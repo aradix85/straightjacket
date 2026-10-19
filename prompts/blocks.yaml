@@ -64,6 +64,10 @@
   {header}
   {lines}
   </world_truths>
+"block_correction_context": '<correction_context>{guidance}</correction_context>'
+"block_task_marker": '<task>'
+"block_mythic_pair_name": '{action} {subject}'
+"block_mythic_pair": '{action} / {subject}'
 "block_correction_instruction": |-
   <correction_instruction>Rewrite the scene incorporating the correction above. Same events and outcome — only adjust what the correction requires.</correction_instruction>
 "block_world_truths_header": |-

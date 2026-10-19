@@ -6,6 +6,7 @@ from typing import Any
 
 from ..logging_util import log
 from ..models import CharacterListEntry, GameState, RandomEvent, ThreadEntry
+from ..prompt_loader import get_prompt
 from .clocks import spawn_emergent_clock
 from .config import gm
 from .keyed_scenes import add_keyed_scene, has_keyed_scene_from
@@ -170,10 +171,7 @@ def spawn_danger_from_random_event(game: GameState, event: RandomEvent) -> None:
         game,
         event.focus,
         f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id or event.focus}",
-        (
-            _name_from_mythic_pair(event.meaning_action, event.meaning_subject),
-            f"{event.meaning_action} / {event.meaning_subject}",
-        ),
+        (_mythic_pair("block_mythic_pair_name", event), _mythic_pair("block_mythic_pair", event)),
     )
 
 
@@ -184,15 +182,15 @@ def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> None:
 
     spawn_emergent_clock(
         game,
-        base_name=_name_from_mythic_pair(event.meaning_action, event.meaning_subject),
+        base_name=_mythic_pair("block_mythic_pair_name", event),
         clock_type=cfg.clock_creation_mapping[event.focus].clock_type,
-        trigger_description=f"{event.meaning_action} / {event.meaning_subject}",
+        trigger_description=_mythic_pair("block_mythic_pair", event),
         source=f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id or event.focus}",
     )
 
 
-def _name_from_mythic_pair(action: str, subject: str) -> str:
-    return f"{action} {subject}"
+def _mythic_pair(template: str, event: RandomEvent) -> str:
+    return get_prompt(template, action=event.meaning_action, subject=event.meaning_subject)
 
 
 def _add_weight(entries: Sequence[ThreadEntry] | Sequence[CharacterListEntry], entry_id: str, label: str) -> None:

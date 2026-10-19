@@ -372,7 +372,8 @@ def resolve_and_narrate_action(ctx: SceneContext, roll_outcome: RollOutcome) -> 
 
 
 def _with_narrator_note(prompt: str, note: str) -> str:
-    return prompt.replace("<task>", f"{note}\n<task>") if note else prompt
+    marker = get_prompt("block_task_marker")
+    return prompt.replace(marker, f"{note}\n{marker}") if note else prompt
 
 
 def _narrate_action_and_finalize(

@@ -135,8 +135,9 @@ def process_correction(
 
     analysis = call_correction_brain(provider, game, correction_text, snap, brain, last_narration)
     note = (
-        f"<correction_context>{_xe(analysis['narrator_guidance'])}</correction_context>\n"
-        f"{get_prompt('block_correction_instruction')}"
+        get_prompt("block_correction_context", guidance=_xe(analysis["narrator_guidance"]))
+        + "\n"
+        + get_prompt("block_correction_instruction")
     )
 
     if analysis["correction_source"] == "input_misread":

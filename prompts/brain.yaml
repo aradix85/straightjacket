@@ -57,6 +57,32 @@
   {lines}
   </npcs>
 "brain_npcs_none": '<npcs>{none}</npcs>'
+"brain_bonus_line": '  {id}: {source}. {condition}'
+"brain_bonuses_wrapper": |-
+  <bonuses>
+  {lines}
+  </bonuses>
+"correction_npc_line": 'id:{id} name:"{npc}"{aliases} disposition:{disposition} desc:"{description}"'
+"correction_npc_aliases": ' aliases:{aliases}'
+"correction_roll": '{result} ({move}, {stat}={value}, action die {die}, score {score} vs c1={c1}/c2={c2})'
+"correction_request_header": '## correction from player: {correction}'
+"correction_request": |-
+  {header}
+
+  <last_turn>
+  player_input: {input}
+  brain_interpretation: move={move} stat={stat} intent={intent}
+  roll: {roll}
+  narration (first {preview} chars): {narration}
+  </last_turn>
+
+  <current_state>
+  location: {location}
+  scene_context: {context}
+  time: {time}
+  npcs:
+  {npcs}
+  </current_state>
 "brain_user_message": |-
   <state>
   loc:{location} | ctx:{context}

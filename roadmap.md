@@ -26,7 +26,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 - For now no Elvira session runs on the real models, the user's choice while the API credit is tight; the user wants them back later. A release that would have had one says so in its CHANGELOG entry, so the run can be caught up.
 - Each finished release is committed and pushed to main.
 - The API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira, `OPENAI_API_KEY` for the judges of the measuring setup); a process started by a tool may need them set in its own environment.
-- Outside the repository, in `C:\Users\radix\Documents`: the scan script of the principle-3 audit in `straightjacket_audit` (it takes a submodule name and writes its hit-list beside itself), the measuring setup for prompt tuning in `mimo_probe`, whose README.md says how to use it, and the render checks of 9o.2 in `straightjacket_prompts`, one script per group (`render_shared.py` for `prompt_shared.py`, then `render_action_dialog.py`, `render_boundary_blocks.py`, `render_brain.py`, `render_narrator_recap.py`, `render_director.py`, and `render_voicing.py`): run with `before`, it writes the renders beside itself, and with `after` it compares them; a group's script covers every line and branch of its module (`coverage run --branch`) before the change.
+- Outside the repository, in `C:\Users\radix\Documents`: the scan script of the principle-3 audit in `straightjacket_audit` (it takes a submodule name and writes its hit-list beside itself), the measuring setup for prompt tuning in `mimo_probe`, whose README.md says how to use it, and the render checks of 9o.2 in `straightjacket_prompts`, one script per group (`render_shared.py` for `prompt_shared.py`, then `render_action_dialog.py`, `render_boundary_blocks.py`, `render_brain.py`, `render_narrator_recap.py`, `render_director.py`, `render_voicing.py`, and `render_small.py`): run with `before`, it writes the renders beside itself, and with `after` it compares them; a group's script covers every line and branch of its module (`coverage run --branch`) before the change.
 
 ## Reference patterns
 
@@ -77,20 +77,20 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ## NEXT STEP — 9o: Dataclass defaults and prompt markup
 
-Two clean-ups of principle 2, formerly 9h.4 and 9h.12; the dataclass defaults (9o.1) are done, the prompt markup is left, one session per group.
+Two clean-ups of principle 2, formerly 9h.4 and 9h.12; the dataclass defaults (9o.1) and the prompt markup (9o.2) are done, and what the render checks of 9o.2 found is left.
 
-**9o.2** The prompt markup assembled in Python (XML tags, attribute names, `key:value` labels, markers) moves to `prompts/*.yaml`, one session per group, each rendering every prompt of the group on a created game before and after and requiring byte-identical text, since the cached prefixes and the measured tuning depend on it: `prompt_shared.py`; `prompt_action.py` and `prompt_dialog.py`; `prompt_boundary.py` and `prompt_blocks.py`; `ai/brain.py`; `ai/narrator.py` and `ai/recap.py`; `director.py`; `ai/blueprint_voicing.py`; and the small sites in `correction/`, `ruleset/bonuses.py`, `ruleset/tracks.py`, `gamemaster/random_events.py`, and `game/turn.py`. Done: `prompt_shared.py`; `prompt_action.py` and `prompt_dialog.py`; `prompt_boundary.py` and `prompt_blocks.py`; `ai/brain.py`; `ai/narrator.py` and `ai/recap.py`; `director.py`; `ai/blueprint_voicing.py`.
+**9o.3** Text that reaches a prompt unescaped, where SECURITY.md says player-supplied text is escaped: the memory events in the target NPC's block (`prompt_shared.py` → `_observed`, and the reflections beside it), whose words the extraction takes from the narration and so from the player's, and the source and condition of a roll bonus in the Brain's `<bonuses>` block (`ruleset/bonuses.py` → `bonus_block`), whose source is a connection's name, the Brain's track name from the player's words. And `ai/provider_base.py` strips a host's `<think>` reasoning with a pattern written in Python, where CONTRIBUTING.md puts the patterns for the AI's words in yaml (`engine/parser.yaml` holds the parser's).
 
 ### Definition of Done
 
-- No prompt markup is assembled in Python: tags, attribute names, labels, and markers come from `prompts/*.yaml`, and every prompt of each group rendered byte-identical before and after on created games in classic, Starforged, and Sundered Isles.
-- The quality gate is green after each group.
-- No Elvira run (Sessions with the user); the prompts are byte-identical, and each CHANGELOG entry says so.
+- The memory events in the target NPC's block and the roll bonuses in the Brain's prompt are escaped, each with a test that fails without it, and SECURITY.md holds.
+- The `<think>` pattern is read from `engine/parser.yaml`.
+- No Elvira run (Sessions with the user); a prompt changes only for text holding `<`, `>`, `&`, or a quote, which the CHANGELOG entry says.
 
 ### Reference patterns
 
-- A prompt block in yaml with placeholders: `prompts/blocks.yaml`, read through `prompt_loader.py` → `get_prompt`.
-- The byte-identical check: render each prompt of the group on created games before the change, keep the text outside the repository, and compare after, as 9n.2j did for the narrator's and the Brain's prompts (CHANGELOG 2026.10.19.33).
+- Escaping: `xml_utils.py` → `xe` for element content, `xa` for attribute values.
+- The render checks of 9o.2 (Sessions with the user) show where the bytes change: after the fix, only the renders whose text holds those characters differ.
 
 ---
 
@@ -336,5 +336,5 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9j, so far.** Suffering goes through `ruleset/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal, and the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5). A progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9).
 - **9h — Principle audits:** principles 2 to 5 audited (AUDIT.md, Status), the long clean-ups of principle 2 are 9o; the Brain keeps its hand-written hints, which chose moves better than the book's triggers (30 of 30 against 29 of 30). The substeps are in the CHANGELOG, and 9h.23 became 11.0.
 - **9n — Four layers:** the setting, the game master, the crafters, and the ruleset each have a package, a yaml folder, and an accessor, and a scan holds their imports to the direction (ARCHITECTURE.md, The four layers); the game master asks the ruleset only its questions (`docs/mechanics.md`, Game master and ruleset). The ruleset owns what a system decides, from its Datasworn rules and its own yaml, and code outside it names none of its words; dialog and asking the oracle are the game master's own moves, and every Datasworn file is at 0.1.0, pinned to one commit (the user's choices). A setting plays the ruleset its Datasworn file names (`docs/settings.md`, Rulesets). Principle 1 is done, and the code the split wrote or rewrote had the queries of principles 2 and 3 (AUDIT.md, Status).
-- **9o, so far.** No dataclass field has a default but an empty collection, and none bound from yaml has one at all; the external structures of `ai/provider_base.py` and `setting/packages.py` are the carve-out of the scan that holds it (`tests/test_project_rules.py` → `_check_no_dataclass_defaults`). State made in several places is made in one (9o.1).
+- **9o, so far.** No dataclass field has a default but an empty collection, and none bound from yaml has one at all; the external structures of `ai/provider_base.py` and `setting/packages.py` are the carve-out of the scan that holds it (`tests/test_project_rules.py` → `_check_no_dataclass_defaults`). State made in several places is made in one (9o.1). No prompt markup is assembled in Python: every tag, attribute, label, and marker of a prompt comes from `prompts/*.yaml`, and every prompt rendered byte-identical before and after (9o.2).
 - **9q — Elvira reaches what a scenario prepares:** a missed aim is a problem; a scenario fixes the results of its first turns through a seam in Elvira alone, or starts at its moment, such as a game over waiting for a successor, and plays in direct mode only (`docs/elvira.md`, Scenarios). Tested on the mock provider; the scenarios' runs on the real models wait for the API credit (Sessions with the user).
