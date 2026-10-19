@@ -27,13 +27,11 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
     return shorter[0] == longer[0]
 
 
-def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None) -> None:
+def update_chaos_factor(game: GameState, outcome: str, target_npc_id: str | None) -> None:
     _c = eng().chaos
-    if result == "MISS":
-        game.world.tick_chaos(_c.adjust_miss)
-    elif result == "STRONG_HIT":
-        game.world.tick_chaos(_c.adjust_strong)
-    elif result == "dialog" and target_npc_id:
+    if outcome in _c.adjust_by_outcome:
+        game.world.tick_chaos(_c.adjust_by_outcome[outcome])
+    elif outcome == "dialog" and target_npc_id:
         from .npc.matching import find_npc
 
         npc = find_npc(game, target_npc_id)

@@ -12,6 +12,7 @@ from ..gamemaster.clock_ticks import tick_threat_clock
 from ..gamemaster.engine_memories import generate_engine_memories, generate_scene_context
 from ..gamemaster.npc.matching import named_in
 from ..gamemaster.npc.memory import consolidate_memory
+from ..gamemaster.questions import answers
 from ..logging_util import log
 from ..models import (
     BrainResult,
@@ -204,11 +205,11 @@ def apply_post_narration(
 ) -> dict[str, Any]:
     cons_list = labels_of(list(consequences))
     present_names = [n.name for n in game.npcs if n.id in scene_present_ids]
-    ctx = generate_scene_context(game, brain, roll, present_names)
-    game.world.current_scene_context = ctx
+    outcome = answers().outcome(roll.result) if roll is not None else None
+    game.world.current_scene_context = generate_scene_context(game, brain, outcome, present_names)
 
     apply_engine_memories(
-        game, generate_engine_memories(game, brain, roll, scene_present_ids, consequences=cons_list), narration
+        game, generate_engine_memories(game, brain, outcome, scene_present_ids, consequences=cons_list), narration
     )
 
     metadata = call_narrator_metadata(provider, narration, game, brain=brain, consequences=cons_list)

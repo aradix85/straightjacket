@@ -5,7 +5,7 @@ from ..logging_util import log
 from ..models import BrainResult, FactRequest, GameState, ResolvedFact
 from .fate import resolve_fate, score_to_odds
 from .npc.matching import find_npc
-from .resolvers import move_category
+from .questions import answers
 from .world import locations_match
 
 
@@ -75,19 +75,19 @@ def release_absent_target(brain: BrainResult, facts: Sequence[ResolvedFact]) -> 
         brain.target_npc = None
 
 
-def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], result: str) -> None:
-    if result not in eng().dice.hit_results:
+def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], outcome: str) -> None:
+    if outcome not in eng().outcomes.gained:
         return
     types = eng().fact_resolution.types
     settled = {(f.about, f.fact_type) for f in facts if f.answer in _YES_ANSWERS and types[f.fact_type].cleared_by_hit}
     if not settled:
         return
     game.world.facts = [f for f in game.world.facts if (f.about, f.fact_type) not in settled]
-    log(f"[Fact] Settled by {result}: {sorted(t for _, t in settled)}")
+    log(f"[Fact] Settled by {outcome}: {sorted(t for _, t in settled)}")
 
 
-def overrule_facts_by_hit(game: GameState, facts: Sequence[ResolvedFact], result: str) -> list[ResolvedFact]:
-    if result not in eng().dice.hit_results:
+def overrule_facts_by_hit(game: GameState, facts: Sequence[ResolvedFact], outcome: str) -> list[ResolvedFact]:
+    if outcome not in eng().outcomes.gained:
         return list(facts)
     miss_settles = eng().fact_resolution.information_miss_settles
     overruled = {
@@ -98,12 +98,12 @@ def overrule_facts_by_hit(game: GameState, facts: Sequence[ResolvedFact], result
     if not overruled:
         return list(facts)
     game.world.facts = [f for f in game.world.facts if (f.about, f.fact_type) not in overruled]
-    log(f"[Fact] Overruled by {result}: {sorted(t for _, t in overruled)}")
+    log(f"[Fact] Overruled by {outcome}: {sorted(t for _, t in overruled)}")
     return [f for f in facts if (f.about, f.fact_type) not in overruled]
 
 
-def settle_facts_by_miss(game: GameState, facts: Sequence[ResolvedFact], move: str, result: str) -> list[ResolvedFact]:
-    if result != "MISS" or move_category(move) != "gather_information":
+def settle_facts_by_miss(game: GameState, facts: Sequence[ResolvedFact], move: str, outcome: str) -> list[ResolvedFact]:
+    if outcome != "failure" or answers().action_kind(move) != "gather_information":
         return list(facts)
     cfg = eng().fact_resolution
     here = cfg.place_reference

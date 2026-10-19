@@ -70,6 +70,7 @@ from .engine_config_dataclasses import (
     NpcMatchingConfig,
     NpcStatusGroups,
     OpeningConfig,
+    OutcomesConfig,
     PacingConfig,
     ParserConfig,
     PatternGrammar,
@@ -100,6 +101,7 @@ from .engine_config_dataclasses import (
     StopwordsConfig,
     StoryConfig,
     StoryStateConfig,
+    StrainConfig,
     SuccessionConfig,
     SufferConfig,
     SufferRecoveryGain,
@@ -186,7 +188,10 @@ class EngineSettings:
     pay_the_price: PayThePriceConfig
     suffer: SufferConfig
     roll_bonuses: RollBonusesConfig
+    outcomes: OutcomesConfig
+    strain: StrainConfig
 
+    advantage_moves: list[str]
     scene_range_default: list[int]
     death_emotions: list[str]
     creativity_seeds: list[str]
@@ -222,7 +227,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "location": LocationConfig,
     "prompt_display": PromptDisplayConfig,
     "opening": OpeningConfig,
-    "threats": ThreatConfig,
     "story": StoryConfig,
     "enums": EnumsConfig,
     "memory_retrieval_weights": MemoryRetrievalWeights,
@@ -248,6 +252,8 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "correction": CorrectionConfig,
     "generation": GenerationConfig,
     "progress": ProgressConfig,
+    "outcomes": OutcomesConfig,
+    "strain": StrainConfig,
 }
 
 
@@ -326,10 +332,6 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         )
         for name, entry in dict(ac_raw["keyed_scene_mapping"]).items()
     }
-    ac_threat_creation = {
-        name: _build_strict(ThreatCreationMappingEntry, dict(entry))
-        for name, entry in dict(ac_raw["threat_creation_mapping"]).items()
-    }
     ac_clock_creation = {
         name: _build_strict(ClockCreationMappingEntry, dict(entry))
         for name, entry in dict(ac_raw["clock_creation_mapping"]).items()
@@ -343,8 +345,7 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         blueprint=ac_blueprint,
         max_keyed_scenes_per_chapter=ac_raw["max_keyed_scenes_per_chapter"],
         keyed_scene_mapping=ac_keyed_mapping,
-        max_threats_per_chapter=ac_raw["max_threats_per_chapter"],
-        threat_creation_mapping=ac_threat_creation,
+        danger_plot_points=list(ac_raw["danger_plot_points"]),
         clock_creation_mapping=ac_clock_creation,
         plotline_name_template=ac_raw["plotline_name_template"],
         returning_character_name_template=ac_raw["returning_character_name_template"],
@@ -372,10 +373,6 @@ def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
         focus: _build_strict(RandomEventKeyedSceneMappingEntry, dict(entry))
         for focus, entry in dict(re_raw["keyed_scene_mapping"]).items()
     }
-    re_threat_creation = {
-        focus: _build_strict(ThreatCreationMappingEntry, dict(entry))
-        for focus, entry in dict(re_raw["threat_creation_mapping"]).items()
-    }
     re_clock_creation = {
         focus: _build_strict(ClockCreationMappingEntry, dict(entry))
         for focus, entry in dict(re_raw["clock_creation_mapping"]).items()
@@ -393,9 +390,17 @@ def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
         consolidation_weight_default=re_raw["consolidation_weight_default"],
         seeded_list_weight=re_raw["seeded_list_weight"],
         keyed_scene_mapping=re_keyed_mapping,
-        threat_creation_mapping=re_threat_creation,
+        danger_foci=list(re_raw["danger_foci"]),
         clock_creation_mapping=re_clock_creation,
     )
+
+
+def _build_threats(t_raw: dict[str, Any]) -> ThreatConfig:
+    _reject_unknown(ThreatConfig, t_raw)
+    by_origin = {
+        origin: _build_strict(ThreatCreationMappingEntry, dict(entry)) for origin, entry in t_raw["by_origin"].items()
+    }
+    return ThreatConfig(**{**t_raw, "by_origin": by_origin})
 
 
 def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
@@ -525,11 +530,11 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         controlled_above=pr["controlled_above"],
         npc_bond_high_min=pr["npc_bond_high_min"],
         npc_bond_low_max=pr["npc_bond_low_max"],
+        strain_weights=dict(pr["strain_weights"]),
         disposition_weights=dict(pr["disposition_weights"]),
         weights=pr_weights,
         move_baselines=dict(pr["move_baselines"]),
         overrides=pr_overrides,
-        secured_advantage_move=pr["secured_advantage_move"],
     )
 
     er = _reject_unknown(EffectResolverConfig, dict(data["effect_resolver"]))
@@ -541,7 +546,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         bond_low_max=er["bond_low_max"],
         position_weights=dict(er["position_weights"]),
         weights=er_weights,
-        move_baselines=dict(er["move_baselines"]),
     )
 
     ig = _reject_unknown(InformationGateConfig, dict(data["information_gate"]))
@@ -615,7 +619,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         location=simple_parsed["location"],
         prompt_display=simple_parsed["prompt_display"],
         opening=simple_parsed["opening"],
-        threats=simple_parsed["threats"],
+        threats=_build_threats(dict(data["threats"])),
         legacy=legacy,
         progress=simple_parsed["progress"],
         engine_moves=engine_moves,
@@ -672,6 +676,9 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         pay_the_price=_build_pay_the_price(dict(data["pay_the_price"])),
         suffer=_build_suffer(dict(data["suffer"])),
         roll_bonuses=_build_roll_bonuses(dict(data["roll_bonuses"])),
+        outcomes=simple_parsed["outcomes"],
+        strain=simple_parsed["strain"],
+        advantage_moves=list(data["advantage_moves"]),
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),
@@ -744,6 +751,7 @@ __all__ = [
     "NpcMatchingConfig",
     "NpcStatusGroups",
     "OpeningConfig",
+    "OutcomesConfig",
     "PacingConfig",
     "ParserConfig",
     "PatternGrammar",
@@ -774,6 +782,7 @@ __all__ = [
     "StopwordsConfig",
     "StoryConfig",
     "StoryStateConfig",
+    "StrainConfig",
     "SuccessionConfig",
     "SufferConfig",
     "SufferRecoveryGain",

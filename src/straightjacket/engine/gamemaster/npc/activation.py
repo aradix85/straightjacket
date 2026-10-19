@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from ...engine_loader import eng
 from ...logging_util import log
 from ...models import GameState, NpcData
-from ...ruleset.bond import get_npc_bond
+from ..questions import answers
 from .lifecycle import reactivate_npc
 from .matching import find_npc
 
@@ -135,7 +135,7 @@ def _cap_activated_overflow(
 
     target_npc = find_npc(game, target_id) if target_id else None
     non_target = [n for n in activated if n is not target_npc]
-    non_target.sort(key=lambda n: get_npc_bond(game, n.id), reverse=True)
+    non_target.sort(key=lambda n: answers().closeness(game, n.id), reverse=True)
     overflow = non_target[_max_activated - (1 if target_npc else 0) :]
     activated = [n for n in activated if n not in overflow]
     mentioned = mentioned + overflow

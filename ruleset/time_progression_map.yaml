@@ -12,5 +12,4 @@ time_progression_map:
   suffer/endure_stress: none
   recover/resupply: moderate
   world_shaping: moderate
-  _with_location_change: long
   _catchall: short

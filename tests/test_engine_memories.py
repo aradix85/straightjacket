@@ -4,7 +4,8 @@ import pytest
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.engine_memories import generate_engine_memories
-from straightjacket.engine.gamemaster.resolvers import is_dialog_branch, is_dialog_memory, move_category
+from straightjacket.engine.gamemaster.resolvers import is_dialog_branch, is_dialog_memory
+from straightjacket.engine.ruleset.answers import action_kind
 from tests._helpers import make_brain_result
 from tests._mocks import make_test_game
 
@@ -45,20 +46,20 @@ class TestEngineMemoriesNoKeyError:
     def test_ask_the_oracle_with_none_roll(self) -> None:
         game = make_test_game()
         brain = make_brain_result(move="ask_the_oracle", target_npc="npc_1")
-        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"}, consequences=())
+        memories = generate_engine_memories(game, brain, outcome=None, activated_npc_ids={"npc_1"}, consequences=())
         assert len(memories) == 1
         assert memories[0][1].event
 
     def test_dialog_only_with_action_move_and_none_roll(self) -> None:
         game = make_test_game()
         brain = make_brain_result(move="combat/clash", dialog_only=True, target_npc="npc_1")
-        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"}, consequences=())
+        memories = generate_engine_memories(game, brain, outcome=None, activated_npc_ids={"npc_1"}, consequences=())
         assert len(memories) == 1
 
     def test_world_shaping_with_none_roll(self) -> None:
         game = make_test_game()
         brain = make_brain_result(move="world_shaping", dialog_only=True)
-        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"}, consequences=())
+        memories = generate_engine_memories(game, brain, outcome=None, activated_npc_ids={"npc_1"}, consequences=())
         assert len(memories) == 1
 
 
@@ -69,14 +70,14 @@ class TestMoveCategoriesCoverage:
 
         implemented = set(outcomes.keys()) | set(engine_moves.keys())
 
-        uncategorized = [m for m in sorted(implemented) if move_category(m) == "other" and m not in _explicitly_other()]
+        uncategorized = [m for m in sorted(implemented) if action_kind(m) == "other" and m not in _explicitly_other()]
         assert uncategorized == [], (
             f"Implemented moves without a real category (will fall through to 'other'): {uncategorized}. "
             "Add them to engine/move_categories.yaml under the appropriate bucket."
         )
 
     def test_unknown_move_returns_other(self) -> None:
-        assert move_category("nonexistent/fake_move") == "other"
+        assert action_kind("nonexistent/fake_move") == "other"
 
 
 class TestProcessTurnGuard:

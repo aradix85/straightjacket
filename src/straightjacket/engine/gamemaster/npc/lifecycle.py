@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 from ...engine_loader import eng
 from ...logging_util import log
 from ...models import NpcData
-from ...ruleset.bond import connection_track, connection_track_id, get_npc_bond
+from ..questions import answers
 from .matching import normalize_for_match, sanitize_npc_name
 from .memory import consolidate_memory
 
@@ -23,7 +23,7 @@ def retire_distant_npcs(game: "GameState") -> None:
         last_scene = max((m.scene for m in npc.memory), default=0)
 
         dd = eng().description_dedup
-        score = last_scene + get_npc_bond(game, npc.id) * dd.bond_multiplier
+        score = last_scene + answers().closeness(game, npc.id) * dd.bond_multiplier
         if not npc.memory or last_scene >= game.narrative.scene_count:
             score += dd.identity_score_delta
         return score
@@ -116,7 +116,7 @@ def _npc_richness(npc: NpcData, game: "GameState") -> int:
         len(npc.memory) * dd.richness_memory
         + bool(npc.agenda) * dd.richness_aim
         + bool(npc.instinct) * dd.richness_aim
-        + get_npc_bond(game, npc.id) * dd.richness_memory
+        + answers().closeness(game, npc.id) * dd.richness_memory
         + bool(npc.description) * dd.richness_other
     )
 
@@ -160,21 +160,6 @@ def _merge_aliases_and_location(original: NpcData, dup: NpcData) -> None:
         original.last_location = dup.last_location
 
 
-def _take_over_connection(game: "GameState", original: NpcData, dup: NpcData) -> None:
-    dup_track = connection_track(game, dup.id)
-    if dup_track is None:
-        return
-    own_track = connection_track(game, original.id)
-    if own_track is not None and own_track.ticks >= dup_track.ticks:
-        game.progress_tracks.remove(dup_track)
-        return
-    if own_track is not None:
-        game.progress_tracks.remove(own_track)
-    dup_track.id = connection_track_id(original.id)
-    dup_track.name = original.name
-    log(f"[NPC] Connection of '{dup.name}' kept for '{original.name}' ({dup_track.filled_boxes} boxes)")
-
-
 def _take_over_list_entry(game: "GameState", original: NpcData, dup: NpcData) -> None:
     entries = game.narrative.characters_list
     dup_entry = next((c for c in entries if c.id == dup.id), None)
@@ -202,7 +187,7 @@ def absorb_npc(game: "GameState", original: NpcData, dup: NpcData) -> None:
         _fill_empty_fields_from_duplicate(original, dup)
 
     _merge_aliases_and_location(original, dup)
-    _take_over_connection(game, original, dup)
+    answers().merge_npcs(game, original, dup)
     _transfer_clocks(game, dup.name, original.name)
     _take_over_list_entry(game, original, dup)
 

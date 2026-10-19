@@ -51,7 +51,7 @@ def test_an_information_miss_turns_useful_to_no(load_engine: None) -> None:
     game = _game()
     earlier = _useful("yes")
     game.world.facts.append(earlier)
-    facts = settle_facts_by_miss(game, [earlier], "adventure/gather_information", "MISS")
+    facts = settle_facts_by_miss(game, [earlier], "adventure/gather_information", "failure")
     assert [(f.fact_type, f.answer) for f in facts] == [("useful", "no")]
     assert find_fact(game, earlier.about, "useful") is facts[0]
     assert earlier.answer == "yes"
@@ -59,14 +59,14 @@ def test_an_information_miss_turns_useful_to_no(load_engine: None) -> None:
 
 def test_an_information_miss_settles_the_place_even_when_nobody_asked(load_engine: None) -> None:
     game = _game()
-    facts = settle_facts_by_miss(game, [], "adventure/gather_information", "MISS")
+    facts = settle_facts_by_miss(game, [], "adventure/gather_information", "failure")
     assert [(f.fact_type, f.answer, f.about_name) for f in facts] == [("useful", "no", "The Docks")]
     assert game.world.facts == facts
 
 
 def test_the_settled_facts_reach_the_narrator(load_engine: None) -> None:
     game = _game()
-    facts = settle_facts_by_miss(game, [], "adventure/gather_information", "MISS")
+    facts = settle_facts_by_miss(game, [], "adventure/gather_information", "failure")
     brain = make_brain_result(move="adventure/gather_information", stat="wits")
     prompt = build_action_prompt(
         game, brain, _roll("MISS"), [], [], **action_prompt_kwargs(player_words="search", facts=facts)
@@ -75,13 +75,13 @@ def test_the_settled_facts_reach_the_narrator(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize(
-    ("move", "result"), [("adventure/face_danger", "MISS"), ("adventure/gather_information", "WEAK_HIT")]
+    ("move", "outcome"), [("adventure/face_danger", "failure"), ("adventure/gather_information", "partial")]
 )
-def test_other_moves_and_hits_leave_useful_alone(load_engine: None, move: str, result: str) -> None:
+def test_other_moves_and_hits_leave_useful_alone(load_engine: None, move: str, outcome: str) -> None:
     game = _game()
     earlier = _useful("yes")
     game.world.facts.append(earlier)
-    assert settle_facts_by_miss(game, [earlier], move, result) == [earlier]
+    assert settle_facts_by_miss(game, [earlier], move, outcome) == [earlier]
     assert game.world.facts == [earlier]
 
 

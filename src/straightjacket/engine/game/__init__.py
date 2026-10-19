@@ -13,6 +13,8 @@ __all__ = [
 ]
 
 
+from ..gamemaster.questions import install_answers
+from ..ruleset import answers as ironsworn
 from .chapters import (
     generate_epilogue,
     start_new_chapter,
@@ -26,3 +28,5 @@ from .succession import (
 )
 from .turn import process_turn, replay_turn
 from .turn_types import BurnOffer, DirectorCall
+
+install_answers(ironsworn)

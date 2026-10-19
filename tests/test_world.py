@@ -8,7 +8,7 @@ def test_update_chaos_factor_miss_increases(load_engine: None) -> None:
 
     g = make_game_state()
     g.world.chaos_factor = 5
-    update_chaos_factor(g, "MISS", target_npc_id=None)
+    update_chaos_factor(g, "failure", target_npc_id=None)
     assert g.world.chaos_factor > 5
 
 
@@ -17,7 +17,7 @@ def test_update_chaos_factor_strong_hit_decreases(load_engine: None) -> None:
 
     g = make_game_state()
     g.world.chaos_factor = 5
-    update_chaos_factor(g, "STRONG_HIT", target_npc_id=None)
+    update_chaos_factor(g, "success", target_npc_id=None)
     assert g.world.chaos_factor < 5
 
 
@@ -65,7 +65,7 @@ def test_update_chaos_factor_weak_hit_unchanged(load_engine: None) -> None:
 
     g = make_game_state()
     g.world.chaos_factor = 5
-    update_chaos_factor(g, "WEAK_HIT", target_npc_id=None)
+    update_chaos_factor(g, "partial", target_npc_id=None)
     assert g.world.chaos_factor == 5
 
 

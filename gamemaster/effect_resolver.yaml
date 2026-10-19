@@ -11,6 +11,3 @@ effect_resolver:
     bond_high: 1
     bond_low: -1
     secured_advantage: 1
-  move_baselines:
-    combat/strike: 1
-    other: 0

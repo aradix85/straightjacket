@@ -10,6 +10,7 @@ from ..game import BurnOffer, DirectorCall, replay_turn
 from ..game.finalization import apply_post_narration, narrate_scene
 from ..gamemaster.facts import facts_of_this_place, overrule_facts_by_hit, settle_facts_by_miss
 from ..gamemaster.npc.activation import activate_npcs_for_prompt
+from ..gamemaster.questions import answers
 from ..logging_util import log
 from ..models import (
     BrainResult,
@@ -61,8 +62,9 @@ def _rewrite_prompt(
         )
         return prompt, facts
 
-    facts = overrule_facts_by_hit(game, facts, roll.result)
-    facts = settle_facts_by_miss(game, facts, brain.move, roll.result)
+    outcome = answers().outcome(roll.result)
+    facts = overrule_facts_by_hit(game, facts, outcome)
+    facts = settle_facts_by_miss(game, facts, brain.move, outcome)
     told_clock_events = [e for e in last_entry.clock_events if not e.autonomous]
     consequence_sentences = generate_consequence_sentences(consequences, told_clock_events, game, brain)
     prompt = build_action_prompt(

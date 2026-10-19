@@ -8,24 +8,24 @@ memory:
   emotion_split_pattern: '[_/,;:\s]+|(?:\s+and\s+)|(?:\s+mixed\s+with\s+)'
 memory_emotions:
   base:
-    combat_MISS: fear_pain
-    combat_WEAK_HIT: tense_relief
-    combat_STRONG_HIT: fierce_triumph
-    social_MISS: suspicious_resentful
-    social_WEAK_HIT: guarded_cautious
-    social_STRONG_HIT: trusting_open
-    endure_MISS: desperate_suffering
-    endure_WEAK_HIT: grim_endurance
-    endure_STRONG_HIT: relieved
-    recovery_MISS: desperate_frustrated
-    recovery_WEAK_HIT: grateful
-    recovery_STRONG_HIT: grateful_relieved
-    other_MISS: frustrated_setback
-    other_WEAK_HIT: wary_uncertain
-    other_STRONG_HIT: confident
-    gather_information_MISS: confused_misled
-    gather_information_WEAK_HIT: cautiously_informed
-    gather_information_STRONG_HIT: enlightened
+    combat_failure: fear_pain
+    combat_partial: tense_relief
+    combat_success: fierce_triumph
+    social_failure: suspicious_resentful
+    social_partial: guarded_cautious
+    social_success: trusting_open
+    endure_failure: desperate_suffering
+    endure_partial: grim_endurance
+    endure_success: relieved
+    recovery_failure: desperate_frustrated
+    recovery_partial: grateful
+    recovery_success: grateful_relieved
+    other_failure: frustrated_setback
+    other_partial: wary_uncertain
+    other_success: confident
+    gather_information_failure: confused_misled
+    gather_information_partial: cautiously_informed
+    gather_information_success: enlightened
     dialog: neutral
   disposition_suffix:
     hostile: _hostile
@@ -39,39 +39,25 @@ memory_templates:
   dialog: 'scene {scene}: {player} spoke with {npc} about {intent}'
   dialog_no_target: 'scene {scene}: {player} engaged in conversation — {intent}'
 memory_result_text:
-  combat_MISS: it went badly, the situation worsened
-  combat_WEAK_HIT: managed but took damage in the process
-  combat_STRONG_HIT: struck true and gained the upper hand
-  social_MISS: was rebuffed, trust eroded
-  social_WEAK_HIT: got somewhere but it came at a cost
-  social_STRONG_HIT: connected and made real progress
-  endure_MISS: buckled under the strain
-  endure_WEAK_HIT: held on, barely
-  endure_STRONG_HIT: endured and came through
-  recovery_MISS: the attempt to recover failed
-  recovery_WEAK_HIT: recovered somewhat
-  recovery_STRONG_HIT: recovered well
-  other_MISS: failed and the situation deteriorated
-  other_WEAK_HIT: partial success with complications
-  other_STRONG_HIT: succeeded cleanly
-  gather_information_MISS: learned nothing useful, or worse, was misled
-  gather_information_WEAK_HIT: pieced together partial information
-  gather_information_STRONG_HIT: uncovered what was needed
+  combat_failure: it went badly, the situation worsened
+  combat_partial: managed but took damage in the process
+  combat_success: struck true and gained the upper hand
+  social_failure: was rebuffed, trust eroded
+  social_partial: got somewhere but it came at a cost
+  social_success: connected and made real progress
+  endure_failure: buckled under the strain
+  endure_partial: held on, barely
+  endure_success: endured and came through
+  recovery_failure: the attempt to recover failed
+  recovery_partial: recovered somewhat
+  recovery_success: recovered well
+  other_failure: failed and the situation deteriorated
+  other_partial: partial success with complications
+  other_success: succeeded cleanly
+  gather_information_failure: learned nothing useful, or worse, was misled
+  gather_information_partial: pieced together partial information
+  gather_information_success: uncovered what was needed
   dialog: exchanged words
-memory_move_verbs:
-  adventure/face_danger: faced danger
-  adventure/compel: pressed someone
-  adventure/gather_information: investigated
-  adventure/secure_an_advantage: prepared carefully
-  combat/clash: fought
-  combat/strike: attacked
-  suffer/endure_harm: endured harm
-  suffer/endure_stress: weathered stress
-  connection/make_a_connection: reached out
-  connection/test_your_relationship: tested a bond
-  recover/resupply: resupplied
-  world_shaping: shaped the world
-  _catchall: acted
 memory_retrieval_weights:
   recency: 0.4
   importance: 0.35

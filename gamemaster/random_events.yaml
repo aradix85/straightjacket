@@ -43,13 +43,9 @@ random_events:
       priority: 7
       narrative_hint: "Pressure on the player from an active threat sharpens into a confrontation."
 
-  threat_creation_mapping:
-    pc_negative:
-      rank: dangerous
-      category: emergent
-    npc_negative:
-      rank: troublesome
-      category: emergent
+  danger_foci:
+  - pc_negative
+  - npc_negative
 
   clock_creation_mapping:
     pc_negative:

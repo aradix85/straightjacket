@@ -31,8 +31,7 @@ class ChaosConfig:
     min: int
     max: int
     start: int
-    adjust_miss: int
-    adjust_strong: int
+    adjust_by_outcome: dict[str, int]
     adjust_dialog_hostile: int
     adjust_dialog_friendly: int
     dialog_raising_dispositions: list[str]
@@ -123,6 +122,20 @@ class LocationConfig:
     history_size: int
     prompt_history_size: int
     word_match_min_words: int
+    change_time: str
+
+
+@dataclass
+class OutcomesConfig:
+    gained: list[str]
+    unrolled: list[str]
+
+
+@dataclass
+class StrainConfig:
+    meters: list[str]
+    below: dict[str, int]
+    otherwise: str
 
 
 @dataclass
@@ -155,6 +168,8 @@ class ThreatConfig:
     autonomous_tick_marks: int
     menace_high_threshold: float
     category_oracle_collection: str
+    max_per_chapter: int
+    by_origin: dict[str, ThreatCreationMappingEntry]
 
 
 @dataclass
@@ -248,16 +263,12 @@ class StopwordsConfig:
 
 @dataclass
 class PositionResolverWeights:
-    resource_critical_below: int
-    resource_low_below: int
-    resource_critical: int
-    resource_low: int
     npc_bond_high: int
     npc_bond_low: int
     chaos_high: int
     chaos_low: int
-    consecutive_misses: int
-    consecutive_strong: int
+    consecutive_failures: int
+    consecutive_successes: int
     threat_clock_critical: int
     secured_advantage: int
 
@@ -275,11 +286,11 @@ class PositionResolverConfig:
     controlled_above: int
     npc_bond_high_min: int
     npc_bond_low_max: int
+    strain_weights: dict[str, int]
     disposition_weights: dict[str, int]
     weights: PositionResolverWeights
     move_baselines: dict[str, int]
     overrides: list[PositionOverride]
-    secured_advantage_move: str
 
 
 @dataclass
@@ -297,7 +308,6 @@ class EffectResolverConfig:
     bond_low_max: int
     position_weights: dict[str, int]
     weights: EffectResolverWeights
-    move_baselines: dict[str, int]
 
 
 @dataclass
@@ -647,7 +657,7 @@ class RandomEventsConfig:
     consolidation_weight_default: int
     seeded_list_weight: int
     keyed_scene_mapping: dict[str, RandomEventKeyedSceneMappingEntry]
-    threat_creation_mapping: dict[str, ThreatCreationMappingEntry]
+    danger_foci: list[str]
     clock_creation_mapping: dict[str, ClockCreationMappingEntry]
 
 
@@ -799,8 +809,7 @@ class AdventureCrafterConfig:
     blueprint: BlueprintConfig
     max_keyed_scenes_per_chapter: int
     keyed_scene_mapping: dict[str, KeyedSceneMappingEntry]
-    max_threats_per_chapter: int
-    threat_creation_mapping: dict[str, ThreatCreationMappingEntry]
+    danger_plot_points: list[str]
     clock_creation_mapping: dict[str, ClockCreationMappingEntry]
     plotline_name_template: str
     returning_character_name_template: str

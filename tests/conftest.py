@@ -12,6 +12,14 @@ _lm.log = lambda *a, **k: None
 sys.modules["straightjacket.engine.logging_util"] = _lm
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _ruleset_answers() -> None:
+    from straightjacket.engine.gamemaster.questions import install_answers
+    from straightjacket.engine.ruleset import answers
+
+    install_answers(answers)
+
+
 @pytest.fixture(autouse=True)
 def _no_backoff_wait(monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.ai import provider_base

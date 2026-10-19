@@ -5,12 +5,12 @@ from typing import Any
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import ClockData, GameState, KeyedScene, RandomEvent, ThreatData
-from ..ruleset.threats import count_emergent_threats, next_threat_id
+from ..models import ClockData, GameState, KeyedScene, RandomEvent
 from .clocks import count_emergent_clocks, unique_clock_name
 from .fate import _load_mythic
 from .keyed_scenes import spawn_keyed_scenes_for_clock
 from .npc.matching import find_npc
+from .questions import answers
 from .spawn_sources import RANDOM_EVENT_SOURCE_PREFIX
 
 _pending_events: list[RandomEvent] = []
@@ -68,11 +68,11 @@ def _select_target(focus: str, game: GameState) -> tuple[str, str]:
     cfg = eng().random_events
 
     if focus in cfg.threat_eligible_focus_categories:
-        active_threats = [t for t in game.threats if t.status == "active" and not t.menace_full]
-        if active_threats and random.random() < cfg.threat_target_probability:
-            threat = random.choice(active_threats)
-            log(f"[RandomEvent] Threat-eligible focus '{focus}' → targeting threat '{threat.name}'")
-            return threat.name, threat.id
+        open_dangers = [d for d in answers().dangers(game) if d.open]
+        if open_dangers and random.random() < cfg.threat_target_probability:
+            danger = random.choice(open_dangers)
+            log(f"[RandomEvent] Threat-eligible focus '{focus}' → targeting danger '{danger.name}'")
+            return danger.name, danger.id
 
     if focus in cfg.npc_focus_categories:
         name, target_id = _select_from_weighted_list(game.narrative.characters_list)
@@ -113,7 +113,7 @@ def generate_random_event(game: GameState, source: str) -> RandomEvent:
     _pending_events.append(event)
 
     spawn_keyed_scene_from_random_event(game, event)
-    spawn_threat_from_random_event(game, event)
+    spawn_danger_from_random_event(game, event)
     spawn_clock_from_random_event(game, event)
 
     return event
@@ -175,44 +175,17 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
     )
 
 
-def _re_threat_already_spawned(game: GameState, focus: str, target_id: str) -> bool:
-    target = f"{RANDOM_EVENT_SOURCE_PREFIX}{focus}:{target_id}"
-    return any(t.creation_source == target for t in game.threats)
-
-
-def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> None:
-    cfg = eng().random_events
-    if event.focus not in cfg.threat_creation_mapping:
+def spawn_danger_from_random_event(game: GameState, event: RandomEvent) -> None:
+    if event.focus not in eng().random_events.danger_foci:
         return
-
-    dedup_key = event.target_id or event.focus
-    if _re_threat_already_spawned(game, event.focus, dedup_key):
-        return
-
-    max_threats = eng().adventure_crafter.max_threats_per_chapter
-    if count_emergent_threats(game) >= max_threats:
-        log(f"[Threat] emergent threat cap {max_threats} reached, skipping focus '{event.focus}'")
-        return
-
-    entry = cfg.threat_creation_mapping[event.focus]
-    name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
-    description = f"{event.meaning_action} / {event.meaning_subject}"
-    threat_id = next_threat_id(game, "threat_re_")
-    creation_source = f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{dedup_key}"
-
-    threat = ThreatData.new(
-        id=threat_id,
-        name=name,
-        category=entry.category,
-        linked_vow_id=None,
-        rank=entry.rank,
-        description=description,
-        creation_source=creation_source,
-    )
-    game.threats.append(threat)
-    log(
-        f"[Threat] spawned '{name}' (id={threat_id}, rank={entry.rank}, category={entry.category}) "
-        f"from random-event focus '{event.focus}'"
+    answers().add_danger(
+        game,
+        event.focus,
+        f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id or event.focus}",
+        (
+            _name_from_mythic_pair(event.meaning_action, event.meaning_subject),
+            f"{event.meaning_action} / {event.meaning_subject}",
+        ),
     )
 
 

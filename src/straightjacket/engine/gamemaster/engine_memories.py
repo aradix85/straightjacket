@@ -3,19 +3,20 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from ..engine_loader import eng
-from ..models import BrainResult, GameState, MemoryEntry, NpcData, RollResult
-from .resolvers import is_dialog_branch, is_dialog_memory, move_category
+from ..models import BrainResult, GameState, MemoryEntry, NpcData
+from .questions import answers
+from .resolvers import is_dialog_branch, is_dialog_memory
 
 
-def derive_memory_emotion(move: str, result: str, disposition: str) -> str:
+def derive_memory_emotion(move: str, outcome: str, disposition: str) -> str:
     _e = eng()
     memory_emotions = _e.memory_emotions
     base_map = memory_emotions.base
     suffix_map = memory_emotions.disposition_suffix
 
-    category = move_category(move)
-    is_dialog = move == "dialog" or result == "dialog"
-    key = "dialog" if is_dialog else f"{category}_{result}"
+    kind = answers().action_kind(move)
+    is_dialog = move == "dialog" or outcome == "dialog"
+    key = "dialog" if is_dialog else f"{kind}_{outcome}"
 
     base = base_map[key]
     suffix = suffix_map[disposition]
@@ -25,7 +26,7 @@ def derive_memory_emotion(move: str, result: str, disposition: str) -> str:
 def generate_engine_memories(
     game: GameState,
     brain: BrainResult,
-    roll: RollResult | None,
+    outcome: str | None,
     activated_npc_ids: set[str],
     consequences: Sequence[str],
 ) -> list[tuple[NpcData, MemoryEntry]]:
@@ -34,18 +35,17 @@ def generate_engine_memories(
     _e = eng()
     templates = _e.memory_templates
     result_text_map = _e.get_raw("memory_result_text")
-    verb_map = _e.get_raw("memory_move_verbs")
     scene = game.narrative.scene_count
 
     move = brain.move
-    is_dialog = is_dialog_memory(brain, roll_present=roll is not None)
-    result = roll.result if roll else "dialog"
-    category = move_category(move)
+    is_dialog = is_dialog_memory(brain, roll_present=outcome is not None)
+    told_outcome = outcome or "dialog"
+    kind = answers().action_kind(move)
     intent = brain.player_intent
 
-    result_key = "dialog" if is_dialog else f"{category}_{result}"
+    result_key = "dialog" if is_dialog else f"{kind}_{told_outcome}"
     result_text = result_text_map[result_key]
-    move_verb = verb_map[move] if move in verb_map else verb_map["_catchall"]
+    move_verb = answers().action_phrase(move)
 
     _pd = eng().prompt_display
     _cons_max = _pd.memory_consequences_max
@@ -80,7 +80,7 @@ def generate_engine_memories(
             consequences=", ".join(consequences[:_cons_max]),
         )
 
-        emotional = derive_memory_emotion(move, result, npc.disposition)
+        emotional = derive_memory_emotion(move, told_outcome, npc.disposition)
         importance = score_importance(emotional, event_text)
 
         memories.append(
@@ -105,7 +105,7 @@ def generate_engine_memories(
 def generate_scene_context(
     game: GameState,
     brain: BrainResult,
-    roll: RollResult | None,
+    outcome: str | None,
     activated_npc_names: list[str],
 ) -> str:
     _e = eng()
@@ -115,14 +115,12 @@ def generate_scene_context(
     location = game.world.current_location or _defaults["unknown_location"]
     npc_summary = ", ".join(activated_npc_names[:_npc_max]) if activated_npc_names else _defaults["no_npcs_nearby"]
 
-    if roll is None or is_dialog_branch(brain):
+    if outcome is None or is_dialog_branch(brain):
         return _e.scene_context.dialog.format(location=location, npc_summary=npc_summary)
 
-    verb_map = _e.get_raw("memory_move_verbs")
-    move_label = verb_map[move] if move in verb_map else move
     return _e.scene_context.template.format(
-        result=roll.result,
-        move_label=move_label,
+        result=outcome,
+        move_label=answers().action_phrase(move),
         location=location,
         npc_summary=npc_summary,
     )

@@ -1,0 +1,29 @@
+result_outcomes:
+  STRONG_HIT: success
+  WEAK_HIT: partial
+  MISS: failure
+strain:
+  meters: [health, spirit, supply]
+  below:
+    critical: 2
+    low: 3
+  otherwise: steady
+advantage_moves:
+- adventure/secure_an_advantage
+effect_bonus_moves:
+  combat/strike: 1
+  other: 0
+action_phrases:
+  adventure/face_danger: faced danger
+  adventure/compel: pressed someone
+  adventure/gather_information: investigated
+  adventure/secure_an_advantage: prepared carefully
+  combat/clash: fought
+  combat/strike: attacked
+  suffer/endure_harm: endured harm
+  suffer/endure_stress: weathered stress
+  connection/make_a_connection: reached out
+  connection/test_your_relationship: tested a bond
+  recover/resupply: resupplied
+  world_shaping: shaped the world
+  _catchall: acted

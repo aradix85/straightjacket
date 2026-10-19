@@ -3,6 +3,10 @@ position_resolver:
   controlled_above: 3
   npc_bond_high_min: 3
   npc_bond_low_max: 0
+  strain_weights:
+    critical: -2
+    low: -1
+    steady: 0
   disposition_weights:
     hostile: -2
     distrustful: -1
@@ -10,16 +14,12 @@ position_resolver:
     friendly: 1
     loyal: 2
   weights:
-    resource_critical_below: 2
-    resource_low_below: 3
-    resource_critical: -2
-    resource_low: -1
     npc_bond_high: 1
     npc_bond_low: -1
     chaos_high: -1
     chaos_low: 1
-    consecutive_misses: -2
-    consecutive_strong: 1
+    consecutive_failures: -2
+    consecutive_successes: 1
     threat_clock_critical: -1
     secured_advantage: 2
   move_baselines:
@@ -33,11 +33,10 @@ position_resolver:
   - name: setup_under_pressure
     conditions:
     - secured_advantage
-    - any_resource_critical
+    - any_strain_critical
     effect: cap_at_risky
   - name: crisis_recovery
     conditions:
     - crisis_mode
     - recovery_move
     effect: floor_at_risky
-  secured_advantage_move: adventure/secure_an_advantage

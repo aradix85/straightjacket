@@ -16,6 +16,7 @@ from ..gamemaster.generation import generate_place_on_arrival, resolve_turn_fact
 from ..gamemaster.npc.activation import activate_npcs_for_prompt
 from ..gamemaster.npc.lifecycle import reactivate_npc
 from ..gamemaster.npc.matching import find_npc
+from ..gamemaster.questions import answers
 from ..gamemaster.random_events import drain_pending_events
 from ..gamemaster.resolvers import is_dialog_branch
 from ..gamemaster.scene import check_scene
@@ -436,9 +437,10 @@ def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOf
 
 def resolve_and_narrate_action(ctx: SceneContext, roll_outcome: RollOutcome) -> tuple[str, DirectorCall | None]:
     action_res = resolve_action_phase(ctx.game, ctx.brain, roll_outcome)
-    clear_facts_settled_by_hit(ctx.game, ctx.facts, roll_outcome.roll.result)
-    ctx.facts = overrule_facts_by_hit(ctx.game, ctx.facts, roll_outcome.roll.result)
-    ctx.facts = settle_facts_by_miss(ctx.game, ctx.facts, ctx.brain.move, roll_outcome.roll.result)
+    outcome = answers().outcome(roll_outcome.roll.result)
+    clear_facts_settled_by_hit(ctx.game, ctx.facts, outcome)
+    ctx.facts = overrule_facts_by_hit(ctx.game, ctx.facts, outcome)
+    ctx.facts = settle_facts_by_miss(ctx.game, ctx.facts, ctx.brain.move, outcome)
     return _narrate_action_and_finalize(ctx, roll_outcome, action_res)
 
 

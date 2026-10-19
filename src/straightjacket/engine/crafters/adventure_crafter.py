@@ -11,9 +11,10 @@ from ..engine_config_dataclasses import PlotPointRanges
 from ..engine_loader import eng
 from ..gamemaster.clocks import count_emergent_clocks, unique_clock_name
 from ..gamemaster.keyed_scenes import spawn_keyed_scenes_for_clock
+from ..gamemaster.questions import answers
 from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX
 from ..logging_util import log
-from ..models import ClockData, GameState, ThreatData
+from ..models import ClockData, GameState
 from ..models_story import (
     CharacterListEntry,
     KeyedScene,
@@ -24,9 +25,6 @@ from ..models_story import (
     StoryAct,
     StoryBlueprint,
 )
-from ..ruleset.threats import count_emergent_threats, next_threat_id
-from ..setting.cascade import roll_oracle_cascade
-from ..setting.packages import load_package
 
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
 
@@ -539,55 +537,11 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
         )
 
 
-def _ac_threat_already_spawned(game: GameState, plot_point_name: str) -> bool:
-    target = f"{AC_SOURCE_PREFIX}{plot_point_name}"
-    return any(t.creation_source == target for t in game.threats)
-
-
-def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint) -> None:
-    cfg = eng().adventure_crafter
-    mapping = cfg.threat_creation_mapping
-    cap = cfg.max_threats_per_chapter
-
-    pkg = load_package(game.setting_id)
-
+def spawn_dangers_for_turning_point(game: GameState, turning_point: TurningPoint) -> None:
+    danger_plot_points = eng().adventure_crafter.danger_plot_points
     for hit in turning_point.plot_points:
-        if hit.special_range is not None:
-            continue
-        if hit.name not in mapping:
-            continue
-        if _ac_threat_already_spawned(game, hit.name):
-            continue
-        if count_emergent_threats(game) >= cap:
-            log(f"[AdventureCrafter] threat cap {cap} reached, skipping plot-point '{hit.name}'")
-            break
-
-        entry = mapping[hit.name]
-        cascade = roll_oracle_cascade(pkg, pkg.oracle_paths.threats)
-        name = cascade[-1].label
-        description = " — ".join(step.text for step in cascade)
-        threat_id = next_threat_id(game, "threat_ac_")
-        creation_source = f"{AC_SOURCE_PREFIX}{hit.name}"
-        collection = f"{eng().threats.category_oracle_collection}/"
-        category = next(
-            (step.path.removeprefix(collection) for step in cascade[1:] if step.path.startswith(collection)),
-            entry.category,
-        )
-
-        threat = ThreatData.new(
-            id=threat_id,
-            name=name,
-            category=category,
-            linked_vow_id=None,
-            rank=entry.rank,
-            description=description,
-            creation_source=creation_source,
-        )
-        game.threats.append(threat)
-        log(
-            f"[AdventureCrafter] spawned threat '{name}' (id={threat_id}, rank={entry.rank}, "
-            f"category={category}) from plot-point '{hit.name}'"
-        )
+        if hit.special_range is None and hit.name in danger_plot_points:
+            answers().add_danger(game, hit.name, f"{AC_SOURCE_PREFIX}{hit.name}", None)
 
 
 def _ac_clock_already_spawned(game: GameState, plot_point_name: str) -> bool:
@@ -696,7 +650,7 @@ def assemble_blueprint_seed_from_ac(
         tp = roll_turning_point(rng, themes, narrative)
         turning_points.append(tp)
         spawn_keyed_scenes_for_turning_point(narrative, tp)
-        spawn_threats_for_turning_point(game, tp)
+        spawn_dangers_for_turning_point(game, tp)
         spawn_clocks_for_turning_point(game, tp)
 
     act_count = bp_cfg.acts_three_act

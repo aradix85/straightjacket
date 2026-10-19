@@ -54,7 +54,7 @@ class TestMoveCategoriesSymmetry:
 
     def test_memory_emotions_covers_every_non_dialog_combination(self) -> None:
         cats = _all_categories()
-        results = ("MISS", "WEAK_HIT", "STRONG_HIT")
+        results = set(eng().get_raw("result_outcomes").values())
         base = eng().memory_emotions.base
         missing = []
         for cat in cats:
@@ -68,7 +68,7 @@ class TestMoveCategoriesSymmetry:
 
     def test_memory_result_text_covers_every_non_dialog_combination(self) -> None:
         cats = _all_categories()
-        results = ("MISS", "WEAK_HIT", "STRONG_HIT")
+        results = set(eng().get_raw("result_outcomes").values())
         result_text = eng().get_raw("memory_result_text")
         missing = [f"{cat}_{res}" for cat in cats for res in results if f"{cat}_{res}" not in result_text]
         assert missing == [], f"memory_result_text missing keys: {missing}."
@@ -108,7 +108,7 @@ class TestEveryMoveResolvesEndToEnd:
         )
 
     def test_every_move_resolves_position_baseline(self) -> None:
-        from straightjacket.engine.gamemaster.resolvers import move_category
+        from straightjacket.engine.ruleset.answers import action_kind
         from straightjacket.engine.ruleset.moves import get_moves
         from straightjacket.engine.setting.packages import list_packages
 
@@ -118,7 +118,7 @@ class TestEveryMoveResolvesEndToEnd:
         all_moves.update(eng().engine_moves.keys())
 
         baselines = eng().position_resolver.move_baselines
-        unmapped = [m for m in sorted(all_moves) if move_category(m) not in baselines]
+        unmapped = [m for m in sorted(all_moves) if action_kind(m) not in baselines]
         assert unmapped == [], f"Moves whose category has no baseline in position_resolver.move_baselines: {unmapped}."
 
 

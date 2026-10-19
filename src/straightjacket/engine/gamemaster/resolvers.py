@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
-
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, GameState, NpcData
-from ..ruleset.bond import get_npc_bond
 from .npc.matching import find_npc
+from .questions import answers, outcome_of
 
 
 def _target_npc(game: GameState, brain: BrainResult) -> NpcData | None:
@@ -18,16 +16,9 @@ def _target_npc(game: GameState, brain: BrainResult) -> NpcData | None:
     return target
 
 
-def _score_resource_pressure(game: GameState) -> int:
-    w = eng().position_resolver.weights
-    score = 0
-    res = game.resources
-    for val in (res.health, res.spirit, res.supply):
-        if val < w.resource_critical_below:
-            score += w.resource_critical
-        elif val < w.resource_low_below:
-            score += w.resource_low
-    return score
+def _score_strain(game: GameState) -> int:
+    weights = eng().position_resolver.strain_weights
+    return sum(weights[level] for level in answers().strain(game))
 
 
 def _score_npc_relationship(game: GameState, brain: BrainResult) -> int:
@@ -36,11 +27,11 @@ def _score_npc_relationship(game: GameState, brain: BrainResult) -> int:
         return 0
     cfg = eng().position_resolver
     score = cfg.disposition_weights[target.disposition]
-    bond = get_npc_bond(game, target.id)
+    closeness = answers().closeness(game, target.id)
     w = cfg.weights
-    if bond >= cfg.npc_bond_high_min:
+    if closeness >= cfg.npc_bond_high_min:
         score += w.npc_bond_high
-    elif bond <= cfg.npc_bond_low_max:
+    elif closeness <= cfg.npc_bond_low_max:
         score += w.npc_bond_low
     return score
 
@@ -56,17 +47,17 @@ def _score_chaos_factor(chaos_factor: int) -> int:
     return 0
 
 
-def _score_recent_streak(recent_results: list[str]) -> int:
+def _score_recent_streak(recent_outcomes: list[str]) -> int:
     _e = eng()
     w = _e.position_resolver.weights
     streak = _e.chaos_resolver.recent_result_window
-    if len(recent_results) < streak:
+    if len(recent_outcomes) < streak:
         return 0
-    tail = recent_results[-streak:]
-    if all(r == "MISS" for r in tail):
-        return w.consecutive_misses
-    if all(r == "STRONG_HIT" for r in tail):
-        return w.consecutive_strong
+    tail = recent_outcomes[-streak:]
+    if all(o == "failure" for o in tail):
+        return w.consecutive_failures
+    if all(o == "success" for o in tail):
+        return w.consecutive_successes
     return 0
 
 
@@ -81,35 +72,18 @@ def _score_threat_clocks(game: GameState) -> int:
     return max(penalty, w.threat_clock_critical * chaos_cfg.clock_pressure_cap_multiplier)
 
 
-def _secured_advantage(recent_log: list[Any]) -> bool:
-    return bool(
-        recent_log
-        and recent_log[-1].move == eng().position_resolver.secured_advantage_move
-        and recent_log[-1].result in eng().dice.hit_results
-    )
-
-
-def _score_secured_advantage(recent_log: list[Any]) -> int:
-    return eng().position_resolver.weights.secured_advantage if _secured_advantage(recent_log) else 0
-
-
-def _score_move_category_baseline(cat: str) -> int:
-    return eng().position_resolver.move_baselines[cat]
-
-
-def _score_position_factors(game: GameState, brain: BrainResult, cat: str) -> int:
-    chaos_cfg = eng().chaos_resolver
-    recent = game.narrative.session_log[-chaos_cfg.recent_session_window :]
-    recent_results = [e.result for e in recent if e.result]
-
+def _score_position_factors(game: GameState, brain: BrainResult, kind: str) -> int:
+    recent = game.narrative.session_log[-eng().chaos_resolver.recent_session_window :]
+    recent_outcomes = [outcome_of(e.result) for e in recent if e.result]
+    advantage = eng().position_resolver.weights.secured_advantage if answers().gained_advantage(game) else 0
     return (
-        _score_resource_pressure(game)
+        _score_strain(game)
         + _score_npc_relationship(game, brain)
         + _score_chaos_factor(game.world.chaos_factor)
-        + _score_recent_streak(recent_results)
+        + _score_recent_streak(recent_outcomes)
         + _score_threat_clocks(game)
-        + _score_secured_advantage(recent)
-        + _score_move_category_baseline(cat)
+        + advantage
+        + eng().position_resolver.move_baselines[kind]
     )
 
 
@@ -122,17 +96,13 @@ def _map_score_to_position(score: int) -> str:
     return "risky"
 
 
-def _apply_position_overrides(position: str, game: GameState, cat: str) -> str:
+def _apply_position_overrides(position: str, game: GameState, kind: str) -> str:
     cfg = eng().position_resolver
-    w = cfg.weights
-
-    recent = game.narrative.session_log[-eng().chaos_resolver.recent_session_window :]
-    res = game.resources
     conditions: dict[str, bool] = {
-        "secured_advantage": _secured_advantage(recent),
-        "any_resource_critical": any(v < w.resource_critical_below for v in (res.health, res.spirit, res.supply)),
+        "secured_advantage": answers().gained_advantage(game),
+        "any_strain_critical": "critical" in answers().strain(game),
         "crisis_mode": game.crisis_mode,
-        "recovery_move": cat == "recovery",
+        "recovery_move": kind == "recovery",
     }
 
     for override in cfg.overrides:
@@ -147,11 +117,11 @@ def _apply_position_overrides(position: str, game: GameState, cat: str) -> str:
 
 
 def resolve_position(game: GameState, brain: BrainResult) -> str:
-    cat = move_category(brain.move)
-    score = _score_position_factors(game, brain, cat)
+    kind = answers().action_kind(brain.move)
+    score = _score_position_factors(game, brain, kind)
     position = _map_score_to_position(score)
-    position = _apply_position_overrides(position, game, cat)
-    log(f"[Position] score={score}, position={position} (move={brain.move}, cat={cat})")
+    position = _apply_position_overrides(position, game, kind)
+    log(f"[Position] score={score}, position={position} (move={brain.move}, kind={kind})")
     return position
 
 
@@ -164,16 +134,16 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
 
     target = _target_npc(game, brain)
     if target is not None:
-        bond = get_npc_bond(game, target.id)
-        if bond >= cfg.bond_high_min:
+        closeness = answers().closeness(game, target.id)
+        if closeness >= cfg.bond_high_min:
             score += w.bond_high
-        elif bond <= cfg.bond_low_max:
+        elif closeness <= cfg.bond_low_max:
             score += w.bond_low
 
-    if _secured_advantage(game.narrative.session_log[-1:]):
+    if answers().gained_advantage(game):
         score += w.secured_advantage
 
-    score += cfg.move_baselines[brain.move] if brain.move in cfg.move_baselines else cfg.move_baselines["other"]
+    score += answers().effect_bonus(brain.move)
 
     if score <= cfg.limited_below:
         effect = "limited"
@@ -187,22 +157,7 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
 
 
 def resolve_time_progression(move: str, has_location_change: bool) -> str:
-    tmap = eng().get_raw("time_progression_map")
-    if has_location_change:
-        key = "_with_location_change"
-    else:
-        key = move if move in tmap else "_catchall"
-    result: str = tmap[key]
-    return result
-
-
-def move_category(move: str) -> str:
-    mc = eng().get_raw("move_categories")
-    cat: str
-    for cat in mc:
-        if move in mc[cat]:
-            return cat
-    return "other"
+    return eng().location.change_time if has_location_change else answers().time_taken(move)
 
 
 def is_dialog_branch(brain: BrainResult) -> bool:

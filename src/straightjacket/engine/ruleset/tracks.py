@@ -7,7 +7,7 @@ from collections.abc import Callable
 from ..engine_loader import eng
 from ..ids import unique_id
 from ..logging_util import log
-from ..models import BrainResult, GameState, ProgressTrack, ThreadEntry, consequence
+from ..models import BrainResult, ClockData, GameState, ProgressTrack, ThreadEntry, consequence
 from ..setting.packages import load_package
 from .bond import connection_track, connection_track_id
 from .impacts import clear_impact
@@ -174,6 +174,16 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
 
                 if threat.status == "overcome":
                     apply_threat_overcome_bonus(game, threat)
+
+
+def complete_track_of_clock(game: GameState, clock: ClockData) -> None:
+    if clock.clock_type != "progress":
+        return
+    for track in game.progress_tracks:
+        if track.name == clock.name and track.status == "active":
+            complete_track(game, track.id, "completed")
+            log(f"[ClockFill] linked progress track '{track.name}' completed")
+            return
 
 
 def roll_oracle_answer(game: GameState) -> str:

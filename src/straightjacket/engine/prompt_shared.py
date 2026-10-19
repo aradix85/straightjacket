@@ -6,7 +6,7 @@ from .engine_loader import eng
 from .gamemaster.generation import current_place
 from .gamemaster.npc.matching import find_npc
 from .gamemaster.npc.memory import retrieve_memories
-from .gamemaster.resolvers import move_category
+from .gamemaster.questions import answers
 from .gamemaster.scene import adjustment_descriptions
 from .gamemaster.stance_gate import compute_npc_gate, resolve_npc_stance
 from .gamemaster.world import get_pacing_hint, locations_match
@@ -388,5 +388,5 @@ def _director_block(game: GameState) -> str:
 
 
 def _resolve_stance_category(move: str) -> str:
-    move_cat = move_category(move)
+    move_cat = answers().action_kind(move)
     return eng().stance_move_buckets.mapping[move_cat]

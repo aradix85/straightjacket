@@ -6,6 +6,7 @@ from ..director import should_call_director
 from ..engine_loader import eng
 from ..gamemaster.clock_ticks import tick_autonomous_clocks
 from ..gamemaster.npc.matching import find_npc
+from ..gamemaster.questions import outcome_of
 from ..gamemaster.random_events import (
     add_character_weight,
     add_thread_weight,
@@ -134,7 +135,7 @@ def finalize_scene(
     check_act_transition(game)
     check_story_completion(game)
 
-    update_chaos_factor(game, roll_result_str, target_npc_id=brain.target_npc)
+    update_chaos_factor(game, outcome_of(roll_result_str), target_npc_id=brain.target_npc)
 
     _update_characters_list(game, metadata, scene_present_ids)
     scene_events = [*ctx.pending_random_events, *filter(None, [ctx.scene_setup.interrupt_event])]

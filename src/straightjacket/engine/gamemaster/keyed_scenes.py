@@ -6,8 +6,8 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ClockData, GameState, KeyedScene, NarrativeState
 from ..models_npc import NpcData
-from ..ruleset.bond import get_npc_bond
 from .npc.matching import find_npc
+from .questions import answers
 from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX
 
 
@@ -52,7 +52,7 @@ def _bond_pool_candidates(
             raise KeyError(f"bond_threshold trigger references unknown npc_id {pool!r}")
         if npc.id in exclude_ids:
             return []
-        return [npc.id] if get_npc_bond(game, npc.id) >= threshold else []
+        return [npc.id] if answers().closeness(game, npc.id) >= threshold else []
 
     matches: list[str] = []
     for npc in game.npcs:
@@ -60,7 +60,7 @@ def _bond_pool_candidates(
             continue
         if not _npc_matches_pool(npc, pool):
             continue
-        if get_npc_bond(game, npc.id) >= threshold:
+        if answers().closeness(game, npc.id) >= threshold:
             matches.append(npc.id)
     return matches
 
@@ -71,21 +71,16 @@ def _threat_pool_candidates(
     threshold: int,
     exclude_ids: set[str],
 ) -> list[str]:
+    dangers = answers().dangers(game)
     if pool != "any":
-        threat = next((t for t in game.threats if t.name == pool), None)
-        if threat is None:
-            raise KeyError(f"threat_menace_phase trigger references unknown threat {pool!r}")
-        if threat.id in exclude_ids:
+        danger = next((d for d in dangers if d.name == pool), None)
+        if danger is None:
+            raise KeyError(f"threat_menace_phase trigger references unknown danger {pool!r}")
+        if danger.id in exclude_ids:
             return []
-        return [threat.id] if threat.menace_filled_boxes >= threshold else []
+        return [danger.id] if danger.progress >= threshold else []
 
-    matches: list[str] = []
-    for threat in game.threats:
-        if threat.id in exclude_ids:
-            continue
-        if threat.menace_filled_boxes >= threshold:
-            matches.append(threat.id)
-    return matches
+    return [d.id for d in dangers if d.id not in exclude_ids and d.progress >= threshold]
 
 
 def _clock_pool_candidates(
@@ -145,7 +140,7 @@ def _resolve_pattern_entity(
         if not candidates:
             return None
         if strategy == "highest_bond":
-            return max(candidates, key=lambda nid: get_npc_bond(game, nid))
+            return max(candidates, key=lambda nid: answers().closeness(game, nid))
         raise ValueError(f"unknown bond_threshold matcher_strategy {strategy!r}")
 
     if trigger_type == "threat_menace_phase":
@@ -153,8 +148,8 @@ def _resolve_pattern_entity(
         if not candidates:
             return None
         if strategy == "highest_menace":
-            id_to_threat = {t.id: t for t in game.threats}
-            return max(candidates, key=lambda tid: id_to_threat[tid].menace_filled_boxes)
+            progress = {d.id: d.progress for d in answers().dangers(game)}
+            return max(candidates, key=lambda did: progress[did])
         raise ValueError(f"unknown threat_menace_phase matcher_strategy {strategy!r}")
 
     if trigger_type == "clock_fills":
@@ -212,12 +207,12 @@ def _bound_entity_meets_threshold(game: GameState, trigger_type: str, value: str
         npc = find_npc(game, entity_id)
         if npc is None:
             return False
-        return get_npc_bond(game, npc.id) >= threshold
+        return answers().closeness(game, npc.id) >= threshold
     if trigger_type == "threat_menace_phase":
-        threat = next((t for t in game.threats if t.id == entity_id), None)
-        if threat is None:
-            raise KeyError(f"threat_menace_phase keyed scene is bound to unknown threat {entity_id!r}")
-        return threat.menace_filled_boxes >= threshold
+        danger = next((d for d in answers().dangers(game) if d.id == entity_id), None)
+        if danger is None:
+            raise KeyError(f"threat_menace_phase keyed scene is bound to unknown danger {entity_id!r}")
+        return danger.progress >= threshold
     if trigger_type == "clock_fills":
         for clock in game.world.clocks:
             if _clock_key(clock.name) == entity_id:

@@ -1,0 +1,3 @@
+outcomes:
+  gained: [success, partial]
+  unrolled: [dialog, oracle, opening]

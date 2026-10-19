@@ -858,6 +858,27 @@ def _collect_public_symbols() -> dict[tuple[str, Path], None]:
     return defs
 
 
+def _names_a_node_uses(node: ast.AST) -> list[str]:
+    if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+        return [node.id]
+    if isinstance(node, ast.ImportFrom):
+        return [alias.name for alias in node.names]
+    if isinstance(node, ast.Import):
+        return [alias.name.split(".")[0] for alias in node.names]
+    if isinstance(node, ast.ClassDef) and any(isinstance(b, ast.Name) and b.id == "Protocol" for b in node.bases):
+        return [item.name for item in node.body if isinstance(item, ast.FunctionDef)]
+    if (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "getattr"
+        and len(node.args) >= 2
+        and isinstance(node.args[1], ast.Constant)
+        and isinstance(node.args[1].value, str)
+    ):
+        return [node.args[1].value]
+    return []
+
+
 def _collect_src_uses() -> dict[Path, set[str]]:
     uses: dict[Path, set[str]] = {}
     for path in _iter_source_files():
@@ -865,26 +886,7 @@ def _collect_src_uses() -> dict[Path, set[str]]:
             tree = ast.parse(path.read_text(encoding="utf-8"))
         except SyntaxError:
             continue
-        names: set[str] = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
-                names.add(node.id)
-            elif isinstance(node, ast.ImportFrom):
-                for alias in node.names:
-                    names.add(alias.name)
-            elif isinstance(node, ast.Import):
-                for alias in node.names:
-                    names.add(alias.name.split(".")[0])
-            elif (
-                isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Name)
-                and node.func.id == "getattr"
-                and len(node.args) >= 2
-                and isinstance(node.args[1], ast.Constant)
-                and isinstance(node.args[1].value, str)
-            ):
-                names.add(node.args[1].value)
-        uses[path] = names
+        uses[path] = {name for node in ast.walk(tree) for name in _names_a_node_uses(node)}
     return uses
 
 

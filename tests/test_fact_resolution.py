@@ -156,9 +156,9 @@ def test_a_hit_clears_only_the_types_that_say_so(load_engine: None) -> None:
     locked, alert = _fact("locked"), _fact("alert", about="npc_2")
     game.world.facts = [locked, alert]
 
-    clear_facts_settled_by_hit(game, [locked, alert], "MISS")
+    clear_facts_settled_by_hit(game, [locked, alert], "failure")
     assert game.world.facts == [locked, alert]
-    clear_facts_settled_by_hit(game, [locked, alert], "WEAK_HIT")
+    clear_facts_settled_by_hit(game, [locked, alert], "partial")
     assert game.world.facts == [alert]
 
 
@@ -168,7 +168,7 @@ def test_a_hit_does_not_settle_a_no(load_engine: None) -> None:
     game = _game()
     nothing_useful = _fact("useful", answer="no")
     game.world.facts = [nothing_useful]
-    clear_facts_settled_by_hit(game, [nothing_useful], "STRONG_HIT")
+    clear_facts_settled_by_hit(game, [nothing_useful], "success")
     assert game.world.facts == [nothing_useful]
 
 
@@ -179,18 +179,18 @@ def test_a_hit_overrules_what_a_search_miss_would_settle(load_engine: None, answ
     game = _game()
     nothing_useful, open_door = _fact("useful", answer=answer), _fact("locked", answer="no")
     game.world.facts = [nothing_useful, open_door]
-    assert overrule_facts_by_hit(game, [nothing_useful, open_door], "WEAK_HIT") == [open_door]
+    assert overrule_facts_by_hit(game, [nothing_useful, open_door], "partial") == [open_door]
     assert game.world.facts == [open_door]
 
 
-@pytest.mark.parametrize(("answer", "result"), [("no", "MISS"), ("yes", "STRONG_HIT")])
-def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, result: str) -> None:
+@pytest.mark.parametrize(("answer", "outcome"), [("no", "failure"), ("yes", "success")])
+def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, outcome: str) -> None:
     from straightjacket.engine.gamemaster.facts import overrule_facts_by_hit
 
     game = _game()
     useful = _fact("useful", answer=answer)
     game.world.facts = [useful]
-    assert overrule_facts_by_hit(game, [useful], result) == [useful]
+    assert overrule_facts_by_hit(game, [useful], outcome) == [useful]
     assert game.world.facts == [useful]
 
 

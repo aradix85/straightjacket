@@ -3,9 +3,11 @@ from __future__ import annotations
 import random
 
 from ..engine_loader import eng
+from ..gamemaster.questions import Danger
 from ..gamemaster.spawn_sources import EMERGENT_SOURCE_PREFIXES
 from ..logging_util import log
 from ..models import GameState, ThreatData, ThreatEvent
+from ..setting.cascade import roll_oracle_cascade
 from ..setting.oracle_rolls import plain_text, roll_table
 from ..setting.packages import load_package
 from .outcome_result import OutcomeResult
@@ -21,6 +23,56 @@ def next_threat_id(game: GameState, prefix: str) -> str:
     while any(t.id == f"{prefix}{n}" for t in game.threats):
         n += 1
     return f"{prefix}{n}"
+
+
+def threats_as_dangers(game: GameState) -> list[Danger]:
+    return [
+        Danger(
+            id=t.id,
+            name=t.name,
+            progress=t.menace_filled_boxes,
+            open=t.status == "active" and not t.menace_full,
+        )
+        for t in game.threats
+    ]
+
+
+def _named_from_setting(game: GameState, fallback_category: str) -> tuple[str, str, str]:
+    pkg = load_package(game.setting_id)
+    cascade = roll_oracle_cascade(pkg, pkg.oracle_paths.threats)
+    collection = f"{eng().threats.category_oracle_collection}/"
+    category = next(
+        (step.path.removeprefix(collection) for step in cascade[1:] if step.path.startswith(collection)),
+        fallback_category,
+    )
+    return cascade[-1].label, " — ".join(step.text for step in cascade), category
+
+
+def add_threat(game: GameState, origin: str, source: str, named: tuple[str, str] | None) -> None:
+    cfg = eng().threats
+    if any(t.creation_source == source for t in game.threats):
+        return
+    if count_emergent_threats(game) >= cfg.max_per_chapter:
+        log(f"[Threat] emergent threat cap {cfg.max_per_chapter} reached, skipping {origin!r}")
+        return
+    entry = cfg.by_origin[origin]
+    if named is None:
+        name, description, category = _named_from_setting(game, entry.category)
+    else:
+        (name, description), category = named, entry.category
+    threat_id = next_threat_id(game, f"threat_{source.split(':', 1)[0]}_")
+    game.threats.append(
+        ThreatData.new(
+            id=threat_id,
+            name=name,
+            category=category,
+            linked_vow_id=None,
+            rank=entry.rank,
+            description=description,
+            creation_source=source,
+        )
+    )
+    log(f"[Threat] spawned '{name}' (id={threat_id}, rank={entry.rank}, category={category}) from {origin!r}")
 
 
 def _development(game: GameState, threat: ThreatData) -> str:

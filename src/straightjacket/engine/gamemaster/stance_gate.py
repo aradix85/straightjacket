@@ -3,7 +3,7 @@ from __future__ import annotations
 from ..engine_config import StanceMatrixEntry
 from ..engine_loader import eng
 from ..models import GameState, NpcData
-from ..ruleset.bond import get_npc_bond
+from .questions import answers
 
 
 def resolve_npc_stance(
@@ -23,11 +23,11 @@ def _matrix_stance(game: GameState, npc: NpcData, move_category: str) -> StanceM
     buckets = eng().stance_bond_buckets
 
     disposition = npc.disposition
-    bond = get_npc_bond(game, npc.id)
+    closeness = answers().closeness(game, npc.id)
 
-    if bond <= buckets.low_max:
+    if closeness <= buckets.low_max:
         bond_range = "low"
-    elif bond <= buckets.mid_max:
+    elif closeness <= buckets.mid_max:
         bond_range = "mid"
     else:
         bond_range = "high"
@@ -54,10 +54,10 @@ def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: 
 
     points += npc.gather_count * p.gather_success
 
-    bond = get_npc_bond(game, npc.id)
-    if bond >= b.bond_high_min:
+    closeness = answers().closeness(game, npc.id)
+    if closeness >= b.bond_high_min:
         points += p.bond_4_plus
-    elif bond >= b.bond_mid_min:
+    elif closeness >= b.bond_mid_min:
         points += p.bond_2_3
     else:
         points += p.bond_1

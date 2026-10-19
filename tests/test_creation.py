@@ -333,23 +333,23 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize(
-    ("move", "result", "disposition", "expected_fragment"),
+    ("move", "outcome", "disposition", "expected_fragment"),
     [
-        ("combat/clash", "MISS", "hostile", "fear_pain_hostile"),
-        ("adventure/compel", "STRONG_HIT", "friendly", "trusting_open_warm"),
+        ("combat/clash", "failure", "hostile", "fear_pain_hostile"),
+        ("adventure/compel", "success", "friendly", "trusting_open_warm"),
         ("dialog", "dialog", "neutral", "neutral"),
-        ("unknown_move", "MISS", "neutral", "frustrated_setback"),
+        ("unknown_move", "failure", "neutral", "frustrated_setback"),
     ],
 )
 def test_derive_memory_emotion(
-    load_engine: None, move: str, result: str, disposition: str, expected_fragment: str
+    load_engine: None, move: str, outcome: str, disposition: str, expected_fragment: str
 ) -> None:
     from straightjacket.engine.gamemaster.engine_memories import derive_memory_emotion
 
-    assert expected_fragment in derive_memory_emotion(move, result, disposition)
+    assert expected_fragment in derive_memory_emotion(move, outcome, disposition)
 
 
 def test_derive_memory_emotion_recovery_strong(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.engine_memories import derive_memory_emotion
 
-    assert "devoted" in derive_memory_emotion("suffer/endure_harm", "STRONG_HIT", "loyal")
+    assert "devoted" in derive_memory_emotion("suffer/endure_harm", "success", "loyal")
