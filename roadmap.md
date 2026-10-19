@@ -26,7 +26,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 - For now no Elvira session runs on the real models, the user's choice while the API credit is tight; the user wants them back later. A release that would have had one says so in its CHANGELOG entry, so the run can be caught up.
 - Each finished release is committed and pushed to main.
 - The API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira, `OPENAI_API_KEY` for the judges of the measuring setup); a process started by a tool may need them set in its own environment.
-- Outside the repository, in `C:\Users\radix\Documents`: the scan script of the principle-3 audit in `straightjacket_audit` (it takes a submodule name and writes its hit-list beside itself), the measuring setup for prompt tuning in `mimo_probe`, whose README.md says how to use it, and the render checks of 9o in `straightjacket_prompts`, one script per group of prompt modules, which `before` and then `after` compare the rendered prompts byte for byte.
+- Outside the repository, in `C:\Users\radix\Documents`: the scan script of the principle-3 audit in `straightjacket_audit` (it takes a submodule name and writes its hit-list beside itself), and the measuring setup for prompt tuning in `mimo_probe`, whose README.md says how to use it.
 
 ## Reference patterns
 

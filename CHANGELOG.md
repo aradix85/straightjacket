@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.16] — 2026-10-20
+
+The render checks of 9o are deleted, at the user's choice, since their work is done and they were built on the code as it stood; the roadmap no longer names them. A later byte-identical check is written anew by the method 9o.2 describes.
+
+Quality gate: 1850 tests, coverage 94.92%, no code changed. Save format unchanged.
+
 ## [2026.10.20.15] — 2026-10-20
 
 The roadmap's DONE line for 9o is cut to what a later session needs, and the note on the render checks outside the repository to how they are used.
