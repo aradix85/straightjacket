@@ -52,11 +52,11 @@ def test_a_failed_turn_is_rolled_back_and_reported(
 ) -> None:
     from straightjacket.i18n import t
     from straightjacket.web import handlers
-    from straightjacket.web.session import Session
+    from straightjacket.web.session import new_session
 
     game = _game()
     before = game.to_dict()
-    session = Session()
+    session = new_session()
     session.game = game
     ws = _FakeWS()
 

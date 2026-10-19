@@ -207,11 +207,11 @@ def test_new_player_input_withdraws_a_pending_burn_offer(
     from straightjacket.engine.ai.provider_base import AIUnavailableError
     from straightjacket.engine.game import process_turn
     from straightjacket.web import handlers
-    from straightjacket.web.session import Session
+    from straightjacket.web.session import new_session
 
     game = _game()
     _n, _r, offer, _d = process_turn(_Provider(_brain()), game, "I slip into the vault", stream=None)
-    session = Session()
+    session = new_session()
     session.game = game
     session.pending_burn = offer
 

@@ -14,15 +14,15 @@ def _default_save_name() -> str:
     return eng().persistence.default_save_name
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Session:
-    player: str = ""
-    game: GameState | None = None
+    player: str
+    game: GameState | None
     chat_messages: list[dict[str, Any]] = field(default_factory=list)
-    save_name: str = field(default_factory=_default_save_name)
-    processing: bool = False
-    active_ws: WebSocket | None = field(default=None, repr=False)
-    pending_burn: BurnOffer | None = None
+    save_name: str
+    processing: bool
+    active_ws: WebSocket | None = field(repr=False)
+    pending_burn: BurnOffer | None
 
     def clear_game(self) -> None:
         self.game = None
@@ -50,3 +50,14 @@ class Session:
             result: str = self.chat_messages[-1]["content"]
             return result
         return None
+
+
+def new_session() -> Session:
+    return Session(
+        player="",
+        game=None,
+        save_name=_default_save_name(),
+        processing=False,
+        active_ws=None,
+        pending_burn=None,
+    )

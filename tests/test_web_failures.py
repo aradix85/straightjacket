@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from straightjacket.web.session import Session
+from straightjacket.web.session import new_session
 from tests._helpers import make_act, make_blueprint, make_game_state
 from tests._mocks import MockProvider
 
@@ -28,7 +28,7 @@ def test_a_failed_chapter_opening_leaves_the_game_as_it_was(
 
     monkeypatch.setattr(chapters, "call_narrator", narrator_down)
     monkeypatch.setattr(handlers, "get_provider", lambda: MockProvider("{}"))
-    session = Session()
+    session = new_session()
     session.game = make_game_state(player_name="Aria", setting_id="starforged")
     before = session.game.to_dict()
     ws = _FakeWS()
@@ -49,7 +49,7 @@ def test_a_fault_outside_the_ai_calls_is_not_swallowed_by_the_handler(
         raise KeyError("broken succession")
 
     monkeypatch.setattr(handlers, "prepare_succession", broken)
-    session = Session()
+    session = new_session()
     session.game = make_game_state(player_name="Aria", setting_id="starforged")
 
     with pytest.raises(KeyError, match="broken succession"):

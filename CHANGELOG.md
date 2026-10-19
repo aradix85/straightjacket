@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.1] — 2026-10-20
+
+Step 9o, 9o.1, sixth module: `web/session.py` loses the six defaults of `Session`, the server's one player session. It is made in one place, `new_session`, which names its starting state (no player, no game, the default save name, nothing processing, no connection, no burn offered); the server and the tests make theirs with it, and `Session` is keyword-only, so its fields keep their order. 28 defaults remain, 20 of them external structures. Play does not change.
+
+Quality gate: 1846 tests, coverage 94.94%. Save format unchanged, since a session is not saved. No Elvira session (Sessions with the user); none would have been needed, since play does not change.
+
 ## [2026.10.20.0] — 2026-10-20
 
 Step 9o, 9o.1, fifth module: `ruleset/outcome_result.py` loses the nine defaults of `OutcomeResult`, the record a move's effects and handlers fill. Every outcome starts empty, so its five makers (the effects, the suffer, threshold, and recovery handlers, and a dialog turn's engine moves) share `new_outcome`, which names each field; `OutcomeResult` is keyword-only, so its fields keep their order. The tests build theirs through `make_outcome`, which starts from `new_outcome`. 34 defaults remain, 20 of them external structures. Play does not change.

@@ -17,7 +17,7 @@ from straightjacket.web.serializers import (
     build_narrative_status,
     highlight_dialog,
 )
-from straightjacket.web.session import Session
+from straightjacket.web.session import new_session
 from tests._helpers import (
     install_config,
     make_act,
@@ -37,7 +37,7 @@ def load_engine(_real_engine) -> None:
 
 class TestSession:
     def test_initial_state(self) -> None:
-        s = Session()
+        s = new_session()
         assert s.player == ""
         assert s.game is None
         assert s.processing is False
@@ -45,7 +45,7 @@ class TestSession:
         assert s.pending_burn is None
 
     def test_append_chat(self) -> None:
-        s = Session()
+        s = new_session()
         s.append_chat("user", "hello")
         s.append_chat("assistant", "world")
         assert len(s.chat_messages) == 2
@@ -53,27 +53,27 @@ class TestSession:
         assert s.chat_messages[1] == {"role": "assistant", "content": "world"}
 
     def test_append_chat_extra_fields(self) -> None:
-        s = Session()
+        s = new_session()
         s.append_chat("assistant", "epilogue text", epilogue=True)
         assert s.chat_messages[0]["epilogue"] is True
 
     def test_orphan_input_none_when_assistant_last(self) -> None:
-        s = Session()
+        s = new_session()
         s.append_chat("user", "action")
         s.append_chat("assistant", "narration")
         assert s.orphan_input() is None
 
     def test_orphan_input_returns_text_when_user_last(self) -> None:
-        s = Session()
+        s = new_session()
         s.append_chat("user", "orphaned action")
         assert s.orphan_input() == "orphaned action"
 
     def test_orphan_input_none_when_empty(self) -> None:
-        s = Session()
+        s = new_session()
         assert s.orphan_input() is None
 
     def test_pop_last_user_message(self) -> None:
-        s = Session()
+        s = new_session()
         s.append_chat("user", "first")
         s.append_chat("assistant", "response")
         s.append_chat("user", "second")
@@ -82,28 +82,28 @@ class TestSession:
         assert s.chat_messages[-1]["role"] == "assistant"
 
     def test_pop_last_user_message_noop_when_assistant_last(self) -> None:
-        s = Session()
+        s = new_session()
         s.append_chat("user", "x")
         s.append_chat("assistant", "y")
         s.pop_last_user_message()
         assert len(s.chat_messages) == 2
 
     def test_replace_last_assistant(self) -> None:
-        s = Session()
+        s = new_session()
         s.append_chat("user", "input")
         s.append_chat("assistant", "original")
         s.replace_last_assistant("replaced")
         assert s.chat_messages[-1]["content"] == "replaced"
 
     def test_replace_last_assistant_skips_user(self) -> None:
-        s = Session()
+        s = new_session()
         s.append_chat("assistant", "first")
         s.append_chat("user", "second")
         s.replace_last_assistant("replaced")
         assert s.chat_messages[0]["content"] == "replaced"
 
     def test_clear_game(self) -> None:
-        s = Session()
+        s = new_session()
         s.game = make_game_state(player_name="Test")
         s.chat_messages = [{"role": "assistant", "content": "x"}]
         s.save_name = "custom"

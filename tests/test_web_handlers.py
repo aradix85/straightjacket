@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from straightjacket.web.session import Session
+from straightjacket.web.session import Session, new_session
 from tests._helpers import make_game_state
 
 
@@ -25,7 +25,7 @@ def fake_ws() -> _FakeWS:
 
 @pytest.fixture
 def session(load_engine: None) -> Session:
-    return Session()
+    return new_session()
 
 
 def test_require_str_returns_trimmed_value(load_engine: None, fake_ws: _FakeWS) -> None:

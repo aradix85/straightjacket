@@ -41,12 +41,12 @@ from .handlers import (
     handle_tracks_query,
     player_selected_message,
 )
-from .session import Session
+from .session import new_session
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
-_session = Session()
+_session = new_session()
 
 
 _HANDLERS: dict[str, Callable[..., Any]] = {
