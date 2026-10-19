@@ -22,12 +22,28 @@ def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[Any, list[Any]
 
 
 def _game() -> Any:
-    from tests._helpers import make_game_state, make_npc
+    from tests._helpers import make_game_state, make_memory, make_npc
 
     game = make_game_state()
     game.setting_id = "classic"
     game.backstory = "Raised by smugglers on the northern coast."
-    game.npcs = [make_npc(id="npc_1", name="Mira", status="active", description="A tired smith with burned hands.")]
+    game.narrative.scene_count = 4
+    game.npcs = [
+        make_npc(
+            id="npc_1",
+            name="Mira",
+            status="active",
+            description="A tired smith with burned hands.",
+            memory=[make_memory(scene=4, event="Watched the search", type="observation")],
+        ),
+        make_npc(
+            id="npc_2",
+            name="Saffi",
+            status="active",
+            description="A trader behind a shut door.",
+            memory=[make_memory(scene=3, event="Went inside", type="observation")],
+        ),
+    ]
     return game
 
 
@@ -53,6 +69,7 @@ def test_the_judge_sees_the_move_text_the_previous_narration_and_what_is_establi
     assert "Rain drums on the chapel roof." in user
     assert "Raised by smugglers on the northern coast." in user
     assert "A tired smith with burned hands." in user
+    assert "A trader behind a shut door." not in user
 
 
 def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:

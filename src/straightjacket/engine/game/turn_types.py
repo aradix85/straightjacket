@@ -27,7 +27,7 @@ class SceneContext:
     brain: BrainResult
     player_message: str
     scene_setup: SceneSetup
-    scene_present_ids: set[str]
+    prompt_npc_ids: set[str]
     pending_revs: list[Any]
     facts: list[ResolvedFact]
     summary_label: str

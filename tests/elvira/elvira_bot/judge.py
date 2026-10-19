@@ -44,10 +44,11 @@ def judge_turn(
     previous: str,
     move_id: str,
 ) -> dict[str, Any]:
+    scene = game.narrative.scene_count
     npcs = "\n".join(
         f"- {n.name} ({n.disposition}): {n.description or _p('judge_none_description')}"
         for n in game.npcs
-        if n.status == "active"
+        if any(m.scene == scene and m.type == "observation" for m in n.memory)
     ) or _p("bot_active_none_label")
     outcome = _p("judge_result_dialog") if result is None else result + (_p("judge_match_suffix") if match else "")
     move_name, move_text = _move_outcome(game, move_id, result)

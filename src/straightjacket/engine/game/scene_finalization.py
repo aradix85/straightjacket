@@ -5,7 +5,7 @@ from ..ai.brain import call_revelation_check
 from ..director import should_call_director
 from ..gamemaster.clock_ticks import tick_autonomous_clocks
 from ..gamemaster.config import gm
-from ..gamemaster.npc.matching import find_npc
+from ..gamemaster.npc.matching import find_npc, present_in_narration
 from ..gamemaster.questions import outcome_of
 from ..gamemaster.random_events import (
     add_character_weight,
@@ -89,7 +89,7 @@ def finalize_scene(
 ) -> tuple[bool, DirectorCall | None]:
     game = ctx.game
     brain = ctx.brain
-    scene_present_ids = ctx.scene_present_ids
+    scene_present_ids = present_in_narration(game, ctx.prompt_npc_ids, brain.target_npc, narration)
 
     metadata = apply_post_narration(
         ctx.provider,

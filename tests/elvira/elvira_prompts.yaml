@@ -142,7 +142,7 @@ judge_turn: |
   Move: {move}
   Engine result: {result}
   The move's text for this result: {move_outcome}
-  Active NPCs:
+  NPCs the engine counts as in this scene:
   {npcs}
 
   New narration:

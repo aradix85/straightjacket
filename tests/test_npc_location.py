@@ -38,3 +38,18 @@ def test_a_name_counts_as_a_whole_word_or_an_alias(load_engine: None) -> None:
     assert not named_in(tomas, "A crate of tomatoes waits by the door.")
     assert named_in(tomas, "Tomas waves from the forge.")
     assert named_in(tomas, "The smith looks up.")
+
+
+def test_the_scene_holds_its_target_and_whom_the_narration_names(load_engine: None) -> None:
+    from straightjacket.engine.gamemaster.npc.matching import present_in_narration
+
+    game = make_game_state()
+    game.npcs = [
+        make_npc(id="npc_1", name="Edda Varn"),
+        make_npc(id="npc_2", name="Tomas Reed"),
+        make_npc(id="npc_3", name="Saffi Orrel"),
+        make_npc(id="npc_4", name="Wynne Beltran"),
+    ]
+    narration = "She shrugs. Tomas hammers on. Wynne watches from the well."
+    in_prompt = {"npc_1", "npc_2", "npc_3"}
+    assert present_in_narration(game, in_prompt, "npc_1", narration) == {"npc_1", "npc_2"}

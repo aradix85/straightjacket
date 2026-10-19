@@ -190,7 +190,7 @@ The opening scene and the character's start come from the setting's launch table
 
 ### 11b — NPC exits and retirement
 
-**11b.1** NPCs who walk out of a scene can be pulled back next scene by the activation bonus without reason. The extractor reports `exited_npc_ids` (like `deceased_npcs`); `NpcData` gets an absent-until-scene value (the save format breaks); activation scores the NPC zero while absent unless the player names them or the Brain targets them; a chapter start clears it. Tests for exit, suppression, the player-name override, and the chapter reset.
+**11b.1** NPCs who walk out of a scene can be pulled back next scene by the activation bonus without reason. The engine counts an NPC as in a scene only when the narration names it or it is the target (`gamemaster/npc/matching.py` → `present_in_narration`), so a passing mention of someone absent still counts. The extractor reports `exited_npc_ids` (like `deceased_npcs`); `NpcData` gets an absent-until-scene value (the save format breaks); activation scores the NPC zero while absent unless the player names them or the Brain targets them; a chapter start clears it. Tests for exit, suppression, the player-name override, and the chapter reset.
 
 **11b.2** An active NPC with an empty connection track and no new memory for N scenes (yaml) moves to background, but not in the scene they reappear.
 

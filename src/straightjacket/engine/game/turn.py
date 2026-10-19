@@ -258,7 +258,7 @@ def build_scene_context(
     narrator_note: str,
 ) -> SceneContext:
     activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, player_message)
-    scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
+    prompt_npc_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
     pending_revs = get_pending_revelations(game)
 
     return SceneContext(
@@ -267,7 +267,7 @@ def build_scene_context(
         brain=brain,
         player_message=player_message,
         scene_setup=scene_setup,
-        scene_present_ids=scene_present_ids,
+        prompt_npc_ids=prompt_npc_ids,
         pending_revs=pending_revs,
         facts=facts,
         summary_label=summary_label,

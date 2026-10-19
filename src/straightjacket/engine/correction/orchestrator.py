@@ -11,6 +11,7 @@ from ..game.finalization import apply_post_narration, narrate_scene
 from ..gamemaster.config import gm
 from ..gamemaster.facts import facts_of_this_place, overrule_facts_by_hit, settle_facts_by_miss
 from ..gamemaster.npc.activation import activate_npcs_for_prompt
+from ..gamemaster.npc.matching import present_in_narration
 from ..gamemaster.questions import answers
 from ..logging_util import log
 from ..models import (
@@ -159,7 +160,9 @@ def process_correction(
         narration,
         brain,
         roll,
-        {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs},
+        present_in_narration(
+            game, {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}, brain.target_npc, narration
+        ),
         consequences=game.narrative.session_log[-1].consequences,
     )
 

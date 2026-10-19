@@ -201,6 +201,19 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
     assert len(provider.calls) >= 3
 
 
+def test_an_npc_the_narration_leaves_out_was_not_in_the_scene(load_engine: None) -> None:
+    from straightjacket.engine.game.turn import process_turn
+
+    game = _make_game()
+    mira = game.npcs[0]
+    game.world.current_scene_context = "conversation at Abandoned Library with Mira"
+    for _ in range(2):
+        process_turn(MockProvider(), game, "I search the room for clues", stream=None)
+
+    assert [m.scene for m in mira.memory if m.scene > 1] == []
+    assert "Mira" not in game.world.current_scene_context
+
+
 def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
     from straightjacket.engine.models_story import StoryAct

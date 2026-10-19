@@ -123,6 +123,10 @@ def named_in(npc: "NpcData", text: str) -> bool:
     return False
 
 
+def present_in_narration(game: "GameState", in_prompt: set[str], target_id: str | None, narration: str) -> set[str]:
+    return {npc.id for npc in game.npcs if npc.id in in_prompt and (npc.id == target_id or named_in(npc, narration))}
+
+
 def find_npc(game: "GameState", npc_ref: str | None) -> NpcData | None:
     if not npc_ref:
         return None
