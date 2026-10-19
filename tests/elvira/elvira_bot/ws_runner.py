@@ -4,12 +4,12 @@ import asyncio
 import html
 import json
 import logging
+import random as _random
 import re
 import time
-import random as _random
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
@@ -19,8 +19,6 @@ import websockets
 from straightjacket.engine.config_loader import VERSION, cfg
 from straightjacket.engine.models import GameState
 
-from .coverage import Coverage
-from .report import write_report
 from .ai_helpers import (
     ask_bot,
     available_styles,
@@ -29,7 +27,9 @@ from .ai_helpers import (
     decide_burn_momentum,
     get_persona,
 )
+from .coverage import Coverage
 from .creation import roll_character
+from .display import print_narration, print_state, print_summary
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
@@ -37,9 +37,9 @@ from .quality_checks import (
     check_npc_spatial_consistency,
 )
 from .recorder import record_turn
-from .runner import _EventCapture, RUNS_DIR, selectable_settings
+from .report import write_report
+from .runner import RUNS_DIR, _EventCapture, selectable_settings
 from .tokens import TokenMeter
-from .display import print_narration, print_state, print_summary
 
 SEPARATOR = "=" * 62
 CORRECTION_TEST_INTERVAL = 8
@@ -152,6 +152,7 @@ _BACKGROUND_TASKS: set[asyncio.Task] = set()
 
 async def _start_server(port: int) -> Any:
     import uvicorn
+
     from straightjacket.web.server import app
 
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")

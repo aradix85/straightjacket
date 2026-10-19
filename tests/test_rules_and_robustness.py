@@ -34,7 +34,7 @@ def _profiled_npc(status: str, needs_reflection: bool) -> NpcData:
 
 
 def test_compel_strong_hit_does_not_mark_bond() -> None:
-    raw = (REPO_ROOT / "engine" / "move_outcomes.yaml").read_text(encoding="utf-8")
+    raw = (REPO_ROOT / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8")
     outcomes = yaml.safe_load(raw)["move_outcomes"]
     for key in ("adventure/compel", "relationship/compel"):
         assert not [effect for effect in outcomes[key]["strong_hit"] if effect.startswith("bond")], key
@@ -183,7 +183,7 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(lo
 
     from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
     from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-    from straightjacket.engine.mechanics.adventure_crafter import assemble_blueprint_seed_from_ac
+    from straightjacket.engine.crafters.adventure_crafter import assemble_blueprint_seed_from_ac
     from tests.test_integration import _make_game
 
     game = _make_game()

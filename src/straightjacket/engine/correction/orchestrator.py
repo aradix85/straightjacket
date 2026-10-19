@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 from typing import Any
+
 from ...i18n import t
 from ..ai.provider_base import AIProvider
 from ..director import should_call_director
 from ..engine_loader import eng
 from ..game import BurnOffer, DirectorCall, replay_turn
 from ..game.finalization import apply_post_narration, narrate_scene
+from ..gamemaster.facts import facts_of_this_place, overrule_facts_by_hit, settle_facts_by_miss
+from ..gamemaster.npc.activation import activate_npcs_for_prompt
 from ..logging_util import log
-from ..mechanics import (
-    facts_of_this_place,
-    generate_consequence_sentences,
-    overrule_facts_by_hit,
-    settle_facts_by_miss,
-)
 from ..models import (
     BrainResult,
     GameState,
@@ -24,10 +21,10 @@ from ..models import (
     SceneSetup,
     TurnSnapshot,
 )
-from ..npc import activate_npcs_for_prompt
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
+from ..ruleset.consequences import generate_consequence_sentences
 from ..xml_utils import xe as _xe
 from .analysis import call_correction_brain
 from .ops import apply_correction_ops

@@ -14,13 +14,13 @@ from .models import (
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
-    _npc_agency_block,
     _clock_filled_block,
     _director_block,
     _facts_block,
     _flags_block,
     _generated_place_block,
     _loc_hist,
+    _npc_agency_block,
     _npc_block,
     _npcs_section,
     _pacing_block,

@@ -1,26 +1,21 @@
-from typing import Any
-from concurrent.futures import ThreadPoolExecutor
-
 import random as _random_module
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..datasworn.settings import SettingPackage, load_package
-from ..engine_loader import eng
-from ..logging_util import log
-from ..mechanics import (
-    choose_story_structure,
-    record_scene_intensity,
-)
-from ..mechanics.adventure_crafter import (
+from ..crafters.adventure_crafter import (
     assemble_blueprint_seed_from_ac,
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
-from ..mechanics.keyed_scenes import spawn_keyed_scenes_for_clock
-from ..mechanics.spawn_sources import SETUP_SOURCE
+from ..engine_loader import eng
+from ..gamemaster.keyed_scenes import spawn_keyed_scenes_for_clock
+from ..gamemaster.spawn_sources import SETUP_SOURCE
+from ..gamemaster.world import choose_story_structure, record_scene_intensity
+from ..logging_util import log
 from ..models import (
     CharacterListEntry,
     ClockData,
@@ -33,7 +28,7 @@ from ..models import (
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
-
+from ..setting.packages import SettingPackage, load_package
 from .setup_common import apply_opening_setup
 
 

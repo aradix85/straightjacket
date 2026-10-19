@@ -1,22 +1,19 @@
-from typing import Any
 from collections.abc import Sequence
+from typing import Any
 
 from ..ai.brain import call_revelation_check
 from ..director import should_call_director
 from ..engine_loader import eng
-from ..logging_util import log
-from ..mechanics import (
-    record_scene_intensity,
-    tick_autonomous_clocks,
-    update_chaos_factor,
-)
-from ..mechanics.random_events import (
+from ..gamemaster.clock_ticks import tick_autonomous_clocks
+from ..gamemaster.npc.matching import find_npc
+from ..gamemaster.random_events import (
     add_character_weight,
     add_thread_weight,
     consolidate_characters,
     consolidate_threads,
 )
-from ..mechanics.threats import tick_autonomous_threats
+from ..gamemaster.world import record_scene_intensity, update_chaos_factor
+from ..logging_util import log
 from ..models import (
     BrainResult,
     CharacterListEntry,
@@ -29,10 +26,10 @@ from ..models import (
     SceneLogEntry,
     ThreatEvent,
 )
+from ..ruleset.threats import tick_autonomous_threats
+from ..ruleset.tracks import vow_acted_on
 from ..story_state import check_act_transition, check_story_completion, mark_revelation_used
 from .finalization import apply_post_narration
-from ..mechanics import vow_acted_on
-from ..npc import find_npc
 from .turn_types import DirectorCall, SceneContext
 
 

@@ -94,8 +94,8 @@ def create_game(
     player_name: str,
     background_vow: str,
 ) -> GameState:
-    from straightjacket.engine.datasworn.settings import load_package
     from straightjacket.engine.game import start_new_game
+    from straightjacket.engine.setting.packages import load_package
 
     creation = {
         "setting_id": setting_id,

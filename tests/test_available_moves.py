@@ -1,9 +1,9 @@
 import pytest
 
-from straightjacket.engine.datasworn.moves import get_moves
 from straightjacket.engine.engine_config import ActiveTrackCondition
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState, Resources
+from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.tools import available_moves
 from tests._helpers import make_game_state, make_progress_track
 

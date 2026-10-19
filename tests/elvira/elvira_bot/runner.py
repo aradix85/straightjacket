@@ -3,8 +3,8 @@ from __future__ import annotations
 import copy
 import json
 import logging
-import time
 import random as _random
+import time
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -18,28 +18,25 @@ if TYPE_CHECKING:
 from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 from straightjacket.engine.ai.provider_base import AIUnavailableError
 from straightjacket.engine.ai.sentence_stream import SentenceStream
-from straightjacket.engine.models import GameState, TurnSnapshot
-from straightjacket.engine.persistence import delete_save, load_game, save_game
-from straightjacket.engine.user_management import create_user
 from straightjacket.engine.config_loader import VERSION, model_for_role, narration_language, provider_for_role
 from straightjacket.engine.correction import process_correction
-from straightjacket.engine.datasworn.settings import list_packages, load_package
 from straightjacket.engine.game import (
     BurnOffer,
     DirectorCall,
-    prepare_succession,
-    start_succession_with_character,
     generate_epilogue,
+    prepare_succession,
     process_momentum_burn,
     process_turn,
     run_deferred_director,
     start_new_chapter,
     start_new_game,
+    start_succession_with_character,
 )
+from straightjacket.engine.models import GameState, TurnSnapshot
+from straightjacket.engine.persistence import delete_save, load_game, save_game
+from straightjacket.engine.setting.packages import list_packages, load_package
+from straightjacket.engine.user_management import create_user
 
-from .coverage import Coverage, world_view
-from .judge import judge_turn
-from .report import write_report
 from .ai_helpers import (
     ask_bot,
     available_styles,
@@ -49,11 +46,12 @@ from .ai_helpers import (
     decide_burn_momentum,
     get_persona,
 )
+from .coverage import Coverage, world_view
 from .creation import roll_character
+from .display import print_narration, print_state, print_summary
 from .faults import NarratorOutage
-from .scenarios import prepare_scenario
-from .tokens import TokenMeter
 from .invariants import assert_game_state, check_turn_replacement
+from .judge import judge_turn
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
     check_chapter_continuity,
@@ -61,7 +59,9 @@ from .quality_checks import (
     check_npc_spatial_consistency,
 )
 from .recorder import record_turn
-from .display import print_narration, print_state, print_summary
+from .report import write_report
+from .scenarios import prepare_scenario
+from .tokens import TokenMeter
 
 RUNS_DIR = Path(__file__).resolve().parent.parent / "runs"
 SEPARATOR = "=" * 62

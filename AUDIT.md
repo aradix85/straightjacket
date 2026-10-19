@@ -66,7 +66,7 @@ The rules "Domain config keys raise on a miss, and dataclass fields have no defa
 
 **Pass 2a — User-facing strings.** Grep `src/straightjacket/` for literals that look like narration, error messages, UI labels, or AI prompts, and cross-reference `strings/*.yaml` and `prompts/*.yaml`. A user-, narrator-, or AI-readable string not loaded from YAML is a violation, the markup of a prompt and patterns for the AI's words included.
 
-**Pass 2b — Numeric thresholds.** Grep numeric literals in `mechanics/`, `npc/`, `game/`, and `ai/`, cross-referenced with `engine/*.yaml`. A domain threshold, limit, or rule is a violation, the source systems' rule constants such as dice sizes included; a structural constant (loop bound, index) is not.
+**Pass 2b — Numeric thresholds.** Grep numeric literals in `gamemaster/`, `crafters/`, `ruleset/`, `game/`, and `ai/`, cross-referenced with the yaml of `engine/`, `gamemaster/`, `crafters/`, and `ruleset/`. A domain threshold, limit, or rule is a violation, the source systems' rule constants such as dice sizes included; a structural constant (loop bound, index) is not.
 
 **Pass 2c — Mappings.** Grep dict and set literals in domain modules that hold domain keys (move names, dispositions, statuses). A mapping that should extend without Python changes is a violation, and so is a group of enum values written out at its callsites.
 
@@ -104,9 +104,9 @@ Carve-outs: the AI-call carve-out for broad excepts; re-exports that make up the
 
 No dead Python symbols, no dead YAML keys; every YAML key has a Python consumer and every config access a YAML source. YAGNI, KISS, DRY.
 
-**Pass 5a — Dead Python symbols.** For each public symbol in `src/straightjacket/`, grep `src/`, `tests/`, `engine/*.yaml`, `prompts/*.yaml`, and `data/`. Dead means no reader and no writer beyond the definition on every surface. Static tools (vulture, pylint) miss dict writes, getattr reads, fixtures, schema generation, and serialization; do not rely on them. Count production callers separately: a re-export plus tests is not a use in play.
+**Pass 5a — Dead Python symbols.** For each public symbol in `src/straightjacket/`, grep `src/`, `tests/`, the yaml of `engine/`, `gamemaster/`, `crafters/`, and `ruleset/`, `prompts/*.yaml`, and `data/`. Dead means no reader and no writer beyond the definition on every surface. Static tools (vulture, pylint) miss dict writes, getattr reads, fixtures, schema generation, and serialization; do not rely on them. Count production callers separately: a re-export plus tests is not a use in play.
 
-**Pass 5b — Dead YAML keys.** For each key in `engine/`, `strings/`, `prompts/`, and `emotions/`, grep `src/` for the key; for each zero-hit key, check `get_raw` consumption and dataclass fields of the same name. Unambiguous orphans are violations.
+**Pass 5b — Dead YAML keys.** For each key in `engine/`, `gamemaster/`, `crafters/`, `ruleset/`, `strings/`, `prompts/`, and `emotions/`, grep `src/` for the key; for each zero-hit key, check `get_raw` consumption and dataclass fields of the same name. Unambiguous orphans are violations.
 
 **Pass 5c — Config dataclass fields without a YAML source.** For each subsystem dataclass in `engine_config_dataclasses.py`, locate each field's YAML key; fields never populated from config are violations.
 
@@ -120,7 +120,7 @@ Carve-outs: the orphan-symbol carve-outs in `tests/test_project_rules.py` (for e
 
 ## Status
 
-Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level of `src/straightjacket/` (`i18n.py`). A finished submodule is listed under its principle with its date; a principle is done when every submodule is listed.
+Submodules for principles 1, 3, and 5: `setting/`, `gamemaster/` with `gamemaster/npc/`, `crafters/`, `ruleset/`, `game/`, `ai/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level of `src/straightjacket/` (`i18n.py`). A finished submodule is listed under its principle with its date; a principle is done when every submodule is listed. The audits below name the submodules as they were when they ran: the code of `mechanics/`, `npc/`, and `datasworn/` has since moved into the four layers' packages (roadmap 9n.1a), and roadmap 9n.5 names it by them.
 
 - Principle 1: no submodule audited; it runs per layer in roadmap step 9n, on the layout of the split into layers, since an audit before it would judge a layout about to change.
 - Principle 2: audited 2026-10-17, all four passes; every violation is fixed except the dataclass defaults and the prompt markup (roadmap 9o.1 and 9o.2).

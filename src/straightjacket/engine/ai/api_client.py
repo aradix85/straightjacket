@@ -8,7 +8,6 @@ from ..config_loader import ProviderConfig, cfg, provider_for_role
 from ..prompt_loader import get_prompt
 from .provider_base import AICallSpec, AIProvider, AIResponse, ModelListingProvider
 
-
 _adapter_cache: dict[str, ModelListingProvider] = {}
 
 

@@ -6,15 +6,15 @@ from tests._helpers import make_game_state
 
 
 def test_roll_oracle_name_needs_the_setting(load_engine: None) -> None:
-    from straightjacket.engine.npc.naming import roll_oracle_name
+    from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
 
     with pytest.raises(FileNotFoundError, match="Setting package not found"):
         roll_oracle_name(make_game_state())
 
 
 def test_roll_oracle_name_classic_single_path(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache
-    from straightjacket.engine.npc.naming import roll_oracle_name
+    from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
+    from straightjacket.engine.setting.packages import clear_cache
 
     clear_cache()
     game = make_game_state(setting_id="classic")
@@ -24,8 +24,8 @@ def test_roll_oracle_name_classic_single_path(load_engine: None) -> None:
 
 
 def test_roll_oracle_name_starforged_multi_path(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache
-    from straightjacket.engine.npc.naming import roll_oracle_name
+    from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
+    from straightjacket.engine.setting.packages import clear_cache
 
     clear_cache()
     game = make_game_state(setting_id="starforged")
@@ -37,8 +37,8 @@ def test_roll_oracle_name_starforged_multi_path(load_engine: None) -> None:
 
 
 def test_roll_oracle_name_delve_inherits_from_classic(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache
-    from straightjacket.engine.npc.naming import roll_oracle_name
+    from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
+    from straightjacket.engine.setting.packages import clear_cache
 
     clear_cache()
     game = make_game_state(setting_id="delve")
@@ -47,12 +47,12 @@ def test_roll_oracle_name_delve_inherits_from_classic(load_engine: None) -> None
 
 
 def test_process_new_npcs_uses_oracle_name(stub_all: None, load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache
-    from straightjacket.engine.npc.processing import process_new_npcs
+    from straightjacket.engine.gamemaster.npc.processing import process_new_npcs
+    from straightjacket.engine.setting.packages import clear_cache
 
     clear_cache()
     game = make_game_state(player_name="Hero", setting_id="classic")
-    with patch("straightjacket.engine.npc.processing.roll_oracle_name", return_value="Sigrid Ironhand"):
+    with patch("straightjacket.engine.gamemaster.npc.processing.roll_oracle_name", return_value="Sigrid Ironhand"):
         process_new_npcs(game, [{"name": "AI Generated Name", "description": "a warrior", "disposition": "neutral"}])
     assert len(game.npcs) == 1
     assert game.npcs[0].name == "Sigrid Ironhand"

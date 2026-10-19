@@ -1,6 +1,11 @@
-from straightjacket.engine.models import labels_of
+import json
+import sys
+from collections.abc import Callable
+
 import pytest
 
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.models import labels_of
 from tests._helpers import (
     action_prompt_kwargs,
     dialog_prompt_kwargs,
@@ -10,12 +15,6 @@ from tests._helpers import (
     make_memory,
     make_npc,
 )
-
-import sys
-import json
-from collections.abc import Callable
-
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 
 
 class MockProvider:
@@ -426,7 +425,7 @@ def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.game import turn
-    from straightjacket.engine.mechanics import move_outcome
+    from straightjacket.engine.ruleset import move_outcome
 
     _force_result(monkeypatch, "WEAK_HIT")
     monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
@@ -445,9 +444,9 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.game import turn
-    from straightjacket.engine.mechanics import move_outcome
-    from straightjacket.engine.mechanics.suffer import start_dying_clock
     from straightjacket.engine.models import SceneSetup
+    from straightjacket.engine.ruleset import move_outcome
+    from straightjacket.engine.ruleset.suffer import start_dying_clock
 
     monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
     monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
@@ -467,7 +466,7 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
 
 
 def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
     from tests._helpers import record_price_tables
 
     rolled = record_price_tables(monkeypatch)
@@ -480,7 +479,7 @@ def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytes
 
 
 def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics.scene import check_scene
+    from straightjacket.engine.gamemaster.scene import check_scene
 
     game = _make_game()
     game.world.chaos_factor = 9
@@ -511,8 +510,8 @@ def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
 
 
 def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
-    from straightjacket.engine.prompt_action import build_action_prompt
     from straightjacket.engine.models import RollResult
+    from straightjacket.engine.prompt_action import build_action_prompt
 
     game = _make_game()
     brain = make_brain_result(
@@ -585,8 +584,8 @@ def test_correction_brain_parses_response(stub_engine: None) -> None:
 
 
 def test_momentum_burn_upgrades_result() -> None:
-    from straightjacket.engine.mechanics import can_burn_momentum
     from straightjacket.engine.models import RollResult
+    from straightjacket.engine.ruleset.rolls import can_burn_momentum
 
     game = _make_game()
     game.resources.momentum = 7
@@ -623,9 +622,8 @@ def test_momentum_burn_upgrades_result() -> None:
 
 
 def test_story_completion_triggers() -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     from straightjacket.engine.models import StoryBlueprint
+    from straightjacket.engine.story_state import get_current_act
 
     game = _make_game()
     game.narrative.story_blueprint = StoryBlueprint.from_dict(
@@ -855,7 +853,7 @@ def test_every_correction_op_has_a_handler(load_engine: None) -> None:
 
 
 def test_description_match_catches_identity_reveal(stub_engine: None) -> None:
-    from straightjacket.engine.npc.lifecycle import description_match_existing_npc
+    from straightjacket.engine.gamemaster.npc.lifecycle import description_match_existing_npc
 
     game = _make_game()
 
@@ -869,7 +867,7 @@ def test_description_match_catches_identity_reveal(stub_engine: None) -> None:
 
 
 def test_description_match_rejects_short_descriptions(stub_engine: None) -> None:
-    from straightjacket.engine.npc.lifecycle import description_match_existing_npc
+    from straightjacket.engine.gamemaster.npc.lifecycle import description_match_existing_npc
 
     game = _make_game()
     match = description_match_existing_npc(game, "Short", "stranger")
@@ -877,7 +875,7 @@ def test_description_match_rejects_short_descriptions(stub_engine: None) -> None
 
 
 def test_merge_npc_identity_updates_clock_owner(stub_engine: None) -> None:
-    from straightjacket.engine.npc.lifecycle import merge_npc_identity
+    from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
 
     game = _make_game()
     game.world.clocks = [
@@ -911,7 +909,7 @@ def test_chapter_about_npc_id_remap(stub_engine: None) -> None:
     npc_a = make_npc(id="npc_1", name="Kira", memory=[make_memory(scene=3, event="trusts Borin", about_npc="npc_2")])
     npc_b = make_npc(id="npc_2", name="Borin", memory=[make_memory(scene=3, event="suspects Kira", about_npc="npc_1")])
 
-    from straightjacket.engine.npc import next_npc_id
+    from straightjacket.engine.gamemaster.npc.matching import next_npc_id
 
     game = _make_game()
     game.npcs = []

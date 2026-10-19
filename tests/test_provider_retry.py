@@ -64,7 +64,7 @@ def test_create_with_retry_raises_on_exhaustion() -> None:
 
 
 def test_post_process_decodes_literal_unicode_escapes() -> None:
-    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
 
     raw = AIResponse(content="She said \\u201chello\\u201d.", stop_reason="complete", tool_calls=[], usage={})
     result = post_process_response(raw)
@@ -72,7 +72,7 @@ def test_post_process_decodes_literal_unicode_escapes() -> None:
 
 
 def test_post_process_leaves_real_unicode_alone() -> None:
-    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
 
     raw = AIResponse(content="She said \u201chello\u201d.", stop_reason="complete", tool_calls=[], usage={})
     result = post_process_response(raw)
@@ -80,7 +80,7 @@ def test_post_process_leaves_real_unicode_alone() -> None:
 
 
 def test_post_process_handles_mixed_real_and_literal_escapes() -> None:
-    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
 
     raw = AIResponse(
         content="real \u201cquote\u201d and literal \\u201cquote\\u201d",
@@ -93,7 +93,7 @@ def test_post_process_handles_mixed_real_and_literal_escapes() -> None:
 
 
 def test_post_process_keeps_the_reasoning_when_it_changes_the_content() -> None:
-    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
 
     raw = AIResponse(
         content="<think>plan</think>The door holds.",
@@ -107,7 +107,7 @@ def test_post_process_keeps_the_reasoning_when_it_changes_the_content() -> None:
 
 
 def test_post_process_does_not_alter_response_without_escapes() -> None:
-    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
 
     raw = AIResponse(content="Plain ASCII content.", stop_reason="complete", tool_calls=[], usage={})
     result = post_process_response(raw)

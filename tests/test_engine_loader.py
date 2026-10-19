@@ -5,8 +5,8 @@ def test_miss_clock_ticks_cover_every_position(load_engine: None) -> None:
 
 
 def test_eng_returns_settings(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.engine_config import EngineSettings
+    from straightjacket.engine.engine_loader import eng
 
     assert isinstance(eng(), EngineSettings)
 
@@ -32,13 +32,13 @@ def test_npc_status_groups_name_only_known_statuses(load_engine: None) -> None:
 
 def test_dice_sizes_cover_the_tables_they_roll(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.fate import _load_mythic
+    from straightjacket.engine.gamemaster.fate import _load_mythic
 
-    dice = eng().dice
+    dice = eng().mythic_dice
     mythic = _load_mythic()
     assert max(row["max"] for row in mythic["event_focus"]) == dice.event_focus_die
     assert max(row["max"] for row in mythic["scene_adjustment"]) == dice.scene_adjustment_die
-    assert max(eng().adventure_crafter.theme_die_table) == dice.adventure_crafter_theme_die
+    assert max(eng().adventure_crafter.theme_die_table) == eng().adventure_crafter_dice.theme_die
 
 
 def test_a_move_gate_on_a_track_type_that_does_not_exist_is_refused() -> None:

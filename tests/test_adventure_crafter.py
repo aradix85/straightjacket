@@ -4,13 +4,12 @@ import random
 
 import pytest
 
-from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.mechanics.adventure_crafter import (
+from straightjacket.engine.crafters.adventure_crafter import (
+    _META_HANDLERS,
     PlotPointHit,
     PlotPointResult,
     ThemeAlternation,
     TurningPoint,
-    _META_HANDLERS,
     _create_character,
     _create_plotline,
     _load_ac_data,
@@ -24,8 +23,8 @@ from straightjacket.engine.mechanics.adventure_crafter import (
     lookup_theme_priority,
     roll_turning_point,
 )
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models_story import NarrativeState
-
 
 _SPECIAL_BOUNDARIES = [
     (1, "conclusion"),
@@ -189,7 +188,7 @@ def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch):
         return "Plot Twist"
 
     monkeypatch.setattr(
-        "straightjacket.engine.mechanics.adventure_crafter.lookup_meta_plot_point",
+        "straightjacket.engine.crafters.adventure_crafter.lookup_meta_plot_point",
         fake_lookup,
     )
     narrative = NarrativeState()
@@ -324,7 +323,7 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
 
 
 def test_meta_character_exits_marks_active_character_exited():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_character_exits
+    from straightjacket.engine.crafters.adventure_crafter import _meta_character_exits
 
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
@@ -333,7 +332,7 @@ def test_meta_character_exits_marks_active_character_exited():
 
 
 def test_meta_character_returns_marks_exited_character_returned():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_character_returns
+    from straightjacket.engine.crafters.adventure_crafter import _meta_character_returns
 
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
@@ -343,7 +342,7 @@ def test_meta_character_returns_marks_exited_character_returned():
 
 
 def test_meta_character_returns_creates_new_when_no_exited():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_character_returns
+    from straightjacket.engine.crafters.adventure_crafter import _meta_character_returns
 
     narrative = NarrativeState()
     _meta_character_returns(narrative, None)
@@ -352,7 +351,7 @@ def test_meta_character_returns_creates_new_when_no_exited():
 
 
 def test_meta_character_steps_up_increases_weight():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_character_steps_up
+    from straightjacket.engine.crafters.adventure_crafter import _meta_character_steps_up
 
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
@@ -363,7 +362,7 @@ def test_meta_character_steps_up_increases_weight():
 
 
 def test_meta_character_steps_down_decreases_weight_to_floor():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_character_steps_down
+    from straightjacket.engine.crafters.adventure_crafter import _meta_character_steps_down
 
     cfg = eng().adventure_crafter.meta_handlers
     narrative = NarrativeState()
@@ -377,7 +376,7 @@ def test_meta_character_steps_down_decreases_weight_to_floor():
 
 
 def test_meta_character_downgrade_marks_status_and_decreases_weight():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_character_downgrade
+    from straightjacket.engine.crafters.adventure_crafter import _meta_character_downgrade
 
     cfg = eng().adventure_crafter.meta_handlers
     narrative = NarrativeState()
@@ -389,7 +388,7 @@ def test_meta_character_downgrade_marks_status_and_decreases_weight():
 
 
 def test_meta_character_upgrade_marks_status_and_increases_weight():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_character_upgrade
+    from straightjacket.engine.crafters.adventure_crafter import _meta_character_upgrade
 
     cfg = eng().adventure_crafter.meta_handlers
     narrative = NarrativeState()
@@ -401,7 +400,7 @@ def test_meta_character_upgrade_marks_status_and_increases_weight():
 
 
 def test_meta_plotline_combo_merges_two_advancing_plotlines():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_plotline_combo
+    from straightjacket.engine.crafters.adventure_crafter import _meta_plotline_combo
 
     narrative = NarrativeState()
     a = _create_plotline(narrative, "First")
@@ -413,7 +412,7 @@ def test_meta_plotline_combo_merges_two_advancing_plotlines():
 
 
 def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_plotline_combo
+    from straightjacket.engine.crafters.adventure_crafter import _meta_plotline_combo
 
     narrative = NarrativeState()
     only = _create_plotline(narrative, "Only one")
@@ -422,7 +421,7 @@ def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
 
 
 def test_meta_plotline_combo_excludes_active_plotline_id():
-    from straightjacket.engine.mechanics.adventure_crafter import _meta_plotline_combo
+    from straightjacket.engine.crafters.adventure_crafter import _meta_plotline_combo
 
     narrative = NarrativeState()
     active = _create_plotline(narrative, "Active")

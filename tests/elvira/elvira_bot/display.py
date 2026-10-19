@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from straightjacket.engine.models import GameState
-from straightjacket.engine.npc import get_npc_bond
+from straightjacket.engine.ruleset.bond import get_npc_bond
 
 from .models import SessionLog
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
 from dataclasses import dataclass, field
+from typing import Any
 
 from .engine_loader import eng
 from .logging_util import log
@@ -31,8 +31,8 @@ from .models_npc import (
 )
 from .models_story import (
     CampaignState,
-    CharacterListEntry,
     ChapterSummary,
+    CharacterListEntry,
     CurrentAct,
     DirectorGuidance,
     InheritanceRollResult,

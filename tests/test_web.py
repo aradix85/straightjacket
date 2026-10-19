@@ -8,20 +8,20 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from straightjacket.engine import engine_loader
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game import BurnOffer
-from straightjacket.engine.mechanics.scene import SceneSetup
+from straightjacket.engine.gamemaster.scene import SceneSetup
 from straightjacket.engine.models import (
     GameState,
     RollResult,
     TurnSnapshot,
 )
-from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc
 from straightjacket.i18n import t
-from straightjacket.web.session import Session
 from straightjacket.web.serializers import (
     build_creation_options,
     build_narrative_status,
     highlight_dialog,
 )
+from straightjacket.web.session import Session
+from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc
 
 
 @pytest.fixture
@@ -258,6 +258,7 @@ class TestWebSocket:
     @pytest.fixture
     def client(self) -> Any:
         from starlette.testclient import TestClient
+
         from straightjacket.web.server import app
 
         return TestClient(app)
@@ -394,6 +395,7 @@ class TestSuccessionWebSocket:
     @pytest.fixture
     def client(self) -> Any:
         from starlette.testclient import TestClient
+
         from straightjacket.web.server import app
 
         return TestClient(app)

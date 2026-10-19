@@ -115,10 +115,10 @@ def test_event_capture_keeps_only_the_configured_prefixes() -> None:
 def test_a_failed_load_back_is_reported_not_raised(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    from tests._helpers import make_game_state
     from tests.elvira.elvira_bot import runner
     from tests.elvira.elvira_bot.coverage import Coverage
     from tests.elvira.elvira_bot.models import SessionLog
-    from tests._helpers import make_game_state
 
     def broken_load(username: str, name: str) -> tuple[object, list]:
         raise RuntimeError("UNIQUE constraint failed: threads.id")

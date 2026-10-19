@@ -84,9 +84,9 @@ class TestMoveCategoriesSymmetry:
 
 class TestEveryMoveResolvesEndToEnd:
     def test_every_move_passes_through_full_stance_pipeline(self) -> None:
-        from straightjacket.engine.datasworn.moves import get_moves
-        from straightjacket.engine.datasworn.settings import list_packages
         from straightjacket.engine.prompt_shared import _resolve_stance_category
+        from straightjacket.engine.ruleset.moves import get_moves
+        from straightjacket.engine.setting.packages import list_packages
 
         all_moves: set[str] = set()
         for sid in list_packages():
@@ -108,9 +108,9 @@ class TestEveryMoveResolvesEndToEnd:
         )
 
     def test_every_move_resolves_position_baseline(self) -> None:
-        from straightjacket.engine.datasworn.moves import get_moves
-        from straightjacket.engine.datasworn.settings import list_packages
-        from straightjacket.engine.mechanics.resolvers import move_category
+        from straightjacket.engine.gamemaster.resolvers import move_category
+        from straightjacket.engine.ruleset.moves import get_moves
+        from straightjacket.engine.setting.packages import list_packages
 
         all_moves: set[str] = set()
         for sid in list_packages():
@@ -124,8 +124,8 @@ class TestEveryMoveResolvesEndToEnd:
 
 class TestMoveOutcomesCoverage:
     def test_every_action_roll_move_has_outcome_config(self) -> None:
-        from straightjacket.engine.datasworn.moves import get_moves
-        from straightjacket.engine.datasworn.settings import list_packages
+        from straightjacket.engine.ruleset.moves import get_moves
+        from straightjacket.engine.setting.packages import list_packages
 
         action_roll_moves: set[str] = set()
         for sid in list_packages():
@@ -144,8 +144,8 @@ class TestMoveOutcomesCoverage:
         )
 
     def test_no_orphan_outcome_entries(self) -> None:
-        from straightjacket.engine.datasworn.moves import get_moves
-        from straightjacket.engine.datasworn.settings import list_packages
+        from straightjacket.engine.ruleset.moves import get_moves
+        from straightjacket.engine.setting.packages import list_packages
 
         all_known_moves: set[str] = set()
         for sid in list_packages():

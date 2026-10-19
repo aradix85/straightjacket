@@ -2,10 +2,10 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.datasworn.loader import OracleTable, Setting
 from straightjacket.engine.engine_loader import eng
-from tests.test_correction_replay import _Provider as _ReplayProvider
+from straightjacket.engine.setting.loader import OracleTable, Setting
 from tests._creation import force_miss
+from tests.test_correction_replay import _Provider as _ReplayProvider
 from tests.test_momentum_burn import _brain, _game, _Provider
 
 
@@ -70,14 +70,14 @@ class _Pkg:
 
 
 def test_an_automatic_roll_replaces_its_link(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.oracle_rolls import roll_oracle
+    from straightjacket.engine.setting.oracle_rolls import roll_oracle
 
     assert roll_oracle(_Pkg(), "t/pair").text == "Alpha + Beta"
 
 
 def test_roll_twice_takes_two_different_rows(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.datasworn import loader
-    from straightjacket.engine.datasworn.oracle_rolls import roll_oracle
+    from straightjacket.engine.setting import loader
+    from straightjacket.engine.setting.oracle_rolls import roll_oracle
 
     dice = iter([1, 2, 2, 3])
     monkeypatch.setattr(loader.random, "randint", lambda low, high: next(dice))
@@ -85,7 +85,7 @@ def test_roll_twice_takes_two_different_rows(load_engine: None, monkeypatch: pyt
 
 
 def test_a_role_rolls_the_table_an_earlier_role_points_to(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.oracle_rolls import roll_generator_tables
+    from straightjacket.engine.setting.oracle_rolls import roll_generator_tables
 
     linked = {"theme": "t/type", "feature": "t/{theme}/feature"}
     named = {"kind": "t/kind", "feature": "t/{kind}/feature"}
@@ -102,8 +102,8 @@ def test_the_place_categories_are_registered(load_engine: None) -> None:
 
 @pytest.mark.parametrize("setting", ["classic", "delve", "starforged", "sundered_isles"])
 def test_every_setting_rolls_every_entity_category(load_engine: None, setting: str) -> None:
-    from straightjacket.engine.datasworn.oracle_rolls import roll_generator_tables
-    from straightjacket.engine.datasworn.settings import load_package
+    from straightjacket.engine.setting.oracle_rolls import roll_generator_tables
+    from straightjacket.engine.setting.packages import load_package
 
     pkg = load_package(setting)
     for category in eng().generation.categories:
@@ -117,14 +117,14 @@ def test_every_setting_rolls_every_entity_category(load_engine: None, setting: s
 
 
 def test_a_category_the_setting_lacks_raises(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import load_package
+    from straightjacket.engine.setting.packages import load_package
 
     with pytest.raises(KeyError, match="No generator tables for 'encounter'"):
         load_package("classic").generator_tables("encounter")
 
 
 def test_an_unregistered_category_raises(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import generate_entity
+    from straightjacket.engine.gamemaster.generation import generate_entity
 
     with pytest.raises(KeyError, match="Unknown generation category"):
         generate_entity(_game(), "encounter")
@@ -133,7 +133,7 @@ def test_an_unregistered_category_raises(load_engine: None) -> None:
 
 
 def test_an_npc_name_comes_from_the_setting_tables(load_engine: None) -> None:
-    from straightjacket.engine.npc.naming import roll_oracle_name
+    from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
 
     name = roll_oracle_name(_game())
     assert len(name.split()) == 2
@@ -192,9 +192,9 @@ def test_a_misread_correction_keeps_the_generated_place(load_engine: None, stub_
 def test_a_roll_twice_row_keeps_or_worsens_a_repeated_result(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.datasworn import loader
-    from straightjacket.engine.datasworn.loader import OracleRow, OracleTable
-    from straightjacket.engine.datasworn.oracle_rolls import roll_rows
+    from straightjacket.engine.setting import loader
+    from straightjacket.engine.setting.loader import OracleRow, OracleTable
+    from straightjacket.engine.setting.oracle_rolls import roll_rows
 
     outcomes = {}
     for rule in ("keep", "make_it_worse"):
@@ -208,8 +208,8 @@ def test_a_roll_twice_row_keeps_or_worsens_a_repeated_result(
 
 
 def test_an_unknown_duplicates_rule_raises(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.loader import OracleRow, OracleTable
-    from straightjacket.engine.datasworn.oracle_rolls import roll_rows
+    from straightjacket.engine.setting.loader import OracleRow, OracleTable
+    from straightjacket.engine.setting.oracle_rolls import roll_rows
 
     twice = OracleRow(min=1, max=1, text="Roll twice", oracle_rolls=[{**_auto(None, 2), "duplicates": "merge"}])
     with pytest.raises(ValueError, match="merge"):

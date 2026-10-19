@@ -1,13 +1,12 @@
-from straightjacket.engine.models import labels_of
 import pytest
 
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.mechanics.facts import find_fact, settle_facts_by_miss
-from straightjacket.engine.datasworn.moves import get_moves
-from straightjacket.engine.mechanics.move_effects import has_story_complication
-from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
-from straightjacket.engine.models import GameState, ResolvedFact, RollResult
+from straightjacket.engine.gamemaster.facts import find_fact, settle_facts_by_miss
+from straightjacket.engine.models import GameState, ResolvedFact, RollResult, labels_of
 from straightjacket.engine.prompt_action import build_action_prompt
+from straightjacket.engine.ruleset.move_effects import has_story_complication
+from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
+from straightjacket.engine.ruleset.moves import get_moves
 from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc, record_price_tables
 
 
@@ -229,8 +228,8 @@ def test_only_place_facts_can_be_settled_by_a_miss() -> None:
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT", "STRONG_HIT"])
 def test_the_narrator_reads_the_rulebook_text_of_the_result(load_engine: None, result: str) -> None:
-    from straightjacket.engine.datasworn.moves import get_moves
-    from straightjacket.engine.datasworn.oracle_rolls import plain_text
+    from straightjacket.engine.ruleset.moves import get_moves
+    from straightjacket.engine.setting.oracle_rolls import plain_text
 
     book = plain_text(get_moves("starforged")["adventure/gather_information"].outcomes[result.lower()].text)
     prompt = _prompt(_game(), result)

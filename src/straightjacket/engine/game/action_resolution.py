@@ -1,21 +1,14 @@
 import random
 
 from ..engine_loader import eng
-from ..mechanics import (
-    ClockFillResult,
-    check_npc_agency,
-    resolve_effect,
-    resolve_position,
-)
-from ..mechanics.complications import avert_complication
-from ..mechanics.consequences import tick_threat_clock
-from ..mechanics.move_outcome import make_follow_up_moves
-from ..mechanics.outcome_result import OutcomeResult, move_outcome_config
-from ..mechanics.suffer import tick_dying_clock
-from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace, take_pending_threat_events
+from ..gamemaster.clock_ticks import check_npc_agency, tick_threat_clock
+from ..gamemaster.complications import avert_complication
+from ..gamemaster.npc.matching import find_npc
+from ..gamemaster.resolvers import resolve_effect, resolve_position
 from ..models import (
     BrainResult,
     ClockEvent,
+    ClockFillResult,
     Consequence,
     GameState,
     ProgressTrack,
@@ -23,10 +16,12 @@ from ..models import (
     ThreatEvent,
     consequence,
 )
-from ..npc import find_npc
+from ..ruleset.move_outcome import make_follow_up_moves
+from ..ruleset.outcome_result import OutcomeResult, move_outcome_config
+from ..ruleset.suffer import tick_dying_clock
+from ..ruleset.threats import advance_menace_on_miss, resolve_full_menace, take_pending_threat_events
+from ..ruleset.tracks import complete_track, recommit_track, start_track
 from .finalization import apply_progress_and_legacy, resolve_action_consequences, update_crisis
-from ..mechanics import complete_track, start_track
-from ..mechanics.tracks import recommit_track
 from .turn_types import ActionResolution, RollOutcome
 
 

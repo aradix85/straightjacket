@@ -86,7 +86,7 @@ def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_
 
 def test_thread_weight_stops_at_the_list_maximum(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.random_events import add_thread_weight
+    from straightjacket.engine.gamemaster.random_events import add_thread_weight
 
     game = _sworn_game()
     for _ in range(eng().random_events.list_weight_max + 2):

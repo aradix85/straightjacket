@@ -2,13 +2,12 @@ import random
 
 import pytest
 
-from straightjacket.engine.mechanics.adventure_crafter import (
+from straightjacket.engine.crafters.adventure_crafter import (
     BlueprintSeed,
     assemble_blueprint_seed_from_ac,
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
-
 from tests._helpers import make_game_state
 
 

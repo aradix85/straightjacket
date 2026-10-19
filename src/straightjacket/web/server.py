@@ -1,8 +1,8 @@
-from typing import Any
 import asyncio
 import ipaddress
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 from starlette.applications import Starlette
@@ -42,7 +42,6 @@ from .handlers import (
     player_selected_message,
 )
 from .session import Session
-
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 

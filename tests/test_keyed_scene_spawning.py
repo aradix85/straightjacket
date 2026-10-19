@@ -4,17 +4,14 @@ import random
 
 import pytest
 
-from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.mechanics.adventure_crafter import (
+from straightjacket.engine.crafters.adventure_crafter import (
     PlotPointHit,
     TurningPoint,
     spawn_keyed_scenes_for_turning_point,
 )
-from straightjacket.engine.mechanics.keyed_scenes import evaluate_keyed_scenes, spawn_keyed_scenes_for_clock
-from straightjacket.engine.mechanics.random_events import (
-    generate_random_event,
-    spawn_keyed_scene_from_random_event,
-)
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.keyed_scenes import evaluate_keyed_scenes, spawn_keyed_scenes_for_clock
+from straightjacket.engine.gamemaster.random_events import generate_random_event, spawn_keyed_scene_from_random_event
 from straightjacket.engine.models import (
     ClockData,
     GameState,

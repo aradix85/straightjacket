@@ -13,7 +13,7 @@ def fix_dice(monkeypatch: pytest.MonkeyPatch, *rolls: int) -> None:
 
 
 def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
-    from straightjacket.engine.mechanics import move_effects
+    from straightjacket.engine.ruleset import move_effects
 
     rolled: list[str] = []
     real = move_effects.roll_oracle_result

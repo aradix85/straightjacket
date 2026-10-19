@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
 from dataclasses import dataclass, field
+from typing import Any
 
 from ..i18n import t
 from .engine_loader import eng

@@ -4,8 +4,8 @@ import json
 from typing import Any
 
 from straightjacket.engine.ai.provider_base import AICallSpec
-from straightjacket.engine.datasworn.moves import get_moves, outcome_text
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.moves import get_moves, outcome_text
 
 from .ai_helpers import ELVIRA_ROLE, _p, bot_model, bot_provider
 

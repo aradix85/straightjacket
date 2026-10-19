@@ -1,8 +1,5 @@
 import pytest
 
-from straightjacket.engine.datasworn.impacts import get_impacts
-from straightjacket.engine.mechanics import generate_consequence_sentences
-from straightjacket.engine.mechanics.consequences import pick_template, resolve_consequence_sentence
 from straightjacket.engine.models import (
     BrainResult,
     ClockEvent,
@@ -12,6 +9,12 @@ from straightjacket.engine.models import (
     consequence,
 )
 from straightjacket.engine.prompt_action import build_action_prompt
+from straightjacket.engine.ruleset.consequences import (
+    generate_consequence_sentences,
+    pick_template,
+    resolve_consequence_sentence,
+)
+from straightjacket.engine.ruleset.impacts import get_impacts
 from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc
 
 

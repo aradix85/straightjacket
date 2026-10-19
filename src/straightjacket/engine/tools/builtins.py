@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
-from ..datasworn.moves import Move, get_moves
+
 from ..engine_config import (
     ActiveTrackCondition,
     BondedTrackCondition,
@@ -11,8 +11,10 @@ from ..engine_config import (
     NoActiveTrackCondition,
 )
 from ..engine_loader import eng
+from ..gamemaster.npc.memory import recent_observations
 from ..models import GameState, NpcData
-from ..npc import get_npc_bond, recent_observations
+from ..ruleset.bond import get_npc_bond
+from ..ruleset.moves import Move, get_moves
 from .registry import register
 
 

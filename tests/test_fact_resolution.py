@@ -19,7 +19,7 @@ from tests._helpers import fix_dice
 
 
 def _chart_rolls(monkeypatch: pytest.MonkeyPatch, roll: int) -> None:
-    from straightjacket.engine.mechanics import fate
+    from straightjacket.engine.gamemaster import fate
 
     original = fate.resolve_fate_chart
 
@@ -55,7 +55,7 @@ def _fate(answer: str) -> FateResult:
 
 @pytest.fixture
 def counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
-    from straightjacket.engine.mechanics import facts
+    from straightjacket.engine.gamemaster import facts
 
     calls: list[str] = []
 
@@ -68,7 +68,7 @@ def counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
 
 def test_odds_follow_base_score_and_npc_disposition(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.facts import fact_odds
+    from straightjacket.engine.gamemaster.facts import fact_odds
 
     game = _game()
     assert fact_odds(game, FactRequest(fact_type="locked", about="here")) == "fifty_fifty"
@@ -78,14 +78,14 @@ def test_odds_follow_base_score_and_npc_disposition(load_engine: None) -> None:
 
 
 def test_an_unknown_fact_type_raises(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.facts import fact_odds
+    from straightjacket.engine.gamemaster.facts import fact_odds
 
     with pytest.raises(KeyError):
         fact_odds(_game(), FactRequest(fact_type="haunted", about="here"))
 
 
 def test_a_resolved_fact_is_stored_and_reused(load_engine: None, counted_fate: list[str]) -> None:
-    from straightjacket.engine.mechanics.facts import resolve_fact
+    from straightjacket.engine.gamemaster.facts import resolve_fact
 
     game = _game()
     first = resolve_fact(game, FactRequest(fact_type="alert", about="npc_2"))
@@ -99,7 +99,7 @@ def test_a_resolved_fact_is_stored_and_reused(load_engine: None, counted_fate: l
 
 
 def test_a_fixed_seed_gives_the_same_answer(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.facts import resolve_fact
+    from straightjacket.engine.gamemaster.facts import resolve_fact
 
     answers = []
     for _ in range(2):
@@ -110,7 +110,7 @@ def test_a_fixed_seed_gives_the_same_answer(load_engine: None) -> None:
 
 
 def test_moving_clears_the_facts_and_staying_keeps_them(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import update_location
+    from straightjacket.engine.gamemaster.world import update_location
 
     game = _game()
     game.world.facts = [_fact("locked")]
@@ -150,7 +150,7 @@ def test_a_location_correction_clears_the_facts(load_engine: None) -> None:
 
 
 def test_a_hit_clears_only_the_types_that_say_so(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import clear_facts_settled_by_hit
+    from straightjacket.engine.gamemaster.facts import clear_facts_settled_by_hit
 
     game = _game()
     locked, alert = _fact("locked"), _fact("alert", about="npc_2")
@@ -163,7 +163,7 @@ def test_a_hit_clears_only_the_types_that_say_so(load_engine: None) -> None:
 
 
 def test_a_hit_does_not_settle_a_no(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import clear_facts_settled_by_hit
+    from straightjacket.engine.gamemaster.facts import clear_facts_settled_by_hit
 
     game = _game()
     nothing_useful = _fact("useful", answer="no")
@@ -174,7 +174,7 @@ def test_a_hit_does_not_settle_a_no(load_engine: None) -> None:
 
 @pytest.mark.parametrize("answer", ["no", "exceptional_no"])
 def test_a_hit_overrules_what_a_search_miss_would_settle(load_engine: None, answer: str) -> None:
-    from straightjacket.engine.mechanics import overrule_facts_by_hit
+    from straightjacket.engine.gamemaster.facts import overrule_facts_by_hit
 
     game = _game()
     nothing_useful, open_door = _fact("useful", answer=answer), _fact("locked", answer="no")
@@ -185,7 +185,7 @@ def test_a_hit_overrules_what_a_search_miss_would_settle(load_engine: None, answ
 
 @pytest.mark.parametrize(("answer", "result"), [("no", "MISS"), ("yes", "STRONG_HIT")])
 def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, result: str) -> None:
-    from straightjacket.engine.mechanics import overrule_facts_by_hit
+    from straightjacket.engine.gamemaster.facts import overrule_facts_by_hit
 
     game = _game()
     useful = _fact("useful", answer=answer)
@@ -195,7 +195,7 @@ def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, result
 
 
 def test_remembered_facts_come_back_only_at_their_own_place(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import remember_facts
+    from straightjacket.engine.gamemaster.facts import remember_facts
 
     game = _game()
     here, elsewhere = _fact("locked"), _fact("useful", location="Harbor Market")
@@ -204,7 +204,7 @@ def test_remembered_facts_come_back_only_at_their_own_place(load_engine: None) -
 
 
 def test_every_fact_input_has_an_implementation(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.facts import _INPUTS
+    from straightjacket.engine.gamemaster.facts import _INPUTS
 
     for name, spec in eng().fact_resolution.types.items():
         assert set(spec.inputs) <= set(_INPUTS), name
@@ -213,8 +213,8 @@ def test_every_fact_input_has_an_implementation(load_engine: None) -> None:
 
 
 def test_a_doublet_queues_a_random_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics.random_events import drain_pending_events
-    from straightjacket.engine.mechanics.facts import resolve_fact
+    from straightjacket.engine.gamemaster.facts import resolve_fact
+    from straightjacket.engine.gamemaster.random_events import drain_pending_events
 
     _chart_rolls(monkeypatch, 55)
     drain_pending_events()
@@ -333,7 +333,7 @@ class _Provider:
 
 def _force(monkeypatch: pytest.MonkeyPatch, result: str, scene_roll: int = 10) -> None:
     from straightjacket.engine.game import turn
-    from straightjacket.engine.mechanics import scene
+    from straightjacket.engine.gamemaster import scene
 
     def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
         return RollResult(
@@ -461,7 +461,7 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
 
 
 def _nothing_useful_search(monkeypatch: pytest.MonkeyPatch, result: str) -> _Provider:
-    from straightjacket.engine.mechanics import facts
+    from straightjacket.engine.gamemaster import facts
 
     monkeypatch.setattr(facts, "resolve_fate", lambda game, odds: _fate("no"))
     _force(monkeypatch, result)
@@ -529,10 +529,10 @@ def test_facts_survive_a_save_round_trip(load_engine: None) -> None:
 
 def test_a_fact_type_with_an_unknown_subject_raises() -> None:
     from straightjacket.engine.engine_config import parse_engine_yaml
-    from straightjacket.engine.engine_loader import _ENGINE_DIR
+    from straightjacket.engine.engine_loader import _CONFIG_DIRS
     from straightjacket.engine.yaml_merge import load_yaml_dir
 
-    data = load_yaml_dir(_ENGINE_DIR, missing_dir_hint="The engine/ directory ships with the repo.")
+    data = load_yaml_dir(*_CONFIG_DIRS, missing_dir_hint="")
     data["fact_resolution"]["types"]["locked"]["subject"] = "room"
     with pytest.raises(ValueError, match="subject"):
         parse_engine_yaml(data)
@@ -543,7 +543,7 @@ def test_a_target_that_is_not_present_leaves_the_scene(
     load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch, answer: str, target: str | None
 ) -> None:
     from straightjacket.engine.game import process_turn
-    from straightjacket.engine.mechanics import facts
+    from straightjacket.engine.gamemaster import facts
 
     monkeypatch.setattr(facts, "resolve_fate", lambda game, odds: _fate(answer))
     _force(monkeypatch, "WEAK_HIT")

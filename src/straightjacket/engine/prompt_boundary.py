@@ -1,10 +1,10 @@
 from .engine_loader import eng
 from .logging_util import log
 from .models import GameState
-from .npc import get_npc_bond
 from .prompt_blocks import campaign_history_block, story_context_block
 from .prompt_loader import get_prompt
-from .prompt_shared import creativity_seed, _loc_hist, _scene_header, _time_ctx
+from .prompt_shared import _loc_hist, _scene_header, _time_ctx, creativity_seed
+from .ruleset.bond import get_npc_bond
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
 

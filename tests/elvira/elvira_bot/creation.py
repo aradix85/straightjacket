@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import random as _random
 
-from straightjacket.engine.datasworn.settings import SettingPackage, load_package
 from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.setting.packages import SettingPackage, load_package
 
 
 def roll_character(setting_id: str, game_cfg: dict) -> dict:

@@ -5,11 +5,13 @@ from .ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from .ai.schemas import get_director_output_schema
 from .config_loader import model_for_role, narration_language, sampling_params
 from .engine_loader import eng
+from .gamemaster.npc.matching import resolve_about_npc
+from .gamemaster.npc.memory import consolidate_memory, recent_observations
 from .logging_util import log
 from .models import DirectorGuidance, GameState, MemoryEntry, NpcData
-from .npc import consolidate_memory, get_npc_bond, recent_observations, resolve_about_npc
 from .prompt_blocks import character_tag, content_boundaries_block, world_tag
 from .prompt_loader import get_prompt
+from .ruleset.bond import get_npc_bond
 from .story_state import get_current_act
 from .tools import execute_tool_call, get_tools
 from .xml_utils import xa as _xa

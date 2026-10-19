@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 
@@ -30,21 +29,21 @@ def _reset_random() -> None:
 
 @pytest.fixture(scope="session")
 def _real_engine():
-    from straightjacket.engine.engine_loader import _ENGINE_DIR
     from straightjacket.engine.engine_config import parse_engine_yaml
+    from straightjacket.engine.engine_loader import _CONFIG_DIRS
     from straightjacket.engine.yaml_merge import load_yaml_dir
 
-    data = load_yaml_dir(_ENGINE_DIR, missing_dir_hint="The engine/ directory ships with the repo.")
+    data = load_yaml_dir(*_CONFIG_DIRS, missing_dir_hint="")
     return parse_engine_yaml(data)
 
 
 @pytest.fixture(scope="session")
 def _stub_engine_instance():
-    from straightjacket.engine.engine_loader import _ENGINE_DIR
     from straightjacket.engine.engine_config import parse_engine_yaml
+    from straightjacket.engine.engine_loader import _CONFIG_DIRS
     from straightjacket.engine.yaml_merge import load_yaml_dir
 
-    data = load_yaml_dir(_ENGINE_DIR, missing_dir_hint="The engine/ directory ships with the repo.")
+    data = load_yaml_dir(*_CONFIG_DIRS, missing_dir_hint="")
     data["story"]["kishotenketsu_probability"] = {"dark_gritty": 0.15}
     data["creativity_seeds"] = ["amber", "glacier", "compass", "obsidian", "cedar"]
     return parse_engine_yaml(data)

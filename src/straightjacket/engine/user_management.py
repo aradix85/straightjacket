@@ -5,7 +5,6 @@ from typing import Any
 from .config_loader import USERS_DIR
 from .logging_util import log
 
-
 _FORBIDDEN_NAME_CHARS = frozenset('<>:"|?*/\\')
 _WINDOWS_RESERVED_NAMES = frozenset(
     {"CON", "PRN", "AUX", "NUL"} | {f"{port}{n}" for port in ("COM", "LPT") for n in "123456789¹²³"}

@@ -1,7 +1,6 @@
-from straightjacket.engine.models import labels_of
 import pytest
 
-from straightjacket.engine.models import GameState, Resources
+from straightjacket.engine.models import GameState, Resources, labels_of
 from tests._helpers import make_game_state
 
 
@@ -13,14 +12,14 @@ def _game() -> GameState:
 
 class TestApplyImpact:
     def test_apply_new_impact(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         assert apply_impact(game, "wounded") is True
         assert "wounded" in game.impacts
 
     def test_apply_duplicate_returns_false(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         apply_impact(game, "wounded")
@@ -28,7 +27,7 @@ class TestApplyImpact:
         assert game.impacts.count("wounded") == 1
 
     def test_apply_unknown_impact_raises(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         with pytest.raises(KeyError, match="nonexistent_impact"):
@@ -38,7 +37,7 @@ class TestApplyImpact:
 
 class TestImpactsFromTheRules:
     def test_each_ruleset_names_its_own_impacts(self, load_engine: None) -> None:
-        from straightjacket.engine.datasworn.impacts import get_impacts
+        from straightjacket.engine.ruleset.impacts import get_impacts
 
         assert "maimed" in get_impacts("classic")
         assert "permanently_harmed" not in get_impacts("classic")
@@ -49,7 +48,7 @@ class TestImpactsFromTheRules:
         assert get_impacts("starforged")["traumatized"].permanent
 
     def test_an_impact_another_ruleset_has_is_refused(self, load_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         game.setting_id = "classic"
@@ -57,11 +56,11 @@ class TestImpactsFromTheRules:
             apply_impact(game, "permanently_harmed")
 
     def test_every_impact_a_move_marks_is_its_rulesets_own(self, load_engine: None) -> None:
-        from straightjacket.engine.datasworn.impacts import get_impacts
-        from straightjacket.engine.datasworn.moves import get_moves
-        from straightjacket.engine.datasworn.settings import list_packages
         from straightjacket.engine.engine_loader import eng
-        from straightjacket.engine.mechanics.outcome_result import move_outcome_config
+        from straightjacket.engine.ruleset.impacts import get_impacts
+        from straightjacket.engine.ruleset.moves import get_moves
+        from straightjacket.engine.ruleset.outcome_result import move_outcome_config
+        from straightjacket.engine.setting.packages import list_packages
 
         outcomes = eng().get_raw("move_outcomes")
         for setting_id in list_packages():
@@ -78,7 +77,7 @@ class TestImpactsFromTheRules:
 
 class TestClearImpact:
     def test_clear_active_impact(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact, clear_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact, clear_impact
 
         game = _game()
         apply_impact(game, "wounded")
@@ -86,13 +85,13 @@ class TestClearImpact:
         assert "wounded" not in game.impacts
 
     def test_clear_inactive_impact_returns_false(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import clear_impact
+        from straightjacket.engine.ruleset.impacts import clear_impact
 
         game = _game()
         assert clear_impact(game, "wounded") is False
 
     def test_cannot_clear_permanent_impact(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact, clear_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact, clear_impact
 
         game = _game()
         apply_impact(game, "permanently_harmed")
@@ -102,14 +101,14 @@ class TestClearImpact:
 
 class TestRecalcMaxMomentum:
     def test_no_impacts_keeps_base_max(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import recalc_max_momentum
+        from straightjacket.engine.ruleset.impacts import recalc_max_momentum
 
         game = _game()
         recalc_max_momentum(game)
         assert game.resources.max_momentum == 10
 
     def test_each_impact_reduces_max_by_one(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         apply_impact(game, "wounded")
@@ -118,7 +117,7 @@ class TestRecalcMaxMomentum:
         assert game.resources.max_momentum == 8
 
     def test_momentum_clamped_to_new_max(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         game.resources.momentum = 10
@@ -126,7 +125,7 @@ class TestRecalcMaxMomentum:
         assert game.resources.momentum == 9
 
     def test_clear_restores_momentum_max(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact, clear_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact, clear_impact
 
         game = _game()
         apply_impact(game, "wounded")
@@ -137,34 +136,34 @@ class TestRecalcMaxMomentum:
 
 class TestBlocksRecovery:
     def test_wounded_blocks_health_recovery(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact, blocks_recovery
+        from straightjacket.engine.ruleset.impacts import apply_impact, blocks_recovery
 
         game = _game()
         apply_impact(game, "wounded")
         assert blocks_recovery(game, "health") == "wounded"
 
     def test_shaken_blocks_spirit_recovery(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact, blocks_recovery
+        from straightjacket.engine.ruleset.impacts import apply_impact, blocks_recovery
 
         game = _game()
         apply_impact(game, "shaken")
         assert blocks_recovery(game, "spirit") == "shaken"
 
     def test_unprepared_blocks_supply_recovery(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact, blocks_recovery
+        from straightjacket.engine.ruleset.impacts import apply_impact, blocks_recovery
 
         game = _game()
         apply_impact(game, "unprepared")
         assert blocks_recovery(game, "supply") == "unprepared"
 
     def test_no_impact_no_block(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import blocks_recovery
+        from straightjacket.engine.ruleset.impacts import blocks_recovery
 
         game = _game()
         assert blocks_recovery(game, "health") == ""
 
     def test_doomed_does_not_block_recovery(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact, blocks_recovery
+        from straightjacket.engine.ruleset.impacts import apply_impact, blocks_recovery
 
         game = _game()
         apply_impact(game, "doomed")
@@ -173,7 +172,7 @@ class TestBlocksRecovery:
 
 class TestImpactsSnapshotRestore:
     def test_impacts_restored(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         apply_impact(game, "wounded")
@@ -187,7 +186,7 @@ class TestImpactsSnapshotRestore:
         assert game.resources.max_momentum == 9
 
     def test_impacts_round_trip(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         apply_impact(game, "doomed")
@@ -200,7 +199,7 @@ class TestImpactsSnapshotRestore:
 
 class TestSufferHandlerMarksImpact:
     def test_miss_at_zero_health_marks_wounded(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.move_handlers import apply_suffer_handler
+        from straightjacket.engine.ruleset.move_handlers import apply_suffer_handler
 
         game = _game()
         game.resources.health = 0
@@ -220,8 +219,8 @@ class TestSufferHandlerMarksImpact:
         assert any("wounded" in c for c in labels_of(result.consequences))
 
     def test_second_hit_marks_worse_impact(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
-        from straightjacket.engine.mechanics.move_handlers import apply_suffer_handler
+        from straightjacket.engine.ruleset.impacts import apply_impact
+        from straightjacket.engine.ruleset.move_handlers import apply_suffer_handler
 
         game = _game()
         game.resources.health = 0
@@ -243,8 +242,8 @@ class TestSufferHandlerMarksImpact:
 
 class TestRecoveryHandlerClearsImpact:
     def test_heal_clears_wounded(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
-        from straightjacket.engine.mechanics.move_handlers import apply_recovery_handler
+        from straightjacket.engine.ruleset.impacts import apply_impact
+        from straightjacket.engine.ruleset.move_handlers import apply_recovery_handler
 
         game = _game()
         apply_impact(game, "wounded")
@@ -261,7 +260,7 @@ class TestRecoveryHandlerClearsImpact:
         assert any("wounded" in c for c in labels_of(result.consequences))
 
     def test_no_impact_no_clear(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.move_handlers import apply_recovery_handler
+        from straightjacket.engine.ruleset.move_handlers import apply_recovery_handler
 
         game = _game()
         params = {
@@ -278,7 +277,7 @@ class TestRecoveryHandlerClearsImpact:
 
 class TestImpactsStatus:
     def test_impacts_shown_in_status(self, load_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
+        from straightjacket.engine.ruleset.impacts import apply_impact
         from straightjacket.web.serializers import build_narrative_status
 
         game = _game()
@@ -308,8 +307,8 @@ class TestCharacterStatePromptTag:
         assert "character_state" not in header
 
     def test_impacts_in_character_state(self, load_engine: None) -> None:
-        from straightjacket.engine.mechanics.impacts import apply_impact
         from straightjacket.engine.prompt_shared import _scene_header
+        from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
         game.setting_id = "starforged"

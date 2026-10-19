@@ -2,14 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from straightjacket.engine.mechanics import (
-    generate_engine_memories,
-    is_dialog_branch,
-    move_category,
-)
-from straightjacket.engine.mechanics.resolvers import is_dialog_memory
 from straightjacket.engine.engine_loader import eng
-
+from straightjacket.engine.gamemaster.engine_memories import generate_engine_memories
+from straightjacket.engine.gamemaster.resolvers import is_dialog_branch, is_dialog_memory, move_category
 from tests._helpers import make_brain_result
 from tests._mocks import make_test_game
 

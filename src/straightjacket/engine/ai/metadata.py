@@ -1,16 +1,10 @@
 from typing import Any
+
 from ..engine_loader import eng
+from ..gamemaster.npc.matching import apply_name_sanitization, find_npc, fuzzy_match_existing_npc, next_npc_id
+from ..gamemaster.npc.processing import process_new_npcs, process_npc_details, process_npc_renames
 from ..logging_util import log
 from ..models import GameState, NpcData
-from ..npc import (
-    apply_name_sanitization,
-    find_npc,
-    fuzzy_match_existing_npc,
-    next_npc_id,
-    process_new_npcs,
-    process_npc_details,
-    process_npc_renames,
-)
 
 
 def apply_narrator_metadata(

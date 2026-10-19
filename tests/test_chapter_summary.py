@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 import pytest
 
 from straightjacket.engine.game.chapters import _close_previous_chapter, _reset_chapter_mechanics

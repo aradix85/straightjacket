@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from ..engine_loader import eng
+from ..gamemaster.npc.lifecycle import absorb_npc
+from ..gamemaster.npc.matching import find_npc, next_npc_id
+from ..gamemaster.npc.naming import roll_oracle_name
+from ..gamemaster.world import clear_facts, locations_match
 from ..logging_util import log
-from ..mechanics import clear_facts, locations_match
 from ..models import GameState, NpcData
-from ..npc import find_npc, next_npc_id
-from ..npc.lifecycle import absorb_npc
-from ..npc.naming import roll_oracle_name
 
 
 def _skip(op_dict: dict[str, Any], reason: str) -> None:

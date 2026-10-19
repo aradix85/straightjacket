@@ -1,11 +1,11 @@
 import pytest
 
-from straightjacket.engine.mechanics import resolve_npc_stance
+from straightjacket.engine.gamemaster.stance_gate import resolve_npc_stance
 from straightjacket.engine.models import (
-    consequence,
     GameState,
     NpcData,
     RollResult,
+    consequence,
 )
 from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
@@ -18,7 +18,6 @@ from tests._helpers import (
     make_npc,
     make_progress_track,
 )
-
 
 pytestmark = pytest.mark.usefixtures("load_engine")
 

@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.mechanics.fate import (
+from straightjacket.engine.gamemaster.fate import (
     _check_chart_random_event,
     _check_check_random_event,
     resolve_fate,
@@ -94,7 +94,7 @@ def test_fate_results_carry_random_event_flag(monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_resolve_fate_follows_the_configured_method(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics import fate
+    from straightjacket.engine.gamemaster import fate
 
     game = make_game_state()
     game.world.chaos_factor = 7

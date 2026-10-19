@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.mechanics.keyed_scenes import evaluate_keyed_scenes
-from straightjacket.engine.mechanics.scene import SceneSetup, check_scene
+from straightjacket.engine.gamemaster.keyed_scenes import evaluate_keyed_scenes
+from straightjacket.engine.gamemaster.scene import SceneSetup, check_scene
 from straightjacket.engine.models import (
     GameState,
     KeyedScene,

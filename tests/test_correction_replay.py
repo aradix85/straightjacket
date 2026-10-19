@@ -45,7 +45,7 @@ class _Provider:
 @pytest.fixture
 def dice(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
     from straightjacket.engine.game import turn
-    from straightjacket.engine.mechanics.consequences import score_action_roll
+    from straightjacket.engine.ruleset.rolls import score_action_roll
 
     counts = {"rolls": 0, "scenes": 0, "scene_roll": 10}
     real_scene = turn.check_scene

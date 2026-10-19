@@ -31,9 +31,9 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 - New AI-call wrapper: `ai/brain.py` → `call_brain` for a call the turn cannot do without, `ai/blueprint_voicing.py` → `call_blueprint_voicing` for one that degrades.
 - Director tool: `tools/builtins.py` → `query_game_state` (`docs/ai.md`, Tool calling and prompt injection).
-- Strict nested domain lookup: `mechanics/stance_gate.py` → `resolve_npc_stance`.
+- Strict nested domain lookup: `gamemaster/stance_gate.py` → `resolve_npc_stance`.
 - New yaml-backed config section: an entry in `engine_config.py` `_SIMPLE_SECTIONS`, with its dataclass in `engine_config_dataclasses.py` (required fields, no defaults).
-- New template text: `prompts/*.yaml` for AI-facing text, with narrator-facing blocks in `prompts/blocks.yaml`; `strings/*.yaml` for user-facing text; `engine/*.yaml` for engine-internal values.
+- New template text: `prompts/*.yaml` for AI-facing text, with narrator-facing blocks in `prompts/blocks.yaml`; `strings/*.yaml` for user-facing text; the layer's own yaml folder (`gamemaster/`, `crafters/`, `ruleset/`) for a rule's values, `engine/*.yaml` for engine-internal values that are no rule.
 - Subpackage layout: `engine/correction/`.
 - Large container split: `engine_config.py` re-exporting from `engine_config_dataclasses.py`.
 - No post-hoc validators of AI output: "No narration validator" in `docs/divergences.md`.
@@ -46,7 +46,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 **Config over code (9h).** CONTRIBUTING.md states the rules (config-driven, what belongs together lives together, lean); the user settled the judgment calls of the principle-2 audit: the markup of prompts, the source systems' rule constants, named status groups, and patterns for the AI's words move to yaml.
 
-**When a generator fires (9d).** A place is generated when the Brain moves the character to a place that is neither a generated place nor in the location history: the Brain names the place's kind from the engine's list, and the engine rolls it. An NPC's name is rolled when the metadata extraction registers a new NPC. Altered and interrupt scenes get no generator, since Mythic's random events serve them. Facts go through `generate_fact` and entity categories through `generate_entity`, behind the registry in `engine/generation.yaml`, each returning a `GeneratedEntity` from the role tables its setting names. Later categories (encounters, waypoints, sites, NPC tiers) follow both choices.
+**When a generator fires (9d).** A place is generated when the Brain moves the character to a place that is neither a generated place nor in the location history: the Brain names the place's kind from the engine's list, and the engine rolls it. An NPC's name is rolled when the metadata extraction registers a new NPC. Altered and interrupt scenes get no generator, since Mythic's random events serve them. Facts go through `generate_fact` and entity categories through `generate_entity`, behind the registry in `gamemaster/generation.yaml`, each returning a `GeneratedEntity` from the role tables its setting names. Later categories (encounters, waypoints, sites, NPC tiers) follow both choices.
 
 **Each spawn source names its own entities** from what it naturally has, as threats and clocks do (`docs/mechanics.md`, Threats and clocks).
 
@@ -76,19 +76,18 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ## NEXT STEP — 9n: Game master, crafters, ruleset, and setting as layers
 
-Decisions, Four layers. Today one setting carries both rules and world (its yaml in `data/settings` and its Datasworn chain), while the Ironsworn rules sit in `engine/` beside Mythic's and the engine's own, 70 yaml files in one folder; `engine/dice.yaml` holds Ironsworn's dice beside Mythic's and the Adventure Crafter's. Datasworn already draws the line: classic and Starforged are `type: ruleset`, Delve and Sundered Isles `type: expansion`.
+Decisions, Four layers. Today one setting carries both rules and world (its yaml in `data/settings` and its Datasworn chain). Datasworn already draws the line: classic and Starforged are `type: ruleset`, Delve and Sundered Isles `type: expansion`.
 
-**9n.1** Four layers, each with its own package and yaml folder (Decisions, Four layers). The game master: Mythic's fate, chaos, scene test, random events, and lists, with the engine's rules that hold in any system (clocks, position and effect, facts, pacing, the NPC layer). The crafters: the Adventure Crafter with its character tables, and the Location Crafter (`data/location_crafter.json`). The ruleset: classic and Starforged, with Delve and Sundered Isles as their expansions, and the threats. The setting: world, truths, oracles, atlas, vocabulary, tone, and generators. In three parts, a commit each:
+**9n.1** Four layers, each with its own package and yaml folder (Decisions, Four layers). The game master: Mythic's fate, chaos, scene test, random events, and lists, with the engine's rules that hold in any system (clocks, position and effect, facts, pacing, the NPC layer). The crafters: the Adventure Crafter with its character tables, and the Location Crafter (`data/location_crafter.json`). The ruleset: classic and Starforged, with Delve and Sundered Isles as their expansions, and the threats. The setting: world, truths, oracles, atlas, vocabulary, tone, and generators. The parts left, a commit each:
 
-- **9n.1a** The files move into the four packages and yaml folders without a change in behaviour; what is no rule (the AI's text, the parser, retry, persistence) stays in `engine/`, and the setting's yaml in `data/settings`. The new packages are markers and callers import from the modules, so each import names its layer.
 - **9n.1b** The game master is untangled from the ruleset. Today it reads an NPC's bond from the connection tracks (stance, information gate, activation, position and effect, keyed scenes, and the NPC lifecycle, which also merges two NPCs' connection tracks), the meters and crisis (position), Secure an Advantage by name (position and effect), Ironsworn's move ids and result names in its yaml (the memories' verbs and result texts, the time a move takes, the effect baselines, narrative direction), and threats, which random events and the Adventure Crafter spawn and the menace keyed scenes read; and a filled progress clock completes the progress track of its name. The rules among these move to the ruleset, the rest become the questions of Decisions, Four layers.
 - **9n.1c** Each layer reads only its own yaml, and a project-rule scan rejects an import against the direction.
 
-**9n.2** The ruleset owns what a system decides, read from its Datasworn data and otherwise its yaml, not fixed in Python: dice and result tiers (`engine/dice.yaml`), meters (`models_base.py` → `Resources` holds health, spirit, supply, and momentum as fixed fields, read 25 times in 8 files), stats, progress tracks and ranks, moves and outcomes, impacts, legacy, and assets. Classic's rule differences (`move_outcome_overrides` in `engine/move_outcomes.yaml`, keyed by setting id and holding in every setting built on classic) become the classic ruleset's own. The save format breaks.
+**9n.2** The ruleset owns what a system decides, read from its Datasworn data and otherwise its yaml, not fixed in Python: dice and result tiers (`ruleset/dice.yaml`), meters (`models_base.py` → `Resources` holds health, spirit, supply, and momentum as fixed fields, read 25 times in 8 files), stats, progress tracks and ranks, moves and outcomes, impacts, legacy, and assets. Classic's rule differences (`move_outcome_overrides` in `ruleset/move_outcomes.yaml`, keyed by setting id and holding in every setting built on classic) become the classic ruleset's own. The save format breaks.
 
 **9n.3** A setting names its ruleset. A Datasworn ruleset file carries both layers: its rules and moves load as the ruleset, its oracles, truths, and atlas as the setting; where a section such as assets belongs is settled against the books. `docs/settings.md` then describes adding a setting and adding a ruleset apart.
 
-**9n.4** The principle-1 audit runs per layer on the new layout and takes up two findings of 9h. First, `game/succession.py` → `_replace_character_identity` repeats the identity setup of `game/game_start.py` → `start_new_game`. Second, three keyed-scene id helpers share one body (`mechanics/adventure_crafter.py` → `_next_keyed_scene_id`, `mechanics/random_events.py` → `_re_next_keyed_scene_id`, `mechanics/keyed_scenes.py` → `_next_clock_keyed_scene_id`); `consolidate_threads` repeats `consolidate_characters`; `game/setup_common.py` counts NPC numbers beside `npc/matching.py` → `next_npc_id`; and `npc/processing.py` → `_apply_surname_update` repeats the alias handling of `npc/lifecycle.py` → `merge_npc_identity`. Clock code lives in six places under `mechanics/` (`consequences.py`, `clock_consequences.py`, `clocks.py`, `complications.py`, the spawners in `random_events.py` and `adventure_crafter.py`, and `keyed_scenes.py`) and gathers in `clocks.py`; the same pattern is looked for in threats, tracks, and NPC naming. Production code imports `game/` both through its `__init__.py` and from its files and settles one way; the four layers' packages are imported from their modules (9n.1a).
+**9n.4** The principle-1 audit runs per layer on the new layout and takes up two findings of 9h. First, `game/succession.py` → `_replace_character_identity` repeats the identity setup of `game/game_start.py` → `start_new_game`. Second, three keyed-scene id helpers share one body (`crafters/adventure_crafter.py` → `_next_keyed_scene_id`, `gamemaster/random_events.py` → `_re_next_keyed_scene_id`, `gamemaster/keyed_scenes.py` → `_next_clock_keyed_scene_id`); `consolidate_threads` repeats `consolidate_characters`; `game/setup_common.py` counts NPC numbers beside `gamemaster/npc/matching.py` → `next_npc_id`; and `gamemaster/npc/processing.py` → `_apply_surname_update` repeats the alias handling of `gamemaster/npc/lifecycle.py` → `merge_npc_identity`. Clock code lives in seven places (`gamemaster/clock_ticks.py`, `gamemaster/clock_consequences.py`, `gamemaster/clocks.py`, `gamemaster/complications.py`, the spawners in `gamemaster/random_events.py` and `crafters/adventure_crafter.py`, and `gamemaster/keyed_scenes.py`) and gathers in `clocks.py`; the same pattern is looked for in threats, tracks, and NPC naming. Production code imports `game/` both through its `__init__.py` and from its files and settles one way; the four layers' packages are imported from their modules (9n.1a).
 
 **9n.5** Code the split only moves keeps its audits; code it writes or rewrites (the layer interface, the meters, the loader that splits a Datasworn file) gets the queries of principles 2 and 3 in the same step, and AUDIT.md's Status then names the audited code by its new packages.
 
@@ -102,8 +101,8 @@ Decisions, Four layers. Today one setting carries both rules and world (its yaml
 
 ### Reference patterns
 
-- The Datasworn line between the layers: `type: ruleset` for classic and Starforged, `type: expansion` for Delve and Sundered Isles, and the chain a setting loads (`datasworn/settings.py` → `SettingPackage.chain`).
-- What the game master reads of the ruleset: 9n.1b, beside the result tier read by the chaos factor (`engine/chaos.yaml`), the Director's trigger (`director.py`), a memory's emotion (`engine/memory.yaml`), what a miss withholds (`docs/mechanics.md`), and a move's category (`engine/move_categories.yaml`).
+- The Datasworn line between the layers: `type: ruleset` for classic and Starforged, `type: expansion` for Delve and Sundered Isles, and the chain a setting loads (`setting/packages.py` → `SettingPackage.chain`).
+- What the game master reads of the ruleset: 9n.1b, beside the result tier read by the chaos factor (`gamemaster/chaos.yaml`), the Director's trigger (`director.py`), a memory's emotion (`gamemaster/memory.yaml`), what a miss withholds (`docs/mechanics.md`), and a move's category (`ruleset/move_categories.yaml`).
 - The existing import and layering scans: `tests/test_project_rules.py`; the four layers: Decisions, Four layers.
 
 ---
@@ -120,9 +119,9 @@ Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, 
 
 Two clean-ups of principle 2, formerly 9h.4 and 9h.12, one session per module or group, after the split, which gives the state classes their new form.
 
-**9o.1** About two hundred dataclass defaults that are not empty collections (pass 2d counted 196, in 43 classes, mostly in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, `mechanics/move_effects.py`, and `models_npc.py`) go, against CONTRIBUTING.md's rule, with every constructor call updated, one module per session; the optional fields of `AICallSpec` and the partial classes in `datasworn/settings.py` parse external structures and keep theirs. After the last, the config-binding scan widens to every dataclass.
+**9o.1** About two hundred dataclass defaults that are not empty collections (pass 2d counted 196, in 43 classes, mostly in `models_story.py`, `models.py`, `models_base.py`, `ruleset/moves.py`, `ruleset/move_effects.py`, and `models_npc.py`) go, against CONTRIBUTING.md's rule, with every constructor call updated, one module per session; the optional fields of `AICallSpec` and the partial classes in `setting/packages.py` parse external structures and keep theirs. After the last, the config-binding scan widens to every dataclass.
 
-**9o.2** The prompt markup assembled in Python (XML tags, attribute names, `key:value` labels, markers) moves to `prompts/*.yaml`, one session per group, each rendering every prompt of the group on a created game before and after and requiring byte-identical text, since the cached prefixes and the measured tuning depend on it: `prompt_shared.py`; `prompt_action.py` and `prompt_dialog.py`; `prompt_boundary.py` and `prompt_blocks.py`; `ai/brain.py`; `ai/narrator.py` and `ai/recap.py`; `director.py`; `ai/blueprint_voicing.py`; and the small sites in `correction/`, `mechanics/bonuses.py`, `mechanics/tracks.py`, `mechanics/random_events.py`, and `game/turn.py`.
+**9o.2** The prompt markup assembled in Python (XML tags, attribute names, `key:value` labels, markers) moves to `prompts/*.yaml`, one session per group, each rendering every prompt of the group on a created game before and after and requiring byte-identical text, since the cached prefixes and the measured tuning depend on it: `prompt_shared.py`; `prompt_action.py` and `prompt_dialog.py`; `prompt_boundary.py` and `prompt_blocks.py`; `ai/brain.py`; `ai/narrator.py` and `ai/recap.py`; `director.py`; `ai/blueprint_voicing.py`; and the small sites in `correction/`, `ruleset/bonuses.py`, `ruleset/tracks.py`, `gamemaster/random_events.py`, and `game/turn.py`.
 
 ### 9i — Revelations settled by the engine
 
@@ -132,15 +131,15 @@ A separate AI call (`call_revelation_check`) judges after narration whether the 
 
 **9j.1** Which gains a marked condition blocks, per ruleset. In Starforged and Sundered Isles a meter whose condition is marked rises only through the move that clears it, while the engine checks only in Endure and the recovery moves, so Sojourn's gains still raise it. Classic's move texts ask only for the meter above 0, but its Datasworn rules text (`rules.impacts.conditions`) says a condition blocks its track; which holds is settled first. The register entries "Classic Ironsworn borrows one Starforged impact rule" and "Marked conditions block only Endure and the recovery moves" leave.
 
-**9j.2** Classic's bonds special track: Forge a Bond marks it, and Write Your Epilogue (13b) rolls it. Today classic's Forge a Bond marks nothing on a hit (`relationship/forge_a_bond` in `engine/move_outcomes.yaml`).
+**9j.2** Classic's bonds special track: Forge a Bond marks it, and Write Your Epilogue (13b) rolls it. Today classic's Forge a Bond marks nothing on a hit (`relationship/forge_a_bond` in `ruleset/move_outcomes.yaml`).
 
 **9j.3** The Adventure Crafter's theme translation lets the adventure's tone pick a theme for the blueprint.
 
 **9j.4** The words of the oracle and meaning tables are checked against the books.
 
-**9j.6** Advance a Threat is rolled on its Delve table when the character gives ground to a threat through inaction, failure, or delay; which misses count, and whether the autonomous tick stays as the engine's reading of delay, is checked against Delve first. A threat a random event starts takes no category from Delve's Category table yet. Forsake Your Vow (`mechanics/tracks.py` → `forsake_vow`) costs classic's spirit by the vow's rank and takes Starforged's choice of costs as a fixed choice. The register entries "Threats advance by engine rule, not by Advance a Threat" and "Forsake Your Vow costs a fixed amount of spirit" leave.
+**9j.6** Advance a Threat is rolled on its Delve table when the character gives ground to a threat through inaction, failure, or delay; which misses count, and whether the autonomous tick stays as the engine's reading of delay, is checked against Delve first. A threat a random event starts takes no category from Delve's Category table yet. Forsake Your Vow (`ruleset/tracks.py` → `forsake_vow`) costs classic's spirit by the vow's rank and takes Starforged's choice of costs as a fixed choice. The register entries "Threats advance by engine rule, not by Advance a Threat" and "Forsake Your Vow costs a fixed amount of spirit" leave.
 
-**9j.7** The Adventure Crafter's Meta plot points take effect. A Meta result is now a hit that does nothing, and `mechanics/adventure_crafter.py` → `dispatch_meta`, its seven handlers, and the Characters List template have no production caller (an orphan-symbol carve-out in `tests/test_project_rules.py` until this step). Each handler is checked against the book first; Character Returns without an exited character needs a name from the npc generator, the handlers take the turning point's random generator, and one that needs the active plotline takes it where `roll_turning_point` holds it. The register entry "Meta plot points have no effect" leaves.
+**9j.7** The Adventure Crafter's Meta plot points take effect. A Meta result is now a hit that does nothing, and `crafters/adventure_crafter.py` → `dispatch_meta`, its seven handlers, and the Characters List template have no production caller (an orphan-symbol carve-out in `tests/test_project_rules.py` until this step). Each handler is checked against the book first; Character Returns without an exited character needs a name from the npc generator, the handlers take the turning point's random generator, and one that needs the active plotline takes it where `roll_turning_point` holds it. The register entry "Meta plot points have no effect" leaves.
 
 **9j.8** Make a Connection's weak hit brings a complication or cost, as the move says, following the `complication` effect of Gather Information and Compel.
 
@@ -148,7 +147,7 @@ Ability effects other than adds belong to step 18; outcomes where the player wou
 
 ### 9k — Scene challenges
 
-The scene challenge of Starforged and Sundered Isles is configured but unreachable: Begin the Scene has no roll, so `tools/builtins.py` → `available_moves` keeps it from the Brain and its `track_creating_moves` entry never fires; without the track, `engine/move_availability.yaml` never offers the scene-challenge Face Danger, Secure an Advantage, or Finish the Scene; the `fill_clock` effect of their misses lands in `OutcomeResult.clock_fills`, read by nothing; and no tension clock exists.
+The scene challenge of Starforged and Sundered Isles is configured but unreachable: Begin the Scene has no roll, so `tools/builtins.py` → `available_moves` keeps it from the Brain and its `track_creating_moves` entry never fires; without the track, `ruleset/move_availability.yaml` never offers the scene-challenge Face Danger, Secure an Advantage, or Finish the Scene; the `fill_clock` effect of their misses lands in `OutcomeResult.clock_fills`, read by nothing; and no tension clock exists.
 
 **9k.1** Begin the Scene becomes a formal move: `available_moves` lets through the roll-less moves a yaml list names, with category and outcome in the same commit. The Brain names the objective as the track's name and picks the rank the move gives: troublesome with a clear advantage, dangerous when ready to act, formidable when unprepared or outmatched.
 
@@ -164,9 +163,9 @@ The measuring setup captures narrator calls only. A set of captured calls per pr
 
 ### 10 — Location and encounter generators
 
-**10.1** The location and settlement categories weighted by location properties and the world state (no prosperous trading post in a region at war), each naming its game-state inputs as a fact type does in `engine/fact_resolution.yaml`. A generated place takes its name from the setting's name tables (Starforged and Sundered Isles settlement names, classic's quick settlement names) where the player has not named it; the register entry "Places are rolled without the world state, and their names are narrated" leaves.
+**10.1** The location and settlement categories weighted by location properties and the world state (no prosperous trading post in a region at war), each naming its game-state inputs as a fact type does in `gamemaster/fact_resolution.yaml`. A generated place takes its name from the setting's name tables (Starforged and Sundered Isles settlement names, classic's quick settlement names) where the player has not named it; the register entry "Places are rolled without the world state, and their names are narrated" leaves.
 
-**10.2** An encounter category in `engine/generation.yaml`, weighted by location properties, active threats, and chaos (`engine/encounter_weights.yaml`, new); oracle for structure, AI for description; its output reaches the Brain as structured data (couples to steps 12 and 25). Of the two code paths that follow a link from one oracle row to another table (`datasworn/cascade.py` → `roll_oracle_cascade`, `datasworn/oracle_rolls.py` → `roll_oracle`), the category settles on one.
+**10.2** An encounter category in `gamemaster/generation.yaml`, weighted by location properties, active threats, and chaos (`engine/encounter_weights.yaml`, new); oracle for structure, AI for description; its output reaches the Brain as structured data (couples to steps 12 and 25). Of the two code paths that follow a link from one oracle row to another table (`setting/cascade.py` → `roll_oracle_cascade`, `setting/oracle_rolls.py` → `roll_oracle`), the category settles on one.
 
 **10.3** `<generated>` tags replace unstructured invention, at a net prompt cost near zero.
 
@@ -186,7 +185,7 @@ The opening scene and the character's start come from the setting's launch table
 
 **11.0** First, with the user: does the Director keep its tool? It takes no parameters, returns the same view whatever the model asks, and was called on every Director run, so by `docs/ai.md`'s own axis it could be prompt data, saving the first of the Director's two calls (about a quarter of its cost) and the tool registry; the design document makes tool calling central (`docs/divergences.md`, Tool calling per data type). The question is whether the Director must choose the data for 11.2, or the engine already knows the promoted NPC and hands it its threads and memories; the user is no longer sure tool calling adds much. If the tool stays, two things it hands over carry nothing yet: a thread's id, which no field of the Director's answer can name, and a clock's owner, `world` and none for every clock until step 12.
 
-**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled without an AI call from the setting's character oracles (Starforged first look, initial disposition, role, goal, revealed aspect; classic role, goal, descriptor) and the Adventure Crafter's character tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). The tables join the npc category's oracle paths beside the name tables, and the narrator receives the values as structured context.
+**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled without an AI call from the setting's character oracles (Starforged first look, initial disposition, role, goal, revealed aspect; classic role, goal, descriptor) and the Adventure Crafter's character tables (`crafters/adventure_crafter.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). The tables join the npc category's oracle paths beside the name tables, and the narrator receives the values as structured context.
 
 **11.2** Tier 2 (recurring): full AIMS and a goal clock; the Director writes only the AIMS, from the tier-1 base and the active threads, with always-relevant context (location, faction state once step 14 lands) injected.
 
@@ -202,7 +201,7 @@ The opening scene and the character's start come from the setting's launch table
 
 ### 11c — NPC-to-NPC memories in the prompt
 
-`MemoryEntry.about_npc` records what NPCs remember of each other, but the narrator never sees it, and no caller passes the present NPCs to `npc/memory.py` → `retrieve_memories`, so `npc.about_npc_relevance_boost` never applies. The engine picks `about_npc` memories between present NPCs (one per pair, most recent first, cap in yaml) into a block in `prompts/blocks.yaml`, and passes `present_npc_ids`, the one parameter left under "No parameters for tests", kept for this step. A stepping stone for step 24.
+`MemoryEntry.about_npc` records what NPCs remember of each other, but the narrator never sees it, and no caller passes the present NPCs to `gamemaster/npc/memory.py` → `retrieve_memories`, so `npc.about_npc_relevance_boost` never applies. The engine picks `about_npc` memories between present NPCs (one per pair, most recent first, cap in yaml) into a block in `prompts/blocks.yaml`, and passes `present_npc_ids`, the one parameter left under "No parameters for tests", kept for this step. A stepping stone for step 24.
 
 ### 11d — Narrator direction on NPC backstory
 
@@ -210,13 +209,13 @@ NPCs draw on their description, agenda, arc, and earlier scenes, and keep an une
 
 ### 12 — NPC goal clocks and autonomous actions
 
-Builds on step 11 and `check_npc_agency` (`pacing.npc_agency_interval`). No clock has an NPC owner today, so its agency tick and the owner rename in `npc/lifecycle.py` → `merge_npc_identity` never run; the goal clock makes `owner_id` an NPC id rather than a name. A state correction retells the session log's clock events that are not `autonomous`, so an agency tick, which the turn's narration does not tell as a clock event, is marked like the scene-end ticks.
+Builds on step 11 and `check_npc_agency` (`pacing.npc_agency_interval`). No clock has an NPC owner today, so its agency tick and the owner rename in `gamemaster/npc/lifecycle.py` → `merge_npc_identity` never run; the goal clock makes `owner_id` an NPC id rather than a name. A state correction retells the session log's clock events that are not `autonomous`, so an agency tick, which the turn's narration does not tell as a clock event, is marked like the scene-end ticks.
 
 **12.1** `goal_clock: ClockData | None` on NpcData, ticked after scene-end bookkeeping on deterministic triggers in `engine/npc_goal_clocks.yaml` (new): bond below N, health below N, scene count.
 
 **12.3** A filled goal clock produces an `<npc_action>` tag, at most one per scene (config), prompt-injected since it is always relevant when present, bounded, and needs no AI selection, from a callable that step 13 swaps (default: meaning table plus templates in `prompts/blocks.yaml`).
 
-**12.4** The Director sets a goal clock on promotion. Either `engine/clock_keyed_scenes.yaml` gains a `goal` type (small priority, full fill only) and the callsite calls `spawn_keyed_scenes_for_clock`, or goal clocks are exempt because their fill is the `<npc_action>`; decided at implementation and recorded in the CHANGELOG.
+**12.4** The Director sets a goal clock on promotion. Either `gamemaster/clock_keyed_scenes.yaml` gains a `goal` type (small priority, full fill only) and the callsite calls `spawn_keyed_scenes_for_clock`, or goal clocks are exempt because their fill is the `<npc_action>`; decided at implementation and recorded in the CHANGELOG.
 
 ### 13 — NPC behavior via fate
 
@@ -224,11 +223,11 @@ Fate plus expected behavior derived from AIMS and stance (`mythic_gme_2e.json` �
 
 ### 13b — Unimplemented Datasworn mechanics
 
-Datasworn data the engine holds but does not act on comes here when no other step names it. The Datasworn moves of the shipped settings that are neither formal moves in `engine/move_outcomes.yaml` nor covered elsewhere (expeditions, sites, and Sundered Isles in 25, 26, and 28; asset abilities in 18 to 20) are wired by "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move, a consequence that fires on a condition an engine trigger.
+Datasworn data the engine holds but does not act on comes here when no other step names it. The Datasworn moves of the shipped settings that are neither formal moves in `ruleset/move_outcomes.yaml` nor covered elsewhere (expeditions, sites, and Sundered Isles in 25, 26, and 28; asset abilities in 18 to 20) are wired by "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move, a consequence that fires on a condition an engine trigger.
 
-Group A, formal moves in `engine/move_outcomes.yaml` and `engine/move_categories.yaml`, reusing the handler patterns: Forsake Your Vow as the player's choice (`quest/forsake_your_vow`, today only an engine trigger), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs step 11's NPC-action context), `relationship/write_your_epilogue` (with the retire flow), `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress marks `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`, and Develop Your Relationship without a bond as the player's own move (today only Test Your Relationship's follow-up; its `without_bond` effects are in `engine/move_outcomes.yaml`), with the divergence "Develop Your Relationship without a bond comes only from Test Your Relationship" leaving.
+Group A, formal moves in `ruleset/move_outcomes.yaml` and `ruleset/move_categories.yaml`, reusing the handler patterns: Forsake Your Vow as the player's choice (`quest/forsake_your_vow`, today only an engine trigger), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs step 11's NPC-action context), `relationship/write_your_epilogue` (with the retire flow), `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress marks `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`, and Develop Your Relationship without a bond as the player's own move (today only Test Your Relationship's follow-up; its `without_bond` effects are in `ruleset/move_outcomes.yaml`), with the divergence "Develop Your Relationship without a bond comes only from Test Your Relationship" leaving.
 
-Group B, engine triggers at their callsites, each with a tag for the narrator (`<failure_marked>`, `<setback>`, `<defeat_faced>`) and its config (failure-track length, setback redirect) in the relevant yaml: `mark_failure_on_miss` (`failure/mark_your_failure`, in the miss resolution of `mechanics/consequences.py`), `face_setback_at_min_momentum` (`suffer/face_a_setback`, at the momentum clamp of `mechanics/suffer.py` and `Resources.adjust_momentum`), and `face_defeat_on_objective_loss` (`combat/face_defeat`). `advance_menace_on_miss`, `pay_the_price`, and Out of Supply already follow this pattern. A move that creates a clock whose type has keyed scenes calls `spawn_keyed_scenes_for_clock`.
+Group B, engine triggers at their callsites, each with a tag for the narrator (`<failure_marked>`, `<setback>`, `<defeat_faced>`) and its config (failure-track length, setback redirect) in the relevant yaml: `mark_failure_on_miss` (`failure/mark_your_failure`, in the miss resolution of `ruleset/rolls.py`), `face_setback_at_min_momentum` (`suffer/face_a_setback`, at the momentum clamp of `ruleset/suffer.py` and `Resources.adjust_momentum`), and `face_defeat_on_objective_loss` (`combat/face_defeat`). `advance_menace_on_miss`, `pay_the_price`, and Out of Supply already follow this pattern. A move that creates a clock whose type has keyed scenes calls `spawn_keyed_scenes_for_clock`.
 
 Group C, elsewhere or deliberately not wired: `legacy/continue_a_legacy` (succession), `fate/ask_the_oracle` (the engine's own), `scene_challenge/begin_the_scene` (9k), `threshold/overcome_destruction` (28), and the five session moves (a divergence).
 
@@ -246,7 +245,7 @@ FactionData with name, goal, tenets, members, and its standing toward the other 
 
 ### 14b — Scheme clocks and chapter-spanning factions
 
-A scheme clock per faction that ticks on its own and queues a faction event when full (`engine/clock_keyed_scenes.yaml` already covers `scheme`); factions carry over chapters through the three-place chapter pattern; faction archetypes come from the setting's Datasworn oracles through its generators (`docs/settings.md`; classic Ironsworn has none).
+A scheme clock per faction that ticks on its own and queues a faction event when full (`gamemaster/clock_keyed_scenes.yaml` already covers `scheme`); factions carry over chapters through the three-place chapter pattern; faction archetypes come from the setting's Datasworn oracles through its generators (`docs/settings.md`; classic Ironsworn has none).
 
 ### 14c — Clock and threat pressure in narrative direction
 
@@ -262,11 +261,11 @@ Player reputation per faction, whose extremes override personal bond in the stan
 
 ### 18 — Asset mechanics beyond adds
 
-Builds on the enabled abilities and the Brain's `bonus_id` (`mechanics/assets.py`, `mechanics/bonuses.py`): rerolls, extra effects on a hit, condition meters on assets, and choosing which ability an upgrade enables. Tests use real Datasworn assets with ids as character creation stores them.
+Builds on the enabled abilities and the Brain's `bonus_id` (`ruleset/assets.py`, `ruleset/bonuses.py`): rerolls, extra effects on a hit, condition meters on assets, and choosing which ability an upgrade enables. Tests use real Datasworn assets with ids as character creation stores them.
 
 ### 19 — Companion and vehicle assets
 
-Companion health and vehicle condition tracks, with Withstand Damage as a suffer move; Companion Takes a Hit and Withstand Damage roll with the asset's meter, which `mechanics/roll_sources.py` → `roll_source_without_stat` then reads beside condition meters and connection ranks; an `/assets` command; companions and vehicles in `<character_state>`. Withstand Damage at 0 integrity rolls its own table, which the move carries (Sundered Isles' inside its own move). Starforged's starship history and quirks are rolled when the command vehicle is created.
+Companion health and vehicle condition tracks, with Withstand Damage as a suffer move; Companion Takes a Hit and Withstand Damage roll with the asset's meter, which `ruleset/roll_sources.py` → `roll_source_without_stat` then reads beside condition meters and connection ranks; an `/assets` command; companions and vehicles in `<character_state>`. Withstand Damage at 0 integrity rolls its own table, which the move carries (Sundered Isles' inside its own move). Starforged's starship history and quirks are rolled when the command vehicle is created.
 
 ### 20 — Asset rollout per setting
 
@@ -322,7 +321,7 @@ Mythic's chaos variants, each with its own fate chart, and the prepared-adventur
 
 ### 33 — Themed element tables
 
-`mechanics/random_events.py` → `roll_meaning_table` reads only actions and descriptions; the 45 themed tables in `mythic_gme_2e.json` → `meaning_tables.elements` join random events by context, six high-use tables first.
+`gamemaster/random_events.py` → `roll_meaning_table` reads only actions and descriptions; the 45 themed tables in `mythic_gme_2e.json` → `meaning_tables.elements` join random events by context, six high-use tables first.
 
 ### 34 — Remaining themed tables
 
@@ -351,5 +350,6 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9f — Prompt tuning on Sonnet:** every role on Sonnet 5.5 at effort medium, Elvira on Haiku 5.5 (baseline 6.41 ± 0.14); rewording the narrator stayed within the noise, so the remaining faults are for the engine.
 - **9g — Tests through the real creation path** (`create_game` in `tests/_creation.py`).
 - **9l — Complications as clocks** (`docs/mechanics.md`, Complication clocks).
-- **9j, so far.** Suffering goes through `mechanics/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal, and the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5). A progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9).
-- **9h — Principle audits:** principles 2 to 5 audited (AUDIT.md, Status), principle 1 runs in 9n, the long clean-ups of principle 2 are 9o. Impossible states raise; dead code, write-only data, and parameters only tests set are gone; the engine reads what Datasworn carries where an audit found it unread; a bonded connection stays and Develop Your Relationship follows both branches; consequences are structured; a correction retells what the turn told; the Brain keeps its hand-written hints, which chose moves better than the book's triggers (30 of 30 against 29 of 30). The substeps are in the CHANGELOG; 9h.4 and 9h.12 became 9o, 9h.13 and 9h.14 are in 9n.4, and 9h.23 became 11.0.
+- **9j, so far.** Suffering goes through `ruleset/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal, and the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5). A progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9).
+- **9h — Principle audits:** principles 2 to 5 audited (AUDIT.md, Status), principle 1 runs in 9n, the long clean-ups of principle 2 are 9o; the Brain keeps its hand-written hints, which chose moves better than the book's triggers (30 of 30 against 29 of 30). The substeps are in the CHANGELOG; 9h.13 and 9h.14 are in 9n.4, and 9h.23 became 11.0.
+- **9n, so far.** The code and the yaml sit in the four layers' packages and folders, `setting/`, `gamemaster/` with the NPC layer, `crafters/`, and `ruleset/`, with `engine/` keeping what is no rule, and each layer's dice in its own `dice.yaml` (9n.1a).

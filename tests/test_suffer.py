@@ -1,17 +1,16 @@
-from straightjacket.engine.models import labels_of
 import pytest
 
-from straightjacket.engine.datasworn.settings import load_package
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game.finalization import update_crisis
-from straightjacket.engine.datasworn.oracle_rolls import plain_text
-from straightjacket.engine.mechanics.move_effects import apply_effects, parse_effects
-from straightjacket.engine.mechanics.move_handlers import _TABLE_TRIGGERS
-from straightjacket.engine.mechanics.move_outcome import make_follow_up_moves, resolve_move_outcome
-from straightjacket.engine.mechanics.outcome_result import OutcomeResult
-from straightjacket.engine.mechanics.suffer import start_dying_clock, suffer, tick_dying_clock
-from straightjacket.engine.mechanics.tracks import complete_track
-from straightjacket.engine.models import GameState, Resources
+from straightjacket.engine.models import GameState, Resources, labels_of
+from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects
+from straightjacket.engine.ruleset.move_handlers import _TABLE_TRIGGERS
+from straightjacket.engine.ruleset.move_outcome import make_follow_up_moves, resolve_move_outcome
+from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+from straightjacket.engine.ruleset.suffer import start_dying_clock, suffer, tick_dying_clock
+from straightjacket.engine.ruleset.tracks import complete_track
+from straightjacket.engine.setting.oracle_rolls import plain_text
+from straightjacket.engine.setting.packages import load_package
 from tests._helpers import fix_dice, make_game_state, make_progress_track
 
 MISS = (1, 10, 10)

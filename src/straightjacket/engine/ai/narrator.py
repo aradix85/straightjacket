@@ -1,6 +1,6 @@
-from typing import Any
 import json
 from collections.abc import Sequence
+from typing import Any
 
 from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng

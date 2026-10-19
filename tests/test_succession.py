@@ -15,16 +15,16 @@ from straightjacket.engine.game.succession import (
     prepare_succession,
     start_succession_with_character,
 )
-from straightjacket.engine.mechanics import (
-    apply_npc_carryover,
-    build_predecessor_record,
-    run_inheritance_rolls,
-    seed_successor_legacy,
-)
 from straightjacket.engine.models import (
     CampaignState,
     GameState,
     ThreadEntry,
+)
+from straightjacket.engine.ruleset.succession import (
+    apply_npc_carryover,
+    build_predecessor_record,
+    run_inheritance_rolls,
+    seed_successor_legacy,
 )
 from tests._creation import create_game
 from tests._helpers import (
@@ -104,7 +104,7 @@ def test_run_inheritance_rolls_outcomes(
     g.campaign.legacy_quests.ticks = ticks
     random.seed(0)
 
-    import straightjacket.engine.mechanics.consequences as cons_mod
+    import straightjacket.engine.ruleset.rolls as rolls_mod
 
     class _Dice:
         def __init__(self, values: list[int]) -> None:
@@ -113,12 +113,12 @@ def test_run_inheritance_rolls_outcomes(
         def randint(self, a: int, b: int) -> int:
             return next(self.values)
 
-    real = cons_mod.random
-    cons_mod.random = _Dice(dice_values)
+    real = rolls_mod.random
+    rolls_mod.random = _Dice(dice_values)
     try:
         rolls = run_inheritance_rolls(g)
     finally:
-        cons_mod.random = real
+        rolls_mod.random = real
     quests = next(r for r in rolls if r.track_name == "quests")
     assert quests.result == expected_result
     assert quests.new_filled_boxes == expected_new_filled
@@ -270,7 +270,7 @@ def test_prepare_succession_archives_the_recorded_reason(aria: GameState) -> Non
     ],
 )
 def test_a_miss_at_the_threshold_records_why_the_game_ended(load_engine: None, move: str, reason: str) -> None:
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     g = make_game_state(setting_id="classic" if move.startswith("suffer/") else "starforged")
     g.resources.health, g.resources.spirit = 0, 0

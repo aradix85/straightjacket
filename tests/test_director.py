@@ -8,11 +8,11 @@ from straightjacket.engine.models import (
     SceneLogEntry,
 )
 from tests._helpers import (
+    keyed_reflections,
     make_director_guidance,
     make_game_state,
     make_memory,
     make_npc,
-    keyed_reflections,
     make_npc_reflection,
 )
 
@@ -449,8 +449,8 @@ def test_reset_stale_reflection_flags(stub_all: None) -> None:
 def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
     import json
 
-    from straightjacket.engine.game.director_runner import run_deferred_director
     from straightjacket.engine import prompt_loader
+    from straightjacket.engine.game.director_runner import run_deferred_director
     from tests._mocks import MockProvider, make_test_game
 
     prompt_loader._prompts = None

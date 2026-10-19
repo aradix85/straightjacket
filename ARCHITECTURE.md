@@ -18,7 +18,7 @@ Straightjacket puts the Narrative RPG Engine design document ([itch.io](https://
 
 The Brain reading free text, the narrator's prose, and the Director's wording stay with the AI by design. What the AI still decides where a system could, and the revelation check, the one call that judges the narration after the fact, are listed in `docs/divergences.md`, each with the roadmap step that takes it over.
 
-**Engine-resolved fiction.** The target is an engine that produces every fact the fiction needs before the narrator writes: names and dispositions from oracle rolls, locations from generators, plot beats from the Adventure Crafter, facts and NPC behaviour under uncertainty from Mythic's fate system, encounters from weighted tables, scene structure from chaos rolls, content from Mythic's element meaning tables. Implemented today: NPC names from oracles, locations and settlements from the setting's tables when the character first arrives, plot beats from the Adventure Crafter, scene structure from chaos rolls, meaning-table rolls inside random events, the naming of threats and clocks (complication clocks included), and facts that the Brain names and fate settles (`docs/mechanics.md`, Facts and Generators). `mechanics/generation.py` is the entry point for the content a turn asks the engine to settle: `generate_fact` settles a fact, and `generate_entity` rolls an entity category (an NPC's name, a location, a settlement) from the tables the setting names; threats and clocks are still rolled at their own callsites.
+**Engine-resolved fiction.** The target is an engine that produces every fact the fiction needs before the narrator writes: names and dispositions from oracle rolls, locations from generators, plot beats from the Adventure Crafter, facts and NPC behaviour under uncertainty from Mythic's fate system, encounters from weighted tables, scene structure from chaos rolls, content from Mythic's element meaning tables. Implemented today: NPC names from oracles, locations and settlements from the setting's tables when the character first arrives, plot beats from the Adventure Crafter, scene structure from chaos rolls, meaning-table rolls inside random events, the naming of threats and clocks (complication clocks included), and facts that the Brain names and fate settles (`docs/mechanics.md`, Facts and Generators). `gamemaster/generation.py` is the entry point for the content a turn asks the engine to settle: `generate_fact` settles a fact, and `generate_entity` rolls an entity category (an NPC's name, a location, a settlement) from the tables the setting names; threats and clocks are still rolled at their own callsites.
 
 ## Turn pipeline
 
@@ -27,19 +27,19 @@ The player types "I search the room"; the engine returns narration and the updat
 ```
 player input
   ↓
-Scene test (mechanics/scene.py) → keyed > interrupt > altered > expected
+Scene test (gamemaster/scene.py) → keyed > interrupt > altered > expected
   ↓
 Brain (ai/brain.py) → one classification call with the game state in its prompt
   ↓
-Location and time (mechanics/world.py) → the Brain's move to another place clears the facts of the old one
+Location and time (gamemaster/world.py) → the Brain's move to another place clears the facts of the old one
   ↓
-Place generation (mechanics/generation.py) → a place the world does not know yet is rolled from the setting's tables
+Place generation (gamemaster/generation.py) → a place the world does not know yet is rolled from the setting's tables
   ↓
-Fact resolution (mechanics/generation.py, mechanics/facts.py) → each undetermined fact settled by fate or reused
+Fact resolution (gamemaster/generation.py, gamemaster/facts.py) → each undetermined fact settled by fate or reused
   ↓
-NPC activation (npc/activation.py) → decides which NPCs get full context
+NPC activation (gamemaster/npc/activation.py) → decides which NPCs get full context
   ↓
-Roll (mechanics/consequences.py) → the Ironsworn action roll: STRONG_HIT, WEAK_HIT, or MISS
+Roll (ruleset/rolls.py) → the Ironsworn action roll: STRONG_HIT, WEAK_HIT, or MISS
   ↓
 Consequences (game/action_resolution.py) → position and effect, move outcome, combat position, clock ticks, threats, the dying clock, follow-up moves (Endure, Face Death), crisis check; a hit clears the facts whose type says so
   ↓
@@ -63,20 +63,24 @@ Dialog turns skip the roll and its consequences. A `##` correction and a momentu
 The source lives under `src/straightjacket/`.
 
 - `engine/` — the engine core: the typed models (`models.py` re-exports every dataclass from `models_base.py`, `models_npc.py`, and `models_story.py`), strict serialization (`serialization.py`), saves (`persistence.py`), users and save folders (`user_management.py`), the loaders for `config.yaml` and the yaml stores, narrator prompt assembly (`prompt_action.py`, `prompt_dialog.py`, `prompt_boundary.py`, with shared parts in `prompt_shared.py` and `prompt_blocks.py`), narrator output cleanup (`parser.py`), story-arc tracking and act transitions (`story_state.py`), and the Director with its AI call (`director.py`).
-- `engine/mechanics/` — the rules, with no AI: rolls and consequences, move outcomes, progress tracks, impacts, legacy, assets and roll bonuses, NPC stance and information gating, fate, facts and the generation entry point, scene structure and keyed scenes, random events, threats, clocks, the Adventure Crafter, and the mechanical side of succession.
-- `engine/npc/` — NPC state: bond from connection tracks, name matching, memory, activation, lifecycle, oracle names, and applying extracted metadata.
+- `engine/setting/` — the setting layer: Datasworn JSON, setting packages, and the rolls on their oracle tables, cascades included.
+- `engine/gamemaster/` — the game master layer, with no AI: Mythic's fate, chaos, scene test, random events, and lists, keyed scenes, and the engine's rules that hold in any system: clocks and their ticks, position and effect, facts and the generation entry point, pacing, location and time, NPC stance and information gating, and the engine's memories.
+- `engine/gamemaster/npc/` — NPC state: name matching, memory, activation, lifecycle, oracle names, and applying extracted metadata.
+- `engine/crafters/` — the crafters layer: the Adventure Crafter's tables, turning points, and blueprint seed.
+- `engine/ruleset/` — the ruleset layer, the Ironsworn rules, with no AI: rolls, Datasworn moves, move outcomes with their effects and handlers, progress tracks and a connection's bond, impacts, harm and stress, legacy, assets and roll bonuses, boasts, threats, the narrator's sentences for consequences, and the mechanical side of succession.
 - `engine/ai/` — provider adapters and routing, output schemas, sentence streaming, and the AI calls of the Brain, the revelation check, the narrator, metadata extraction, recap, and blueprint voicing. Two calls live with the code that uses them: the Director's in `director.py` and the correction analysis in `correction/analysis.py`.
 - `engine/tools/` — the Director's tool registry, the execution of its tool calls, and engine query functions such as the available moves.
 - `engine/game/` — orchestration: the turn, action resolution, shared narration and finalization, momentum burn, game start, chapters, succession, and the deferred Director run.
 - `engine/correction/` — the `##` correction: the analysis call, atomic state patches, and snapshot restore with re-narration.
-- `engine/datasworn/` — Datasworn JSON: loading, moves, oracle cascades, and setting packages.
 - `web/` — the Starlette server, one handler per WebSocket message, session state, serializers that turn game state into client JSON, and the single-page client `web/static/index.html`.
 
 Beside them, `i18n.py` serves user-facing strings.
 
-**Subpackage public API via `__init__.py`.** `mechanics`, `npc`, `game`, `tools`, and `correction` re-export their public names in `__init__.py`, so callers write `from straightjacket.engine.mechanics import roll_action` and the internal file layout stays free to change. `models.py` is the same kind of hub for the dataclasses. `engine`, `ai`, `datasworn`, and `web` are package markers without re-exports.
+**The four layers.** The setting, the game master, the crafters, and the ruleset each have a package and a yaml folder of their own, apart so that another system replaces only the ruleset; until roadmap step 9n is done, the game master still reads parts of the ruleset directly. Their packages are markers without re-exports, and callers import from the module, so every import names the layer it reaches into.
 
-**Import layers.** Dependencies point downward. The files directly under `engine/` are not one layer. Their base (the models, serialization, the configuration and yaml loaders, logging, and small helpers such as `xml_utils.py`; the list is `_CORE_BASE` in `tests/test_project_rules.py`) imports nothing above it. `datasworn` imports only that base. `npc` and `mechanics` may use the base, `datasworn`, and each other, but not `ai` or `tools`; `tools` may use all of those but not `ai`, since it only answers the tool calls the Director's AI call makes in `director.py`. None of them imports the rest of the core files, `game`, `correction`, or `web`. The rest of the core (prompt assembly, the parser, persistence, story-arc tracking, and the Director) and `ai` use each other: the Brain and the narrator read prompt blocks and the parser, while the Director in `director.py` calls `ai` and `tools`. No core file and nothing in `ai` imports `game`, `correction`, or `web`. `game` orchestrates everything below it, `correction` builds on `game`, and nothing in the engine imports `web`. A project-rule scan enforces this, inline imports included.
+**Subpackage public API via `__init__.py`.** `game`, `tools`, and `correction` re-export their public names in `__init__.py`, so callers write `from straightjacket.engine.game import process_turn` and the internal file layout stays free to change. `models.py` is the same kind of hub for the dataclasses. `engine`, `ai`, and `web` are package markers without re-exports, like the four layers.
+
+**Import layers.** Dependencies point downward. The files directly under `engine/` are not one layer. Their base (the models, serialization, the configuration and yaml loaders, logging, and small helpers such as `xml_utils.py`; the list is `_CORE_BASE` in `tests/test_project_rules.py`) imports nothing above it. `setting` imports only that base. `gamemaster`, `crafters`, and `ruleset` may use the base, `setting`, and each other, but not `ai` or `tools`; `tools` may use all of those but not `ai`, since it only answers the tool calls the Director's AI call makes in `director.py`. None of them imports the rest of the core files, `game`, `correction`, or `web`. The rest of the core (prompt assembly, the parser, persistence, story-arc tracking, and the Director) and `ai` use each other: the Brain and the narrator read prompt blocks and the parser, while the Director in `director.py` calls `ai` and `tools`. No core file and nothing in `ai` imports `game`, `correction`, or `web`. `game` orchestrates everything below it, `correction` builds on `game`, and nothing in the engine imports `web`. A project-rule scan enforces this, inline imports included.
 
 ## State
 
@@ -90,7 +94,7 @@ Beside them, `i18n.py` serves user-facing strings.
 
 ## Configuration
 
-Configuration lives in yaml stores that are directories with one file per subsystem or topic: `engine` for rules and numbers, `prompts` for AI-facing text, `strings` for user-facing text, `emotions` for emotion scoring. Each loader merges its directory and raises on duplicate keys; code reaches them only through `eng()`, `get_prompt()`, `t()`, and `importance_map()`. `config.yaml` stays a single, user-edited file for the server, the providers, and the model assignment, read as strictly as the rest: a key it does not know or a key it lacks stops startup with a message that names it. Game content comes from Datasworn JSON and the Mythic and Adventure Crafter data in the `data` folder, each setting from a yaml file in `data/settings`.
+Configuration lives in yaml stores that are directories with one file per subsystem or topic: `gamemaster`, `crafters`, and `ruleset` for the rules and numbers of each layer, `engine` for the engine's own numbers and text that are no rule (the AI's text, the parser, retry, persistence), `prompts` for AI-facing text, `strings` for user-facing text, `emotions` for emotion scoring. Each loader merges its directories and raises on a key that two files define; code reaches them only through `eng()`, `get_prompt()`, `t()`, and `importance_map()`. `config.yaml` stays a single, user-edited file for the server, the providers, and the model assignment, read as strictly as the rest: a key it does not know or a key it lacks stops startup with a message that names it. Game content comes from Datasworn JSON and the Mythic and Adventure Crafter data in the `data` folder, each setting from a yaml file in `data/settings`.
 
 Every yaml block is parsed into a typed dataclass at load time (`engine_config.py`, `engine_config_dataclasses.py`) and read as `eng().subsystem.field`; a key the dataclass does not know raises, at every depth. The exception is yaml whose keys are themselves domain content, such as move names or dispositions, which must extend without a Python change; those blocks are read with `eng().get_raw("section")`.
 

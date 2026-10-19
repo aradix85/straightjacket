@@ -43,8 +43,8 @@ def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(lo
 
 
 def test_a_connection_without_a_bond_gives_develop_your_relationship_nothing_to_roll(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.moves import get_moves
-    from straightjacket.engine.mechanics.roll_sources import roll_source_without_stat
+    from straightjacket.engine.ruleset.moves import get_moves
+    from straightjacket.engine.ruleset.roll_sources import roll_source_without_stat
 
     game = _starforged()
     game.progress_tracks.append(

@@ -61,8 +61,9 @@ def test_require_str_rejects_blank(load_engine: None, fake_ws: _FakeWS) -> None:
 
 
 def test_send_swallows_disconnect(load_engine: None) -> None:
-    from straightjacket.web.handlers import _send
     from starlette.websockets import WebSocketDisconnect
+
+    from straightjacket.web.handlers import _send
 
     class _DeadWS:
         async def send_json(self, msg: dict) -> None:

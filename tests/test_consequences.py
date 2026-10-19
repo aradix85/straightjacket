@@ -16,7 +16,7 @@ def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) 
 
 
 def test_roll_action_returns_valid_result() -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     r = roll_action("edge", 3, "adventure/face_danger", 0, 0)
     assert r.result in ("STRONG_HIT", "WEAK_HIT", "MISS")
@@ -31,7 +31,7 @@ def test_roll_action_returns_valid_result() -> None:
 
 
 def test_roll_action_match_detection() -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     matches = 0
     for _ in range(1000):
@@ -43,7 +43,7 @@ def test_roll_action_match_detection() -> None:
 
 
 def test_roll_action_score_capped_at_10() -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     for _ in range(100):
         r = roll_action("edge", 3, "adventure/face_danger", 0, 0)
@@ -51,7 +51,7 @@ def test_roll_action_score_capped_at_10() -> None:
 
 
 def test_tick_threat_clock() -> None:
-    from straightjacket.engine.mechanics.consequences import tick_threat_clock
+    from straightjacket.engine.gamemaster.clock_ticks import tick_threat_clock
 
     game = _game()
     game.world.clocks = [make_clock(name="Storm", clock_type="threat", segments=4, filled=2)]
@@ -62,7 +62,7 @@ def test_tick_threat_clock() -> None:
 
 
 def test_tick_threat_clock_fires_when_full() -> None:
-    from straightjacket.engine.mechanics.consequences import tick_threat_clock
+    from straightjacket.engine.gamemaster.clock_ticks import tick_threat_clock
 
     game = _game()
     game.world.clocks = [make_clock(name="Storm", clock_type="threat", segments=4, filled=3)]
@@ -75,7 +75,7 @@ def test_tick_threat_clock_fires_when_full() -> None:
 
 
 def test_tick_threat_clock_skips_non_threat() -> None:
-    from straightjacket.engine.mechanics.consequences import tick_threat_clock
+    from straightjacket.engine.gamemaster.clock_ticks import tick_threat_clock
 
     game = _game()
     game.world.clocks = [make_clock(name="Progress", clock_type="progress", segments=4, filled=2)]
@@ -85,7 +85,7 @@ def test_tick_threat_clock_skips_non_threat() -> None:
 
 
 def test_tick_threat_clock_skips_full() -> None:
-    from straightjacket.engine.mechanics.consequences import tick_threat_clock
+    from straightjacket.engine.gamemaster.clock_ticks import tick_threat_clock
 
     game = _game()
     game.world.clocks = [make_clock(name="Done", clock_type="threat", segments=4, filled=4, fired=True)]
@@ -107,7 +107,7 @@ def test_tick_threat_clock_skips_full() -> None:
 def test_can_burn_momentum(
     momentum: int, d_value: int, action_score: int, roll_result: str, expected_burn: str | None
 ) -> None:
-    from straightjacket.engine.mechanics.consequences import can_burn_momentum
+    from straightjacket.engine.ruleset.rolls import can_burn_momentum
 
     game = _game(momentum=momentum)
     roll = RollResult(
@@ -125,7 +125,7 @@ def test_can_burn_momentum(
 
 
 def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.consequences import check_npc_agency
+    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
 
     game = _game()
     game.narrative.scene_count = 5
@@ -137,7 +137,7 @@ def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
 
 
 def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.consequences import check_npc_agency
+    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
 
     game = _game()
     game.narrative.scene_count = 3
@@ -148,7 +148,7 @@ def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
 
 
 def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.consequences import check_npc_agency
+    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
 
     game = _game()
     game.narrative.scene_count = 5
@@ -163,7 +163,7 @@ def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
 
 
 def test_autonomous_clock_tick(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.consequences import tick_autonomous_clocks
+    from straightjacket.engine.gamemaster.clock_ticks import tick_autonomous_clocks
 
     game = _game()
     game.world.clocks = [make_clock(name="Plague", clock_type="threat", segments=6, filled=2, owner_kind="world")]
@@ -178,7 +178,7 @@ def test_autonomous_clock_tick(load_engine: None) -> None:
 
 
 def test_purge_old_fired_clocks(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.consequences import purge_old_fired_clocks
+    from straightjacket.engine.gamemaster.clock_ticks import purge_old_fired_clocks
 
     game = _game()
     game.narrative.scene_count = 10
@@ -195,7 +195,7 @@ def test_purge_old_fired_clocks(load_engine: None) -> None:
 
 
 def test_roll_progress_returns_valid_result() -> None:
-    from straightjacket.engine.mechanics.consequences import roll_progress
+    from straightjacket.engine.ruleset.rolls import roll_progress
 
     r = roll_progress("Test Vow", 6, "quest/fulfill_your_vow")
     assert r.result in ("STRONG_HIT", "WEAK_HIT", "MISS")
@@ -209,14 +209,14 @@ def test_roll_progress_returns_valid_result() -> None:
 
 
 def test_roll_progress_score_capped_at_10() -> None:
-    from straightjacket.engine.mechanics.consequences import roll_progress
+    from straightjacket.engine.ruleset.rolls import roll_progress
 
     r = roll_progress("Epic", 15, "quest/fulfill_your_vow")
     assert r.action_score == 10
 
 
 def test_roll_progress_zero_boxes() -> None:
-    from straightjacket.engine.mechanics.consequences import roll_progress
+    from straightjacket.engine.ruleset.rolls import roll_progress
 
     r = roll_progress("Empty", 0, "quest/fulfill_your_vow")
     assert r.action_score == 0
@@ -225,7 +225,7 @@ def test_roll_progress_zero_boxes() -> None:
 
 
 def test_roll_progress_match_detection() -> None:
-    from straightjacket.engine.mechanics.consequences import roll_progress
+    from straightjacket.engine.ruleset.rolls import roll_progress
 
     matches = 0
     for _ in range(1000):
@@ -237,7 +237,7 @@ def test_roll_progress_match_detection() -> None:
 
 
 def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     rolls = [roll_action("wits", 2, "adventure/face_danger", 0, 0) for _ in range(500)]
     assert all(r.action_score == r.d1 + 2 for r in rolls)
@@ -245,14 +245,14 @@ def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> No
 
 
 def _fixed_dice(monkeypatch: pytest.MonkeyPatch, *values: int) -> None:
-    from straightjacket.engine.mechanics import consequences
+    from straightjacket.engine.ruleset import rolls
 
     sequence = list(values)
-    monkeypatch.setattr(consequences.random, "randint", lambda low, high: sequence.pop(0))
+    monkeypatch.setattr(rolls.random, "randint", lambda low, high: sequence.pop(0))
 
 
 def test_negative_momentum_cancels_a_matching_action_die(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     _fixed_dice(monkeypatch, 3, 5, 8)
     roll = roll_action("wits", 2, "adventure/face_danger", -3, 0)
@@ -262,7 +262,7 @@ def test_negative_momentum_cancels_a_matching_action_die(load_engine: None, monk
 def test_negative_momentum_that_does_not_match_leaves_the_die(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     _fixed_dice(monkeypatch, 3, 4, 8)
     roll = roll_action("wits", 2, "adventure/face_danger", -2, 0)
@@ -270,14 +270,14 @@ def test_negative_momentum_that_does_not_match_leaves_the_die(
 
 
 def test_positive_momentum_never_cancels_the_die(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     _fixed_dice(monkeypatch, 3, 4, 8)
     assert roll_action("wits", 2, "adventure/face_danger", 3, 0).action_score == 5
 
 
 def test_adds_raise_the_action_score(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     _fixed_dice(monkeypatch, 3, 5, 8)
     assert roll_action("wits", 2, "adventure/face_danger", 0, 1).action_score == 6
@@ -286,7 +286,7 @@ def test_adds_raise_the_action_score(load_engine: None, monkeypatch: pytest.Monk
 def test_adds_still_count_when_negative_momentum_cancels_the_die(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.mechanics.consequences import roll_action
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     _fixed_dice(monkeypatch, 3, 5, 8)
     assert roll_action("wits", 2, "adventure/face_danger", -3, 1).action_score == 3
@@ -296,7 +296,7 @@ def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.game.turn import _execute_roll
-    from straightjacket.engine.mechanics.move_effects import MoveEffect, apply_effects
+    from straightjacket.engine.ruleset.move_effects import MoveEffect, apply_effects
     from tests._helpers import make_brain_result, make_game_state
 
     game = make_game_state(setting_id="classic")

@@ -5,14 +5,13 @@ import random
 
 import pytest
 
-from straightjacket.engine.mechanics.adventure_crafter import (
+from straightjacket.engine.crafters.adventure_crafter import (
     CharacterTraits,
     lookup_character_descriptor,
     lookup_character_identity,
     lookup_character_special_trait,
     roll_character_traits,
 )
-
 
 _SPECIAL_TRAIT_BOUNDARIES = [
     (1, "individual"),

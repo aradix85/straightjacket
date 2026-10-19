@@ -4,7 +4,7 @@ from tests._helpers import make_brain_result, make_game_state
 
 
 def _swear(game: object, name: str) -> None:
-    from straightjacket.engine.mechanics import start_track
+    from straightjacket.engine.ruleset.tracks import start_track
 
     brain = make_brain_result(move="quest/swear_an_iron_vow", stat="heart")
     brain.track_name = name
@@ -13,7 +13,7 @@ def _swear(game: object, name: str) -> None:
 
 
 def _connect(game: object, target: str | None, result: str) -> None:
-    from straightjacket.engine.mechanics import start_track
+    from straightjacket.engine.ruleset.tracks import start_track
 
     brain = make_brain_result(move="connection/make_a_connection", stat="heart", target_npc=target)
     brain.track_name = "Kira"
@@ -57,7 +57,7 @@ def test_a_track_id_holds_only_word_characters(load_engine: None) -> None:
 def test_completing_a_track_that_does_not_exist_raises(load_engine: None) -> None:
     import pytest
 
-    from straightjacket.engine.mechanics.tracks import complete_track
+    from straightjacket.engine.ruleset.tracks import complete_track
 
     with pytest.raises(KeyError):
         complete_track(make_game_state(setting_id="starforged"), "vow_missing", "completed")

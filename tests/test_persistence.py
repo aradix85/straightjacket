@@ -35,7 +35,7 @@ def save_dir(tmp_path: Any, monkeypatch: Any, stub_all: None) -> object:
 
 
 def test_save_and_load_roundtrip(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import save_game, load_game
+    from straightjacket.engine.persistence import load_game, save_game
 
     game = _game()
     msgs = [{"role": "assistant", "content": "Hello world."}]
@@ -67,7 +67,7 @@ def test_list_saves_empty(save_dir: Any) -> None:
 
 
 def test_list_saves_with_saves(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import save_game, list_saves_with_info
+    from straightjacket.engine.persistence import list_saves_with_info, save_game
 
     save_game(_game(), "lister", [], "save_a")
     save_game(_game(), "lister", [], "save_b")
@@ -79,7 +79,7 @@ def test_list_saves_with_saves(save_dir: Any) -> None:
 
 
 def test_delete_save(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import save_game, delete_save, list_saves_with_info
+    from straightjacket.engine.persistence import delete_save, list_saves_with_info, save_game
 
     save_game(_game(), "deleter", [], "to_delete")
     delete_save("deleter", "to_delete")
@@ -104,7 +104,7 @@ def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
 
 
 def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import save_game, list_saves_with_info, get_save_dir
+    from straightjacket.engine.persistence import get_save_dir, list_saves_with_info, save_game
 
     save_game(_game(), "mixed", [], "good_save")
     save_root = get_save_dir("mixed")
@@ -119,7 +119,7 @@ def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
 
 
 def test_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import save_game, load_game
+    from straightjacket.engine.persistence import load_game, save_game
 
     game = _game()
     game.npcs[0].disposition = "wary"

@@ -2,14 +2,15 @@ import dataclasses
 
 import pytest
 
-from straightjacket.engine.datasworn.moves import get_moves
 from straightjacket.engine.game.action_resolution import resolve_action_phase
 from straightjacket.engine.game.turn_types import RollOutcome
-from straightjacket.engine.mechanics.consequences import downgrade_in_position, generate_consequence_sentences
-from straightjacket.engine.mechanics.legacy import get_legacy_track
-from straightjacket.engine.mechanics.outcome_result import OutcomeResult
-from straightjacket.engine.mechanics.tracks import recommit_track
 from straightjacket.engine.models import GameState, ProgressTrack, RollResult, labels_of
+from straightjacket.engine.ruleset.consequences import generate_consequence_sentences
+from straightjacket.engine.ruleset.legacy import get_legacy_track
+from straightjacket.engine.ruleset.moves import get_moves
+from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+from straightjacket.engine.ruleset.rolls import downgrade_in_position
+from straightjacket.engine.ruleset.tracks import recommit_track
 from tests._helpers import fix_dice, make_brain_result, make_game_state, make_progress_track
 
 
@@ -128,8 +129,8 @@ def test_forge_a_bond_weak_hit_bonds_now_and_tells_the_request(load_engine: None
 
 
 def test_a_bonded_connection_keeps_its_bond_and_is_not_made_again(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.tracks import start_track
-    from straightjacket.engine.npc.bond import get_npc_bond
+    from straightjacket.engine.ruleset.bond import get_npc_bond
+    from straightjacket.engine.ruleset.tracks import start_track
 
     track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", ticks=24)
     game, _ = _play("starforged", "connection/forge_a_bond", track, "STRONG_HIT")

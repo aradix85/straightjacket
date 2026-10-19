@@ -6,7 +6,6 @@ from straightjacket.engine.models import GameState
 
 from .models import NpcSnapshot
 
-
 _LEAKED_MECHANICS = [
     (re.compile(r"\b(?:MISS|WEAK_HIT|STRONG_HIT)\b"), "result type leaked"),
     (re.compile(r"\b(?:health|spirit|supply|momentum)\s*[=:]\s*\d", re.IGNORECASE), "raw stat value leaked"),

@@ -5,7 +5,7 @@ from tests._helpers import make_brain_result, make_clock, make_game_state, make_
 
 
 def test_position_default_risky(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
     game.world.chaos_factor = 5
@@ -14,7 +14,7 @@ def test_position_default_risky(stub_engine: None) -> None:
 
 
 def test_position_desperate_on_low_resources(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
     game.resources.health = 1
@@ -26,7 +26,7 @@ def test_position_desperate_on_low_resources(stub_engine: None) -> None:
 
 
 def test_position_controlled_on_high_resources_low_chaos(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
     game.resources.health = 5
@@ -42,7 +42,7 @@ def test_position_controlled_on_high_resources_low_chaos(stub_engine: None) -> N
 
 
 def test_position_hostile_npc_pushes_desperate(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
     game.resources.health = 3
@@ -56,7 +56,7 @@ def test_position_hostile_npc_pushes_desperate(stub_engine: None) -> None:
 
 
 def test_position_friendly_npc_helps(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
     game.resources.health = 5
@@ -73,7 +73,7 @@ def test_position_friendly_npc_helps(stub_engine: None) -> None:
 
 
 def test_position_consecutive_misses(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
     game.world.chaos_factor = 5
@@ -88,7 +88,7 @@ def test_position_consecutive_misses(stub_engine: None) -> None:
 
 
 def test_position_threat_clock_pressure(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
     game.world.chaos_factor = 5
@@ -99,7 +99,7 @@ def test_position_threat_clock_pressure(stub_engine: None) -> None:
 
 
 def test_position_combat_baseline(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
     game.world.chaos_factor = 5
@@ -113,7 +113,7 @@ def test_position_combat_baseline(stub_engine: None) -> None:
 
 def test_a_move_category_without_a_baseline_raises(stub_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics import resolve_position
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     baselines = {k: v for k, v in eng().position_resolver.move_baselines.items() if k != "combat"}
     monkeypatch.setattr(eng().position_resolver, "move_baselines", baselines)
@@ -122,7 +122,7 @@ def test_a_move_category_without_a_baseline_raises(stub_engine: None, monkeypatc
 
 
 def test_effect_default_standard(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_effect
+    from straightjacket.engine.gamemaster.resolvers import resolve_effect
 
     game = make_game_state(player_name="Test")
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
@@ -130,7 +130,7 @@ def test_effect_default_standard(stub_engine: None) -> None:
 
 
 def test_effect_desperate_pushes_limited(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_effect
+    from straightjacket.engine.gamemaster.resolvers import resolve_effect
 
     game = make_game_state(player_name="Test")
     game.npcs = [make_npc(id="npc_1", name="Enemy", disposition="hostile")]
@@ -140,7 +140,7 @@ def test_effect_desperate_pushes_limited(stub_engine: None) -> None:
 
 
 def test_effect_controlled_pushes_great(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_effect
+    from straightjacket.engine.gamemaster.resolvers import resolve_effect
 
     game = make_game_state(player_name="Test")
     game.npcs = [make_npc(id="npc_1", name="Ally", disposition="friendly")]
@@ -157,7 +157,7 @@ def test_effect_controlled_pushes_great(stub_engine: None) -> None:
 
 
 def test_effect_strike_baseline(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_effect
+    from straightjacket.engine.gamemaster.resolvers import resolve_effect
 
     game = make_game_state(player_name="Test")
     brain = make_brain_result(move="combat/strike", stat="iron")
@@ -167,73 +167,73 @@ def test_effect_strike_baseline(stub_engine: None) -> None:
 
 
 def test_time_progression_dialog_is_none(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
+    from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
 
     assert resolve_time_progression("dialog", has_location_change=False) == "none"
 
 
 def test_time_progression_gather_is_short(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
+    from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
 
     assert resolve_time_progression("adventure/gather_information", has_location_change=False) == "short"
 
 
 def test_time_progression_resupply_is_moderate(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
+    from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
 
     assert resolve_time_progression("recover/resupply", has_location_change=False) == "moderate"
 
 
 def test_time_progression_location_change_is_long(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
+    from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
 
     assert resolve_time_progression("adventure/face_danger", has_location_change=True) == "long"
 
 
 def test_time_progression_unknown_move_uses_default(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
+    from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
 
     assert resolve_time_progression("unknown_move", has_location_change=False) == "short"
 
 
 def test_locations_match_identical() -> None:
-    from straightjacket.engine.mechanics import locations_match
+    from straightjacket.engine.gamemaster.world import locations_match
 
     assert locations_match("Tavern", "Tavern")
 
 
 def test_locations_match_case_insensitive() -> None:
-    from straightjacket.engine.mechanics import locations_match
+    from straightjacket.engine.gamemaster.world import locations_match
 
     assert locations_match("Old Tavern", "old tavern")
 
 
 def test_locations_match_stopwords() -> None:
-    from straightjacket.engine.mechanics import locations_match
+    from straightjacket.engine.gamemaster.world import locations_match
 
     assert locations_match("the dark forest", "dark forest")
 
 
 def test_locations_match_subset() -> None:
-    from straightjacket.engine.mechanics import locations_match
+    from straightjacket.engine.gamemaster.world import locations_match
 
     assert locations_match("market square", "the old market square")
 
 
 def test_locations_match_different() -> None:
-    from straightjacket.engine.mechanics import locations_match
+    from straightjacket.engine.gamemaster.world import locations_match
 
     assert not locations_match("tavern", "castle")
 
 
 def test_locations_match_empty() -> None:
-    from straightjacket.engine.mechanics import locations_match
+    from straightjacket.engine.gamemaster.world import locations_match
 
     assert locations_match("", "anywhere")
     assert locations_match("anywhere", "")
 
 
 def test_locations_match_underscore() -> None:
-    from straightjacket.engine.mechanics import locations_match
+    from straightjacket.engine.gamemaster.world import locations_match
 
     assert locations_match("dark_forest", "dark forest")

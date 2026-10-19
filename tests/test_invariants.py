@@ -1,8 +1,8 @@
-from straightjacket.engine.models import GameState
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc
-
 import sys as _sys
 from pathlib import Path as _Path
+
+from straightjacket.engine.models import GameState
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
 _sys.path.insert(0, str(_Path(__file__).resolve().parent / "elvira"))
 
@@ -157,7 +157,7 @@ def test_catches_invalid_clock_type(load_engine: None) -> None:
 
 
 def test_a_dying_clock_is_a_valid_clock(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.suffer import start_dying_clock
+    from straightjacket.engine.ruleset.suffer import start_dying_clock
 
     game = _clean_game()
     game.resources.health = 0

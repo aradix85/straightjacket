@@ -1,10 +1,10 @@
 # Settings and character creation
 
-A setting is a data package: a Datasworn JSON file with the game content (moves, oracles, assets) and a settings yaml with what the engine needs to use it (vocabulary, oracle paths, creation flow). The shipped settings are classic Ironsworn (`classic`), Starforged (`starforged`), and Sundered Isles (`sundered_isles`), plus Delve (`delve`), which only extends classic. `datasworn/settings.py` loads the packages.
+A setting is a data package: a Datasworn JSON file with the game content (moves, oracles, assets) and a settings yaml with what the engine needs to use it (vocabulary, oracle paths, creation flow). The shipped settings are classic Ironsworn (`classic`), Starforged (`starforged`), and Sundered Isles (`sundered_isles`), plus Delve (`delve`), which only extends classic. `setting/packages.py` loads the packages.
 
 ## Character creation
 
-Creation is driven by the setting's Datasworn data, with no AI call: the client receives the options from `web/serializers.py` → `build_creation_options`, the setting's `creation_flow` decides which steps it shows, and `game/game_start.py` → `validate_stats`, `validate_creation` check the result against the stat arrays in `engine/stats.yaml`. The chosen truths are stored on the game state and reach every narrator prompt as a `<world_truths>` block (`prompt_blocks.py` → `truths_block`), which the narrator treats as canon. How creation seeds the first threads and tracks is in `docs/mechanics.md`.
+Creation is driven by the setting's Datasworn data, with no AI call: the client receives the options from `web/serializers.py` → `build_creation_options`, the setting's `creation_flow` decides which steps it shows, and `game/game_start.py` → `validate_stats`, `validate_creation` check the result against the stat arrays in `ruleset/stats.yaml`. The chosen truths are stored on the game state and reach every narrator prompt as a `<world_truths>` block (`prompt_blocks.py` → `truths_block`), which the narrator treats as canon. How creation seeds the first threads and tracks is in `docs/mechanics.md`.
 
 ## Adding a new setting
 
@@ -51,7 +51,7 @@ creation_flow:
   starting_asset_categories: [companion, module]
 ```
 
-`id` must equal the yaml file's stem, which the loader checks, and `datasworn_id` is the basename of the Datasworn JSON. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve. `parent` names the setting it inherits from. `vocabulary` keeps the narrator's word choice in the setting and is the one block of hand-written game content the Yaml content boundary allows (CONTRIBUTING.md). `oracle_paths.threats` drives threat naming (`docs/mechanics.md`). `generators` names, for each category registered in `engine/generation.yaml` apart from `fact`, the oracle table every role of it rolls: `npc` for NPC names (and the name buttons of character creation), `location` and `settlement` for places. A role's path may name an earlier role of the same category in braces, which stands for the table that role's row links to or for its text; a name that no earlier role rolls raises at load (`docs/mechanics.md`, Generators). `creation_flow` controls the client's creation steps.
+`id` must equal the yaml file's stem, which the loader checks, and `datasworn_id` is the basename of the Datasworn JSON. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve. `parent` names the setting it inherits from. `vocabulary` keeps the narrator's word choice in the setting and is the one block of hand-written game content the Yaml content boundary allows (CONTRIBUTING.md). `oracle_paths.threats` drives threat naming (`docs/mechanics.md`). `generators` names, for each category registered in `gamemaster/generation.yaml` apart from `fact`, the oracle table every role of it rolls: `npc` for NPC names (and the name buttons of character creation), `location` and `settlement` for places. A role's path may name an earlier role of the same category in braces, which stands for the table that role's row links to or for its text; a name that no earlier role rolls raises at load (`docs/mechanics.md`, Generators). `creation_flow` controls the client's creation steps.
 
 ## Inheritance
 

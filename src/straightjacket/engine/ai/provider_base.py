@@ -1,8 +1,8 @@
 import re
 import time as _time
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any, Protocol
-from collections.abc import Callable
 
 from ..logging_util import log
 

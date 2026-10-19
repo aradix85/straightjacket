@@ -4,7 +4,7 @@ from tests._helpers import make_brain_result, make_game_state, make_npc
 
 
 def test_update_chaos_factor_miss_increases(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.world import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -13,7 +13,7 @@ def test_update_chaos_factor_miss_increases(load_engine: None) -> None:
 
 
 def test_update_chaos_factor_strong_hit_decreases(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.world import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -22,7 +22,7 @@ def test_update_chaos_factor_strong_hit_decreases(load_engine: None) -> None:
 
 
 def test_update_chaos_factor_dialog_hostile_increases(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.world import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -32,7 +32,7 @@ def test_update_chaos_factor_dialog_hostile_increases(load_engine: None) -> None
 
 
 def test_update_chaos_factor_dialog_friendly_decreases(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.world import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -42,7 +42,7 @@ def test_update_chaos_factor_dialog_friendly_decreases(load_engine: None) -> Non
 
 
 def test_update_chaos_factor_dialog_neutral_unchanged(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.world import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -52,7 +52,7 @@ def test_update_chaos_factor_dialog_neutral_unchanged(load_engine: None) -> None
 
 
 def test_update_chaos_factor_dialog_unknown_npc(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.world import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -61,7 +61,7 @@ def test_update_chaos_factor_dialog_unknown_npc(load_engine: None) -> None:
 
 
 def test_update_chaos_factor_weak_hit_unchanged(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.world import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -70,7 +70,7 @@ def test_update_chaos_factor_weak_hit_unchanged(load_engine: None) -> None:
 
 
 def test_advance_time_short_progression_noop(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import advance_time
+    from straightjacket.engine.gamemaster.world import advance_time
 
     g = make_game_state()
     g.world.time_of_day = "morning"
@@ -79,7 +79,7 @@ def test_advance_time_short_progression_noop(load_engine: None) -> None:
 
 
 def test_advance_time_none_progression_noop(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import advance_time
+    from straightjacket.engine.gamemaster.world import advance_time
 
     g = make_game_state()
     g.world.time_of_day = "morning"
@@ -88,7 +88,7 @@ def test_advance_time_none_progression_noop(load_engine: None) -> None:
 
 
 def test_advance_time_unknown_phase_raises(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import advance_time
+    from straightjacket.engine.gamemaster.world import advance_time
 
     g = make_game_state()
     g.world.time_of_day = "tea_time"
@@ -98,7 +98,7 @@ def test_advance_time_unknown_phase_raises(load_engine: None) -> None:
 
 def test_advance_time_moderate_advances(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.world import advance_time
+    from straightjacket.engine.gamemaster.world import advance_time
 
     g = make_game_state()
     phases = eng().enums.time_phases
@@ -110,7 +110,7 @@ def test_advance_time_moderate_advances(load_engine: None) -> None:
 
 def test_advance_time_long_wraps(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.world import advance_time
+    from straightjacket.engine.gamemaster.world import advance_time
 
     g = make_game_state()
     phases = eng().enums.time_phases
@@ -120,7 +120,7 @@ def test_advance_time_long_wraps(load_engine: None) -> None:
 
 
 def test_update_location_sets_initial(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_location
+    from straightjacket.engine.gamemaster.world import update_location
 
     g = make_game_state()
     g.world.current_location = ""
@@ -129,7 +129,7 @@ def test_update_location_sets_initial(load_engine: None) -> None:
 
 
 def test_update_location_empty_input_noop(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_location
+    from straightjacket.engine.gamemaster.world import update_location
 
     g = make_game_state()
     g.world.current_location = "Tavern"
@@ -138,7 +138,7 @@ def test_update_location_empty_input_noop(load_engine: None) -> None:
 
 
 def test_update_location_only_underscores_noop(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_location
+    from straightjacket.engine.gamemaster.world import update_location
 
     g = make_game_state()
     g.world.current_location = "Tavern"
@@ -147,7 +147,7 @@ def test_update_location_only_underscores_noop(load_engine: None) -> None:
 
 
 def test_update_location_matching_keeps_current(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_location
+    from straightjacket.engine.gamemaster.world import update_location
 
     g = make_game_state()
     g.world.current_location = "Old Tavern"
@@ -156,7 +156,7 @@ def test_update_location_matching_keeps_current(load_engine: None) -> None:
 
 
 def test_update_location_change_archives_history(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_location
+    from straightjacket.engine.gamemaster.world import update_location
 
     g = make_game_state()
     g.world.current_location = "Tavern"
@@ -166,7 +166,7 @@ def test_update_location_change_archives_history(load_engine: None) -> None:
 
 
 def test_update_location_dedup_consecutive(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import update_location
+    from straightjacket.engine.gamemaster.world import update_location
 
     g = make_game_state()
     g.world.current_location = "Tavern"
@@ -177,7 +177,7 @@ def test_update_location_dedup_consecutive(load_engine: None) -> None:
 
 def test_update_location_history_capped(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.world import update_location
+    from straightjacket.engine.gamemaster.world import update_location
 
     g = make_game_state()
     cap = eng().location.history_size
@@ -188,7 +188,7 @@ def test_update_location_history_capped(load_engine: None) -> None:
 
 
 def test_apply_brain_location_time_with_change(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import apply_brain_location_time
+    from straightjacket.engine.gamemaster.world import apply_brain_location_time
     from straightjacket.engine.models import LocationChange
 
     g = make_game_state()
@@ -202,7 +202,7 @@ def test_apply_brain_location_time_with_change(load_engine: None) -> None:
 
 
 def test_apply_brain_location_time_without_change(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import apply_brain_location_time
+    from straightjacket.engine.gamemaster.world import apply_brain_location_time
 
     g = make_game_state()
     g.world.current_location = "Tavern"
@@ -213,7 +213,7 @@ def test_apply_brain_location_time_without_change(load_engine: None) -> None:
 
 
 def test_get_pacing_hint_neutral_when_empty(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import get_pacing_hint
+    from straightjacket.engine.gamemaster.world import get_pacing_hint
 
     g = make_game_state()
     g.narrative.scene_intensity_history = []
@@ -222,7 +222,7 @@ def test_get_pacing_hint_neutral_when_empty(load_engine: None) -> None:
 
 def test_get_pacing_hint_breather_after_intense_run(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.world import get_pacing_hint
+    from straightjacket.engine.gamemaster.world import get_pacing_hint
 
     g = make_game_state()
     threshold = eng().pacing.intense_threshold
@@ -232,7 +232,7 @@ def test_get_pacing_hint_breather_after_intense_run(load_engine: None) -> None:
 
 def test_get_pacing_hint_action_after_calm_run(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.world import get_pacing_hint
+    from straightjacket.engine.gamemaster.world import get_pacing_hint
 
     g = make_game_state()
     threshold = eng().pacing.calm_threshold
@@ -241,7 +241,7 @@ def test_get_pacing_hint_action_after_calm_run(load_engine: None) -> None:
 
 
 def test_get_pacing_hint_neutral_mixed(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import get_pacing_hint
+    from straightjacket.engine.gamemaster.world import get_pacing_hint
 
     g = make_game_state()
     g.narrative.scene_intensity_history = ["action", "breather", "action"]
@@ -250,7 +250,7 @@ def test_get_pacing_hint_neutral_mixed(load_engine: None) -> None:
 
 def test_record_scene_intensity_caps_at_window(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.world import record_scene_intensity
+    from straightjacket.engine.gamemaster.world import record_scene_intensity
 
     g = make_game_state()
     window = eng().pacing.window_size
@@ -262,7 +262,7 @@ def test_record_scene_intensity_caps_at_window(load_engine: None) -> None:
 def test_choose_story_structure_follows_the_tone(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     import random
 
-    from straightjacket.engine.mechanics.world import choose_story_structure
+    from straightjacket.engine.gamemaster.world import choose_story_structure
 
     monkeypatch.setattr(random, "random", lambda: 0.5)
     assert choose_story_structure("dark_gritty") == "3act"
@@ -270,7 +270,7 @@ def test_choose_story_structure_follows_the_tone(load_engine: None, monkeypatch:
 
 
 def test_choose_story_structure_rejects_an_unknown_tone(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import choose_story_structure
+    from straightjacket.engine.gamemaster.world import choose_story_structure
 
     with pytest.raises(KeyError):
         choose_story_structure("nonsense_tone")

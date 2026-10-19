@@ -1,26 +1,24 @@
-from typing import Any
 import copy
 import random as _random_module
 import re
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..engine_loader import eng
-from ..logging_util import log
-from ..mechanics import (
-    choose_story_structure,
-    clear_facts,
-    record_scene_intensity,
-)
-from ..mechanics.adventure_crafter import (
+from ..crafters.adventure_crafter import (
     BlueprintSeed,
     assemble_blueprint_seed_from_ac,
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
+from ..engine_loader import eng
+from ..gamemaster.npc.matching import next_npc_id
+from ..gamemaster.npc.memory import consolidate_memory
+from ..gamemaster.world import choose_story_structure, clear_facts, record_scene_intensity
+from ..logging_util import log
 from ..models import (
     ChapterSummary,
     DirectorGuidance,
@@ -29,15 +27,10 @@ from ..models import (
     NpcData,
     SceneLogEntry,
 )
-from ..npc import (
-    consolidate_memory,
-    get_npc_bond,
-    next_npc_id,
-)
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
 from ..prompt_loader import get_prompt
-
+from ..ruleset.bond import get_npc_bond
 from .setup_common import apply_opening_setup
 
 

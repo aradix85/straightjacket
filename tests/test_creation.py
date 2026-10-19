@@ -1,6 +1,5 @@
 import pytest
 
-
 from tests._helpers import make_game_state
 
 
@@ -83,7 +82,7 @@ def test_seed_background_vow_invalid_rank_raises(load_engine: None) -> None:
     ],
 )
 def test_setting_creation_flow(setting: str, expected_flags: dict) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
+    from straightjacket.engine.setting.packages import clear_cache, load_package
 
     clear_cache()
     pkg = load_package(setting)
@@ -107,7 +106,7 @@ def _minimal_setting_yaml() -> dict:
 
 
 def test_setting_yaml_with_known_keys_parses() -> None:
-    from straightjacket.engine.datasworn.settings import _parse_setting_config
+    from straightjacket.engine.setting.packages import _parse_setting_config
 
     config = _parse_setting_config(_minimal_setting_yaml(), "probe.yaml")
     assert config.oracle_paths.threats == "a/b"
@@ -115,7 +114,7 @@ def test_setting_yaml_with_known_keys_parses() -> None:
 
 
 def test_setting_yaml_generator_role_names_only_earlier_roles() -> None:
-    from straightjacket.engine.datasworn.settings import _parse_setting_config
+    from straightjacket.engine.setting.packages import _parse_setting_config
 
     data = _minimal_setting_yaml()
     data["generators"] = {"location": {"feature": "themes/{theme}/feature", "theme": "themes/type"}}
@@ -125,7 +124,7 @@ def test_setting_yaml_generator_role_names_only_earlier_roles() -> None:
 
 @pytest.mark.parametrize("section", [None, "oracle_paths", "vocabulary", "creation_flow"])
 def test_setting_yaml_unknown_key_raises(section: str | None) -> None:
-    from straightjacket.engine.datasworn.settings import _parse_setting_config
+    from straightjacket.engine.setting.packages import _parse_setting_config
 
     data = _minimal_setting_yaml()
     target = data if section is None else data[section]
@@ -135,14 +134,14 @@ def test_setting_yaml_unknown_key_raises(section: str | None) -> None:
 
 
 def test_setting_yaml_id_must_equal_its_file_name() -> None:
-    from straightjacket.engine.datasworn.settings import _parse_setting_config
+    from straightjacket.engine.setting.packages import _parse_setting_config
 
     with pytest.raises(ValueError, match="must equal the file name 'other'"):
         _parse_setting_config(_minimal_setting_yaml(), "other.yaml")
 
 
 def test_setting_yaml_must_say_whether_it_is_playable() -> None:
-    from straightjacket.engine.datasworn.settings import _parse_setting_config
+    from straightjacket.engine.setting.packages import _parse_setting_config
 
     data = _minimal_setting_yaml()
     del data["playable"]
@@ -306,8 +305,8 @@ _VALID_PAYLOAD = {"paths": [], "assets": [], "truths": {}, "background_vow_rank"
     ],
 )
 def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
     from straightjacket.engine.game.game_start import validate_creation
+    from straightjacket.engine.setting.packages import clear_cache, load_package
 
     clear_cache()
     pkg = load_package(setting)
@@ -316,8 +315,8 @@ def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payl
 
 
 def test_validate_creation_valid_passes(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
     from straightjacket.engine.game.game_start import validate_creation
+    from straightjacket.engine.setting.packages import clear_cache, load_package
 
     clear_cache()
     pkg = load_package("starforged")
@@ -325,8 +324,8 @@ def test_validate_creation_valid_passes(load_engine: None) -> None:
 
 
 def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
     from straightjacket.engine.game.game_start import validate_creation
+    from straightjacket.engine.setting.packages import clear_cache, load_package
 
     clear_cache()
     pkg = load_package("starforged")
@@ -345,12 +344,12 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
 def test_derive_memory_emotion(
     load_engine: None, move: str, result: str, disposition: str, expected_fragment: str
 ) -> None:
-    from straightjacket.engine.mechanics.engine_memories import derive_memory_emotion
+    from straightjacket.engine.gamemaster.engine_memories import derive_memory_emotion
 
     assert expected_fragment in derive_memory_emotion(move, result, disposition)
 
 
 def test_derive_memory_emotion_recovery_strong(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.engine_memories import derive_memory_emotion
+    from straightjacket.engine.gamemaster.engine_memories import derive_memory_emotion
 
     assert "devoted" in derive_memory_emotion("suffer/endure_harm", "STRONG_HIT", "loyal")

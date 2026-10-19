@@ -2,13 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from straightjacket.engine.mechanics.adventure_crafter import (
-    PlotPointHit,
-    TurningPoint,
-    spawn_clocks_for_turning_point,
-)
-from straightjacket.engine.mechanics.clock_consequences import resolve_clock_fill
-from straightjacket.engine.mechanics.random_events import spawn_clock_from_random_event
+from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint, spawn_clocks_for_turning_point
+from straightjacket.engine.gamemaster.clock_consequences import resolve_clock_fill
+from straightjacket.engine.gamemaster.random_events import spawn_clock_from_random_event
 from straightjacket.engine.models import KeyedScene, RandomEvent
 from tests._helpers import make_clock, make_game_state, make_progress_track
 

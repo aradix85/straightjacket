@@ -1,36 +1,26 @@
 import copy
 from typing import Any
+
 from ..ai.brain import call_brain
 from ..ai.provider_base import AIProvider, NarrationSink
-from ..datasworn.moves import get_moves
 from ..engine_loader import eng
-from ..logging_util import log
-from ..mechanics import (
-    apply_brain_location_time,
-    can_burn_momentum,
+from ..gamemaster.clock_ticks import check_npc_agency, purge_old_fired_clocks
+from ..gamemaster.facts import (
     clear_facts_settled_by_hit,
     overrule_facts_by_hit,
-    settle_facts_by_miss,
-    generate_consequence_sentences,
-    generate_place_on_arrival,
-    is_dialog_branch,
-    keep_action_dice,
-    keep_progress_dice,
-    purge_old_fired_clocks,
     release_absent_target,
     remember_facts,
-    resolve_turn_facts,
-    roll_action,
-    roll_progress,
+    settle_facts_by_miss,
 )
-from ..mechanics import check_npc_agency
-from ..mechanics.consequences import downgrade_in_position
-from ..mechanics.move_outcome import make_follow_up_moves
-from ..mechanics.outcome_result import OutcomeResult
-from ..mechanics.random_events import drain_pending_events
-from ..mechanics.scene import check_scene
-from ..mechanics.suffer import tick_dying_clock
-from ..mechanics.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
+from ..gamemaster.generation import generate_place_on_arrival, resolve_turn_facts
+from ..gamemaster.npc.activation import activate_npcs_for_prompt
+from ..gamemaster.npc.lifecycle import reactivate_npc
+from ..gamemaster.npc.matching import find_npc
+from ..gamemaster.random_events import drain_pending_events
+from ..gamemaster.resolvers import is_dialog_branch
+from ..gamemaster.scene import check_scene
+from ..gamemaster.world import apply_brain_location_time
+from ..logging_util import log
 from ..models import (
     BrainResult,
     ClockFillResult,
@@ -44,18 +34,30 @@ from ..models import (
     ThreatEvent,
     TurnSnapshot,
 )
-from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
+from ..ruleset.bonuses import apply_momentum_on_hit, chosen_bonus
+from ..ruleset.consequences import generate_consequence_sentences
+from ..ruleset.move_outcome import make_follow_up_moves
+from ..ruleset.moves import PICK_METHODS, Move, get_moves
+from ..ruleset.outcome_result import OutcomeResult
+from ..ruleset.roll_sources import roll_by_method, roll_source_without_stat
+from ..ruleset.rolls import (
+    can_burn_momentum,
+    downgrade_in_position,
+    keep_action_dice,
+    keep_progress_dice,
+    roll_action,
+    roll_progress,
+)
+from ..ruleset.suffer import tick_dying_clock
+from ..ruleset.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
+from ..ruleset.tracks import find_progress_track, roll_oracle_answer
 from ..story_state import get_pending_revelations
 from .action_resolution import resolve_action_phase
 from .finalization import narrate_scene, update_crisis
 from .scene_finalization import finalize_scene
-from ..mechanics import find_progress_track, roll_oracle_answer
-from ..mechanics.bonuses import apply_momentum_on_hit, chosen_bonus
-from ..mechanics.roll_sources import roll_by_method, roll_source_without_stat
-from ..datasworn.moves import PICK_METHODS, Move
 from .turn_types import ActionResolution, BurnOffer, DirectorCall, RollOutcome, SceneContext
 
 

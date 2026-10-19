@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import itertools
 import os
 import re
 import subprocess
@@ -10,12 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-import itertools
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = REPO_ROOT / "src" / "straightjacket"
 TESTS_ROOT = Path(__file__).resolve().parent
-ENGINE_YAML_ROOT = REPO_ROOT / "engine"
+ENGINE_YAML_ROOTS = tuple(REPO_ROOT / name for name in ("engine", "gamemaster", "crafters", "ruleset"))
 PROMPTS_YAML_ROOT = REPO_ROOT / "prompts"
 
 
@@ -440,14 +440,14 @@ def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
 
 
 _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
-    ("engine/npc/lifecycle.py", "_npc_eligible_for_desc_match"),
-    ("engine/npc/naming.py", "roll_oracle_name"),
+    ("engine/gamemaster/npc/lifecycle.py", "_npc_eligible_for_desc_match"),
+    ("engine/gamemaster/npc/naming.py", "roll_oracle_name"),
     ("engine/ai/api_client.py", "build_adapter"),
     ("engine/ai/provider_base.py", "create_with_retry"),
-    ("engine/mechanics/fate.py", "resolve_fate"),
-    ("engine/mechanics/engine_memories.py", "generate_engine_memories"),
-    ("engine/mechanics/world.py", "update_chaos_factor"),
-    ("engine/mechanics/world.py", "apply_brain_location_time"),
+    ("engine/gamemaster/fate.py", "resolve_fate"),
+    ("engine/gamemaster/engine_memories.py", "generate_engine_memories"),
+    ("engine/gamemaster/world.py", "update_chaos_factor"),
+    ("engine/gamemaster/world.py", "apply_brain_location_time"),
 }
 
 
@@ -813,29 +813,29 @@ _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
     ("ServerConfig", "engine/config_loader.py"),
     ("ClusterConfig", "engine/config_loader.py"),
     ("LanguageConfig", "engine/config_loader.py"),
-    ("OraclePaths", "engine/datasworn/settings.py"),
-    ("CreationFlow", "engine/datasworn/settings.py"),
-    ("VocabularyConfig", "engine/datasworn/settings.py"),
-    ("OracleRow", "engine/datasworn/loader.py"),
-    ("RollOption", "engine/datasworn/moves.py"),
-    ("TriggerCondition", "engine/datasworn/moves.py"),
-    ("MoveEffect", "engine/mechanics/move_effects.py"),
+    ("OraclePaths", "engine/setting/packages.py"),
+    ("CreationFlow", "engine/setting/packages.py"),
+    ("VocabularyConfig", "engine/setting/packages.py"),
+    ("OracleRow", "engine/setting/loader.py"),
+    ("RollOption", "engine/ruleset/moves.py"),
+    ("TriggerCondition", "engine/ruleset/moves.py"),
+    ("MoveEffect", "engine/ruleset/move_effects.py"),
     ("ActionOutcome", "engine/game/finalization.py"),
     ("homepage", "web/server.py"),
     ("websocket_endpoint", "web/server.py"),
     ("build_director_prompt", "engine/director.py"),
     ("apply_engine_memories", "engine/game/finalization.py"),
-    ("clear_cache", "engine/datasworn/moves.py"),
-    ("clear_cache", "engine/datasworn/settings.py"),
+    ("clear_cache", "engine/ruleset/moves.py"),
+    ("clear_cache", "engine/setting/packages.py"),
     ("query_game_state", "engine/tools/builtins.py"),
-    ("CharacterTraits", "engine/mechanics/adventure_crafter.py"),
+    ("CharacterTraits", "engine/crafters/adventure_crafter.py"),
     ("check_configured_models", "engine/ai/api_client.py"),
-    ("roll_character_traits", "engine/mechanics/adventure_crafter.py"),
-    ("lookup_character_special_trait", "engine/mechanics/adventure_crafter.py"),
-    ("lookup_character_identity", "engine/mechanics/adventure_crafter.py"),
-    ("lookup_character_descriptor", "engine/mechanics/adventure_crafter.py"),
-    ("dispatch_meta", "engine/mechanics/adventure_crafter.py"),
-    ("lookup_characters_template", "engine/mechanics/adventure_crafter.py"),
+    ("roll_character_traits", "engine/crafters/adventure_crafter.py"),
+    ("lookup_character_special_trait", "engine/crafters/adventure_crafter.py"),
+    ("lookup_character_identity", "engine/crafters/adventure_crafter.py"),
+    ("lookup_character_descriptor", "engine/crafters/adventure_crafter.py"),
+    ("dispatch_meta", "engine/crafters/adventure_crafter.py"),
+    ("lookup_characters_template", "engine/crafters/adventure_crafter.py"),
 }
 
 
@@ -918,11 +918,9 @@ _ORPHAN_YAML_KEY_CARVE_OUT: set[tuple[str, str]] = set()
 
 
 def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
-    if not ENGINE_YAML_ROOT.exists():
-        return "orphan engine yaml top-level key", []
     py_text = "\n".join(p.read_text(encoding="utf-8") for p in (*_iter_source_files(), *_iter_test_files()))
     violations: list[Violation] = []
-    for yfile in sorted(ENGINE_YAML_ROOT.glob("*.yaml")):
+    for yfile in sorted(y for root in ENGINE_YAML_ROOTS for y in root.glob("*.yaml")):
         try:
             data = yaml.safe_load(yfile.read_text(encoding="utf-8"))
         except yaml.YAMLError:
@@ -932,7 +930,7 @@ def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
         for key in data:
             if not isinstance(key, str):
                 continue
-            if (yfile.name, key) in _ORPHAN_YAML_KEY_CARVE_OUT:
+            if (yfile.relative_to(REPO_ROOT).as_posix(), key) in _ORPHAN_YAML_KEY_CARVE_OUT:
                 continue
             literal_patterns = [f'"{key}"', f"'{key}'", f".{key}", f"['{key}']", f'["{key}"]']
             if any(p in py_text for p in literal_patterns):
@@ -941,8 +939,10 @@ def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
             dotted_pattern_alt = f"get_raw('{key}"
             if dotted_pattern in py_text or dotted_pattern_alt in py_text:
                 continue
-            violations.append(Violation(yfile.name, 0, f"top-level key {key!r} has no Python reader"))
-    return "orphan engine yaml top-level key", violations
+            violations.append(
+                Violation(yfile.relative_to(REPO_ROOT).as_posix(), 0, f"top-level key {key!r} has no Python reader")
+            )
+    return "orphan config yaml top-level key", violations
 
 
 def _defines(path: Path, name: str) -> bool:
@@ -1163,7 +1163,8 @@ def _check_changelog_consistent() -> tuple[str, list[Violation]]:
     return "DOC DRIFT: CHANGELOG versions and headers", violations
 
 
-_ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "datasworn", "game", "mechanics", "npc", "tools"})
+_ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "crafters", "game", "gamemaster", "ruleset", "setting", "tools"})
+_LAYERS = frozenset({"gamemaster", "crafters", "ruleset"})
 _CORE_BASE = frozenset(
     {
         "config_loader",
@@ -1186,10 +1187,11 @@ _CORE_BASE = frozenset(
 )
 _UPPER = frozenset({"correction", "game", "web"})
 _LAYER_FORBIDDEN: dict[str, frozenset[str]] = {
-    "base": frozenset({"core", "datasworn", "npc", "mechanics", "ai", "tools"}) | _UPPER,
-    "datasworn": frozenset({"core", "npc", "mechanics", "ai", "tools"}) | _UPPER,
-    "npc": frozenset({"core", "ai", "tools"}) | _UPPER,
-    "mechanics": frozenset({"core", "ai", "tools"}) | _UPPER,
+    "base": frozenset({"core", "setting", "ai", "tools"}) | _LAYERS | _UPPER,
+    "setting": frozenset({"core", "ai", "tools"}) | _LAYERS | _UPPER,
+    "gamemaster": frozenset({"core", "ai", "tools"}) | _UPPER,
+    "crafters": frozenset({"core", "ai", "tools"}) | _UPPER,
+    "ruleset": frozenset({"core", "ai", "tools"}) | _UPPER,
     "tools": frozenset({"core", "ai"}) | _UPPER,
     "ai": _UPPER,
     "core": _UPPER,

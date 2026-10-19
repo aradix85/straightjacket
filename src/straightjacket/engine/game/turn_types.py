@@ -1,12 +1,11 @@
-from typing import Any
 from dataclasses import dataclass
+from typing import Any
 
 from ..ai.provider_base import AIProvider, NarrationSink
-from ..datasworn.moves import Move
-from ..models import ClockFillResult
 from ..models import (
     BrainResult,
     ClockEvent,
+    ClockFillResult,
     Consequence,
     GameState,
     NpcData,
@@ -18,6 +17,7 @@ from ..models import (
     ThreatEvent,
     TurnSnapshot,
 )
+from ..ruleset.moves import Move
 
 
 @dataclass

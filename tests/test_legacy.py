@@ -10,14 +10,14 @@ def _game() -> GameState:
 
 class TestMarkLegacy:
     def test_mark_dangerous_adds_2_ticks(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         mark_legacy(game, "quests", "dangerous")
         assert game.campaign.legacy_quests.ticks == 2
 
     def test_mark_formidable_adds_4_ticks(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         mark_legacy(game, "quests", "formidable")
@@ -26,7 +26,7 @@ class TestMarkLegacy:
     def test_mark_unknown_rank_raises(self, stub_engine: None) -> None:
         import pytest
 
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         with pytest.raises(KeyError):
@@ -35,21 +35,21 @@ class TestMarkLegacy:
     def test_mark_unknown_track_raises(self, stub_engine: None) -> None:
         import pytest
 
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         with pytest.raises(ValueError, match="Unknown legacy track"):
             mark_legacy(game, "bogus", "dangerous")
 
     def test_no_xp_before_box_fills(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         mark_legacy(game, "quests", "dangerous")
         assert game.campaign.xp == 0
 
     def test_xp_on_box_cross(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         mark_legacy(game, "quests", "dangerous")
@@ -58,7 +58,7 @@ class TestMarkLegacy:
         assert game.campaign.legacy_quests.filled_boxes == 1
 
     def test_epic_rank_fills_3_boxes_at_once(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         mark_legacy(game, "quests", "epic")
@@ -66,7 +66,7 @@ class TestMarkLegacy:
         assert game.campaign.legacy_quests.filled_boxes == 3
 
     def test_full_track_clears_and_continues_at_one_xp_per_box(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         game.campaign.legacy_quests.ticks = 38
@@ -76,7 +76,7 @@ class TestMarkLegacy:
         assert game.campaign.xp == 2 + 1 + 1
 
     def test_separate_tracks_independent(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         mark_legacy(game, "quests", "formidable")
@@ -88,8 +88,8 @@ class TestMarkLegacy:
 
 class TestAdvanceAsset:
     def test_upgrade_spends_xp_on_the_next_ability(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.assets import enabled_abilities
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.assets import enabled_abilities
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         game = _game()
         game.paths = ["empath"]
@@ -101,7 +101,7 @@ class TestAdvanceAsset:
         assert sum(enabled_abilities(game, "empath")) == before + 1
 
     def test_upgrade_by_another_spelling_lands_on_the_held_id(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         game = _game()
         game.paths = ["empath"]
@@ -110,7 +110,7 @@ class TestAdvanceAsset:
         assert list(game.asset_abilities) == ["empath"]
 
     def test_new_asset_costs_more_and_joins_the_assets(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         game = _game()
         game.campaign.xp = 5
@@ -119,7 +119,7 @@ class TestAdvanceAsset:
         assert game.assets == ["empath"]
 
     def test_insufficient_xp_is_refused(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         game = _game()
         game.campaign.xp = 2
@@ -128,7 +128,7 @@ class TestAdvanceAsset:
         assert game.assets == []
 
     def test_an_asset_the_setting_lacks_is_refused(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         game = _game()
         game.campaign.xp = 10
@@ -137,7 +137,7 @@ class TestAdvanceAsset:
         assert game.assets == []
 
     def test_buying_an_asset_already_held_is_refused(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         game = _game()
         game.paths = ["empath"]
@@ -147,7 +147,7 @@ class TestAdvanceAsset:
         assert game.assets == []
 
     def test_upgrading_an_asset_not_held_is_refused(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         game = _game()
         game.campaign.xp = 10
@@ -156,8 +156,8 @@ class TestAdvanceAsset:
         assert game.asset_abilities == {}
 
     def test_upgrading_a_fully_upgraded_asset_is_refused(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.assets import enabled_abilities
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.assets import enabled_abilities
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         game = _game()
         game.paths = ["empath"]
@@ -169,7 +169,7 @@ class TestAdvanceAsset:
     def test_an_unknown_kind_of_advance_raises(self, stub_engine: None) -> None:
         import pytest
 
-        from straightjacket.engine.mechanics.legacy import advance_asset
+        from straightjacket.engine.ruleset.legacy import advance_asset
 
         with pytest.raises(ValueError, match="Unknown advance"):
             advance_asset(_game(), "empath", "sell")
@@ -177,7 +177,7 @@ class TestAdvanceAsset:
 
 class TestThreatOvercomeBonus:
     def test_bonus_at_high_menace(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
+        from straightjacket.engine.ruleset.legacy import apply_threat_overcome_bonus
 
         game = _game()
         threat = make_threat(id="t1", name="Foo", menace_ticks=30, max_menace_ticks=40)
@@ -185,7 +185,7 @@ class TestThreatOvercomeBonus:
         assert game.campaign.xp == 2
 
     def test_no_bonus_below_threshold(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
+        from straightjacket.engine.ruleset.legacy import apply_threat_overcome_bonus
 
         game = _game()
         threat = make_threat(id="t1", name="Foo", menace_ticks=10, max_menace_ticks=40)
@@ -193,7 +193,7 @@ class TestThreatOvercomeBonus:
         assert game.campaign.xp == 0
 
     def test_exactly_at_threshold_grants_bonus(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
+        from straightjacket.engine.ruleset.legacy import apply_threat_overcome_bonus
 
         game = _game()
         threat = make_threat(id="t1", name="Foo", menace_ticks=20, max_menace_ticks=40)
@@ -211,7 +211,7 @@ class TestCampaignSnapshot:
         assert snap["xp_spent"] == 2
 
     def test_restore_reverts_legacy_progress(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         snap = game.campaign.snapshot()
@@ -247,7 +247,7 @@ class TestLegacyTrackType:
         assert game.campaign.legacy_discoveries.track_type == "legacy"
 
     def test_get_legacy_track_returns_campaign_instance(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import get_legacy_track
+        from straightjacket.engine.ruleset.legacy import get_legacy_track
 
         game = _game()
         track = get_legacy_track(game, "quests")
@@ -257,7 +257,7 @@ class TestLegacyTrackType:
 class TestSharedProgressAndLegacyHelper:
     def test_helper_consumes_legacy_track(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
         game = _game()
         outcome = OutcomeResult(legacy_track="quests")
@@ -267,7 +267,7 @@ class TestSharedProgressAndLegacyHelper:
 
     def test_helper_consumes_progress_marks(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
         game = _game()
         game.progress_tracks.append(
@@ -284,7 +284,7 @@ class TestSharedProgressAndLegacyHelper:
 
     def test_helper_handles_both_in_one_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
         game = _game()
         outcome = OutcomeResult(progress_marks=0, legacy_track="bonds")
@@ -294,7 +294,7 @@ class TestSharedProgressAndLegacyHelper:
 
     def test_helper_noop_on_empty_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
         game = _game()
         outcome = OutcomeResult()
@@ -307,7 +307,7 @@ class TestSharedProgressAndLegacyHelper:
         import pytest
 
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
         outcome = OutcomeResult(legacy_track="quests")
         brain = make_brain_result(move="quest/fulfill_your_vow")
@@ -318,7 +318,7 @@ class TestSharedProgressAndLegacyHelper:
         import pytest
 
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
         outcome = OutcomeResult(progress_marks=1)
         with pytest.raises(KeyError):
@@ -339,7 +339,7 @@ class TestChapterPersistence:
 
     def test_reset_chapter_preserves_legacy_tracks(self, stub_engine: None) -> None:
         from straightjacket.engine.game.chapters import _reset_chapter_mechanics
-        from straightjacket.engine.mechanics.legacy import mark_legacy
+        from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         mark_legacy(game, "quests", "epic")

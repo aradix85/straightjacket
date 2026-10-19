@@ -1,12 +1,13 @@
-from typing import Any
 import re
 from collections.abc import Sequence
+from typing import Any
 
 from ..engine_loader import eng
+from ..gamemaster.npc.matching import apply_name_sanitization, fuzzy_match_existing_npc
+from ..gamemaster.npc.memory import score_importance
+from ..gamemaster.world import update_location
 from ..logging_util import log
-from ..mechanics import update_location
 from ..models import GameState, MemoryEntry, NpcData
-from ..npc import apply_name_sanitization, fuzzy_match_existing_npc, score_importance
 
 
 def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:

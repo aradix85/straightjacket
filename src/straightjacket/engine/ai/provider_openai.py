@@ -1,5 +1,4 @@
 import json as _json
-
 from collections.abc import Callable
 from typing import Any
 

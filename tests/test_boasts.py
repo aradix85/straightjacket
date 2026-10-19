@@ -1,9 +1,8 @@
-from straightjacket.engine.models import labels_of
 import json
 
 import pytest
 
-from straightjacket.engine.models import RollResult
+from straightjacket.engine.models import RollResult, labels_of
 from tests._helpers import make_brain_result, make_game_state
 
 _MOVE = "relationship/draw_the_circle"

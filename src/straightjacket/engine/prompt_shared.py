@@ -3,22 +3,18 @@ import random
 from collections.abc import Sequence
 
 from .engine_loader import eng
+from .gamemaster.generation import current_place
+from .gamemaster.npc.matching import find_npc
+from .gamemaster.npc.memory import retrieve_memories
+from .gamemaster.resolvers import move_category
+from .gamemaster.scene import adjustment_descriptions
+from .gamemaster.stance_gate import compute_npc_gate, resolve_npc_stance
+from .gamemaster.world import get_pacing_hint, locations_match
 from .logging_util import log
-from .mechanics import (
-    ClockFillResult,
-    compute_npc_gate,
-    current_place,
-    get_pacing_hint,
-    locations_match,
-    move_category,
-    resolve_npc_stance,
-)
-from .datasworn.impacts import get_impacts
-from .mechanics.scene import adjustment_descriptions
-from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup, ThreatEvent
-from .npc import find_npc, retrieve_memories
+from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup, ThreatEvent
 from .prompt_blocks import character_tag, world_tag
 from .prompt_loader import get_prompt
+from .ruleset.impacts import get_impacts
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
 

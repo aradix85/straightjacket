@@ -32,7 +32,7 @@ def test_an_npc_the_narration_names_moves_along(load_engine: None) -> None:
 
 
 def test_a_name_counts_as_a_whole_word_or_an_alias(load_engine: None) -> None:
-    from straightjacket.engine.npc import named_in
+    from straightjacket.engine.gamemaster.npc.matching import named_in
 
     tomas = make_npc(id="npc_2", name="Tomas Reed", aliases=["the smith"])
     assert not named_in(tomas, "A crate of tomatoes waits by the door.")

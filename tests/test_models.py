@@ -1,14 +1,15 @@
 from straightjacket.engine.models import (
     NpcData,
-    StoryBlueprint,
     StoryAct,
+    StoryBlueprint,
 )
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_npc_detail, make_progress_track
 
 
 def test_roll_action_cap() -> None:
-    from straightjacket.engine.mechanics import roll_action
     import random
+
+    from straightjacket.engine.ruleset.rolls import roll_action
 
     random.seed(42)
     for _ in range(50):
@@ -17,7 +18,7 @@ def test_roll_action_cap() -> None:
 
 
 def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
@@ -32,7 +33,7 @@ def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: N
 
 
 def test_test_bond_disposition_shift(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
@@ -50,7 +51,7 @@ def test_test_bond_disposition_shift(load_engine: None) -> None:
 
 
 def test_npc_owned_threat_clock_ticks_in_agency() -> None:
-    from straightjacket.engine.mechanics import check_npc_agency
+    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
 
     game = make_game_state()
     game.narrative.scene_count = 5
@@ -69,7 +70,7 @@ def test_npc_owned_threat_clock_ticks_in_agency() -> None:
 
 
 def test_npc_agency_clock_fires_on_full() -> None:
-    from straightjacket.engine.mechanics import check_npc_agency
+    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
 
     game = make_game_state()
     game.narrative.scene_count = 10
@@ -88,7 +89,7 @@ def test_npc_agency_clock_fires_on_full() -> None:
 
 
 def test_npc_agency_empty_on_wrong_scene() -> None:
-    from straightjacket.engine.mechanics import check_npc_agency
+    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
 
     game = make_game_state()
     game.narrative.scene_count = 3
@@ -100,8 +101,9 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
 
 
 def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import tick_autonomous_clocks
     import random
+
+    from straightjacket.engine.gamemaster.clock_ticks import tick_autonomous_clocks
 
     random.seed(0)
     game = make_game_state()
@@ -188,7 +190,7 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
 
 
 def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:
-    from straightjacket.engine.npc.processing import process_npc_details
+    from straightjacket.engine.gamemaster.npc.processing import process_npc_details
 
     game = make_game_state()
     npc = make_npc(
@@ -209,7 +211,7 @@ def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:
 
 
 def test_memory_guard_allows_no_memories() -> None:
-    from straightjacket.engine.npc.processing import process_npc_details
+    from straightjacket.engine.gamemaster.npc.processing import process_npc_details
 
     game = make_game_state()
     npc = make_npc(id="npc_1", name="Der Fremde", status="active")
@@ -219,7 +221,7 @@ def test_memory_guard_allows_no_memories() -> None:
 
 
 def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")

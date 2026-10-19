@@ -1,10 +1,10 @@
 from .config_loader import narration_language
-from .datasworn.settings import load_package
 from .engine_loader import eng
 from .format_utils import describe_by_threshold
-from .mechanics import get_pacing_hint
+from .gamemaster.world import get_pacing_hint
 from .models import GameState
 from .prompt_loader import get_prompt, get_prompt_prefix
+from .setting.packages import load_package
 from .story_state import get_current_act, get_pending_revelations
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe

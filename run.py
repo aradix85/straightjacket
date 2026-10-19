@@ -52,9 +52,9 @@ def _start() -> None:
     _ensure_data()
     sys.path.insert(0, str(ROOT / "src"))
 
+    from straightjacket.engine.ai.api_client import check_configured_models
     from straightjacket.engine.config_loader import cfg
     from straightjacket.engine.logging_util import log
-    from straightjacket.engine.ai.api_client import check_configured_models
 
     try:
         check_configured_models()
@@ -68,6 +68,7 @@ def _start() -> None:
     log(f"[Server] Starting Straightjacket on http://{host}:{port}")
 
     import uvicorn
+
     from straightjacket.web.server import app
 
     uvicorn.run(app, host=host, port=port, log_level="info")

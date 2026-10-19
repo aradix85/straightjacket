@@ -4,10 +4,10 @@ import re
 import statistics
 from collections import Counter
 from pathlib import Path
+
 from straightjacket.engine.config_loader import model_for_role
 
 from .ai_helpers import ELVIRA_ROLE, bot_model
-
 from .coverage import Coverage
 from .judge import CRITERIA
 from .models import SessionLog, TurnRecord

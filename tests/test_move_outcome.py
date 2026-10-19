@@ -1,18 +1,13 @@
-from straightjacket.engine.models import labels_of
 import pytest
 
-from straightjacket.engine.mechanics.move_effects import (
-    apply_effects,
-    parse_effect,
-    parse_effects,
-)
-from straightjacket.engine.mechanics.move_handlers import (
+from straightjacket.engine.models import GameState, Resources, labels_of
+from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effect, parse_effects
+from straightjacket.engine.ruleset.move_handlers import (
     apply_recovery_handler,
     apply_suffer_handler,
     apply_threshold_handler,
 )
-from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
-from straightjacket.engine.models import GameState, Resources
+from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 from tests._helpers import make_game_state, record_price_tables
 
 

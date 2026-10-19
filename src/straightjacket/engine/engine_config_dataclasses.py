@@ -187,13 +187,21 @@ class DiceConfig:
     challenge_die: int
     action_score_max: int
     hit_results: list[str]
+
+
+@dataclass
+class MythicDiceConfig:
     fate_chart_die: int
     fate_check_die: int
     scene_test_die: int
     scene_adjustment_die: int
     event_focus_die: int
-    adventure_crafter_table_die: int
-    adventure_crafter_theme_die: int
+
+
+@dataclass
+class AdventureCrafterDiceConfig:
+    table_die: int
+    theme_die: int
 
 
 @dataclass

@@ -1,5 +1,5 @@
-from straightjacket.engine.datasworn.loader import load_setting
-from straightjacket.engine.datasworn.settings import list_packages
+from straightjacket.engine.setting.loader import load_setting
+from straightjacket.engine.setting.packages import list_packages
 
 
 def test_all_settings_load_oracles() -> None:
@@ -58,14 +58,14 @@ def test_oracle_unknown_path_returns_none() -> None:
 def test_an_oracle_path_missing_from_the_setting_chain_raises() -> None:
     import pytest
 
-    from straightjacket.engine.datasworn.settings import load_package
+    from straightjacket.engine.setting.packages import load_package
 
     with pytest.raises(KeyError, match="nonexistent/path"):
         load_package("sundered_isles").oracle_table("nonexistent/path")
 
 
 def test_an_oracle_table_comes_from_the_parent_setting() -> None:
-    from straightjacket.engine.datasworn.settings import load_package
+    from straightjacket.engine.setting.packages import load_package
 
     path = "campaign_launch/backstory_prompts"
     sundered = load_package("sundered_isles")

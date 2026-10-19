@@ -1,30 +1,22 @@
 from __future__ import annotations
 
-from typing import Any
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
 from ..ai.provider_base import AIProvider, NarrationSink
 from ..engine_loader import eng
+from ..gamemaster.clock_ticks import tick_threat_clock
+from ..gamemaster.engine_memories import generate_engine_memories, generate_scene_context
+from ..gamemaster.npc.matching import named_in
+from ..gamemaster.npc.memory import consolidate_memory
 from ..logging_util import log
-from ..mechanics import (
-    apply_boasts,
-    ClockFillResult,
-    generate_engine_memories,
-    generate_scene_context,
-)
-from ..mechanics.consequences import tick_threat_clock
-from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
-from ..datasworn.oracle_rolls import roll_rows, plain_text
-from ..mechanics.move_effects import apply_effects, parse_effects
-from ..mechanics.move_outcome import resolve_move_outcome
-from ..mechanics.outcome_result import OutcomeResult, move_outcome_config
-from ..mechanics.roll_sources import best_roll_option, roll_source_without_stat
 from ..models import (
     BrainResult,
     ClockEvent,
+    ClockFillResult,
     Consequence,
     GameState,
     MemoryEntry,
@@ -34,15 +26,19 @@ from ..models import (
     consequence,
     labels_of,
 )
-from ..npc import named_in
-from ..npc.bond import connection_track
-from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
-
-from ..mechanics import find_progress_track
-from ..datasworn.loader import OracleTable
-from ..datasworn.moves import Move, get_moves
-from ..mechanics.consequences import roll_action
+from ..ruleset.boasts import apply_boasts
+from ..ruleset.bond import connection_track
+from ..ruleset.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
+from ..ruleset.move_effects import apply_effects, parse_effects
+from ..ruleset.move_outcome import resolve_move_outcome
+from ..ruleset.moves import Move, get_moves
+from ..ruleset.outcome_result import OutcomeResult, move_outcome_config
+from ..ruleset.roll_sources import best_roll_option, roll_source_without_stat
+from ..ruleset.rolls import roll_action
+from ..ruleset.tracks import find_progress_track
+from ..setting.loader import OracleTable
+from ..setting.oracle_rolls import plain_text, roll_rows
 
 
 @dataclass

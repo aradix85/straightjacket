@@ -6,12 +6,15 @@ from typing import Any
 import yaml
 
 
-def load_yaml_dir(directory: Path, *, missing_dir_hint: str) -> dict[str, Any]:
-    if not directory.is_dir():
-        raise FileNotFoundError(f"Config directory not found: {directory}\n{missing_dir_hint}")
-    files = sorted(directory.glob("*.yaml"))
-    if not files:
-        raise FileNotFoundError(f"No yaml files found in {directory}")
+def load_yaml_dir(*directories: Path, missing_dir_hint: str) -> dict[str, Any]:
+    files: list[Path] = []
+    for directory in directories:
+        if not directory.is_dir():
+            raise FileNotFoundError(f"Config directory not found: {directory}\n{missing_dir_hint}")
+        found = sorted(directory.glob("*.yaml"))
+        if not found:
+            raise FileNotFoundError(f"No yaml files found in {directory}")
+        files.extend(found)
     merged: dict[str, Any] = {}
     origin: dict[str, Path] = {}
     for path in files:

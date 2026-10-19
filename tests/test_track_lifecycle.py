@@ -11,7 +11,7 @@ def _game(setting: str = "starforged", combat_position: str = "") -> GameState:
 
 class TestCombatTrackCompletion:
     def test_complete_combat_track_clears_position(self) -> None:
-        from straightjacket.engine.mechanics.tracks import complete_track
+        from straightjacket.engine.ruleset.tracks import complete_track
 
         game = _game(combat_position="in_control")
         game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=20))
@@ -20,7 +20,7 @@ class TestCombatTrackCompletion:
         assert game.world.combat_position == ""
 
     def test_fail_combat_track_clears_position(self) -> None:
-        from straightjacket.engine.mechanics.tracks import complete_track
+        from straightjacket.engine.ruleset.tracks import complete_track
 
         game = _game(combat_position="bad_spot")
         game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=8))
@@ -29,7 +29,7 @@ class TestCombatTrackCompletion:
         assert game.world.combat_position == ""
 
     def test_complete_vow_does_not_clear_position(self) -> None:
-        from straightjacket.engine.mechanics.tracks import complete_track
+        from straightjacket.engine.ruleset.tracks import complete_track
 
         game = _game(combat_position="in_control")
         game.progress_tracks.append(make_progress_track(id="v1", name="Vow", track_type="vow", ticks=40))
@@ -171,7 +171,7 @@ def test_progress_track_filled_boxes() -> None:
 
 
 def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.consequences import roll_progress
+    from straightjacket.engine.ruleset.rolls import roll_progress
 
     track = make_progress_track(id="v1", name="Find the artifact", track_type="vow", rank="dangerous", ticks=24)
     assert track.filled_boxes == 6
@@ -184,7 +184,7 @@ def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
 def test_find_progress_track(load_engine: None) -> None:
     import pytest
 
-    from straightjacket.engine.mechanics.tracks import find_progress_track as _find_progress_track
+    from straightjacket.engine.ruleset.tracks import find_progress_track as _find_progress_track
 
     game = _game()
     game.progress_tracks = [

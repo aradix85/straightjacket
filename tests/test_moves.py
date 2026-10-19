@@ -1,16 +1,9 @@
+from collections.abc import Generator
+
 import pytest
 
-from straightjacket.engine.datasworn.moves import (
-    Move,
-    _load_moves_from_setting,
-    _parse_move,
-    clear_cache,
-    get_moves,
-)
-from straightjacket.engine.datasworn.settings import load_package
-
-
-from collections.abc import Generator
+from straightjacket.engine.ruleset.moves import Move, _load_moves_from_setting, _parse_move, clear_cache, get_moves
+from straightjacket.engine.setting.packages import load_package
 
 
 def _own_moves(setting_id: str) -> dict[str, Move]:

@@ -1,9 +1,8 @@
-from straightjacket.engine.models import labels_of
 from typing import Any
 
 import pytest
 
-from straightjacket.engine.models import GameState, Resources, RollResult
+from straightjacket.engine.models import GameState, Resources, RollResult, labels_of
 from tests._helpers import make_clock, make_game_state
 
 WEAK_HIT_MOVES = ["adventure/gather_information", "adventure/compel"]
@@ -26,8 +25,8 @@ def _complication(name: str = "A beacon calls the raiders", filled: int = 0) -> 
 
 @pytest.mark.parametrize("move", WEAK_HIT_MOVES)
 def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(load_engine: None, move: str) -> None:
-    from straightjacket.engine.mechanics.complications import open_complications
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.gamemaster.complications import open_complications
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = _game()
     outcome = resolve_move_outcome(game, move, "WEAK_HIT", target_npc_id=None, match=False)
@@ -41,7 +40,7 @@ def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(load_engine
 
 @pytest.mark.parametrize("move", WEAK_HIT_MOVES)
 def test_a_strong_hit_starts_no_complication(load_engine: None, move: str) -> None:
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = _game()
     resolve_move_outcome(game, move, "STRONG_HIT", target_npc_id=None, match=False)
@@ -51,9 +50,9 @@ def test_a_strong_hit_starts_no_complication(load_engine: None, move: str) -> No
 def test_without_a_story_complication_table_a_meaning_pair_names_the_danger(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.mechanics import move_effects
-    from straightjacket.engine.mechanics.complications import open_complications
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.gamemaster.complications import open_complications
+    from straightjacket.engine.ruleset import move_effects
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     monkeypatch.setattr(move_effects, "roll_meaning_table", lambda table: ("Oppose", "Plans"))
     game = _game("classic")
@@ -63,7 +62,7 @@ def test_without_a_story_complication_table_a_meaning_pair_names_the_danger(
 
 def test_the_emergent_clock_cap_leaves_the_complication_without_a_clock(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = _game()
     cap = eng().clocks.max_clocks_per_chapter
@@ -75,7 +74,7 @@ def test_the_emergent_clock_cap_leaves_the_complication_without_a_clock(load_eng
 
 
 def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = _game()
     game.world.clocks = [_complication(filled=1)]
@@ -86,7 +85,7 @@ def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one(
 
 
 def test_a_complication_clock_fills_every_scene_and_strikes_when_full(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.consequences import tick_autonomous_clocks
+    from straightjacket.engine.gamemaster.clock_ticks import tick_autonomous_clocks
 
     game = _game()
     game.world.clocks = [_complication()]
@@ -115,7 +114,7 @@ def test_a_hit_aimed_at_a_complication_heads_it_off(load_engine: None, result: s
 
 
 def test_a_fired_or_unknown_complication_cannot_be_headed_off(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.complications import avert_complication
+    from straightjacket.engine.gamemaster.complications import avert_complication
 
     game = _game()
     fired = _complication(filled=4)
@@ -146,9 +145,9 @@ def test_the_brain_sees_open_complications_and_may_aim_at_one(load_engine: None)
 
 @pytest.mark.parametrize("verb", ["complication_clock", "complication_averted"])
 def test_a_danger_with_commas_is_told_whole(verb: str) -> None:
-    from straightjacket.engine.datasworn.impacts import get_impacts
-    from straightjacket.engine.mechanics.consequences import resolve_consequence_sentence
     from straightjacket.engine.models import consequence
+    from straightjacket.engine.ruleset.consequences import resolve_consequence_sentence
+    from straightjacket.engine.ruleset.impacts import get_impacts
 
     danger = "Weather, terrain, or a creature blocks the way"
     sentence = resolve_consequence_sentence(consequence(verb, name=danger), "Ash", "", "", get_impacts("starforged"))

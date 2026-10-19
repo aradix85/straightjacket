@@ -1,7 +1,7 @@
-from typing import Any
 import asyncio
 import copy
 from concurrent.futures import Future
+from typing import Any
 
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -25,9 +25,9 @@ from ..engine.game import (
     start_succession_with_character,
 )
 from ..engine.logging_util import log
-from ..engine.mechanics.legacy import advance_asset, advance_cost
 from ..engine.models import GameState, TurnSnapshot
 from ..engine.persistence import IncompatibleSaveError, delete_save, list_saves_with_info, load_game, save_game
+from ..engine.ruleset.legacy import advance_asset, advance_cost
 from ..engine.user_management import InvalidNameError, create_user, delete_user, list_users
 from ..i18n import t
 from .serializers import (

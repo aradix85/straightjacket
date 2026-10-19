@@ -1,29 +1,17 @@
 from __future__ import annotations
 
-from typing import Any
 import random as _random_module
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..datasworn.settings import load_package
+from ..crafters.adventure_crafter import assemble_blueprint_seed_from_ac, assemble_blueprint_seed_kishotenketsu
 from ..engine_loader import eng
+from ..gamemaster.world import choose_story_structure, clear_facts, record_scene_intensity
 from ..logging_util import log
-from ..mechanics import (
-    apply_npc_carryover,
-    build_predecessor_record,
-    choose_story_structure,
-    clear_facts,
-    record_scene_intensity,
-    run_inheritance_rolls,
-    seed_successor_legacy,
-)
-from ..mechanics.adventure_crafter import (
-    assemble_blueprint_seed_from_ac,
-    assemble_blueprint_seed_kishotenketsu,
-)
 from ..models import (
     DirectorGuidance,
     GameState,
@@ -38,7 +26,13 @@ from ..models import (
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
-from .setup_common import apply_opening_setup
+from ..ruleset.succession import (
+    apply_npc_carryover,
+    build_predecessor_record,
+    run_inheritance_rolls,
+    seed_successor_legacy,
+)
+from ..setting.packages import load_package
 from .chapters import (
     _apply_blueprint,
     _close_previous_chapter,
@@ -50,7 +44,7 @@ from .game_start import (
     validate_creation,
     validate_stats,
 )
-
+from .setup_common import apply_opening_setup
 
 END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
 
