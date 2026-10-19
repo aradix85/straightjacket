@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.34] — 2026-10-19
+
+Roadmap, the user's choices: step 9q makes Elvira's scenarios reach what they prepare, by fixing the dice of their next turns or starting at the moment itself, and counts a judge's score below a floor as a problem; it comes first after 9n, and an overview of scores across runs is not built. Step 9p audits the tests after 9o: a test that holds what the game does stays, one that holds how it is built is rebuilt or goes, double tests are joined, and the coverage floor is read again. No code changed.
+
+Quality gate: 1810 tests, coverage 94.78%. Save format unchanged.
+
 ## [2026.10.19.33] — 2026-10-19
 
 Step 9n, 9n.2j: the two findings 9n.2 kept, at the user's request, and 9n.2 closes. The threat statuses outside the ruleset go: `ruleset/threats.py` says which threats are active and which overcome, and gives the events of overcome threats whose menace stays high (`overcome_under_pressure`, from `game/action_resolution.py`), which the chapter record, the action phase, and `/threats` now ask for. The narrator's rules named the ruleset's results (MISS, WEAK_HIT, STRONG_HIT) in `prompts/narrator.yaml` and `prompts/tasks.yaml`; they now take them from the ruleset by outcome (`ruleset/answers.py` → `results_by_outcome`, filled in by `prompt_blocks.py`), so another ruleset's names would stand in their place. The narrator's system prompt, its cached prefix, and the action task were rendered on created games in classic, Starforged, and Sundered Isles before and after and are byte-identical, and so is the Brain's prompt. 9n.2 moves to DONE, AUDIT.md's open items name the roadmap steps they now sit in, and 9n.5 lists the code 9n.2 wrote or rewrote, which its audit takes up.

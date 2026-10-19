@@ -108,6 +108,14 @@ Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not
 
 Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and whether a planned tool becomes a new one or part of it when its step becomes NEXT STEP. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
 
+### 9q — Elvira reaches what a scenario prepares
+
+The user's choice, first after 9n, since the Elvira runs of the steps after it gain from it. The overview of scores across runs is not built, also the user's choice.
+
+**9q.1** A scenario reaches its aims. Today it sets meters and stats and hopes: `near_death` (health, spirit, and supply 0, every stat 1) reached none of its aims in an eight-turn run on 2026-10-19, since an impact, Face Death, game over, and succession wait on misses and on the Brain choosing a suffer move, and fifteen of the twenty-nine coverage targets were untouched in that run. A scenario can fix the dice of its next turns, through a seam in Elvira's own runner in direct mode, so the engine keeps no switch for tests; or it starts at the moment itself, such as a game over waiting for a successor, so the successor's creation and opening play on the real models. The report then says for every aim whether it was reached, and a missed aim counts as a problem.
+
+**9q.2** A low score is a problem. The judge's scores count in the verdict when one falls below a floor per criterion, result integrity on misses first. The floors are set from the scores of the runs on record in `tests/elvira/runs`, so that an ordinary run does not trip them, given the judge's noise of about 0.14 (9f).
+
 ### 9o — Dataclass defaults and prompt markup
 
 Two clean-ups of principle 2, formerly 9h.4 and 9h.12, one session per module or group, after the split, which gives the state classes their new form.
@@ -115,6 +123,10 @@ Two clean-ups of principle 2, formerly 9h.4 and 9h.12, one session per module or
 **9o.1** About two hundred dataclass defaults that are not empty collections (pass 2d counted 196, in 43 classes, mostly in `models_story.py`, `models.py`, `models_base.py`, `ruleset/moves.py`, `ruleset/move_effects.py`, and `models_npc.py`) go, against CONTRIBUTING.md's rule, with every constructor call updated, one module per session; the optional fields of `AICallSpec` and the partial classes in `setting/packages.py` parse external structures and keep theirs. After the last, the config-binding scan widens to every dataclass.
 
 **9o.2** The prompt markup assembled in Python (XML tags, attribute names, `key:value` labels, markers) moves to `prompts/*.yaml`, one session per group, each rendering every prompt of the group on a created game before and after and requiring byte-identical text, since the cached prefixes and the measured tuning depend on it: `prompt_shared.py`; `prompt_action.py` and `prompt_dialog.py`; `prompt_boundary.py` and `prompt_blocks.py`; `ai/brain.py`; `ai/narrator.py` and `ai/recap.py`; `director.py`; `ai/blueprint_voicing.py`; and the small sites in `correction/`, `ruleset/bonuses.py`, `ruleset/tracks.py`, `gamemaster/random_events.py`, and `game/turn.py`.
+
+### 9p — Test audit
+
+The tests run to about one and a half times the code (some 25,000 lines against 17,000 in October 2026). Their number is no aim either way; their kind is, the user's choice. A test that holds what the game does stays. A test that holds how it is built, calling a private function or rebuilding a yaml block the code reads (the `blocking_impact` parameters that 9n.2h removed from two test files), is rebuilt on what the code does or goes, since it breaks on every rebuild while play stays the same. Tests that check the same thing twice are joined, and a test kept only for the coverage floor earns its place or goes, with the floor read again afterwards. One session per group of test files, after 9o, when the state classes and the prompts stand still.
 
 ### 9i — Revelations settled by the engine
 
