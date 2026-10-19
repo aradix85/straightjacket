@@ -16,10 +16,6 @@ from .progress import advance_menace, menace_boxes, menace_total_boxes
 from .tracks import forsake_vow
 
 
-def count_emergent_threats(game: GameState) -> int:
-    return sum(1 for t in game.threats if t.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
-
-
 def threats_as_dangers(game: GameState) -> list[Danger]:
     return [
         Danger(
@@ -70,7 +66,8 @@ def add_threat(game: GameState, origin: str, source: str, named: tuple[str, str]
     cfg = rules().threats
     if any(t.creation_source == source for t in game.threats):
         return
-    if count_emergent_threats(game) >= cfg.max_per_chapter:
+    emergent = sum(1 for t in game.threats if t.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
+    if emergent >= cfg.max_per_chapter:
         log(f"[Threat] emergent threat cap {cfg.max_per_chapter} reached, skipping {origin!r}")
         return
     entry = cfg.by_origin[origin]

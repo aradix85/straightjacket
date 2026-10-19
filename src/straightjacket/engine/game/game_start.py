@@ -11,16 +11,14 @@ from ..crafters.blueprint import (
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
-from ..gamemaster.clocks import spawn_keyed_scenes_for_clock
+from ..gamemaster.clocks import start_opening_clock
 from ..gamemaster.config import gm
 from ..gamemaster.pacing import record_scene_intensity
-from ..gamemaster.spawn_sources import SETUP_SOURCE
 from ..gamemaster.story import choose_story_structure
 from ..gamemaster.world import new_world
 from ..logging_util import log
 from ..models import (
     CharacterListEntry,
-    ClockData,
     GameState,
     NarrationEntry,
     SceneLogEntry,
@@ -110,23 +108,8 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
     game.narrative.scene_count = 1
     game.world.chaos_factor = _compute_chaos_start(game.background_vow)
 
-    _opening = gm().opening
-    game.world.time_of_day = _opening.time_of_day
-
-    _trigger = _opening.clock_trigger_template.format(player=game.player_name)
-    background_clock = ClockData(
-        name=game.background_vow,
-        clock_type="threat",
-        segments=_opening.clock_segments,
-        filled=_opening.clock_filled,
-        trigger_description=_trigger,
-        owner_kind="world",
-        owner_id=None,
-        creation_source=SETUP_SOURCE,
-    )
-    game.world.clocks.append(background_clock)
-    spawn_keyed_scenes_for_clock(game.narrative, background_clock)
-    log(f"[NewGame] Engine-created opening clock and time_of_day={_opening.time_of_day}")
+    game.world.time_of_day = gm().opening.time_of_day
+    start_opening_clock(game)
 
     log(f"[NewGame] Character: {game.player_name}, paths={game.paths}, assets={game.assets}")
 

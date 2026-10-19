@@ -76,6 +76,16 @@ def test_the_settled_facts_reach_the_narrator(load_engine: None) -> None:
     assert gm().fact_resolution.types["useful"].description in prompt
 
 
+def test_a_miss_on_any_move_the_ruleset_counts_as_gathering_information_settles_the_place(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(rules(), "information_moves", ["adventure/face_danger"])
+    game = _game()
+    facts = settle_facts_by_miss(game, [], "adventure/face_danger", "failure")
+    assert [(f.fact_type, f.answer) for f in facts] == [("useful", "no")]
+    assert settle_facts_by_miss(_game(), [], "adventure/gather_information", "failure") == []
+
+
 @pytest.mark.parametrize(
     ("move", "outcome"), [("adventure/face_danger", "failure"), ("adventure/gather_information", "partial")]
 )

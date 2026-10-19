@@ -140,7 +140,7 @@ def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeR
     result.consequences.append(consequence("momentum_change", n=effect.value))
 
 
-def _apply_resource_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+def _apply_meter_effect(game: GameState, effect: MoveEffect, result: OutcomeResult) -> None:
     if effect.value > 0:
         gained = gain(game, effect.type, effect.value)
         if gained:
@@ -351,7 +351,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
 
 def _apply_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
     if is_condition_meter(game, effect.type):
-        _apply_resource_effect(game, effect, result, target)
+        _apply_meter_effect(game, effect, result)
     else:
         _EFFECT_HANDLERS[effect.type](game, effect, result, target)
 

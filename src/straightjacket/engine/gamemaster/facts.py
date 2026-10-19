@@ -103,7 +103,7 @@ def overrule_facts_by_hit(game: GameState, facts: Sequence[ResolvedFact], outcom
 
 
 def settle_facts_by_miss(game: GameState, facts: Sequence[ResolvedFact], move: str, outcome: str) -> list[ResolvedFact]:
-    if outcome != "failure" or answers().action_kind(move) != "gather_information":
+    if outcome != "failure" or not answers().gathers_information(move):
         return list(facts)
     cfg = gm().fact_resolution
     here = cfg.place_reference

@@ -9,7 +9,7 @@ from .config import gm
 from .keyed_scenes import add_keyed_scene, has_keyed_scene_from
 from .npc.matching import normalize_for_match
 from .questions import answers
-from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX, COMPLICATION_SOURCE_PREFIX, EMERGENT_SOURCE_PREFIXES
+from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX, COMPLICATION_SOURCE_PREFIX, EMERGENT_SOURCE_PREFIXES, SETUP_SOURCE
 
 
 def _unique_clock_name(game: GameState, base_name: str) -> str:
@@ -72,6 +72,22 @@ def spawn_emergent_clock(
     return clock
 
 
+def start_opening_clock(game: GameState) -> None:
+    opening = gm().opening
+    clock = ClockData(
+        name=game.background_vow,
+        clock_type="threat",
+        segments=opening.clock_segments,
+        filled=opening.clock_filled,
+        trigger_description=opening.clock_trigger_template.format(player=game.player_name),
+        owner_kind=gm().clocks.default_owner_kind,
+        creation_source=SETUP_SOURCE,
+    )
+    game.world.clocks.append(clock)
+    spawn_keyed_scenes_for_clock(game.narrative, clock)
+    log(f"[Clock] opening clock '{clock.name}' at {clock.filled}/{clock.segments}")
+
+
 def is_complication(clock: ClockData) -> bool:
     return clock.creation_source.startswith(COMPLICATION_SOURCE_PREFIX)
 
@@ -93,7 +109,7 @@ def spawn_complication_clock(game: GameState, kind: str, danger: str) -> ClockDa
         clock_type="threat",
         segments=cfg.complication.segments,
         trigger_description=danger,
-        owner_kind="world",
+        owner_kind=cfg.default_owner_kind,
         creation_source=f"{COMPLICATION_SOURCE_PREFIX}{kind}:{game.narrative.scene_count}",
     )
     game.world.clocks.append(clock)
