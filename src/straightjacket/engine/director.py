@@ -8,6 +8,7 @@ from .engine_loader import eng
 from .gamemaster.config import gm
 from .gamemaster.npc.matching import resolve_about_npc
 from .gamemaster.npc.memory import consolidate_memory, recent_observations
+from .gamemaster.questions import outcome_of
 from .logging_util import log
 from .models import DirectorGuidance, GameState, MemoryEntry, NpcData
 from .prompt_blocks import character_tag, content_boundaries_block, world_tag
@@ -36,7 +37,7 @@ def should_call_director(
         game.post_epilogue_director_done = True
         return "post_epilogue_aftermath"
 
-    if roll_result == "MISS":
+    if outcome_of(roll_result) == "failure":
         return "miss"
     if chaos_used:
         return "chaos"

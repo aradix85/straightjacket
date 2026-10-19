@@ -15,43 +15,43 @@ def _roll_challenge_dice() -> tuple[int, int]:
     return random.randint(1, die), random.randint(1, die)
 
 
-def roll_action(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
+def _result(score: int, c1: int, c2: int) -> str:
+    return rules().dice.results_by_dice_beaten[(score > c1) + (score > c2)]
+
+
+def _rank(result: str) -> int:
+    return rules().dice.results_by_dice_beaten.index(result)
+
+
+def roll_action(stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int) -> RollResult:
     d1 = random.randint(1, rules().dice.action_die)
     c1, c2 = _roll_challenge_dice()
-    return score_action_roll(d1, c1, c2, stat_name, stat_value, move, momentum, adds)
+    return score_action_roll(d1, c1, c2, stat_name, stat_value, move, held_momentum, adds)
 
 
 def keep_action_dice(
-    earlier: RollResult, stat_name: str, stat_value: int, move: str, momentum: int, adds: int
+    earlier: RollResult, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
 ) -> RollResult:
     d1 = earlier.d1 if earlier.d1 else random.randint(1, rules().dice.action_die)
-    return score_action_roll(d1, earlier.c1, earlier.c2, stat_name, stat_value, move, momentum, adds)
+    return score_action_roll(d1, earlier.c1, earlier.c2, stat_name, stat_value, move, held_momentum, adds)
 
 
 def score_action_roll(
-    d1: int, c1: int, c2: int, stat_name: str, stat_value: int, move: str, momentum: int, adds: int
+    d1: int, c1: int, c2: int, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
 ) -> RollResult:
-    action_die = 0 if momentum < 0 and -momentum == d1 else d1
+    action_die = 0 if held_momentum < 0 and -held_momentum == d1 else d1
     score = min(action_die + stat_value + adds, rules().dice.action_score_max)
-    if score > c1 and score > c2:
-        result = "STRONG_HIT"
-    elif score > c1 or score > c2:
-        result = "WEAK_HIT"
-    else:
-        result = "MISS"
-    return RollResult(d1, c1, c2, stat_name, stat_value, score, result, move, match=(c1 == c2))
+    return RollResult(d1, c1, c2, stat_name, stat_value, score, _result(score, c1, c2), move, match=(c1 == c2))
 
 
 def downgrade_in_position(game: GameState, roll: RollResult) -> RollResult:
     cfg = move_outcome_config(game, roll.move)
     if "downgrade_in" not in cfg or game.world.combat_position != cfg["downgrade_in"]:
         return roll
-    if roll.result == "WEAK_HIT":
-        lower = "MISS"
-    elif roll.result == "STRONG_HIT" and not roll.match:
-        lower = "WEAK_HIT"
-    else:
+    rank = _rank(roll.result)
+    if rank == 0 or (rank == len(rules().dice.results_by_dice_beaten) - 1 and roll.match):
         return roll
+    lower = rules().dice.results_by_dice_beaten[rank - 1]
     log(f"[Roll] {roll.move} in {game.world.combat_position}: {roll.result} counts as {lower}")
     return dataclasses.replace(roll, result=lower)
 
@@ -67,12 +67,6 @@ def keep_progress_dice(earlier: RollResult, track_name: str, filled_boxes: int, 
 
 def score_progress_roll(c1: int, c2: int, track_name: str, filled_boxes: int, move: str) -> RollResult:
     score = min(filled_boxes, rules().progress.boxes)
-    if score > c1 and score > c2:
-        result = "STRONG_HIT"
-    elif score > c1 or score > c2:
-        result = "WEAK_HIT"
-    else:
-        result = "MISS"
     return RollResult(
         d1=0,
         c1=c1,
@@ -80,20 +74,12 @@ def score_progress_roll(c1: int, c2: int, track_name: str, filled_boxes: int, mo
         stat_name=track_name,
         stat_value=filled_boxes,
         action_score=score,
-        result=result,
+        result=_result(score, c1, c2),
         move=move,
         match=(c1 == c2),
     )
 
 
 def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
-    mom = momentum(game)
-    if mom <= 0:
-        return None
-    if roll.result == "MISS" and mom > roll.c1 and mom > roll.c2:
-        return "STRONG_HIT"
-    if roll.result == "MISS" and (mom > roll.c1 or mom > roll.c2):
-        return "WEAK_HIT"
-    if roll.result == "WEAK_HIT" and mom > roll.c1 and mom > roll.c2:
-        return "STRONG_HIT"
-    return None
+    burned = _result(momentum(game), roll.c1, roll.c2)
+    return burned if _rank(burned) > _rank(roll.result) else None

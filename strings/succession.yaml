@@ -6,9 +6,9 @@ succession.headline_death: '{predecessor} did not survive. Their legacy passes t
 succession.headline_despair: '{predecessor} is broken — beyond what one person can carry. Their legacy passes to a new protagonist.'
 succession.headline_retire: '{predecessor} steps out of the story. Their legacy passes to a new protagonist.'
 
-succession.legacy_full: 'Their {track} live on in full — every step they took remains.'
+succession.legacy_success: 'Their {track} live on in full — every step they took remains.'
 succession.legacy_partial: 'Their {track} carry forward in part — half of what was achieved survives.'
-succession.legacy_lost: 'Their {track} fade — nothing carries forward.'
+succession.legacy_failure: 'Their {track} fade — nothing carries forward.'
 
 succession.legacy_track_quests: quests
 succession.legacy_track_bonds: bonds

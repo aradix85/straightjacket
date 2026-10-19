@@ -86,7 +86,7 @@ def _parse_roll_option(raw: dict[str, Any]) -> RollOption:
 def _parse_outcomes(raw: dict[str, Any] | None) -> dict[str, MoveOutcome]:
     if raw is None:
         return {}
-    return {key: MoveOutcome(text=raw[key]["text"]) for key in ("strong_hit", "weak_hit", "miss")}
+    return {key: MoveOutcome(text=outcome["text"]) for key, outcome in raw.items()}
 
 
 def _parse_tables(raw: list[str] | dict[str, Any] | None, pkg: SettingPackage) -> dict[str, OracleTable]:

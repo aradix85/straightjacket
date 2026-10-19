@@ -27,7 +27,7 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
     track_type = rules().get_raw("track_creating_moves").get(brain.move)
     if not track_type:
         return
-    if result == "MISS" and brain.move in rules().get_raw("tracks_started_on_a_hit"):
+    if result not in rules().dice.hit_results and brain.move in rules().get_raw("tracks_started_on_a_hit"):
         log(f"[Track] {brain.move} missed; no {track_type} track")
         return
     if brain.target_track is not None and brain.move in rules().get_raw("progress_mark_categories"):

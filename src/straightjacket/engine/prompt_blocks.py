@@ -75,7 +75,7 @@ def tone_authority_block(game: GameState) -> str:
     return "\n" + get_prompt("block_tone_authority_wrapper", tone=_xa(game.setting_tone), body=body)
 
 
-def narrative_direction_block(game: GameState, roll_result: str) -> str:
+def narrative_direction_block(game: GameState, outcome: str) -> str:
     nd = eng().narrative_direction
     parts = []
 
@@ -90,7 +90,7 @@ def narrative_direction_block(game: GameState, roll_result: str) -> str:
     else:
         parts.append(get_prompt("narrative_direction_intensity_low"))
 
-    entry = nd.result_map[roll_result]
+    entry = nd.by_outcome[outcome]
     parts.append(get_prompt("narrative_direction_tempo_label", tempo=entry.tempo))
     parts.append(get_prompt("narrative_direction_perspective_label", perspective=entry.perspective))
     parts.append(get_prompt("narrative_direction_player_caused"))

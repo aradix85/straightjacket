@@ -4,6 +4,7 @@ from ..gamemaster.clock_ticks import check_npc_agency, tick_threat_clock
 from ..gamemaster.complications import avert_complication
 from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import find_npc
+from ..gamemaster.questions import answers, gained
 from ..gamemaster.resolvers import resolve_effect, resolve_position
 from ..models import (
     BrainResult,
@@ -28,7 +29,7 @@ from .turn_types import ActionResolution, RollOutcome
 
 
 def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTrack, outcome: OutcomeResult) -> None:
-    if roll.result in rules().dice.hit_results:
+    if gained(roll.result):
         bonded = track.track_type in rules().get_raw("tracks_bonded_on_a_hit")
         complete_track(game, track.id, "bonded" if bonded else "completed")
         return
@@ -46,7 +47,7 @@ def _maybe_tick_weak_hit_clock(
     clock_events: list[ClockEvent],
     fill_results: list[ClockFillResult],
 ) -> None:
-    if roll.result != "WEAK_HIT" or position == "controlled":
+    if answers().outcome(roll.result) != "partial" or position == "controlled":
         return
     should_tick = (position == "desperate") or (random.random() < gm().pacing.weak_hit_clock_tick_chance)
     if should_tick:
@@ -56,7 +57,7 @@ def _maybe_tick_weak_hit_clock(
 def _maybe_avert_complication(
     game: GameState, brain: BrainResult, roll: RollResult, consequences: list[Consequence]
 ) -> None:
-    if not brain.target_clock or roll.result not in rules().dice.hit_results:
+    if not brain.target_clock or not gained(roll.result):
         return
     avert_complication(game, brain.target_clock)
     consequences.append(consequence("complication_averted", name=brain.target_clock))
@@ -64,7 +65,7 @@ def _maybe_avert_complication(
 
 def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeResult) -> list[ThreatEvent]:
     events = take_pending_threat_events(game)
-    if roll.result == "MISS":
+    if answers().outcome(roll.result) == "failure":
         events.extend(advance_menace_on_miss(game))
     events.extend(resolve_full_menace(game, outcome))
 
@@ -84,7 +85,7 @@ def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeRe
 
 
 def _track_gather_information_success(game: GameState, brain: BrainResult, roll: RollResult) -> None:
-    if brain.move != "adventure/gather_information" or roll.result not in rules().dice.hit_results:
+    if brain.move != "adventure/gather_information" or not gained(roll.result):
         return
     if brain.target_npc is None:
         return

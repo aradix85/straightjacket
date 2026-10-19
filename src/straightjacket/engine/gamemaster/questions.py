@@ -57,3 +57,7 @@ def answers() -> RulesetAnswers:
 
 def outcome_of(result: str) -> str:
     return result if result in gm().outcomes.unrolled else answers().outcome(result)
+
+
+def gained(result: str) -> bool:
+    return outcome_of(result) in gm().outcomes.gained

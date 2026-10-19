@@ -137,7 +137,7 @@ def resolve_action_consequences(
 
     clock_events: list[ClockEvent] = []
     fill_results: list[ClockFillResult] = []
-    if roll.result == "MISS":
+    if answers().outcome(roll.result) == "failure":
         clock_ticks = gm().clocks.miss_ticks_by_position[position]
         if clock_ticks > 0:
             tick_threat_clock(game, clock_ticks, clock_events, fill_results)

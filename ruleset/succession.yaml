@@ -2,9 +2,10 @@ succession:
 
   inheritance:
     move_name: "continue_a_legacy"
-    strong_hit_fraction: 1.0
-    weak_hit_fraction: 0.5
-    miss_fraction: 0.0
+    fraction_by_result:
+      STRONG_HIT: 1.0
+      WEAK_HIT: 0.5
+      MISS: 0.0
 
   npc_carryover:
     active:

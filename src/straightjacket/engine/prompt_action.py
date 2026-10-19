@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+from .gamemaster.questions import answers
 from .models import (
     BrainResult,
     ClockFillResult,
@@ -37,24 +38,19 @@ from .ruleset.moves import get_moves, outcome_text
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
 
+_RESULT_PROMPTS = {
+    "success": ("result_success_body", "result_match_hint_success"),
+    "partial": ("result_partial_body", "result_match_hint_partial"),
+    "failure": ("result_failure_body", "result_match_hint_failure"),
+}
 
-def _build_result_constraint(roll: RollResult, consequences: list[Consequence]) -> str:
+
+def _build_result_constraint(roll: RollResult, outcome: str, consequences: list[Consequence]) -> str:
     match_tag = ' match="true"' if roll.match else ""
     cons_attr = f' consequences="{_xa(",".join(labels_of(consequences)))}"' if consequences else ""
-
-    if roll.result == "MISS":
-        match_hint = get_prompt("result_match_hint_miss") if roll.match else ""
-        body = get_prompt("result_miss_body")
-        return f'<result type="MISS"{match_tag}{cons_attr}>{body}{match_hint}</result>'
-
-    if roll.result == "WEAK_HIT":
-        match_hint = get_prompt("result_match_hint_weak_hit") if roll.match else ""
-        body = get_prompt("result_weak_hit_body")
-        return f'<result type="WEAK_HIT"{match_tag}{cons_attr}>{body}{match_hint}</result>'
-
-    match_hint = get_prompt("result_match_hint_strong_hit") if roll.match else ""
-    body = get_prompt("result_strong_hit_body")
-    return f'<result type="STRONG_HIT"{match_tag}{cons_attr}>{body}{match_hint}</result>'
+    body, hint = _RESULT_PROMPTS[outcome]
+    match_hint = get_prompt(hint) if roll.match else ""
+    return f'<result type="{roll.result}"{match_tag}{cons_attr}>{get_prompt(body)}{match_hint}</result>'
 
 
 def _move_outcome_block(game: GameState, brain: BrainResult, roll: RollResult) -> str:
@@ -86,7 +82,8 @@ def build_action_prompt(
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
 
-    miss = roll.result == "MISS"
+    outcome = answers().outcome(roll.result)
+    miss = outcome == "failure"
     stance_cat = _resolve_stance_category(brain.move)
     npc = _npc_block(
         game, brain.target_npc, context_text=context_text, move_category=stance_cat, miss=miss, hit=not miss
@@ -99,7 +96,7 @@ def build_action_prompt(
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
 
-    constraint = _build_result_constraint(roll, consequences) + _move_outcome_block(game, brain, roll)
+    constraint = _build_result_constraint(roll, outcome, consequences) + _move_outcome_block(game, brain, roll)
     position_tag = f'<position level="{_xa(position)}" effect="{_xa(effect)}"/>'
 
     flags = _flags_block(game)
@@ -126,6 +123,6 @@ def build_action_prompt(
 {npc}{npcs_sect}{wl}{flags}{agency}
 {pacing}
 {events_block}{director}
-{narrative_direction_block(game, roll.result)}
+{narrative_direction_block(game, outcome)}
 {story_context_block(game, miss=miss)}{recent_events_block(game)}</scene>
 <task>{get_prompt("task_action")}</task>"""

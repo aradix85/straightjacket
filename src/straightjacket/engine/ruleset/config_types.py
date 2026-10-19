@@ -96,7 +96,11 @@ class DiceConfig:
     action_die: int
     challenge_die: int
     action_score_max: int
-    hit_results: list[str]
+    results_by_dice_beaten: list[str]
+
+    @property
+    def hit_results(self) -> list[str]:
+        return self.results_by_dice_beaten[1:]
 
 
 @dataclass
@@ -154,9 +158,7 @@ class ThreatCreationMappingEntry:
 @dataclass
 class InheritanceConfig:
     move_name: str
-    strong_hit_fraction: float
-    weak_hit_fraction: float
-    miss_fraction: float
+    fraction_by_result: dict[str, float]
 
 
 @dataclass

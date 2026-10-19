@@ -4,14 +4,14 @@ narrative_direction:
     critical_below: 1
     high_below: 3
     moderate_below: 4
-  result_map:
-    MISS:
+  by_outcome:
+    failure:
       tempo: slow
       perspective: sensory_loss
-    WEAK_HIT:
+    partial:
       tempo: moderate
       perspective: action_detail
-    STRONG_HIT:
+    success:
       tempo: brisk
       perspective: action_detail
     dialog:

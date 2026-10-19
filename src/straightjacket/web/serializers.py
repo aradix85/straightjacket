@@ -4,6 +4,7 @@ from typing import Any
 from ..engine.engine_loader import eng
 from ..engine.format_utils import describe_by_threshold
 from ..engine.gamemaster.config import gm
+from ..engine.gamemaster.questions import answers
 from ..engine.models import GameState
 from ..engine.ruleset.bond import get_npc_bond
 from ..engine.ruleset.config import rules
@@ -262,15 +263,13 @@ def build_succession_summary(game: GameState) -> dict[str, Any]:
     title_key = f"succession.title_{end_reason}"
     headline_key = f"succession.headline_{end_reason}"
 
-    inheritance: list[str] = []
-    for roll in record.inheritance_rolls:
-        if roll.result == "STRONG_HIT":
-            text_key = "succession.legacy_full"
-        elif roll.result == "WEAK_HIT":
-            text_key = "succession.legacy_partial"
-        else:
-            text_key = "succession.legacy_lost"
-        inheritance.append(t(text_key, track=t(f"succession.legacy_track_{roll.track_name}")))
+    inheritance = [
+        t(
+            f"succession.legacy_{answers().outcome(roll.result)}",
+            track=t(f"succession.legacy_track_{roll.track_name}"),
+        )
+        for roll in record.inheritance_rolls
+    ]
 
     return {
         "title": t(title_key),

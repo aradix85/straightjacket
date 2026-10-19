@@ -184,7 +184,7 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
     ]
     game.narrative.story_blueprint = bp
 
-    triggers = {"roll_result": "", "chaos_used": False, "new_npcs_found": False, "revelation_used": False}
+    triggers = {"roll_result": "dialog", "chaos_used": False, "new_npcs_found": False, "revelation_used": False}
     assert should_call_director(game, **triggers) == "phase:resolution"
     assert bp.triggered_director_phases == ["resolution"]
     assert should_call_director(game, **triggers) != "phase:resolution"

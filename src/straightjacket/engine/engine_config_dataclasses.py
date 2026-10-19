@@ -47,7 +47,7 @@ class NarrativeDirectionEntry:
 @dataclass
 class NarrativeDirectionConfig:
     intensity: NarrativeIntensityThresholds
-    result_map: dict[str, NarrativeDirectionEntry]
+    by_outcome: dict[str, NarrativeDirectionEntry]
 
 
 @dataclass

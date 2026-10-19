@@ -26,17 +26,6 @@ def build_predecessor_record(game: GameState, end_reason: str) -> PredecessorRec
     )
 
 
-def _fraction_for_result(result: str) -> float:
-    inh = rules().succession.inheritance
-    if result == "STRONG_HIT":
-        return inh.strong_hit_fraction
-    if result == "WEAK_HIT":
-        return inh.weak_hit_fraction
-    if result == "MISS":
-        return inh.miss_fraction
-    raise ValueError(f"Unknown roll result for inheritance: {result!r}")
-
-
 def run_inheritance_rolls(game: GameState) -> list[InheritanceRollResult]:
     move_name = rules().succession.inheritance.move_name
     rolls: list[InheritanceRollResult] = []
@@ -44,7 +33,7 @@ def run_inheritance_rolls(game: GameState) -> list[InheritanceRollResult]:
         track = get_legacy_track(game, name)
         boxes = filled_boxes(track)
         roll = roll_progress(track_name=track.name, filled_boxes=boxes, move=move_name)
-        fraction = _fraction_for_result(roll.result)
+        fraction = rules().succession.inheritance.fraction_by_result[roll.result]
         new_boxes = round(boxes * fraction)
         rolls.append(InheritanceRollResult(track_name=name, result=roll.result, new_filled_boxes=new_boxes))
         log(
@@ -76,7 +65,7 @@ def apply_npc_carryover(
         if npc.status not in carryover:
             raise ValueError(
                 f"NPC {npc.id} has status {npc.status!r} with no succession.npc_carryover rule. "
-                f"Update engine/succession.yaml or NPC status."
+                f"Update ruleset/succession.yaml or NPC status."
             )
         rule = carryover[npc.status]
         if not rule.keep:

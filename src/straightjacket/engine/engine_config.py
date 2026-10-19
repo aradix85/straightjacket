@@ -66,7 +66,7 @@ def _build_narrative_direction(nd: dict[str, Any]) -> NarrativeDirectionConfig:
     reject_unknown(NarrativeDirectionConfig, nd)
     return NarrativeDirectionConfig(
         intensity=build_strict(NarrativeIntensityThresholds, dict(nd["intensity"])),
-        result_map={key: build_strict(NarrativeDirectionEntry, dict(entry)) for key, entry in nd["result_map"].items()},
+        by_outcome={key: build_strict(NarrativeDirectionEntry, dict(entry)) for key, entry in nd["by_outcome"].items()},
     )
 
 

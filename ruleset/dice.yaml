@@ -2,4 +2,4 @@ dice:
   action_die: 6
   challenge_die: 10
   action_score_max: 10
-  hit_results: [STRONG_HIT, WEAK_HIT]
+  results_by_dice_beaten: [MISS, WEAK_HIT, STRONG_HIT]

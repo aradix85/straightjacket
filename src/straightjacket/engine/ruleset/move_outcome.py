@@ -4,6 +4,7 @@ from typing import Any
 
 from ..logging_util import log
 from ..models import GameState, consequence
+from .config import rules
 from .meters import momentum
 from .move_effects import NPC_EFFECTS, MoveEffect, apply_effects, has_story_complication, parse_effects, roll_move_table
 from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_threshold_handler
@@ -30,7 +31,7 @@ def resolve_move_outcome(
         raise ValueError(f"No effects for {move_key}/{result_key}. Add it to ruleset/move_outcomes.yaml.")
 
     effects = parse_effects(effects_raw)
-    if match and roll_result == "MISS" and has_story_complication(game):
+    if match and roll_result not in rules().dice.hit_results and has_story_complication(game):
         effects = [MoveEffect(type="story_complication") if e.type == "pay_the_price" else e for e in effects]
     result = apply_effects(game, [e for e in effects if e.type != "table"], target_npc_id=target_npc_id)
     for effect in effects:

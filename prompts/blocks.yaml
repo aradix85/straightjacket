@@ -85,13 +85,13 @@
 "flag_crisis": "CRISIS:desperate,world closing in"
 
 "json_schema_instruction": 'Answer with one JSON object that follows this JSON Schema and nothing else: {schema}'
-"result_miss_body": The attempt fails and the situation gets worse. The player leaves this scene worse off, without what they came for.
-"result_weak_hit_body": Success with tangible cost or complication.
-"result_strong_hit_body": Clean success.
+"result_failure_body": The attempt fails and the situation gets worse. The player leaves this scene worse off, without what they came for.
+"result_partial_body": Success with tangible cost or complication.
+"result_success_body": Clean success.
 "block_move_outcome": '<move_outcome move="{move}">{text}</move_outcome>'
-"result_match_hint_miss": " A MATCH — the situation escalates dramatically, a fateful twist makes everything worse."
-"result_match_hint_weak_hit": " A MATCH — despite the cost, something unexpected and significant happens, a twist of fate."
-"result_match_hint_strong_hit": " A MATCH — an unexpected boon, a fateful revelation, or a dramatic advantage beyond the clean success."
+"result_match_hint_failure": " A MATCH — the situation escalates dramatically, a fateful twist makes everything worse."
+"result_match_hint_partial": " A MATCH — despite the cost, something unexpected and significant happens, a twist of fate."
+"result_match_hint_success": " A MATCH — an unexpected boon, a fateful revelation, or a dramatic advantage beyond the clean success."
 "block_crisis": |-
   <crisis>Character at breaking point.</crisis>
 "block_facts_wrapper": |-
