@@ -36,3 +36,25 @@
   When a <reflect> tag has a last_reflection attribute, write a new insight that builds on, deepens, or contradicts it, with a different theme or emotional tone.
   </task>
 "tool_error_unknown": 'unknown tool: {tool}'
+"director_prompt": |-
+  {task}
+
+  <latest_scene>
+  {narration}
+  </latest_scene>
+  {story_arc}{arc_notes}
+  {reflections}
+"director_arc_notes": '<arc_notes>{notes}</arc_notes>'
+"director_tool_results": |-
+  <tool_results>
+  {results}
+  </tool_results>
+"director_reflect": '<reflect npc_id="{id}" name="{npc}" disposition="{disposition}" bond="{bond}" description="{description}"{instinct}{arc}{last_reflection}{needs_profile}>{memories}</reflect>'
+"director_instinct_attr": ' instinct="{instinct}"'
+"director_last_reflection_attr": ' last_reflection="{reflection}"'
+"director_last_tone_attr": ' last_tone="{tone}"'
+"director_last_tone_key_attr": ' last_tone_key="{tone_key}"'
+"director_needs_profile_attr": ' needs_profile="true"'
+"director_story_arc": '<story_arc structure="{structure}" act="{act_number}/{total_acts}" phase="{phase}" progress="{progress}" current_scene="{scene}" scene_range="{first}-{last}"{past_range} conflict="{conflict}" antagonist="{antagonist}"{thematic}/>'
+"director_past_range_attr": ' PAST_RANGE="true"'
+"director_transition_trigger": '<transition_trigger act="{act_number}">{trigger}</transition_trigger>'

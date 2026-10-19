@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.11] — 2026-10-20
+
+Step 9o, 9o.2, sixth group: the markup of `director.py` moves to `prompts/director.yaml`, 12 keys: the Director's prompt as a template, its arc notes and tool results, the `<reflect>` tag with its instinct, last reflection, tone, and profile attributes, and its story arc with the scene range, the past-range marker, and the transition trigger. An NPC's memory form, its arc attribute, and the thematic thread attribute are the keys the narrator's blocks already use. The render script of this group rendered the Director's system prompt, its reflection blocks, its story arc at several scenes with and without a thematic thread and a transition trigger, and both of its calls with and without the tool's results, with every line that builds a prompt reached (what it leaves out are the trigger rules and how guidance is applied), and the five earlier groups' scripts ran again: all byte-identical before and after. The previous entry's key count is corrected to 17. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.89%. Save format unchanged. No Elvira session (Sessions with the user); the prompts are byte-identical.
+
 ## [2026.10.20.10] — 2026-10-20
 
 Step 9o, 9o.2, fifth group: the markup of `ai/narrator.py` and `ai/recap.py` moves to `prompts/narrator.yaml`, 21 keys: the recap's request as a template, its NPC, story-arc, and campaign forms, and the separator between recent scenes; the metadata extraction's NPC reference with its aliases, status markers, place, and description, and its engine context with the move, stat, target, and consequences. A session-log entry, which the epilogue and the recap write alike, is one key, `block_session_log_entry`, where the epilogue had its own. The render script of this group rendered the recap's and the extraction's prompts with and without NPCs of every status, a blueprint, campaign history, and consequences, with every line that builds a prompt reached (what it leaves out are the calls' failure paths and the narrator call, which assembles no markup), and the four earlier groups' scripts ran again: all byte-identical before and after. The previous entry's key count is corrected to 20. Play does not change.

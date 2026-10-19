@@ -72,26 +72,33 @@ def _reflection_eligible(npc: NpcData) -> bool:
 
 
 def _build_reflection_block(game: GameState, npc: NpcData) -> str:
-    mem_text = "; ".join(f"{m.event}({m.emotional_weight})" for m in recent_observations(npc))
+    mem_text = "; ".join(
+        get_prompt("block_npc_memory", event=m.event, weight=m.emotional_weight) for m in recent_observations(npc)
+    )
 
     last_reflection_attrs = ""
     reflections = [m for m in npc.memory if m.type == "reflection"]
     if reflections:
         last = reflections[-1]
-        last_reflection_attrs = f' last_reflection="{_xa(last.event[: eng().truncations.prompt_short])}"'
+        last_reflection_attrs = get_prompt(
+            "director_last_reflection_attr", reflection=_xa(last.event[: eng().truncations.prompt_short])
+        )
         if last.tone:
-            last_reflection_attrs += f' last_tone="{_xa(last.tone)}"'
-        last_reflection_attrs += f' last_tone_key="{_xa(last.tone_key)}"'
+            last_reflection_attrs += get_prompt("director_last_tone_attr", tone=_xa(last.tone))
+        last_reflection_attrs += get_prompt("director_last_tone_key_attr", tone_key=_xa(last.tone_key))
 
-    instinct_attr = f' instinct="{_xa(npc.instinct)}"' if npc.instinct.strip() else ""
-    arc_attr = f' arc="{_xa(npc.arc)}"' if npc.arc.strip() else ""
-    needs_profile_attr = ' needs_profile="true"' if _needs_profile(npc) else ""
-
-    return (
-        f'<reflect npc_id="{_xa(npc.id)}" name="{_xa(npc.name)}" '
-        f'disposition="{_xa(npc.disposition)}" bond="{get_npc_bond(game, npc.id)}" '
-        f'description="{_xa(npc.description)}"{instinct_attr}{arc_attr}{last_reflection_attrs}{needs_profile_attr}>'
-        f"{_xe(mem_text)}</reflect>"
+    return get_prompt(
+        "director_reflect",
+        id=_xa(npc.id),
+        npc=_xa(npc.name),
+        disposition=_xa(npc.disposition),
+        bond=str(get_npc_bond(game, npc.id)),
+        description=_xa(npc.description),
+        instinct=get_prompt("director_instinct_attr", instinct=_xa(npc.instinct)) if npc.instinct.strip() else "",
+        arc=get_prompt("block_npc_arc_attr", arc=_xa(npc.arc)) if npc.arc.strip() else "",
+        last_reflection=last_reflection_attrs,
+        needs_profile=get_prompt("director_needs_profile_attr") if _needs_profile(npc) else "",
+        memories=_xe(mem_text),
     )
 
 
@@ -102,21 +109,27 @@ def _build_story_arc_block(game: GameState) -> str:
 
     act = get_current_act(game)
     scene_range = act.scene_range
-    past_range_attr = ' PAST_RANGE="true"' if game.narrative.scene_count > scene_range[1] else ""
-
-    info = (
-        f'\n<story_arc structure="{_xa(bp.structure_type)}" '
-        f'act="{act.act_number}/{act.total_acts}" phase="{_xa(act.phase)}" '
-        f'progress="{act.progress}" '
-        f'current_scene="{game.narrative.scene_count}" scene_range="{scene_range[0]}-{scene_range[1]}"'
-        f"{past_range_attr} "
-        f'conflict="{_xa(bp.central_conflict)}" antagonist="{_xa(bp.antagonist_force)}"'
+    info = "\n" + get_prompt(
+        "director_story_arc",
+        structure=_xa(bp.structure_type),
+        act_number=str(act.act_number),
+        total_acts=str(act.total_acts),
+        phase=_xa(act.phase),
+        progress=act.progress,
+        scene=str(game.narrative.scene_count),
+        first=str(scene_range[0]),
+        last=str(scene_range[1]),
+        past_range=get_prompt("director_past_range_attr") if game.narrative.scene_count > scene_range[1] else "",
+        conflict=_xa(bp.central_conflict),
+        antagonist=_xa(bp.antagonist_force),
+        thematic=get_prompt("block_story_arc_thematic_attr", thematic=_xa(bp.thematic_thread))
+        if bp.thematic_thread
+        else "",
     )
-    if bp.thematic_thread:
-        info += f' thematic_thread="{_xa(bp.thematic_thread)}"'
-    info += "/>"
     if act.transition_trigger:
-        info += f'\n<transition_trigger act="{act.act_number}">{_xe(act.transition_trigger)}</transition_trigger>'
+        info += "\n" + get_prompt(
+            "director_transition_trigger", act_number=str(act.act_number), trigger=_xe(act.transition_trigger)
+        )
     return info
 
 
@@ -124,14 +137,14 @@ def build_director_prompt(game: GameState, latest_narration: str) -> str:
     reflection_section = "\n".join(_build_reflection_block(game, npc) for npc in game.npcs if _reflection_eligible(npc))
     task = get_prompt("director_task", lang=narration_language())
     notes = game.narrative.director_guidance.arc_notes
-    notes_block = f"\n<arc_notes>{_xe(notes)}</arc_notes>" if notes else ""
-    return f"""{task}
-
-<latest_scene>
-{latest_narration[: eng().truncations.prompt_xlong]}
-</latest_scene>
-{_build_story_arc_block(game)}{notes_block}
-{reflection_section}"""
+    return get_prompt(
+        "director_prompt",
+        task=task,
+        narration=latest_narration[: eng().truncations.prompt_xlong],
+        story_arc=_build_story_arc_block(game),
+        arc_notes="\n" + get_prompt("director_arc_notes", notes=_xe(notes)) if notes else "",
+        reflections=reflection_section,
+    )
 
 
 def _no_guidance(error: Exception) -> dict[str, Any]:
@@ -162,7 +175,9 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
 
     if tool_response.stop_reason == "tool_use" and tool_response.tool_calls:
         results = [execute_tool_call(call.name, call.arguments, game) for call in tool_response.tool_calls]
-        prompt += f"\n<tool_results>\n{chr(10).join(results)[: eng().truncations.prompt_xxlong]}\n</tool_results>"
+        prompt += "\n" + get_prompt(
+            "director_tool_results", results="\n".join(results)[: eng().truncations.prompt_xxlong]
+        )
         log(f"[Director] Phase 1: {len(results)} tool calls")
     else:
         log("[Director] Phase 1: no tools called")
