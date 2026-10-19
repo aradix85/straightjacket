@@ -2,9 +2,10 @@ from collections.abc import Generator
 
 import pytest
 
+from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.moves import (
     Move,
-    _load_moves_from_setting,
+    _load_moves,
     _parse_move,
     clear_cache,
     get_moves,
@@ -15,7 +16,7 @@ from straightjacket.engine.setting.packages import load_package
 
 
 def _own_moves(setting_id: str) -> dict[str, Move]:
-    return _load_moves_from_setting(load_package(setting_id))
+    return _load_moves(load_ruleset(setting_id).setting_file)
 
 
 @pytest.fixture(autouse=True)

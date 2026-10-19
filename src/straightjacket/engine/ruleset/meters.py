@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 from ..logging_util import log
 from ..models import GameState, Resources
-from ..setting.packages import load_package
 from .config import rules
+from .datasworn import load_ruleset
 
 _MOMENTUM = "momentum"
 
@@ -24,8 +24,8 @@ def condition_meters(setting_id: str) -> dict[str, ConditionMeter]:
     if setting_id in _cache:
         return _cache[setting_id]
     meters: dict[str, ConditionMeter] = {}
-    for pkg in reversed(list(load_package(setting_id).chain())):
-        for key, raw in (pkg.data.raw["rules"].get("condition_meters") or {}).items():
+    for rules_file in load_ruleset(setting_id).files:
+        for key, raw in (rules_file.rules.get("condition_meters") or {}).items():
             meters[key] = ConditionMeter(min=raw["min"], max=raw["max"], start=raw["value"])
     _cache[setting_id] = meters
     return meters

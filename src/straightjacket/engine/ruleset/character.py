@@ -6,6 +6,7 @@ from typing import Any
 from ..models import GameState
 from ..setting.packages import SettingPackage
 from .config import rules
+from .datasworn import RulesFile, load_ruleset
 from .progress import ranks
 from .stats import stat_descriptions, validate_stats
 from .tracks import swear_background_vow
@@ -21,26 +22,26 @@ class Character:
     background_vow_rank: str
 
 
-def _path_names(paths: list[str], pkg: SettingPackage) -> list[str]:
+def _path_names(paths: list[str], own: RulesFile) -> list[str]:
     max_paths = rules().creation.max_paths
     if len(paths) > max_paths:
         raise ValueError(f"Too many paths: {len(paths)} (max {max_paths})")
     names: list[str] = []
     for pid in paths:
-        path = pkg.data.asset("path", pid)
+        path = own.asset("path", pid)
         if path is None:
-            raise ValueError(f"Path '{pid}' not found in setting '{pkg.id}'")
+            raise ValueError(f"Path '{pid}' is not among the paths of '{own.datasworn_id}'")
         names.append(path["name"])
     return names
 
 
-def _validate_assets(assets: list[str], pkg: SettingPackage) -> None:
+def _validate_assets(assets: list[str], pkg: SettingPackage, own: RulesFile) -> None:
     max_assets = rules().creation.max_starting_assets
     if len(assets) > max_assets:
         raise ValueError(f"Too many starting assets: {len(assets)} (max {max_assets})")
     allowed_cats = set(pkg.creation_flow.starting_asset_categories)
     for asset_id in assets:
-        if not any(pkg.data.asset(cat, asset_id) for cat in allowed_cats):
+        if not any(own.asset(cat, asset_id) for cat in allowed_cats):
             raise ValueError(f"Asset '{asset_id}' not in allowed categories: {allowed_cats}")
 
 
@@ -51,8 +52,9 @@ def make_character(creation_data: dict[str, Any], pkg: SettingPackage) -> Charac
     background_vow = creation_data["background_vow"]
     vow_rank = creation_data["background_vow_rank"]
     validate_stats(stats, pkg.id)
-    path_names = _path_names(paths, pkg)
-    _validate_assets(assets, pkg)
+    own = load_ruleset(pkg.id).setting_file
+    path_names = _path_names(paths, own)
+    _validate_assets(assets, pkg, own)
     if not background_vow:
         raise ValueError("creation_data['background_vow'] is empty. The background vow becomes the first vow track.")
     if vow_rank and vow_rank not in ranks():

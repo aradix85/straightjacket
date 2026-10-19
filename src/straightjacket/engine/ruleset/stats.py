@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ..setting.packages import load_package
 from .config import rules
+from .datasworn import load_ruleset
 
 _cache: dict[str, dict[str, str]] = {}
 
@@ -10,8 +10,8 @@ def stat_descriptions(setting_id: str) -> dict[str, str]:
     if setting_id in _cache:
         return _cache[setting_id]
     found: dict[str, str] = {}
-    for pkg in reversed(list(load_package(setting_id).chain())):
-        for name, raw in pkg.data.stats().items():
+    for rules_file in load_ruleset(setting_id).files:
+        for name, raw in (rules_file.rules.get("stats") or {}).items():
             found[name] = raw["description"]
     _cache[setting_id] = found
     return found

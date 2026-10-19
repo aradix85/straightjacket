@@ -42,7 +42,7 @@ Text-in, text-out, and built for screen readers from the start by a blind develo
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — the core idea, turn pipeline, code map, state, configuration, interface
 - [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, project rules, code standards, testing
-- [docs/ai.md](docs/ai.md), [docs/mechanics.md](docs/mechanics.md), [docs/settings.md](docs/settings.md), [docs/divergences.md](docs/divergences.md), [docs/elvira.md](docs/elvira.md) — the AI layer, the game mechanics, settings and character creation, deliberate departures from the source rulebooks and the design document, and the test player Elvira
+- [docs/ai.md](docs/ai.md), [docs/mechanics.md](docs/mechanics.md), [docs/settings.md](docs/settings.md), [docs/divergences.md](docs/divergences.md), [docs/elvira.md](docs/elvira.md) — the AI layer, the game mechanics, settings, rulesets, and character creation, deliberate departures from the source rulebooks and the design document, and the test player Elvira
 - [ORIGINS.md](ORIGINS.md) — where the project comes from, and credits
 - [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model
 - [CHANGELOG.md](CHANGELOG.md) — release log since September 2026; earlier releases are in git history

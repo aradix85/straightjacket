@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from ..logging_util import log
 from ..models import GameState
 from ..setting.oracle_rolls import plain_text
-from ..setting.packages import load_package
+from .datasworn import load_ruleset
 from .meters import cap_momentum, max_momentum
 
 
@@ -24,8 +24,8 @@ def get_impacts(setting_id: str) -> dict[str, Impact]:
     if setting_id in _cache:
         return _cache[setting_id]
     impacts: dict[str, Impact] = {}
-    for pkg in reversed(list(load_package(setting_id).chain())):
-        for category in (pkg.data.raw["rules"].get("impacts") or {}).values():
+    for rules_file in load_ruleset(setting_id).files:
+        for category in (rules_file.rules.get("impacts") or {}).values():
             for key, raw in category["contents"].items():
                 impacts[key] = Impact(
                     label=raw["label"],

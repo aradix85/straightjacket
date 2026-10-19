@@ -5,16 +5,16 @@ from typing import Any
 from ...i18n import t
 from ..logging_util import log
 from ..models import CampaignState, GameState, ProgressTrack, ThreatData
-from ..setting.packages import load_package
 from .assets import asset_data, enable_next_ability, enabled_abilities
 from .config import rules
+from .datasworn import load_ruleset
 from .progress import filled_boxes, ranks
 
 
 def _legacy_tracks(setting_id: str) -> dict[str, dict[str, Any]]:
     tracks: dict[str, dict[str, Any]] = {}
-    for pkg in reversed(list(load_package(setting_id).chain())):
-        for raw in (pkg.data.raw["rules"].get("special_tracks") or {}).values():
+    for rules_file in load_ruleset(setting_id).files:
+        for raw in (rules_file.rules.get("special_tracks") or {}).values():
             if not raw["optional"] and raw["label"] not in tracks:
                 tracks[raw["label"]] = raw
     return tracks

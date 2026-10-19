@@ -3,20 +3,18 @@ from __future__ import annotations
 from typing import Any
 
 from ..models import GameState
-from ..setting.packages import SettingPackage, load_package
+from .datasworn import load_ruleset
 
 
 def asset_data(game: GameState, asset_id: str) -> dict[str, Any] | None:
     parts = asset_id.split("/")
     key = parts[-1]
-    package: SettingPackage | None = load_package(game.setting_id)
-    while package is not None:
-        categories = [parts[-2]] if len(parts) >= 2 else package.data.asset_categories()
+    for rules_file in reversed(load_ruleset(game.setting_id).files):
+        categories = [parts[-2]] if len(parts) >= 2 else sorted(rules_file.assets)
         for category in categories:
-            found = package.data.asset(category, key)
+            found = rules_file.asset(category, key)
             if found is not None:
                 return found
-        package = package.parent
     return None
 
 

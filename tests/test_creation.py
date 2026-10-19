@@ -341,7 +341,7 @@ _CHARACTER = {
     ("setting", "payload", "error_match"),
     [
         ("starforged", {"paths": ["a", "b", "c"]}, "Too many paths"),
-        ("starforged", {"paths": ["alchemist"]}, "not found in setting"),
+        ("starforged", {"paths": ["alchemist"]}, "not among the paths of"),
         ("starforged", {"assets": ["a", "b"]}, "Too many starting assets"),
         ("starforged", {"assets": ["ace"]}, "not in allowed categories"),
         ("delve", {"assets": ["ace"]}, "not in allowed categories"),
@@ -361,12 +361,14 @@ def test_make_character_rejects_invalid(load_engine: None, setting: str, payload
 
 def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None:
     from straightjacket.engine.ruleset.character import make_character
+    from straightjacket.engine.ruleset.datasworn import load_ruleset
     from straightjacket.engine.setting.packages import clear_cache, load_package
 
     clear_cache()
     pkg = load_package("starforged")
     character = make_character({**_CHARACTER, "paths": ["ace", "explorer"], "background_vow_rank": "epic"}, pkg)
-    names = [pkg.data.asset("path", pid)["name"] for pid in ("ace", "explorer")]
+    own = load_ruleset("starforged").setting_file
+    names = [own.asset("path", pid)["name"] for pid in ("ace", "explorer")]
     assert character.concept == ", ".join(names)
     assert character.background_vow_rank == "epic"
 

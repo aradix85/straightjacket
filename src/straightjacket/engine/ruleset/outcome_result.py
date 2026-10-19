@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..models import Consequence, GameState
-from ..setting.packages import load_package
 from .config import rules
+from .datasworn import load_ruleset
 
 
 @dataclass
@@ -25,10 +25,10 @@ class OutcomeResult:
 
 def move_outcome_config(game: GameState, move_key: str) -> dict[str, Any]:
     overrides = rules().get_raw("move_outcome_overrides")
-    for pkg in load_package(game.setting_id).chain():
-        if pkg.id in overrides and move_key in overrides[pkg.id]:
-            cfg: dict[str, Any] = overrides[pkg.id][move_key]
-            return cfg
+    ruleset = load_ruleset(game.setting_id).id
+    if ruleset in overrides and move_key in overrides[ruleset]:
+        cfg: dict[str, Any] = overrides[ruleset][move_key]
+        return cfg
     outcomes = rules().get_raw("move_outcomes")
     if move_key not in outcomes:
         raise ValueError(f"No outcome config for {move_key}. Add it to ruleset/move_outcomes.yaml.")

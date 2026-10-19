@@ -4,6 +4,7 @@ import random as _random
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.stats import stat_descriptions, validate_stats
 from straightjacket.engine.setting.packages import SettingPackage, load_package
 
@@ -24,7 +25,7 @@ def roll_character(setting_id: str, game_cfg: dict) -> dict:
 
     path_display = []
     for pid in paths:
-        asset = pkg.data.asset("path", pid)
+        asset = load_ruleset(setting_id).setting_file.asset("path", pid)
         if asset:
             path_display.append(asset["name"])
 
@@ -71,7 +72,7 @@ def _roll_paths(pkg: SettingPackage, game_cfg: dict) -> list[str]:
     max_paths = rules().creation.max_paths
     if game_cfg.get("paths") and len(game_cfg["paths"]) == max_paths:
         return game_cfg["paths"]
-    all_paths = pkg.data.paths()
+    all_paths = load_ruleset(pkg.id).setting_file.assets_of("path")
     path_ids = [p.get("_id", "").rsplit("/", 1)[-1] for p in all_paths if p.get("_id")]
     return _random.sample(path_ids, min(max_paths, len(path_ids)))
 
@@ -133,7 +134,7 @@ def _roll_starting_assets(pkg: SettingPackage, game_cfg: dict) -> list[str]:
     max_assets = rules().creation.max_starting_assets
     available = []
     for cat in cats:
-        for asset in pkg.data.assets(cat):
+        for asset in load_ruleset(pkg.id).setting_file.assets_of(cat):
             asset_id = asset.get("_id", "").rsplit("/", 1)[-1]
             if asset_id:
                 available.append(asset_id)

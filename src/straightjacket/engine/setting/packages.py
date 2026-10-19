@@ -240,6 +240,10 @@ class SettingPackage:
         self._data = data
         self._parent = parent
 
+        rulesets = {pkg.datasworn_id: pkg.ruleset_id for pkg in self.chain()}
+        if len(set(rulesets.values())) > 1:
+            raise ValueError(f"The setting chain ending at {yaml_path} names more than one ruleset: {rulesets}")
+
         chain = [pkg._config for pkg in self.chain()]
         self._oracle_paths = _resolve_oracle_paths(chain, yaml_path)
         self._creation_flow = _resolve_creation_flow(chain, yaml_path)
@@ -277,12 +281,16 @@ class SettingPackage:
         return self._config.description
 
     @property
-    def data(self) -> Setting:
-        return self._data
+    def datasworn_id(self) -> str:
+        return self._config.datasworn_id
 
     @property
-    def parent(self) -> SettingPackage | None:
-        return self._parent
+    def ruleset_id(self) -> str:
+        return self._data.ruleset_id
+
+    @property
+    def data(self) -> Setting:
+        return self._data
 
     @property
     def vocabulary(self) -> VocabularyConfig:
@@ -314,7 +322,7 @@ class SettingPackage:
 
     def table_by_id(self, datasworn_id: str) -> OracleTable | None:
         owner, path = link_owner_and_path(datasworn_id)
-        pkg = next((p for p in self.chain() if p._config.datasworn_id == owner), None)
+        pkg = next((p for p in self.chain() if p.datasworn_id == owner), None)
         if pkg is None:
             return None
         table = pkg._data.oracle(path)

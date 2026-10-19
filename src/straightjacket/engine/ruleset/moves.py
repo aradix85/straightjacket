@@ -7,7 +7,8 @@ from typing import Any
 from ..logging_util import log
 from ..setting.loader import OracleTable, parse_oracle_table
 from ..setting.oracle_rolls import is_table_link, link_path, plain_text
-from ..setting.packages import SettingPackage, load_package
+from ..setting.packages import load_package
+from .datasworn import RulesFile, load_ruleset
 
 
 def _highest(values: dict[str, int]) -> str:
@@ -152,10 +153,10 @@ def _parse_move(raw: dict[str, Any]) -> Move:
     )
 
 
-def _load_moves_from_setting(source: SettingPackage) -> dict[str, Move]:
+def _load_moves(rules_file: RulesFile) -> dict[str, Move]:
     return {
         f"{cat_key}/{move_key}": _parse_move(move_data)
-        for cat_key, cat_data in source.data.raw["moves"].items()
+        for cat_key, cat_data in rules_file.moves.items()
         for move_key, move_data in cat_data["contents"].items()
     }
 
@@ -167,10 +168,9 @@ def get_moves(setting_id: str) -> dict[str, Move]:
     if setting_id in _cache:
         return _cache[setting_id]
 
-    pkg = load_package(setting_id)
     moves: dict[str, Move] = {}
-    for source in reversed(list(pkg.chain())):
-        moves.update(_load_moves_from_setting(source))
+    for rules_file in load_ruleset(setting_id).files:
+        moves.update(_load_moves(rules_file))
     log(f"[Moves] Loaded {setting_id}: {len(moves)} moves")
     _cache[setting_id] = moves
     return moves

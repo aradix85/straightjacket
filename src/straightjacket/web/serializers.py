@@ -8,6 +8,7 @@ from ..engine.gamemaster.questions import answers
 from ..engine.models import GameState
 from ..engine.ruleset.bond import bonded_tracks, get_npc_bond
 from ..engine.ruleset.config import rules
+from ..engine.ruleset.datasworn import load_ruleset
 from ..engine.ruleset.impacts import impact_label
 from ..engine.ruleset.progress import filled_boxes, menace_boxes, ranks
 from ..engine.ruleset.stats import stat_descriptions
@@ -152,8 +153,9 @@ def build_creation_options() -> dict[str, Any]:
         if not pkg.playable:
             continue
 
+        own = load_ruleset(pkg_id).setting_file
         paths = []
-        for asset in pkg.data.paths():
+        for asset in own.assets_of("path"):
             asset_id = asset["_id"].rsplit("/", 1)[-1]
             paths.append({"id": asset_id, "title": asset["name"]})
 
@@ -193,7 +195,7 @@ def build_creation_options() -> dict[str, Any]:
 
         starting_assets = []
         for cat in flow.starting_asset_categories:
-            for asset in pkg.data.assets(cat):
+            for asset in own.assets_of(cat):
                 asset_id = asset["_id"].rsplit("/", 1)[-1]
                 starting_assets.append(
                     {

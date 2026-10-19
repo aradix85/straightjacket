@@ -30,6 +30,8 @@ class _Pkg:
         self.data = Setting(
             {
                 "_id": "probe",
+                "type": "ruleset",
+                "truths": {},
                 "oracles": {
                     "t": {
                         "contents": {
