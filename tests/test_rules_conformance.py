@@ -567,7 +567,24 @@ def test_scene_challenge_match_outcomes(
     assert (outcome.progress_marks, outcome.clock_fills) == (progress, clock)
 
 
-def test_test_your_relationship_chains_develop_your_relationship(
+def test_test_your_relationship_marks_progress_on_a_connection_without_a_bond(load_engine: None) -> None:
+    from straightjacket.engine.game.finalization import resolve_action_consequences
+    from straightjacket.engine.models import RollResult
+    from tests._helpers import make_brain_result, make_game_state, make_npc, make_progress_track
+
+    game = make_game_state(setting_id="starforged")
+    game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
+    track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous")
+    game.progress_tracks.append(track)
+    roll = RollResult(4, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
+    brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
+    action = resolve_action_consequences(game, brain, roll, "risky")
+    assert track.ticks == track.ticks_per_mark
+    assert not any(c.startswith("follow-up move") for c in action.consequences)
+    assert action.outcome.legacy_fixed_ticks == 0
+
+
+def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.game.finalization import resolve_action_consequences
@@ -578,7 +595,9 @@ def test_test_your_relationship_chains_develop_your_relationship(
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     game.progress_tracks.append(
-        make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=0)
+        make_progress_track(
+            id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=12, status="bonded"
+        )
     )
     dice = [6, 1, 2]
     monkeypatch.setattr(consequences.random, "randint", lambda low, high: dice.pop(0))

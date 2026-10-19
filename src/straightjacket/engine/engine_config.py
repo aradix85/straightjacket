@@ -18,6 +18,7 @@ from .engine_config_dataclasses import (
     DyingClockConfig,
     NpcStatusGroups,
     ChaosResolverConfig,
+    BondedTrackCondition,
     ChapterConfig,
     ClockCreationMappingEntry,
     ClockFillConsequenceEntry,
@@ -256,11 +257,13 @@ def _parse_move_availability_condition(cond: dict[str, Any], track_types: set[st
         return ActiveTrackCondition(active_track=_known_track_type(cond["active_track"], track_types))
     if keys == {"no_active_track"}:
         return NoActiveTrackCondition(no_active_track=_known_track_type(cond["no_active_track"], track_types))
+    if keys == {"bonded_track"}:
+        return BondedTrackCondition(bonded_track=_known_track_type(cond["bonded_track"], track_types))
     if keys == {"combat_pos_in"}:
         return CombatPosCondition(combat_pos_in=list(cond["combat_pos_in"]))
     raise ValueError(
         f"Invalid move_availability condition: {cond!r}. "
-        "Expected exactly one of: active_track, no_active_track, combat_pos_in."
+        "Expected exactly one of: active_track, no_active_track, bonded_track, combat_pos_in."
     )
 
 
@@ -674,6 +677,7 @@ __all__ = [
     "BlueprintConfig",
     "BoastOption",
     "BoastsConfig",
+    "BondedTrackCondition",
     "ChaosConfig",
     "ChaosResolverConfig",
     "ChapterConfig",

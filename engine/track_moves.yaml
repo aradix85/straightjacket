@@ -7,6 +7,8 @@ track_creating_moves:
   scene_challenge/begin_the_scene: scene_challenge
 tracks_started_on_a_hit:
 - connection/make_a_connection
+tracks_bonded_on_a_hit:
+- connection
 track_types_by_category:
   Vow: vow
   Connection: connection

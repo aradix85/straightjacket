@@ -29,17 +29,29 @@ def test_a_stat_the_brain_names_for_a_meter_move_is_ignored(load_engine: None) -
     assert (outcome.roll.stat_name, outcome.roll.stat_value) == ("supply", 2)
 
 
-def test_develop_your_relationship_rolls_with_the_rank_of_the_connection(load_engine: None) -> None:
+def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(load_engine: None) -> None:
     from straightjacket.engine.game.turn import _execute_roll
 
     game = _starforged()
     game.npcs = [make_npc(id="npc_1", name="Vex")]
-    game.progress_tracks.append(
-        ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
-    )
+    track = ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
+    track.status = "bonded"
+    game.progress_tracks.append(track)
     brain = make_brain_result(move="connection/develop_your_relationship", stat="none", target_npc="npc_1")
     outcome = _execute_roll(game, brain, None)
     assert (outcome.roll.stat_name, outcome.roll.stat_value) == ("dangerous", 2)
+
+
+def test_a_connection_without_a_bond_gives_develop_your_relationship_nothing_to_roll(load_engine: None) -> None:
+    from straightjacket.engine.datasworn.moves import get_moves
+    from straightjacket.engine.mechanics.roll_sources import roll_source_without_stat
+
+    game = _starforged()
+    game.progress_tracks.append(
+        ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
+    )
+    develop = get_moves("starforged")["connection/develop_your_relationship"]
+    assert roll_source_without_stat(game, develop, "npc_1") is None
 
 
 def test_a_meter_move_does_not_turn_into_dialog(load_engine: None) -> None:

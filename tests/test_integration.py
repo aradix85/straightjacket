@@ -292,7 +292,7 @@ def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
 
 
 @pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
-def test_a_connection_made_in_play_is_the_npcs_and_can_be_developed(
+def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_develops_by_rank(
     load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
     from straightjacket.engine.game.turn import process_turn
@@ -316,15 +316,20 @@ def test_a_connection_made_in_play_is_the_npcs_and_can_be_developed(
             "track_name": "Kira",
             "track_rank": "dangerous",
         },
+        {"move": "connection/test_your_relationship", "stat": "heart", "target_npc": kira},
         {"move": "connection/develop_your_relationship", "stat": "none", "target_npc": kira},
     )
     _narration, _roll, _burn, _director = process_turn(provider, game, "I share a drink with Kira", stream=None)
-    connections = [t.id for t in game.progress_tracks if t.track_type == "connection"]
+    connections = [t for t in game.progress_tracks if t.track_type == "connection"]
 
     if result == "MISS":
         assert connections == []
         return
-    assert connections == [f"connection_{kira}"]
+    [track] = connections
+    assert track.id == f"connection_{kira}"
+    process_turn(provider, game, "I stand by Kira when her crew turns on her", stream=None)
+    assert track.ticks == track.ticks_per_mark
+    track.status = "bonded"
     _narration, roll, _burn, _director = process_turn(provider, game, "I help Kira fix her ship", stream=None)
     assert roll is not None
     assert (roll.move, roll.stat_name) == ("connection/develop_your_relationship", "dangerous")

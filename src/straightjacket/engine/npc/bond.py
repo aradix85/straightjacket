@@ -9,7 +9,7 @@ def connection_track_id(npc_id: str) -> str:
 
 def connection_track(game: GameState, npc_id: str) -> ProgressTrack | None:
     track_id = connection_track_id(npc_id)
-    return next((t for t in game.progress_tracks if t.id == track_id and t.status == "active"), None)
+    return next((t for t in game.progress_tracks if t.id == track_id and t.status in ("active", "bonded")), None)
 
 
 def get_npc_bond(game: GameState, npc_id: str) -> int:

@@ -9,7 +9,7 @@ from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from ..ids import unique_id
 from ..logging_util import log
-from ..npc.bond import connection_track_id
+from ..npc.bond import connection_track, connection_track_id
 from .impacts import clear_impact
 from .legacy import apply_threat_overcome_bonus, shifted_rank
 from .outcome_result import OutcomeResult
@@ -37,6 +37,9 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
     if track_type == "connection":
         if brain.target_npc is None:
             log(f"[Track] {brain.move}: its target turned out absent; no connection")
+            return
+        if connection_track(game, brain.target_npc) is not None:
+            log(f"[Track] {brain.target_npc} is already a connection; not made again")
             return
         base_id = connection_track_id(brain.target_npc)
     else:

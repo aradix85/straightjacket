@@ -214,11 +214,16 @@ class NoActiveTrackCondition:
 
 
 @dataclass
+class BondedTrackCondition:
+    bonded_track: str
+
+
+@dataclass
 class CombatPosCondition:
     combat_pos_in: list[str]
 
 
-MoveAvailabilityCondition = ActiveTrackCondition | NoActiveTrackCondition | CombatPosCondition
+MoveAvailabilityCondition = ActiveTrackCondition | NoActiveTrackCondition | BondedTrackCondition | CombatPosCondition
 
 
 @dataclass
@@ -872,6 +877,7 @@ class SufferConfig:
 @dataclass
 class ConnectionAidConfig:
     add: int
+    bonded_add: int
     momentum_on_hit: int
     condition: str
 

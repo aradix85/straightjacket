@@ -18,11 +18,13 @@ from ..mechanics import (
 from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..datasworn.oracle_rolls import roll_rows, plain_text
+from ..mechanics.move_effects import apply_effects, parse_effects
 from ..mechanics.move_outcome import resolve_move_outcome
-from ..mechanics.outcome_result import OutcomeResult
+from ..mechanics.outcome_result import OutcomeResult, move_outcome_config
 from ..mechanics.roll_sources import best_roll_option, roll_source_without_stat
 from ..models import BrainResult, ClockEvent, GameState, MemoryEntry, NpcData, ProgressTrack, RollResult
 from ..npc import named_in
+from ..npc.bond import connection_track
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 
@@ -66,11 +68,24 @@ def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome
     log(f"[Chain] {move.name}: {'; '.join(results)}")
 
 
+def _chain_without_bond(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> bool:
+    cfg = move_outcome_config(game, outcome.chained_move)
+    track = connection_track(game, brain.target_npc) if brain.target_npc is not None else None
+    if "without_bond" not in cfg or track is None or track.status == "bonded":
+        return False
+    marked = apply_effects(game, parse_effects(cfg["without_bond"]), target_npc_id=brain.target_npc)
+    outcome.consequences.extend(marked.consequences)
+    log(f"[Chain] {outcome.chained_move}: no bond with {track.name} yet, so progress is marked without a roll")
+    return True
+
+
 def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> None:
     move = get_moves(game.setting_id)[outcome.chained_move]
     oracle_moves = eng().get_raw("oracle_moves")
     if move.roll_type == "no_roll" and outcome.chained_move in oracle_moves:
         _chain_oracle_move(game, move, oracle_moves[outcome.chained_move], outcome)
+        return
+    if _chain_without_bond(game, brain, outcome):
         return
     value = _chained_roll_value(game, brain, move)
     if value is None:

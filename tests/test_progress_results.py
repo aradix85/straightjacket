@@ -39,23 +39,23 @@ def _play(setting_id: str, move: str, track: ProgressTrack, result: str) -> tupl
 
 
 PROGRESS_MOVES = [
-    ("classic", "quest/fulfill_your_vow", "vow"),
-    ("classic", "adventure/reach_your_destination", "journey"),
-    ("classic", "combat/end_the_fight", "combat"),
-    ("starforged", "quest/fulfill_your_vow", "vow"),
-    ("starforged", "connection/forge_a_bond", "connection"),
-    ("starforged", "exploration/finish_an_expedition", "expedition"),
-    ("starforged", "combat/take_decisive_action", "combat"),
+    ("classic", "quest/fulfill_your_vow", "vow", "completed"),
+    ("classic", "adventure/reach_your_destination", "journey", "completed"),
+    ("classic", "combat/end_the_fight", "combat", "completed"),
+    ("starforged", "quest/fulfill_your_vow", "vow", "completed"),
+    ("starforged", "connection/forge_a_bond", "connection", "bonded"),
+    ("starforged", "exploration/finish_an_expedition", "expedition", "completed"),
+    ("starforged", "combat/take_decisive_action", "combat", "completed"),
 ]
 
 
-@pytest.mark.parametrize(("setting_id", "move", "track_type"), PROGRESS_MOVES)
-def test_a_weak_hit_on_a_progress_move_completes_its_track(
-    load_engine: None, setting_id: str, move: str, track_type: str
+@pytest.mark.parametrize(("setting_id", "move", "track_type", "status"), PROGRESS_MOVES)
+def test_a_weak_hit_on_a_progress_move_completes_its_track_or_bonds_a_connection(
+    load_engine: None, setting_id: str, move: str, track_type: str, status: str
 ) -> None:
     track = make_progress_track(id=f"{track_type}_x", track_type=track_type, ticks=24)
     game, _ = _play(setting_id, move, track, "WEAK_HIT")
-    assert track.status == "completed"
+    assert track.status == status
     if track_type == "combat":
         assert game.world.combat_position == ""
 
@@ -119,12 +119,26 @@ def test_finish_an_expedition_weak_hit_rewards_one_rank_lower(load_engine: None)
 def test_forge_a_bond_weak_hit_bonds_now_and_tells_the_request(load_engine: None) -> None:
     track = make_progress_track(id="connection_npc_1", track_type="connection", ticks=24)
     game, consequences = _play("starforged", "connection/forge_a_bond", track, "WEAK_HIT")
-    assert track.status == "completed"
+    assert track.status == "bonded"
     assert get_legacy_track(game, "bonds").ticks == 2
     sentences = generate_consequence_sentences(
         consequences, [], game, make_brain_result(move="connection/forge_a_bond")
     )
     assert any("ask something more of Hero" in s or "Hero has yet to do" in s for s in sentences)
+
+
+def test_a_bonded_connection_keeps_its_bond_and_is_not_made_again(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.tracks import start_track
+    from straightjacket.engine.npc.bond import get_npc_bond
+
+    track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", ticks=24)
+    game, _ = _play("starforged", "connection/forge_a_bond", track, "STRONG_HIT")
+    assert get_npc_bond(game, "npc_1") == track.filled_boxes == 6
+    again = make_brain_result(
+        move="connection/make_a_connection", target_npc="npc_1", track_name="Mira", track_rank="dangerous"
+    )
+    start_track(game, again, "STRONG_HIT")
+    assert [t.id for t in game.progress_tracks] == ["connection_npc_1"]
 
 
 @pytest.mark.parametrize(

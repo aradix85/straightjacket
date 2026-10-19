@@ -123,6 +123,8 @@ move_outcomes:
     miss:
     - pay_the_price
   connection/develop_your_relationship:
+    without_bond:
+    - bond +1
     strong_hit:
     - legacy_ticks bonds 2
     strong_hit_match:

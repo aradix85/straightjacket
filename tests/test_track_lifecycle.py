@@ -122,6 +122,16 @@ class TestTracksStatus:
         result = build_tracks_status(game)
         assert "Done Vow" not in result
 
+    def test_a_bonded_connection_is_shown_as_a_bond(self) -> None:
+        from straightjacket.i18n import t
+        from straightjacket.web.serializers import build_tracks_status
+
+        game = _game()
+        game.progress_tracks.append(
+            make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", status="bonded")
+        )
+        assert build_tracks_status(game) == t("status.track_bonded", name="Mira")
+
 
 def test_progress_track_ticks_per_mark() -> None:
     from straightjacket.engine.engine_loader import eng

@@ -58,7 +58,7 @@ move_availability:
     available: []
   connection/develop_your_relationship:
     available:
-    - active_track: connection
+    - bonded_track: connection
   connection/test_your_relationship:
     available: []
   connection/forge_a_bond:

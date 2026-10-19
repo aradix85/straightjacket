@@ -47,13 +47,13 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
             )
     aid = cfg.connection_aid
     for track in game.progress_tracks:
-        if track.track_type == "connection" and track.status == "active":
+        if track.track_type == "connection" and track.status in ("active", "bonded"):
             options.append(
                 RollBonus(
                     id=f"connection:{track.id.removeprefix('connection_')}",
                     source=track.name,
                     condition=aid.condition.format(name=track.name),
-                    add=aid.add,
+                    add=aid.bonded_add if track.status == "bonded" else aid.add,
                     momentum_on_hit=aid.momentum_on_hit,
                 )
             )

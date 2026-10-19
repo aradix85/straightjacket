@@ -40,6 +40,17 @@ def test_a_connection_offers_its_aid(load_engine: None) -> None:
     assert (option.add, option.momentum_on_hit) == (1, 1)
 
 
+def test_a_bonded_connection_aids_with_more(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.bonuses import roll_bonuses
+
+    game = _game_with()
+    game.progress_tracks.append(
+        make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", ticks=40, status="bonded")
+    )
+    option = next(o for o in roll_bonuses(game) if o.id == "connection:npc_1")
+    assert (option.add, option.momentum_on_hit) == (2, 1)
+
+
 def test_a_bonus_not_on_offer_raises(load_engine: None) -> None:
     from straightjacket.engine.mechanics.bonuses import chosen_bonus
 

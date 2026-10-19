@@ -10,6 +10,7 @@ status.tracks: '{name}: {progress}.'
 status.track_combat: '{name}: {progress}, {position}.'
 status.track_expedition: '{name} (expedition): {progress}.'
 status.track_scene_challenge: '{name} (scene challenge): {progress}.'
+status.track_bonded: '{name}: a bond is forged.'
 status.no_tracks: No active tracks.
 status.impacts: 'Impacts: {impacts}.'
 status.threat: '{name}: {urgency}.'

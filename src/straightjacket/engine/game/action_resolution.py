@@ -23,7 +23,8 @@ from .turn_types import ActionResolution, RollOutcome
 
 def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTrack, outcome: OutcomeResult) -> None:
     if roll.result in eng().dice.hit_results:
-        complete_track(game, track.id, "completed")
+        bonded = track.track_type in eng().get_raw("tracks_bonded_on_a_hit")
+        complete_track(game, track.id, "bonded" if bonded else "completed")
         return
     cfg = move_outcome_config(game, roll.move)
     if "recommit_on_miss" in cfg:

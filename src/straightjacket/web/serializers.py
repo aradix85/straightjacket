@@ -124,10 +124,11 @@ def build_narrative_status(game: GameState) -> str:
 
 def build_tracks_status(game: GameState) -> str:
     active = [tr for tr in game.progress_tracks if tr.status == "active"]
-    if not active:
+    bonded = [tr for tr in game.progress_tracks if tr.status == "bonded"]
+    if not active and not bonded:
         return t("status.no_tracks")
 
-    lines = []
+    lines = [t("status.track_bonded", name=tr.name) for tr in bonded]
     track_desc_map = eng().status_descriptions.track
     combat_pos_desc = eng().status_descriptions.combat_position
     for tr in active:

@@ -46,6 +46,6 @@ def roll_source_without_stat(game: GameState, move: Move, target_npc: str | None
         return best, _meter_value(game, best)
     ranked = {option.label: option.value for option in options if option.using == "custom" and option.value is not None}
     track = connection_track(game, target_npc) if target_npc is not None else None
-    if track is None or track.rank not in ranked:
+    if track is None or track.status != "bonded" or track.rank not in ranked:
         return None
     return track.rank, int(ranked[track.rank])

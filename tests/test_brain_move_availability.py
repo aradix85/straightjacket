@@ -199,12 +199,44 @@ def test_a_move_with_nothing_to_roll_with_for_its_target_is_refused(load_engine:
 
     game = _starforged()
     game.npcs = [make_npc(id="npc_1", name="Vex"), make_npc(id="npc_2", name="Orla")]
+    bonded = ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
+    bonded.status = "bonded"
+    game.progress_tracks.append(bonded)
+    provider = _BrainAnswers("connection/develop_your_relationship", stat="none", target_npc="npc_2")
+    with pytest.raises(AIUnavailableError, match="nothing to roll with"):
+        call_brain(provider, game, "I share a drink with Orla.")
+
+
+def test_develop_your_relationship_rolls_only_for_a_connection_with_a_bond(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+    from tests._helpers import make_npc
+
+    game = _starforged()
+    game.npcs = [make_npc(id="npc_1", name="Vex"), make_npc(id="npc_2", name="Orla")]
+    bonded = ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
+    bonded.status = "bonded"
+    game.progress_tracks.append(bonded)
     game.progress_tracks.append(
-        ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
+        ProgressTrack.new(id="connection_npc_2", name="Orla", track_type="connection", rank="troublesome")
     )
     provider = _BrainAnswers("connection/develop_your_relationship", stat="none", target_npc="npc_2")
     with pytest.raises(AIUnavailableError, match="nothing to roll with"):
         call_brain(provider, game, "I share a drink with Orla.")
+    assert "Vex (id:npc_1, neutral, bonded)" in provider.user_messages[0]
+    assert "Orla (id:npc_2, neutral)" in provider.user_messages[0]
+
+
+def test_develop_your_relationship_is_offered_only_with_a_bond(load_engine: None) -> None:
+    from straightjacket.engine.tools import available_moves
+
+    game = _starforged()
+    connection = ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
+    game.progress_tracks.append(connection)
+    assert "connection/develop_your_relationship" not in available_moves(game)
+    assert "connection/forge_a_bond" in available_moves(game)
+    connection.status = "bonded"
+    assert "connection/develop_your_relationship" in available_moves(game)
+    assert "connection/forge_a_bond" not in available_moves(game)
 
 
 def test_the_brain_sees_each_way_of_a_move_in_the_books_words(load_engine: None) -> None:

@@ -20,6 +20,7 @@ from ..mechanics.bonuses import bonus_block, roll_bonuses
 from ..mechanics.complications import open_complications
 from ..mechanics.roll_sources import roll_source_without_stat
 from ..mechanics.tracks import track_category_of_move
+from ..npc.bond import connection_track
 from ..xml_utils import xe as _xe
 
 
@@ -198,7 +199,9 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
 
     npc_lines = []
     for n in _listed_npcs(game):
-        entry = f"  {_xe(n.name)} (id:{n.id}, {n.disposition})"
+        connection = connection_track(game, n.id)
+        bonded = ", bonded" if connection is not None and connection.status == "bonded" else ""
+        entry = f"  {_xe(n.name)} (id:{n.id}, {n.disposition}{bonded})"
         if n.aliases:
             entry += f" aliases:{_xe(','.join(n.aliases))}"
         npc_lines.append(entry)
