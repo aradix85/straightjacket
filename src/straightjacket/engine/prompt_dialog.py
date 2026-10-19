@@ -16,6 +16,7 @@ from .prompt_blocks import narrative_direction_block, recent_events_block, story
 from .prompt_loader import get_prompt
 from .prompt_shared import (
     _clock_filled_block,
+    _consequence_tags,
     _director_block,
     _facts_block,
     _flags_block,
@@ -25,11 +26,13 @@ from .prompt_shared import (
     _npc_block,
     _npcs_section,
     _pacing_block,
+    _player_words_tag,
     _random_events_block,
     _scene_enrichment,
     _scene_header,
     _threat_events_block,
     _time_ctx,
+    _world_add_tag,
 )
 from .xml_utils import xe as _xe
 
@@ -56,16 +59,12 @@ def build_dialog_prompt(
     npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=move_cat)
     agency = _npc_agency_block(npc_agency)
 
-    wa = brain.world_addition
-    wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     flags = _flags_block(game)
-    cons_tags = "".join(f"\n<consequence>{_xe(c.label)}</consequence>" for c in consequences)
-    pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
     pacing = _pacing_block(game, scene_setup)
     events_block = _random_events_block(random_events)
     clock_block = _clock_filled_block(clock_fill_results)
     director = _director_block(game)
-    oracle_tag = f"\n<oracle_answer>{_xe(oracle_answer)}</oracle_answer>" if oracle_answer else ""
+    oracle_tag = "\n" + get_prompt("block_oracle_answer", answer=_xe(oracle_answer)) if oracle_answer else ""
 
     is_oracle = asks_the_oracle(brain.move)
     scene_type = "oracle" if is_oracle else "dialog"
@@ -76,15 +75,33 @@ def build_dialog_prompt(
     else:
         task = get_prompt("task_oracle_facts")
 
-    clock_section = f"\n{clock_block}" if clock_block else ""
-
-    return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
-{_scene_header(game)}
-<intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}{cons_tags}{_facts_block(facts)}{_threat_events_block(threat_events)}{clock_section}
-<location>{_xe(game.world.current_location)}</location>{_generated_place_block(game)}{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
-{npc}{npcs_sect}{wl}{flags}{agency}
-{pacing}
-{events_block}{director}
-{narrative_direction_block(game, "dialog")}
-{story_context_block(game)}{recent_events_block(game)}</scene>
-<task>{task}</task>"""
+    return get_prompt(
+        "block_scene_dialog",
+        scene_type=scene_type,
+        n=str(game.narrative.scene_count),
+        header=_scene_header(game),
+        intent=_xe(brain.player_intent),
+        player_words=_player_words_tag(player_words),
+        oracle=oracle_tag,
+        consequences=_consequence_tags(c.label for c in consequences),
+        facts=_facts_block(facts),
+        threats=_threat_events_block(threat_events),
+        clocks=f"\n{clock_block}" if clock_block else "",
+        location=_xe(game.world.current_location),
+        generated=_generated_place_block(game),
+        previous_locations=_loc_hist(game),
+        time=_time_ctx(game),
+        thread=_scene_enrichment(game),
+        npc=npc,
+        npcs=npcs_sect,
+        world_add=_world_add_tag(brain.world_addition),
+        flags=flags,
+        agency=agency,
+        pacing=pacing,
+        events=events_block,
+        director=director,
+        direction=narrative_direction_block(game, "dialog"),
+        story=story_context_block(game),
+        recent=recent_events_block(game),
+        task=task,
+    )

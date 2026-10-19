@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.7] — 2026-10-20
+
+Step 9o, 9o.2, second group: the markup of `prompt_action.py` and `prompt_dialog.py` moves to `prompts/blocks.yaml`, 12 keys: the action and dialog scenes as two templates, the result tag with its match and consequences attributes, the position tag, and the tags of the player's words, a world addition, a consequence, and the oracle's answer. The three tags both prompts wrote out alike are one helper each in `prompt_shared.py` (`_player_words_tag`, `_world_add_tag`, `_consequence_tags`). The render script of this group rendered 90 action, dialog, and oracle prompts with every line and branch of both modules reached, and the first group's script ran again: both byte-identical before and after. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.90%. Save format unchanged. No Elvira session (Sessions with the user); the prompts are byte-identical.
+
 ## [2026.10.20.6] — 2026-10-20
 
 Step 9o, 9o.2, first group: the prompt markup that `prompt_shared.py` assembled in Python moves to `prompts/blocks.yaml`, 41 keys: the tags of time, earlier places, the active thread, known NPCs, lore figures, pacing, an altered or interrupt scene, random events, NPC agency, flags, threat events, filled clocks, and the Director's guidance and NPC notes; the target NPC's tag in its two forms with its attributes and its `agenda:`, `instinct:`, and `secrets(...)` labels; the activated NPC's tag with its attributes; and the memory labels `recent:` and `insight:` with the `event(weight)` form an NPC's memories share. What stays in Python is the joining of parts and the escaping. A placeholder is not named `name`, which `get_prompt` takes as the prompt's own name. A render script outside the repository (Sessions with the user) rendered every block of the module, on created games in classic, Starforged, and Sundered Isles with every line and branch of the module reached, and the action, dialog, oracle, and opening prompts that use them: 2466 renders, byte-identical before and after. Play does not change.

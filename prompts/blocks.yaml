@@ -150,6 +150,38 @@
 "block_clock_filled": '<clock_filled name="{clock}" clock_type="{clock_type}">{text}</clock_filled>'
 "block_director_guidance": '<director_guidance>{guidance}</director_guidance>'
 "block_npc_note": '<npc_note for="{npc}">{guidance}</npc_note>'
+"block_player_words": '<player_words>{words}</player_words>'
+"block_world_add": '<world_add>{addition}</world_add>'
+"block_consequence": '<consequence>{consequence}</consequence>'
+"block_oracle_answer": '<oracle_answer>{answer}</oracle_answer>'
+"block_result": '<result type="{result}"{match}{consequences}>{body}{hint}</result>'
+"block_result_match_attr": ' match="true"'
+"block_result_consequences_attr": ' consequences="{consequences}"'
+"block_position": '<position level="{level}" effect="{effect}"/>'
+"block_scene_action": |-
+  <scene type="action" n="{n}">
+  {header}
+  <intent>{intent} ({approach})</intent>{player_words}
+  {result}{consequences}{threats}{clocks}{facts}
+  {position}
+  <location>{location}</location>{generated}{previous_locations}{time}{thread}
+  {npc}{npcs}{world_add}{flags}{agency}
+  {pacing}
+  {events}{director}
+  {direction}
+  {story}{recent}</scene>
+  <task>{task}</task>
+"block_scene_dialog": |-
+  <scene type="{scene_type}" n="{n}">
+  {header}
+  <intent>{intent}</intent>{player_words}{oracle}{consequences}{facts}{threats}{clocks}
+  <location>{location}</location>{generated}{previous_locations}{time}{thread}
+  {npc}{npcs}{world_add}{flags}{agency}
+  {pacing}
+  {events}{director}
+  {direction}
+  {story}{recent}</scene>
+  <task>{task}</task>
 "block_background_npcs_prefix": "Known but not recently active: "
 "block_chapter_record_untitled": 'Chapter {n}'
 "block_chapter_record_conflict": 'The conflict: {items}'

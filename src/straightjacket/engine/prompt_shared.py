@@ -1,6 +1,6 @@
 import json
 import random
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 
 from .engine_loader import eng
 from .gamemaster.config import gm
@@ -293,6 +293,18 @@ def _event_tag(template: str, ev: RandomEvent) -> str:
 
 def _random_events_block(events: Sequence[RandomEvent]) -> str:
     return "\n".join(_event_tag("block_random_event", ev) for ev in events)
+
+
+def _player_words_tag(words: str) -> str:
+    return "\n" + get_prompt("block_player_words", words=_xe(words)) if words else ""
+
+
+def _world_add_tag(addition: str | None) -> str:
+    return "\n" + get_prompt("block_world_add", addition=_xe(addition)) if addition else ""
+
+
+def _consequence_tags(texts: Iterable[str]) -> str:
+    return "".join("\n" + get_prompt("block_consequence", consequence=_xe(text)) for text in texts)
 
 
 def _npc_agency_block(npc_agency: Sequence[str]) -> str:

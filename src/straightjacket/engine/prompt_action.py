@@ -18,6 +18,7 @@ from .prompt_blocks import narrative_direction_block, recent_events_block, story
 from .prompt_loader import get_prompt
 from .prompt_shared import (
     _clock_filled_block,
+    _consequence_tags,
     _director_block,
     _facts_block,
     _flags_block,
@@ -27,12 +28,14 @@ from .prompt_shared import (
     _npc_block,
     _npcs_section,
     _pacing_block,
+    _player_words_tag,
     _random_events_block,
     _resolve_stance_category,
     _scene_enrichment,
     _scene_header,
     _threat_events_block,
     _time_ctx,
+    _world_add_tag,
 )
 from .ruleset.moves import get_moves, outcome_text
 from .xml_utils import xa as _xa
@@ -46,11 +49,20 @@ _RESULT_PROMPTS = {
 
 
 def _build_result_constraint(roll: RollResult, outcome: str, consequences: list[Consequence]) -> str:
-    match_tag = ' match="true"' if roll.match else ""
-    cons_attr = f' consequences="{_xa(",".join(labels_of(consequences)))}"' if consequences else ""
     body, hint = _RESULT_PROMPTS[outcome]
-    match_hint = get_prompt(hint) if roll.match else ""
-    return f'<result type="{roll.result}"{match_tag}{cons_attr}>{get_prompt(body)}{match_hint}</result>'
+    cons_attr = (
+        get_prompt("block_result_consequences_attr", consequences=_xa(",".join(labels_of(consequences))))
+        if consequences
+        else ""
+    )
+    return get_prompt(
+        "block_result",
+        result=roll.result,
+        match=get_prompt("block_result_match_attr") if roll.match else "",
+        consequences=cons_attr,
+        body=get_prompt(body),
+        hint=get_prompt(hint) if roll.match else "",
+    )
 
 
 def _move_outcome_block(game: GameState, brain: BrainResult, roll: RollResult) -> str:
@@ -92,12 +104,8 @@ def build_action_prompt(
         game, brain, context_text, activated_npcs, mentioned_npcs, move_category=stance_cat, miss=miss
     )
 
-    wa = brain.world_addition
-    wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
-    pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
-
     constraint = _build_result_constraint(roll, outcome, consequences) + _move_outcome_block(game, brain, roll)
-    position_tag = f'<position level="{_xa(position)}" effect="{_xa(effect)}"/>'
+    position_tag = get_prompt("block_position", level=_xa(position), effect=_xa(effect))
 
     flags = _flags_block(game)
     agency = _npc_agency_block(npc_agency)
@@ -105,24 +113,36 @@ def build_action_prompt(
     events_block = _random_events_block(random_events)
     clock_block = _clock_filled_block(clock_fill_results)
     director = "" if miss else _director_block(game)
-
-    cons_tags = "\n".join(f"<consequence>{_xe(s)}</consequence>" for s in consequence_sentences)
-    if cons_tags:
-        cons_tags = f"\n{cons_tags}"
-
     threat_tags = _threat_events_block(threat_events)
 
-    clock_section = f"\n{clock_block}" if clock_block else ""
-
-    return f"""<scene type="action" n="{game.narrative.scene_count}">
-{_scene_header(game)}
-<intent>{_xe(brain.player_intent)} ({_xe(brain.approach)})</intent>{pw}
-{constraint}{cons_tags}{threat_tags}{clock_section}{_facts_block(facts)}
-{position_tag}
-<location>{_xe(game.world.current_location)}</location>{_generated_place_block(game)}{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
-{npc}{npcs_sect}{wl}{flags}{agency}
-{pacing}
-{events_block}{director}
-{narrative_direction_block(game, outcome)}
-{story_context_block(game, miss=miss)}{recent_events_block(game)}</scene>
-<task>{task_action()}</task>"""
+    return get_prompt(
+        "block_scene_action",
+        n=str(game.narrative.scene_count),
+        header=_scene_header(game),
+        intent=_xe(brain.player_intent),
+        approach=_xe(brain.approach),
+        player_words=_player_words_tag(player_words),
+        result=constraint,
+        consequences=_consequence_tags(consequence_sentences),
+        threats=threat_tags,
+        clocks=f"\n{clock_block}" if clock_block else "",
+        facts=_facts_block(facts),
+        position=position_tag,
+        location=_xe(game.world.current_location),
+        generated=_generated_place_block(game),
+        previous_locations=_loc_hist(game),
+        time=_time_ctx(game),
+        thread=_scene_enrichment(game),
+        npc=npc,
+        npcs=npcs_sect,
+        world_add=_world_add_tag(brain.world_addition),
+        flags=flags,
+        agency=agency,
+        pacing=pacing,
+        events=events_block,
+        director=director,
+        direction=narrative_direction_block(game, outcome),
+        story=story_context_block(game, miss=miss),
+        recent=recent_events_block(game),
+        task=task_action(),
+    )
