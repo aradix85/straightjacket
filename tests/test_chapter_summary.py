@@ -3,14 +3,13 @@ from __future__ import annotations
 import pytest
 
 from straightjacket.engine.game.chapters import _close_previous_chapter, _reset_chapter_mechanics
-from straightjacket.engine.models import (
-    ChapterSummary,
-    GameState,
-    ThreadEntry,
-)
+from straightjacket.engine.models import ChapterSummary, GameState, PlotlineEntry
 from tests._helpers import (
+    make_blueprint,
     make_game_state,
+    make_npc,
     make_progress_track,
+    make_thread,
     make_threat,
 )
 
@@ -59,7 +58,7 @@ class TestChapterTransitionCarriesStateOver:
         game.impacts = ["wounded"]
         game.assets = ["asset_compass"]
         game.narrative.threads = [
-            ThreadEntry(id="thr1", name="Truth", thread_type="vow", weight=2, source="creation"),
+            make_thread(id="thr1", name="Truth", thread_type="vow", weight=2, source="creation"),
         ]
         return game
 
@@ -90,22 +89,18 @@ class TestChapterTransitionCarriesStateOver:
 
 class TestChapterRecord:
     def test_the_record_is_built_from_the_game_state(self, load_engine: None) -> None:
-        from straightjacket.engine.models import PlotlineEntry
-        from straightjacket.engine.models_story import StoryBlueprint
-        from tests._helpers import make_npc
-
         game = make_game_state(player_name="Hero", setting_id="starforged")
         game.world.current_location = "Old tollhouse"
-        game.narrative.story_blueprint = StoryBlueprint(
-            central_conflict="The drowned bell", antagonist_force="", thematic_thread="", structure_type="3act"
-        )
+        game.narrative.story_blueprint = make_blueprint(central_conflict="The drowned bell")
         fulfilled = make_progress_track(id="v1", name="Ring the bell", track_type="vow")
         fulfilled.status = "completed"
         game.progress_tracks = [fulfilled, make_progress_track(id="v2", name="Find Kira", track_type="vow")]
-        game.narrative.plotlines_list = [PlotlineEntry(id="p1", name="The bell", status="conclusion")]
+        game.narrative.plotlines_list = [
+            PlotlineEntry(id="p1", name="The bell", status="conclusion", turning_point_count=0)
+        ]
         game.narrative.threads = [
-            ThreadEntry(id="thr1", name="Who cast the bell", thread_type="plot", source="ac"),
-            ThreadEntry(id="thr2", name="Find Kira", thread_type="vow", source="vow"),
+            make_thread(id="thr1", name="Who cast the bell", thread_type="plot", source="ac"),
+            make_thread(id="thr2", name="Find Kira", thread_type="vow", source="vow"),
         ]
         game.npcs = [
             make_npc(id="npc_1", name="Mira", disposition="friendly"),

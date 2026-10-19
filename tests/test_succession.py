@@ -14,11 +14,7 @@ from straightjacket.engine.game.succession import (
     start_succession_with_character,
 )
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import (
-    CampaignState,
-    GameState,
-    ThreadEntry,
-)
+from straightjacket.engine.models import CampaignState, GameState
 from straightjacket.engine.ruleset.meters import starting_resources
 from straightjacket.engine.ruleset.progress import filled_boxes, new_track
 from straightjacket.engine.ruleset.succession import (
@@ -30,11 +26,13 @@ from straightjacket.engine.ruleset.succession import (
 )
 from tests._creation import create_game
 from tests._helpers import (
+    make_character_entry,
     make_game_state,
     make_inheritance_roll,
     make_npc,
     make_predecessor,
     make_progress_track,
+    make_thread,
     make_threat,
 )
 
@@ -225,8 +223,8 @@ def test_carryover_keeps_only_the_connections_of_every_track_it_is_given() -> No
 
 def test_filter_drops_vow_threads() -> None:
     threads = [
-        ThreadEntry(id="t1", name="Avenge sister", thread_type="vow", source="creation"),
-        ThreadEntry(id="t2", name="Find ally", thread_type="vow", source="vow"),
+        make_thread(id="t1", name="Avenge sister", thread_type="vow", source="creation"),
+        make_thread(id="t2", name="Find ally", thread_type="vow", source="vow"),
     ]
     kept = threads_for_successor(threads)
     assert kept == []
@@ -234,9 +232,9 @@ def test_filter_drops_vow_threads() -> None:
 
 def test_filter_drops_creation_threads_regardless_of_type() -> None:
     threads = [
-        ThreadEntry(id="t1", name="Old fear", thread_type="tension", source="creation"),
-        ThreadEntry(id="t2", name="Faction war", thread_type="subplot", source="director"),
-        ThreadEntry(id="t3", name="Rumor", thread_type="goal", source="event"),
+        make_thread(id="t1", name="Old fear", thread_type="tension", source="creation"),
+        make_thread(id="t2", name="Faction war", thread_type="subplot", source="director"),
+        make_thread(id="t3", name="Rumor", thread_type="goal", source="event"),
     ]
     kept = threads_for_successor(threads)
     kept_ids = {t.id for t in kept}
@@ -316,7 +314,7 @@ def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> Non
 
     _reset_for_successor(
         aria,
-        surviving_threads=[ThreadEntry(id="t1", name="Faction war", thread_type="subplot", source="director")],
+        surviving_threads=[make_thread(id="t1", name="Faction war", thread_type="subplot", source="director")],
         surviving_threats=surviving_threats,
         surviving_npcs=[],
         surviving_connection_tracks=[],
@@ -353,13 +351,11 @@ def test_a_successor_cannot_correct_the_predecessors_last_turn(aria: GameState) 
 
 
 def test_reset_for_successor_filters_characters_list(aria: GameState) -> None:
-    from straightjacket.engine.models import CharacterListEntry
-
     keeper_npc = make_npc(id="npc_keep", name="Keep", status="active")
     aria.narrative.characters_list = [
-        CharacterListEntry(id="npc_keep", name="Keep", entry_type="npc", weight=1),
-        CharacterListEntry(id="npc_dropped", name="Dropped", entry_type="npc", weight=1),
-        CharacterListEntry(id="char_vow_subject", name="Sister", entry_type="abstract", weight=2),
+        make_character_entry(id="npc_keep", name="Keep", entry_type="npc", weight=1),
+        make_character_entry(id="npc_dropped", name="Dropped", entry_type="npc", weight=1),
+        make_character_entry(id="char_vow_subject", name="Sister", entry_type="abstract", weight=2),
     ]
     _reset_for_successor(
         aria,

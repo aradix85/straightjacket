@@ -22,7 +22,7 @@ from straightjacket.engine.crafters.adventure_crafter import (
 )
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.crafters.meta_plot_points import _META_HANDLERS, _create_character, dispatch_meta
-from straightjacket.engine.models_story import NarrativeState
+from tests._helpers import make_narrative
 
 _SPECIAL_BOUNDARIES = [
     (1, "conclusion"),
@@ -172,16 +172,12 @@ def test_meta_lookup_out_of_range_roll_raises(bad_roll: int):
 
 
 def test_dispatch_meta_routes_to_handler_without_raising():
-    from straightjacket.engine.models_story import NarrativeState
-
-    narrative = NarrativeState()
+    narrative = make_narrative()
     for roll in [1, 19, 28, 37, 56, 74, 83]:
         dispatch_meta(roll, narrative, None)
 
 
 def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch):
-    from straightjacket.engine.models_story import NarrativeState
-
     def fake_lookup(_roll: int) -> str:
         return "Plot Twist"
 
@@ -189,7 +185,7 @@ def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch):
         "straightjacket.engine.crafters.meta_plot_points.lookup_meta_plot_point",
         fake_lookup,
     )
-    narrative = NarrativeState()
+    narrative = make_narrative()
     with pytest.raises(KeyError, match="drifted"):
         dispatch_meta(50, narrative, None)
 
@@ -254,7 +250,7 @@ def test_characters_template_weighted_toward_new_character():
 
 
 def test_roll_turning_point_produces_two_to_five_plot_points():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     rng = random.Random(7)
     themes = ["action", "tension", "mystery", "social", "personal"]
     for _ in range(20):
@@ -267,14 +263,14 @@ def test_roll_turning_point_produces_two_to_five_plot_points():
 
 
 def test_roll_turning_point_themes_length_must_match_theme_slots():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     rng = random.Random(0)
     with pytest.raises(ValueError, match="theme_slots"):
         roll_turning_point(rng, ["action", "tension"], narrative)
 
 
 def test_roll_turning_point_creates_plotline_on_empty_list():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     rng = random.Random(1)
     themes = ["action", "tension", "mystery", "social", "personal"]
     assert narrative.plotlines_list == []
@@ -284,14 +280,14 @@ def test_roll_turning_point_creates_plotline_on_empty_list():
 
 
 def test_a_turning_point_names_its_plotline_and_what_it_does_to_it():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     themes = ["action", "tension", "mystery", "social", "personal"]
     tp = roll_turning_point(random.Random(1), themes, narrative)
     assert (tp.plotline, tp.opens_plotline, tp.concludes_plotline) == (narrative.plotlines_list[0].name, True, False)
 
 
 def test_roll_turning_point_reuses_advancing_plotline():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     _create_plotline(narrative, "First")
     rng = random.Random(0)
     themes = ["action", "tension", "mystery", "social", "personal"]
@@ -302,7 +298,7 @@ def test_roll_turning_point_reuses_advancing_plotline():
 
 
 def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeypatch):
-    narrative = NarrativeState()
+    narrative = make_narrative()
     _create_plotline(narrative, "First")
     rng = random.Random(0)
     themes = ["action", "tension", "mystery", "social", "personal"]
@@ -323,7 +319,7 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
 def test_meta_character_exits_marks_active_character_exited():
     from straightjacket.engine.crafters.meta_plot_points import _meta_character_exits
 
-    narrative = NarrativeState()
+    narrative = make_narrative()
     char = _create_character(narrative, "Alice")
     _meta_character_exits(narrative, None)
     assert char.ac_status == "exited"
@@ -332,7 +328,7 @@ def test_meta_character_exits_marks_active_character_exited():
 def test_meta_character_returns_marks_exited_character_returned():
     from straightjacket.engine.crafters.meta_plot_points import _meta_character_returns
 
-    narrative = NarrativeState()
+    narrative = make_narrative()
     char = _create_character(narrative, "Alice")
     char.ac_status = "exited"
     _meta_character_returns(narrative, None)
@@ -342,7 +338,7 @@ def test_meta_character_returns_marks_exited_character_returned():
 def test_meta_character_returns_creates_new_when_no_exited():
     from straightjacket.engine.crafters.meta_plot_points import _meta_character_returns
 
-    narrative = NarrativeState()
+    narrative = make_narrative()
     _meta_character_returns(narrative, None)
     assert len(narrative.characters_list) == 1
     assert narrative.characters_list[0].ac_status == "returned"
@@ -351,7 +347,7 @@ def test_meta_character_returns_creates_new_when_no_exited():
 def test_meta_character_steps_up_increases_weight():
     from straightjacket.engine.crafters.meta_plot_points import _meta_character_steps_up
 
-    narrative = NarrativeState()
+    narrative = make_narrative()
     char = _create_character(narrative, "Alice")
     initial = char.weight
     _meta_character_steps_up(narrative, None)
@@ -363,7 +359,7 @@ def test_meta_character_steps_down_decreases_weight_to_floor():
     from straightjacket.engine.crafters.meta_plot_points import _meta_character_steps_down
 
     cfg = crafter().adventure_crafter.meta_handlers
-    narrative = NarrativeState()
+    narrative = make_narrative()
     char = _create_character(narrative, "Alice")
     char.weight = 5
     _meta_character_steps_down(narrative, None)
@@ -377,7 +373,7 @@ def test_meta_character_downgrade_marks_status_and_decreases_weight():
     from straightjacket.engine.crafters.meta_plot_points import _meta_character_downgrade
 
     cfg = crafter().adventure_crafter.meta_handlers
-    narrative = NarrativeState()
+    narrative = make_narrative()
     char = _create_character(narrative, "Alice")
     char.weight = 5
     _meta_character_downgrade(narrative, None)
@@ -389,7 +385,7 @@ def test_meta_character_upgrade_marks_status_and_increases_weight():
     from straightjacket.engine.crafters.meta_plot_points import _meta_character_upgrade
 
     cfg = crafter().adventure_crafter.meta_handlers
-    narrative = NarrativeState()
+    narrative = make_narrative()
     char = _create_character(narrative, "Alice")
     initial = char.weight
     _meta_character_upgrade(narrative, None)
@@ -400,7 +396,7 @@ def test_meta_character_upgrade_marks_status_and_increases_weight():
 def test_meta_plotline_combo_merges_two_advancing_plotlines():
     from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
-    narrative = NarrativeState()
+    narrative = make_narrative()
     a = _create_plotline(narrative, "First")
     b = _create_plotline(narrative, "Second")
     _meta_plotline_combo(narrative, None)
@@ -412,7 +408,7 @@ def test_meta_plotline_combo_merges_two_advancing_plotlines():
 def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
     from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
-    narrative = NarrativeState()
+    narrative = make_narrative()
     only = _create_plotline(narrative, "Only one")
     _meta_plotline_combo(narrative, None)
     assert only.status == "advancement"
@@ -421,7 +417,7 @@ def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
 def test_meta_plotline_combo_excludes_active_plotline_id():
     from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
-    narrative = NarrativeState()
+    narrative = make_narrative()
     active = _create_plotline(narrative, "Active")
     _create_plotline(narrative, "Other")
     _meta_plotline_combo(narrative, active.id)
@@ -429,7 +425,7 @@ def test_meta_plotline_combo_excludes_active_plotline_id():
 
 
 def test_narrative_state_snapshot_restore_round_trips_plotlines_list():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     _create_plotline(narrative, "Original")
     snap = narrative.snapshot()
     _create_plotline(narrative, "Mid-turn add")

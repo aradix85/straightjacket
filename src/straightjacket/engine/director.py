@@ -266,6 +266,10 @@ def _clear_reflection_flags(game: GameState, reason: str) -> None:
             )
 
 
+def new_guidance() -> DirectorGuidance:
+    return DirectorGuidance(narrator_guidance="", arc_notes="")
+
+
 def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
     if not guidance:
         _clear_reflection_flags(game, "no guidance")

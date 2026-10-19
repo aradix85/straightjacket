@@ -4,10 +4,10 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.models import GameState, ThreadEntry
+from straightjacket.engine.models import GameState
 from straightjacket.engine.tools import execute_tool_call, get_tools, handler, registry
 from straightjacket.engine.tools.builtins import query_game_state
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_thread
 
 
 def _game_with_data() -> GameState:
@@ -36,7 +36,7 @@ def _game_with_data() -> GameState:
         ),
     ]
     game.narrative.threads.append(
-        ThreadEntry(id="thread_1", name="Find the vault", thread_type="vow", weight=2, active=True, source="creation")
+        make_thread(id="thread_1", name="Find the vault", thread_type="vow", weight=2, active=True, source="creation")
     )
     game.world.clocks.append(
         make_clock(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner_kind="npc", owner_id="Kira")

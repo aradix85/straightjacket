@@ -240,6 +240,7 @@ def add_keyed_scene(
         trigger_value=trigger_value,
         priority=priority,
         narrative_hint=narrative_hint,
+        bound_entity_id=None,
         source=source,
     )
     narrative.keyed_scenes.append(scene)

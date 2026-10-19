@@ -1,5 +1,4 @@
 import copy
-from typing import Any
 
 from ..ai.brain import call_brain
 from ..ai.provider_base import AIProvider, NarrationSink
@@ -30,6 +29,7 @@ from ..models import (
     RandomEvent,
     ResolvedFact,
     RollResult,
+    SceneLogEntry,
     SceneSetup,
     ThreatEvent,
     TurnSnapshot,
@@ -314,30 +314,26 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
 
     _snapshot_of_turn(game).narration = narration
 
-    result_label = "oracle" if is_oracle else "dialog"
-    log_entry: dict[str, Any] = {
-        "scene": game.narrative.scene_count,
-        "summary": (brain.player_intent or ctx.player_message),
-        "move": brain.move,
-        "result": result_label,
-        "consequences": engine_moves.consequences,
-        "clock_events": [],
-        "scene_type": ctx.scene_setup.scene_type,
-        "_pacing_type": "breather",
-    }
-    if is_oracle:
-        log_entry["oracle_answer"] = oracle_answer
-
-    _, director_ctx = finalize_scene(
+    director_ctx = finalize_scene(
         ctx,
         narration,
-        log_entry=log_entry,
+        log_entry=SceneLogEntry(
+            scene=game.narrative.scene_count,
+            scene_type=ctx.scene_setup.scene_type,
+            summary=brain.player_intent or ctx.player_message,
+            move=brain.move,
+            result="oracle" if is_oracle else "dialog",
+            consequences=engine_moves.consequences,
+            position="",
+            effect="",
+            rich_summary="",
+            oracle_answer=oracle_answer,
+        ),
+        pacing_type="breather",
         prompt_summary=get_prompt(
             "history_oracle" if is_oracle else "history_dialog",
             intent=(brain.player_intent or ctx.player_message)[: eng().truncations.log_medium],
         ),
-        roll_result_str=result_label,
-        consequences=engine_moves.consequences,
         agency_clock_events=agency_clock_events,
         threat_events=threat_events,
     )
@@ -430,30 +426,30 @@ def _narrate_action_and_finalize(
     snapshot.roll = roll
     snapshot.narration = narration
 
-    _, director_ctx = finalize_scene(
+    director_ctx = finalize_scene(
         ctx,
         narration,
-        log_entry={
-            "scene": game.narrative.scene_count,
-            "summary": (brain.player_intent or player_message),
-            "move": brain.move,
-            "result": roll.result,
-            "consequences": action_res.consequences,
-            "clock_events": action_res.clock_events,
-            "position": action_res.position,
-            "effect": action_res.effect,
-            "scene_type": ctx.scene_setup.scene_type,
-            "_pacing_type": "action",
-        },
+        log_entry=SceneLogEntry(
+            scene=game.narrative.scene_count,
+            scene_type=ctx.scene_setup.scene_type,
+            summary=brain.player_intent or player_message,
+            move=brain.move,
+            result=roll.result,
+            consequences=action_res.consequences,
+            clock_events=action_res.clock_events,
+            position=action_res.position,
+            effect=action_res.effect,
+            rich_summary="",
+            oracle_answer="",
+        ),
+        pacing_type="action",
         prompt_summary=get_prompt(
             "history_action",
             label=ctx.summary_label,
             result=roll.result,
             intent=(brain.player_intent or player_message)[: eng().truncations.log_medium],
         ),
-        roll_result_str=roll.result,
         roll=roll,
-        consequences=action_res.consequences,
         agency_clock_events=action_res.agency_clock_events,
         threat_events=action_res.threat_events,
     )

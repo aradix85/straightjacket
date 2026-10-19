@@ -35,7 +35,14 @@ def _legacy_track(name: str) -> ProgressTrack:
 
 
 def new_campaign(setting_id: str) -> CampaignState:
-    return CampaignState(legacy={name: _legacy_track(name) for name in _legacy_tracks(setting_id)})
+    return CampaignState(
+        chapter_number=1,
+        epilogue_dismissed=False,
+        pending_succession=False,
+        xp=0,
+        xp_spent=0,
+        legacy={name: _legacy_track(name) for name in _legacy_tracks(setting_id)},
+    )
 
 
 def shifted_rank(rank: str, shift: int) -> str | None:

@@ -14,22 +14,15 @@ from ..crafters.blueprint import (
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
+from ..director import new_guidance
 from ..engine_loader import eng
 from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import next_npc_id
 from ..gamemaster.npc.memory import consolidate_memory
-from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.story import choose_story_structure
 from ..gamemaster.world import clear_facts
 from ..logging_util import log
-from ..models import (
-    ChapterSummary,
-    DirectorGuidance,
-    GameState,
-    NarrationEntry,
-    NpcData,
-    SceneLogEntry,
-)
+from ..models import ChapterSummary, GameState, NpcData
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
 from ..prompt_loader import get_prompt
@@ -37,7 +30,7 @@ from ..ruleset.bond import get_npc_bond
 from ..ruleset.progress import menace_boxes, menace_total_boxes
 from ..ruleset.threats import active_threats, overcome_threats
 from ..ruleset.tracks import is_vow_thread, vow_record
-from .setup_common import apply_opening_setup
+from .setup_common import apply_opening_setup, record_opening
 
 
 def generate_epilogue(provider: AIProvider, game: GameState) -> str:
@@ -161,7 +154,7 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.world.time_of_day = gm().opening.time_of_day
     game.world.location_history = []
     clear_facts(game)
-    game.narrative.director_guidance = DirectorGuidance()
+    game.narrative.director_guidance = new_guidance()
     game.last_turn_snapshot = None
 
 
@@ -254,24 +247,14 @@ def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> Non
 
 
 def _record_chapter_opening(game: GameState, narration: str) -> None:
-    record_scene_intensity(game, "action")
-    game.narrative.narration_history.append(
-        NarrationEntry(
-            scene=1,
-            prompt_summary=get_prompt(
-                "history_chapter_opening",
-                n=str(game.campaign.chapter_number),
-                player=game.player_name,
-                location=game.world.current_location,
-            ),
-            narration=narration,
-        )
-    )
-    game.narrative.session_log.append(
-        SceneLogEntry(
-            scene=1,
-            scene_type="expected",
-            summary=get_prompt("scene_log_chapter_start", n=str(game.campaign.chapter_number)),
-            result="opening",
-        )
+    record_opening(
+        game,
+        narration,
+        history_summary=get_prompt(
+            "history_chapter_opening",
+            n=str(game.campaign.chapter_number),
+            player=game.player_name,
+            location=game.world.current_location,
+        ),
+        log_summary=get_prompt("scene_log_chapter_start", n=str(game.campaign.chapter_number)),
     )

@@ -2,10 +2,9 @@ import pytest
 
 from straightjacket.engine.gamemaster import questions
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import SceneLogEntry
 from straightjacket.engine.ruleset import answers
 from straightjacket.engine.ruleset.progress import menace_total_boxes
-from tests._helpers import make_game_state, make_npc, make_progress_track, make_threat
+from tests._helpers import make_game_state, make_npc, make_progress_track, make_scene_log_entry, make_threat
 
 
 def test_the_game_package_installs_the_ironsworn_answers(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -92,7 +91,7 @@ def test_an_advantage_is_gained_by_a_hit_on_an_advantage_move(
     load_engine: None, move: str, result: str, gained: bool
 ) -> None:
     game = make_game_state(player_name="Test")
-    game.narrative.session_log.append(SceneLogEntry(scene=1, move=move, result=result, scene_type="expected"))
+    game.narrative.session_log.append(make_scene_log_entry(scene=1, move=move, result=result))
     assert answers.gained_advantage(game) is gained
 
 

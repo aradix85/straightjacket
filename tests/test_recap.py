@@ -1,6 +1,4 @@
-from straightjacket.engine.models import SceneLogEntry
-from straightjacket.engine.models_story import StoryAct, StoryBlueprint
-from tests._helpers import make_game_state, make_npc
+from tests._helpers import make_act, make_blueprint, make_game_state, make_npc, make_scene_log_entry
 from tests._mocks import MockProvider
 
 
@@ -44,21 +42,11 @@ def test_call_recap_with_arc(load_engine: None) -> None:
 
     provider = MockProvider("recap text")
     g = _full_game(None)
-    g.narrative.story_blueprint = StoryBlueprint(
+    g.narrative.story_blueprint = make_blueprint(
         central_conflict="x",
         antagonist_force="y",
         thematic_thread="z",
-        structure_type="3act",
-        acts=[
-            StoryAct(
-                phase="setup",
-                title="Act 1",
-                goal="g",
-                scene_range=[1, 5],
-                mood="tense",
-                transition_trigger="trigger",
-            )
-        ],
+        acts=[make_act(title="Act 1", goal="g", mood="tense", transition_trigger="trigger")],
     )
     g.narrative.scene_count = 3
     result = call_recap(provider, g)
@@ -83,6 +71,6 @@ def test_call_recap_with_session_log(load_engine: None) -> None:
     provider = MockProvider("recap")
     g = _full_game(None)
     g.narrative.session_log = [
-        SceneLogEntry(scene=1, summary="Met Kira", result="STRONG_HIT", scene_type="expected"),
+        make_scene_log_entry(scene=1, summary="Met Kira", move="adventure/face_danger", result="STRONG_HIT"),
     ]
     assert call_recap(provider, g) == "recap"

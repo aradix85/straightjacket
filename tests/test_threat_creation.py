@@ -8,9 +8,9 @@ from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, Turni
 from straightjacket.engine.crafters.turning_point_spawns import spawn_dangers_for_turning_point
 from straightjacket.engine.gamemaster.random_events import spawn_danger_from_random_event
 from straightjacket.engine.gamemaster.scene import check_scene
-from straightjacket.engine.models import KeyedScene, RandomEvent
+from straightjacket.engine.models import RandomEvent
 from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes
-from tests._helpers import make_game_state, make_threat
+from tests._helpers import make_game_state, make_keyed_scene, make_threat
 
 
 def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
@@ -186,7 +186,7 @@ def test_keyed_scene_threat_menace_fires_after_spawn(load_engine: None) -> None:
     threat = g.threats[0]
 
     g.narrative.keyed_scenes.append(
-        KeyedScene(
+        make_keyed_scene(
             id="ks_test",
             trigger_type="threat_menace_phase",
             trigger_value=f"{threat.name}:1",

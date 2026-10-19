@@ -11,20 +11,14 @@ from ..crafters.blueprint import (
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
+from ..director import new_guidance
 from ..gamemaster.clocks import start_opening_clock
 from ..gamemaster.config import gm
-from ..gamemaster.pacing import record_scene_intensity
+from ..gamemaster.random_events import add_character
 from ..gamemaster.story import choose_story_structure
 from ..gamemaster.world import new_world
 from ..logging_util import log
-from ..models import (
-    CharacterListEntry,
-    GameState,
-    NarrationEntry,
-    NarrativeState,
-    PlayerPreferences,
-    SceneLogEntry,
-)
+from ..models import GameState, NarrativeState, PlayerPreferences
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
@@ -33,7 +27,7 @@ from ..ruleset.config import rules
 from ..ruleset.legacy import new_campaign
 from ..ruleset.meters import starting_resources
 from ..setting.packages import SettingPackage, load_package
-from .setup_common import apply_opening_setup
+from .setup_common import apply_opening_setup, record_opening
 
 
 def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> None:
@@ -81,14 +75,7 @@ def _compute_chaos_start(vow_text: str) -> int:
 def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
     if not vow_subject:
         return
-    game.narrative.characters_list.append(
-        CharacterListEntry(
-            id="char_vow_subject",
-            name=vow_subject,
-            entry_type="abstract",
-            weight=gm().random_events.seeded_list_weight,
-        )
-    )
+    add_character(game, "char_vow_subject", vow_subject, "abstract", gm().random_events.seeded_list_weight)
     log(f"[NewGame] Vow subject seeded in characters list: {vow_subject}")
 
 
@@ -111,7 +98,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
         backstory="",
         resources=starting_resources(setting_id),
         world=new_world(),
-        narrative=NarrativeState(),
+        narrative=NarrativeState(scene_count=1, story_blueprint=None, director_guidance=new_guidance()),
         campaign=new_campaign(setting_id),
         preferences=PlayerPreferences(player_wishes="", content_lines=""),
         crisis_mode=False,
@@ -121,7 +108,6 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
     )
     take_up_character(game, character, creation_data, pkg)
 
-    game.narrative.scene_count = 1
     game.world.chaos_factor = _compute_chaos_start(game.background_vow)
 
     game.world.time_of_day = gm().opening.time_of_day
@@ -155,8 +141,6 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
 
     if voicing is not None:
         game.narrative.story_blueprint = materialize_blueprint(seed, voicing)
-    else:
-        game.narrative.story_blueprint = None
 
     setup_data = call_opening_setup(provider, narration, game)
     apply_opening_setup(game, setup_data, label="OpeningSetup")
@@ -166,29 +150,16 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
 
     for npc in game.npcs:
         if npc.status == "active":
-            game.narrative.characters_list.append(
-                CharacterListEntry(id=npc.id, name=npc.name, entry_type="npc", weight=1)
-            )
+            add_character(game, npc.id, npc.name, "npc", 1)
 
     if setup_data["deceased_npcs"]:
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
-    record_scene_intensity(game, "action")
-
-    game.narrative.narration_history.append(
-        NarrationEntry(
-            scene=1,
-            prompt_summary=get_prompt("history_opening", player=game.player_name, location=game.world.current_location),
-            narration=narration,
-        )
-    )
-    game.narrative.session_log.append(
-        SceneLogEntry(
-            scene=1,
-            scene_type="expected",
-            summary=get_prompt("scene_log_game_start"),
-            result="opening",
-        )
+    record_opening(
+        game,
+        narration,
+        history_summary=get_prompt("history_opening", player=game.player_name, location=game.world.current_location),
+        log_summary=get_prompt("scene_log_game_start"),
     )
 
     return game, narration

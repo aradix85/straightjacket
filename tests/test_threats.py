@@ -4,7 +4,7 @@ from straightjacket.engine.models import GameState, Resources, ThreatData, label
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes, menace_per_mark
-from tests._helpers import make_game_state, make_progress_track, make_threat, make_world_state
+from tests._helpers import make_game_state, make_progress_track, make_thread, make_threat, make_world_state
 
 
 def _game_with_threat() -> GameState:
@@ -264,12 +264,11 @@ class TestResolveForsakeVow:
         assert result.follow_up_moves == ["suffer/endure_stress"]
 
     def test_menace_full_deactivates_thread(self, stub_engine: None) -> None:
-        from straightjacket.engine.models import ThreadEntry
         from straightjacket.engine.ruleset.threats import resolve_full_menace
 
         game = _game_with_threat()
         game.narrative.threads.append(
-            ThreadEntry(
+            make_thread(
                 id="thread_hunt",
                 name="Hunt the beast",
                 linked_track_id="vow_hunt",

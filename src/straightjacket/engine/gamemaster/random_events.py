@@ -209,6 +209,12 @@ def add_thread_weight(game: GameState, thread_id: str) -> None:
     _add_weight(game.narrative.threads, thread_id, "Thread")
 
 
+def add_character(game: GameState, character_id: str, name: str, entry_type: str, weight: int) -> None:
+    game.narrative.characters_list.append(
+        CharacterListEntry(id=character_id, name=name, entry_type=entry_type, weight=weight, active=True, ac_status="")
+    )
+
+
 def add_character_weight(game: GameState, character_id: str) -> None:
     _add_weight(game.narrative.characters_list, character_id, "Character")
 

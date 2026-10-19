@@ -360,8 +360,7 @@ def test_absorb_duplicate_npc(stub_engine: None, stub_emotions: None) -> None:
 
 
 def _merge_game(original_ticks: int | None, dup_ticks: int | None) -> GameState:
-    from straightjacket.engine.models import CharacterListEntry
-    from tests._helpers import make_clock, make_progress_track
+    from tests._helpers import make_character_entry, make_clock, make_progress_track
 
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Mira"), make_npc(id="npc_2", name="The stranger")]
@@ -372,8 +371,8 @@ def _merge_game(original_ticks: int | None, dup_ticks: int | None) -> GameState:
             )
     game.world.clocks = [make_clock(name="The stranger's errand", owner_kind="npc", owner_id="The stranger")]
     game.narrative.characters_list = [
-        CharacterListEntry(id="npc_1", name="Mira", entry_type="npc", weight=1),
-        CharacterListEntry(id="npc_2", name="The stranger", entry_type="npc", weight=1),
+        make_character_entry(id="npc_1", name="Mira", entry_type="npc", weight=1),
+        make_character_entry(id="npc_2", name="The stranger", entry_type="npc", weight=1),
     ]
     return game
 

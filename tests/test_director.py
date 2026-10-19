@@ -3,10 +3,7 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.game import DirectorCall
-from straightjacket.engine.models import (
-    GameState,
-    SceneLogEntry,
-)
+from straightjacket.engine.models import GameState
 from tests._helpers import (
     keyed_reflections,
     make_director_guidance,
@@ -14,13 +11,14 @@ from tests._helpers import (
     make_memory,
     make_npc,
     make_npc_reflection,
+    make_scene_log_entry,
 )
 
 
 def _game() -> GameState:
     game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 6
-    game.narrative.session_log.append(SceneLogEntry(scene=6, summary="Last scene", scene_type="expected"))
+    game.narrative.session_log.append(make_scene_log_entry(scene=6, summary="Last scene"))
     game.npcs = [
         make_npc(
             id="npc_1",
@@ -470,7 +468,7 @@ def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
         )
     )
     game = make_test_game()
-    game.narrative.session_log.append(SceneLogEntry(scene=5, summary="Last", scene_type="expected"))
+    game.narrative.session_log.append(make_scene_log_entry(scene=5, summary="Last"))
     run_deferred_director(
         provider,
         game,

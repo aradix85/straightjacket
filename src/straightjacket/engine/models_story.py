@@ -13,9 +13,9 @@ class ThreadEntry(SerializableMixin):
     name: str
     thread_type: str
     source: str
-    weight: int = 1
-    linked_track_id: str | None = None
-    active: bool = True
+    weight: int
+    linked_track_id: str | None
+    active: bool
 
 
 @dataclass
@@ -23,9 +23,9 @@ class CharacterListEntry(SerializableMixin):
     id: str
     name: str
     entry_type: str
-    weight: int = 1
-    active: bool = True
-    ac_status: str = ""
+    weight: int
+    active: bool
+    ac_status: str
 
 
 @dataclass
@@ -33,22 +33,22 @@ class PlotlineEntry(SerializableMixin):
     id: str
     name: str
     status: str
-    turning_point_count: int = 0
+    turning_point_count: int
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SceneLogEntry(SerializableMixin):
-    scene: int = 0
-    scene_type: str = field(kw_only=True)
-    summary: str = ""
-    move: str = ""
-    result: str = ""
+    scene: int
+    scene_type: str
+    summary: str
+    move: str
+    result: str
     consequences: list[Consequence] = field(default_factory=list)
     clock_events: list[ClockEvent] = field(default_factory=list)
-    position: str = "risky"
-    effect: str = "standard"
-    rich_summary: str = ""
-    oracle_answer: str = ""
+    position: str
+    effect: str
+    rich_summary: str
+    oracle_answer: str
 
 
 @dataclass
@@ -72,16 +72,16 @@ class StoryAct(SerializableMixin):
 class CurrentAct:
     _NOT_SERIALIZED = True
 
-    phase: str = ""
-    title: str = ""
-    goal: str = ""
-    scene_range: list[int] = field(default_factory=list)
-    mood: str = ""
-    transition_trigger: str = ""
-    act_number: int = 1
-    total_acts: int = 3
-    progress: str = "early"
-    approaching_end: bool = False
+    phase: str
+    title: str
+    goal: str
+    scene_range: list[int]
+    mood: str
+    transition_trigger: str
+    act_number: int
+    total_acts: int
+    progress: str
+    approaching_end: bool
 
 
 @dataclass
@@ -98,7 +98,7 @@ class PossibleEnding(SerializableMixin):
     description: str
 
 
-@dataclass
+@dataclass(kw_only=True)
 class StoryBlueprint(SerializableMixin):
     central_conflict: str
     antagonist_force: str
@@ -110,14 +110,14 @@ class StoryBlueprint(SerializableMixin):
     revealed: list[str] = field(default_factory=list)
     triggered_transitions: list[str] = field(default_factory=list)
     triggered_director_phases: list[str] = field(default_factory=list)
-    story_complete: bool = False
+    story_complete: bool
 
 
-@dataclass
+@dataclass(kw_only=True)
 class DirectorGuidance(SerializableMixin):
-    narrator_guidance: str = ""
+    narrator_guidance: str
     npc_guidance: dict[str, str] = field(default_factory=dict)
-    arc_notes: str = ""
+    arc_notes: str
 
 
 @dataclass
@@ -127,17 +127,17 @@ class KeyedScene(SerializableMixin):
     trigger_value: str
     priority: int
     narrative_hint: str
-    bound_entity_id: str | None = None
-    source: str = ""
+    bound_entity_id: str | None
+    source: str
 
 
-@dataclass
+@dataclass(kw_only=True)
 class NarrativeState(SerializableMixin):
-    scene_count: int = 0
+    scene_count: int
     session_log: list[SceneLogEntry] = field(default_factory=list)
     narration_history: list[NarrationEntry] = field(default_factory=list)
-    story_blueprint: StoryBlueprint | None = None
-    director_guidance: DirectorGuidance = field(default_factory=DirectorGuidance)
+    story_blueprint: StoryBlueprint | None
+    director_guidance: DirectorGuidance
     scene_intensity_history: list[str] = field(default_factory=list)
     threads: list[ThreadEntry] = field(default_factory=list)
     characters_list: list[CharacterListEntry] = field(default_factory=list)
@@ -214,18 +214,18 @@ class ChapterSummary(SerializableMixin):
     unresolved_threads: list[str]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CampaignState(SerializableMixin):
     campaign_history: list[ChapterSummary] = field(default_factory=list)
     predecessors: list[PredecessorRecord] = field(default_factory=list)
-    chapter_number: int = 1
-    epilogue_dismissed: bool = False
+    chapter_number: int
+    epilogue_dismissed: bool
 
-    pending_succession: bool = False
+    pending_succession: bool
 
-    xp: int = 0
-    xp_spent: int = 0
-    legacy: dict[str, ProgressTrack] = field(kw_only=True)
+    xp: int
+    xp_spent: int
+    legacy: dict[str, ProgressTrack]
 
     @property
     def xp_available(self) -> int:

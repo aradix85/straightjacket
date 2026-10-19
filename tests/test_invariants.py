@@ -2,7 +2,7 @@ import sys as _sys
 from pathlib import Path as _Path
 
 from straightjacket.engine.models import GameState
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_scene_log_entry
 
 _sys.path.insert(0, str(_Path(__file__).resolve().parent / "elvira"))
 
@@ -30,10 +30,8 @@ def _clean_game() -> GameState:
     game.world.clocks = [
         make_clock(name="Doom", clock_type="threat", segments=6, filled=2),
     ]
-    from straightjacket.engine.models import SceneLogEntry
-
     game.narrative.session_log = [
-        SceneLogEntry(scene=3, summary="Last scene", scene_type="expected"),
+        make_scene_log_entry(scene=3, summary="Last scene"),
     ]
     return game
 

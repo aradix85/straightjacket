@@ -5,16 +5,14 @@ import pytest
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene, evaluate_keyed_scenes
 from straightjacket.engine.gamemaster.scene import SceneSetup, check_scene
-from straightjacket.engine.models import (
-    GameState,
-    KeyedScene,
-    NarrativeState,
-)
+from straightjacket.engine.models import GameState, KeyedScene
 from straightjacket.engine.prompt_shared import _pacing_block
 from tests._helpers import (
     fix_dice,
     make_clock,
     make_game_state,
+    make_keyed_scene,
+    make_narrative,
     make_npc,
     make_progress_track,
     make_scene_setup,
@@ -33,7 +31,7 @@ def _ks(**kwargs) -> KeyedScene:
     kwargs.setdefault("trigger_value", "1")
     kwargs.setdefault("priority", 1)
     kwargs.setdefault("narrative_hint", "test hint")
-    return KeyedScene(**kwargs)
+    return make_keyed_scene(**kwargs)
 
 
 def test_keyed_scene_unknown_trigger_type_raises():
@@ -237,7 +235,7 @@ def test_check_scene_no_keyed_scenes_uses_chaos(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_narrative_state_snapshot_restores_keyed_scenes():
-    nar = NarrativeState()
+    nar = make_narrative()
     nar.keyed_scenes.append(_ks(id="ks_a"))
     nar.keyed_scenes.append(_ks(id="ks_b"))
     snap = nar.snapshot()

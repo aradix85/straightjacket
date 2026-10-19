@@ -14,15 +14,13 @@ from straightjacket.engine.gamemaster.keyed_scenes import (
     evaluate_keyed_scenes,
 )
 from straightjacket.engine.gamemaster.random_events import generate_random_event, spawn_keyed_scene_from_random_event
-from straightjacket.engine.models import (
-    GameState,
-    KeyedScene,
-    NarrativeState,
-    ProgressTrack,
-)
+from straightjacket.engine.models import GameState, KeyedScene, ProgressTrack
 from tests._helpers import (
+    make_character_entry,
     make_clock,
     make_game_state,
+    make_keyed_scene,
+    make_narrative,
     make_npc,
     make_progress_track,
     make_random_event,
@@ -59,22 +57,16 @@ def _ks_pattern(trigger_type: str, trigger_value: str, **kwargs) -> KeyedScene:
     kwargs.setdefault("id", "ks_test")
     kwargs.setdefault("priority", 5)
     kwargs.setdefault("narrative_hint", "test hint")
-    return KeyedScene(trigger_type=trigger_type, trigger_value=trigger_value, **kwargs)
+    return make_keyed_scene(trigger_type=trigger_type, trigger_value=trigger_value, **kwargs)
 
 
 def test_bond_threshold_any_pattern_validates():
-    KeyedScene(id="ks", trigger_type="bond_threshold", trigger_value="any:5", priority=1, narrative_hint="")
+    make_keyed_scene(id="ks", trigger_type="bond_threshold", trigger_value="any:5")
 
 
 def test_bond_threshold_disposition_pattern_validates_for_each_disposition():
     for disp in gm().enums.dispositions:
-        KeyedScene(
-            id=f"ks_{disp}",
-            trigger_type="bond_threshold",
-            trigger_value=f"disposition_{disp}:4",
-            priority=1,
-            narrative_hint="",
-        )
+        make_keyed_scene(id=f"ks_{disp}", trigger_type="bond_threshold", trigger_value=f"disposition_{disp}:4")
 
 
 def test_bond_threshold_unknown_disposition_raises():
@@ -271,7 +263,7 @@ def _turning_point_with_plot_points(*plot_point_names: str) -> TurningPoint:
 
 
 def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     tp = _turning_point_with_plot_points("Betrayal!")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert len(narrative.keyed_scenes) == 1
@@ -282,14 +274,14 @@ def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point():
 
 
 def test_ac_spawner_skips_unmapped_plot_points():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     tp = _turning_point_with_plot_points("A Common Social Gathering", "Dense Urban Setting")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert narrative.keyed_scenes == []
 
 
 def test_ac_spawner_dedups_same_plot_point_within_chapter():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     tp1 = _turning_point_with_plot_points("Betrayal!")
     tp2 = _turning_point_with_plot_points("Betrayal!")
     spawn_keyed_scenes_for_turning_point(narrative, tp1)
@@ -298,7 +290,7 @@ def test_ac_spawner_dedups_same_plot_point_within_chapter():
 
 
 def test_ac_spawner_respects_max_keyed_scenes_per_chapter_cap():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     cap = crafter().adventure_crafter.max_keyed_scenes_per_chapter
     mappable_names = list(crafter().adventure_crafter.keyed_scene_mapping.keys())
     assert len(mappable_names) > cap
@@ -309,7 +301,7 @@ def test_ac_spawner_respects_max_keyed_scenes_per_chapter_cap():
 
 
 def test_ac_spawner_assigns_unique_ids():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     tp = _turning_point_with_plot_points("Betrayal!", "Liar!", "Hidden Agenda")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     ids = {ks.id for ks in narrative.keyed_scenes}
@@ -317,7 +309,7 @@ def test_ac_spawner_assigns_unique_ids():
 
 
 def test_ac_spawner_skips_special_range_plot_points():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     tp = TurningPoint(
         plot_points=[PlotPointHit(theme="action", name="Conclusion", special_range="conclusion")],
         plotline="Plotline 1",
@@ -384,12 +376,10 @@ def test_random_event_spawner_dedups_same_focus_target_pair():
 
 
 def test_generate_random_event_invokes_spawner():
-    from straightjacket.engine.models_story import CharacterListEntry
-
     game = _seed_game()
     _seed_bond(game, "npc_kira", filled_boxes=0, name="Kira")
     game.narrative.characters_list.append(
-        CharacterListEntry(id="npc_kira", name="Kira", entry_type="character", weight=3, active=True)
+        make_character_entry(id="npc_kira", name="Kira", entry_type="character", weight=3)
     )
     random.seed(42)
     pre_count = len(game.narrative.keyed_scenes)
@@ -398,7 +388,7 @@ def test_generate_random_event_invokes_spawner():
 
 
 def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     clock = make_clock(
         name="The Storm Approaches",
         clock_type="threat",
@@ -417,7 +407,7 @@ def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock():
 
 
 def test_clock_spawner_progress_clock_only_emits_full():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     clock = make_clock(
         name="The Bridge",
         clock_type="progress",
@@ -433,7 +423,7 @@ def test_clock_spawner_progress_clock_only_emits_full():
 
 
 def test_clock_spawner_renders_clock_name_into_narrative_hint():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     clock = make_clock(
         name="De Hertog onthult zijn plan",
         clock_type="threat",
@@ -449,7 +439,7 @@ def test_clock_spawner_renders_clock_name_into_narrative_hint():
 
 
 def test_clock_spawner_dedups_same_clock_threshold_on_repeat_calls():
-    narrative = NarrativeState()
+    narrative = make_narrative()
     clock = make_clock(
         name="Repeat Clock",
         clock_type="threat",

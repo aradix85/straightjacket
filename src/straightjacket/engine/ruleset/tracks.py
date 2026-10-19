@@ -62,34 +62,29 @@ def _add_track(game: GameState, base_id: str, name: str, track_type: str, rank: 
     log(f"[Track] Created {track_type} track: {name} ({rank}), id={track_id}")
 
     if track_type == "vow":
-        game.narrative.threads.append(
-            ThreadEntry(
-                id=unique_id(f"thread_{_slug(name)}", {t.id for t in game.narrative.threads}),
-                name=name,
-                thread_type="vow",
-                weight=gm().random_events.seeded_list_weight,
-                source="vow",
-                linked_track_id=track_id,
-            )
-        )
+        thread_id = unique_id(f"thread_{_slug(name)}", {t.id for t in game.narrative.threads})
+        game.narrative.threads.append(_vow_thread(thread_id, track, "vow"))
         log(f"[Track] Created linked thread for vow: {name}")
     return track
+
+
+def _vow_thread(thread_id: str, vow: ProgressTrack, source: str) -> ThreadEntry:
+    return ThreadEntry(
+        id=thread_id,
+        name=vow.name,
+        thread_type="vow",
+        source=source,
+        weight=gm().random_events.seeded_list_weight,
+        linked_track_id=vow.id,
+        active=True,
+    )
 
 
 def swear_background_vow(game: GameState, vow_text: str, rank: str) -> None:
     vow_rank = rank if rank else rules().creation.background_vow_default_rank
     track = new_track(id="vow_background", name=vow_text, track_type="vow", rank=vow_rank)
     game.progress_tracks.append(track)
-    game.narrative.threads.append(
-        ThreadEntry(
-            id="thread_background_vow",
-            name=vow_text,
-            thread_type="vow",
-            weight=gm().random_events.seeded_list_weight,
-            source="creation",
-            linked_track_id=track.id,
-        )
-    )
+    game.narrative.threads.append(_vow_thread("thread_background_vow", track, "creation"))
     log(f"[Track] Background vow track: rank={vow_rank}, thread seeded")
 
 

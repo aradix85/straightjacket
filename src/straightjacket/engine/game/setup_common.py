@@ -5,9 +5,10 @@ from ..engine_loader import eng
 from ..gamemaster.npc.lifecycle import new_npc
 from ..gamemaster.npc.matching import apply_name_sanitization, fuzzy_match_existing_npc, next_npc_id
 from ..gamemaster.npc.memory import score_importance
+from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.world import update_location
 from ..logging_util import log
-from ..models import GameState, MemoryEntry, NpcData
+from ..models import GameState, MemoryEntry, NarrationEntry, NpcData, SceneLogEntry
 
 
 def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
@@ -114,3 +115,23 @@ def apply_opening_setup(
 
     if data["scene_context"]:
         game.world.current_scene_context = data["scene_context"]
+
+
+def record_opening(game: GameState, narration: str, history_summary: str, log_summary: str) -> None:
+    record_scene_intensity(game, "action")
+    game.narrative.narration_history.append(
+        NarrationEntry(scene=1, prompt_summary=history_summary, narration=narration)
+    )
+    game.narrative.session_log.append(
+        SceneLogEntry(
+            scene=1,
+            scene_type="expected",
+            summary=log_summary,
+            move="",
+            result="opening",
+            position="",
+            effect="",
+            rich_summary="",
+            oracle_answer="",
+        )
+    )

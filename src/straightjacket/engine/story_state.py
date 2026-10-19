@@ -20,9 +20,11 @@ def get_current_act(game: GameState) -> CurrentAct:
             goal=defaults["aftermath_act_goal"],
             scene_range=list(last.scene_range),
             mood=last.mood,
+            transition_trigger="",
             act_number=len(bp.acts),
             total_acts=len(bp.acts),
             progress="late",
+            approaching_end=False,
         )
 
     acts = bp.acts

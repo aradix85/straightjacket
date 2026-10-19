@@ -10,6 +10,7 @@ from ..gamemaster.npc.matching import find_npc, present_in_narration
 from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.questions import outcome_of
 from ..gamemaster.random_events import (
+    add_character,
     add_character_weight,
     add_thread_weight,
     consolidate_lists,
@@ -17,9 +18,7 @@ from ..gamemaster.random_events import (
 from ..logging_util import log
 from ..models import (
     BrainResult,
-    CharacterListEntry,
     ClockEvent,
-    Consequence,
     GameState,
     NarrationEntry,
     RandomEvent,
@@ -50,9 +49,7 @@ def _update_characters_list(game: GameState, metadata: dict[str, Any], scene_pre
         entry_id = npc_obj.id if npc_obj else f"char_{len(game.narrative.characters_list) + 1}"
         existing = any(c.name == name or c.id == entry_id for c in game.narrative.characters_list)
         if not existing:
-            game.narrative.characters_list.append(
-                CharacterListEntry(id=entry_id, name=name, entry_type="npc", weight=1, active=True)
-            )
+            add_character(game, entry_id, name, "npc", 1)
 
 
 def invoked_threads(
@@ -78,15 +75,14 @@ def invoked_threads(
 def finalize_scene(
     ctx: SceneContext,
     narration: str,
-    log_entry: dict[str, Any],
+    log_entry: SceneLogEntry,
+    pacing_type: str,
     prompt_summary: str,
-    roll_result_str: str,
     roll: RollResult | None = None,
     *,
-    consequences: Sequence[Consequence],
     agency_clock_events: Sequence[ClockEvent],
     threat_events: Sequence[ThreatEvent],
-) -> tuple[bool, DirectorCall | None]:
+) -> DirectorCall | None:
     game = ctx.game
     brain = ctx.brain
     scene_present_ids = present_in_narration(game, ctx.prompt_npc_ids, brain.target_npc, narration)
@@ -98,7 +94,7 @@ def finalize_scene(
         brain,
         roll,
         scene_present_ids,
-        consequences=consequences,
+        consequences=log_entry.consequences,
     )
 
     revelation_confirmed = False
@@ -107,7 +103,7 @@ def finalize_scene(
         if revelation_confirmed:
             mark_revelation_used(game, ctx.pending_revs[0].id)
 
-    scene_type = ctx.scene_setup.scene_type if ctx.scene_setup.scene_type != "expected" else log_entry["_pacing_type"]
+    scene_type = ctx.scene_setup.scene_type if ctx.scene_setup.scene_type != "expected" else pacing_type
     record_scene_intensity(game, scene_type)
 
     nar = game.narrative
@@ -121,8 +117,7 @@ def finalize_scene(
     if len(nar.narration_history) > gm().pacing.max_narration_history:
         nar.narration_history = nar.narration_history[-gm().pacing.max_narration_history :]
 
-    log_entry.pop("_pacing_type")
-    nar.session_log.append(SceneLogEntry(**log_entry))
+    nar.session_log.append(log_entry)
     if len(nar.session_log) > gm().pacing.max_session_log:
         nar.session_log = nar.session_log[-gm().pacing.max_session_log :]
 
@@ -135,7 +130,7 @@ def finalize_scene(
     check_act_transition(game)
     check_story_completion(game)
 
-    update_chaos_factor(game, outcome_of(roll_result_str), target_npc_id=brain.target_npc)
+    update_chaos_factor(game, outcome_of(log_entry.result), target_npc_id=brain.target_npc)
 
     _update_characters_list(game, metadata, scene_present_ids)
     scene_events = [*ctx.pending_random_events, *filter(None, [ctx.scene_setup.interrupt_event])]
@@ -146,7 +141,7 @@ def finalize_scene(
     director_ctx: DirectorCall | None = None
     director_reason = should_call_director(
         game,
-        roll_result=roll_result_str,
+        roll_result=log_entry.result,
         chaos_used=ctx.scene_setup.scene_type != "expected",
         new_npcs_found=bool(metadata["new_npcs"]),
         revelation_used=revelation_confirmed,
@@ -157,4 +152,4 @@ def finalize_scene(
     else:
         log(f"[Director] Skipped (no trigger at scene {nar.scene_count})")
 
-    return revelation_confirmed, director_ctx
+    return director_ctx

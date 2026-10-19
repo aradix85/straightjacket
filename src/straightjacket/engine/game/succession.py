@@ -9,21 +9,12 @@ from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..crafters.blueprint import assemble_blueprint_seed_from_ac, assemble_blueprint_seed_kishotenketsu
+from ..director import new_guidance
 from ..gamemaster.config import gm
-from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.story import choose_story_structure
 from ..gamemaster.world import clear_facts
 from ..logging_util import log
-from ..models import (
-    DirectorGuidance,
-    GameState,
-    NarrationEntry,
-    PredecessorRecord,
-    ProgressTrack,
-    SceneLogEntry,
-    ThreadEntry,
-    ThreatData,
-)
+from ..models import GameState, PredecessorRecord, ProgressTrack, ThreadEntry, ThreatData
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
@@ -43,7 +34,7 @@ from .chapters import (
     _prepare_npcs_for_new_chapter,
 )
 from .game_start import take_up_character
-from .setup_common import apply_opening_setup
+from .setup_common import apply_opening_setup, record_opening
 
 END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
 
@@ -95,7 +86,7 @@ def _reset_for_successor(
     game.narrative.narration_history = []
     game.narrative.scene_intensity_history = []
     game.narrative.story_blueprint = None
-    game.narrative.director_guidance = DirectorGuidance()
+    game.narrative.director_guidance = new_guidance()
 
     game.narrative.threads = surviving_threads
 
@@ -213,29 +204,18 @@ def _generate_succession_opening(provider: AIProvider, game: GameState) -> str:
 
 
 def _record_succession_opening(game: GameState, narration: str, predecessor: PredecessorRecord) -> None:
-    record_scene_intensity(game, "action")
-    summary = get_prompt(
-        "history_succession_opening",
-        player=game.player_name,
-        predecessor=predecessor.player_name,
-        reason=predecessor.end_reason,
-        n=str(game.campaign.chapter_number),
-        location=game.world.current_location,
-    )
-    game.narrative.narration_history.append(
-        NarrationEntry(
-            scene=1,
-            prompt_summary=summary,
-            narration=narration,
-        )
-    )
-    game.narrative.session_log.append(
-        SceneLogEntry(
-            scene=1,
-            scene_type="expected",
-            summary=get_prompt("scene_log_succession_start", predecessor=predecessor.player_name),
-            result="opening",
-        )
+    record_opening(
+        game,
+        narration,
+        history_summary=get_prompt(
+            "history_succession_opening",
+            player=game.player_name,
+            predecessor=predecessor.player_name,
+            reason=predecessor.end_reason,
+            n=str(game.campaign.chapter_number),
+            location=game.world.current_location,
+        ),
+        log_summary=get_prompt("scene_log_succession_start", predecessor=predecessor.player_name),
     )
 
 

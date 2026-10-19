@@ -1,8 +1,14 @@
 import pytest
 
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import SceneLogEntry
-from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc, make_progress_track
+from tests._helpers import (
+    make_brain_result,
+    make_clock,
+    make_game_state,
+    make_npc,
+    make_progress_track,
+    make_scene_log_entry,
+)
 
 
 def test_position_default_risky(stub_engine: None) -> None:
@@ -36,7 +42,7 @@ def test_position_controlled_on_high_resources_low_chaos(stub_engine: None) -> N
     game.world.chaos_factor = 3
 
     game.narrative.session_log.append(
-        SceneLogEntry(scene=1, move="adventure/secure_an_advantage", result="STRONG_HIT", scene_type="expected")
+        make_scene_log_entry(scene=1, move="adventure/secure_an_advantage", result="STRONG_HIT")
     )
     brain = make_brain_result(move="adventure/gather_information", stat="wits")
     assert resolve_position(game, brain) == "controlled"
@@ -79,8 +85,8 @@ def test_position_consecutive_misses(stub_engine: None) -> None:
     game = make_game_state(player_name="Test")
     game.world.chaos_factor = 5
     game.narrative.session_log = [
-        SceneLogEntry(scene=1, move="adventure/face_danger", result="MISS", scene_type="expected"),
-        SceneLogEntry(scene=2, move="combat/clash", result="MISS", scene_type="expected"),
+        make_scene_log_entry(scene=1, move="adventure/face_danger", result="MISS"),
+        make_scene_log_entry(scene=2, move="combat/clash", result="MISS"),
     ]
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     pos = resolve_position(game, brain)
@@ -149,7 +155,7 @@ def test_effect_controlled_pushes_great(stub_engine: None) -> None:
     )
 
     game.narrative.session_log.append(
-        SceneLogEntry(scene=1, move="adventure/secure_an_advantage", result="STRONG_HIT", scene_type="expected")
+        make_scene_log_entry(scene=1, move="adventure/secure_an_advantage", result="STRONG_HIT")
     )
     brain = make_brain_result(move="combat/strike", stat="iron", target_npc="npc_1")
     effect = resolve_effect(game, brain, "controlled")

@@ -7,7 +7,7 @@ from straightjacket.engine.crafters.turning_point_spawns import spawn_clocks_for
 from straightjacket.engine.gamemaster.clocks import resolve_clock_fill
 from straightjacket.engine.gamemaster.random_events import spawn_clock_from_random_event
 from straightjacket.engine.models import KeyedScene, RandomEvent
-from tests._helpers import make_clock, make_game_state, make_progress_track
+from tests._helpers import make_clock, make_game_state, make_keyed_scene, make_progress_track
 
 
 def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
@@ -144,7 +144,7 @@ def test_fill_handler_suppressed_when_keyed_scene_attached(load_engine: None) ->
     clock = make_clock(name="Storm", clock_type="threat", segments=4, filled=4)
     g.world.clocks.append(clock)
     g.narrative.keyed_scenes.append(
-        KeyedScene(
+        make_keyed_scene(
             id="ks_1",
             trigger_type="clock_fills",
             trigger_value="Storm:4",

@@ -28,7 +28,7 @@ def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
 def make_game_state(**kwargs: Any) -> Any:
     from straightjacket.engine.gamemaster.world import new_world
-    from straightjacket.engine.models import GameState, NarrativeState, PlayerPreferences
+    from straightjacket.engine.models import GameState, PlayerPreferences
     from straightjacket.engine.ruleset.legacy import new_campaign
     from straightjacket.engine.ruleset.meters import starting_resources
 
@@ -40,13 +40,55 @@ def make_game_state(**kwargs: Any) -> Any:
     kwargs.setdefault("stats", {"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2})
     kwargs.setdefault("resources", starting_resources(kwargs["setting_id"]))
     kwargs.setdefault("world", new_world())
-    kwargs.setdefault("narrative", NarrativeState())
+    kwargs.setdefault("narrative", make_narrative())
     kwargs.setdefault("campaign", new_campaign(kwargs["setting_id"]))
     kwargs.setdefault("preferences", PlayerPreferences(player_wishes="", content_lines=""))
     kwargs.setdefault("crisis_mode", False)
     kwargs.setdefault("last_turn_snapshot", None)
     kwargs.setdefault("post_epilogue_director_done", False)
     return GameState(**kwargs)
+
+
+def make_narrative(**kwargs: Any) -> Any:
+    from straightjacket.engine.director import new_guidance
+    from straightjacket.engine.models import NarrativeState
+
+    kwargs.setdefault("scene_count", 0)
+    kwargs.setdefault("story_blueprint", None)
+    kwargs.setdefault("director_guidance", new_guidance())
+    return NarrativeState(**kwargs)
+
+
+def make_thread(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import ThreadEntry
+
+    kwargs.setdefault("thread_type", "vow")
+    kwargs.setdefault("source", "creation")
+    kwargs.setdefault("weight", 1)
+    kwargs.setdefault("linked_track_id", None)
+    kwargs.setdefault("active", True)
+    return ThreadEntry(**kwargs)
+
+
+def make_character_entry(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import CharacterListEntry
+
+    kwargs.setdefault("entry_type", "npc")
+    kwargs.setdefault("weight", 1)
+    kwargs.setdefault("active", True)
+    kwargs.setdefault("ac_status", "")
+    return CharacterListEntry(**kwargs)
+
+
+def make_keyed_scene(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import KeyedScene
+
+    kwargs.setdefault("id", "ks_1")
+    kwargs.setdefault("priority", 1)
+    kwargs.setdefault("narrative_hint", "")
+    kwargs.setdefault("bound_entity_id", None)
+    kwargs.setdefault("source", "")
+    return KeyedScene(**kwargs)
 
 
 def make_npc(**kwargs: Any) -> Any:
@@ -175,7 +217,13 @@ def make_scene_setup(**kwargs: Any) -> Any:
 def make_scene_log_entry(**kwargs: Any) -> Any:
     from straightjacket.engine.models import SceneLogEntry
 
+    kwargs.setdefault("scene", 1)
     kwargs.setdefault("scene_type", "expected")
+    kwargs.setdefault("summary", "")
+    kwargs.setdefault("move", "dialog")
+    kwargs.setdefault("result", "dialog")
+    for name in ("position", "effect", "rich_summary", "oracle_answer"):
+        kwargs.setdefault(name, "")
     return SceneLogEntry(**kwargs)
 
 
@@ -321,6 +369,7 @@ def make_blueprint(**kwargs: Any) -> Any:
     kwargs.setdefault("antagonist_force", "")
     kwargs.setdefault("thematic_thread", "")
     kwargs.setdefault("structure_type", "3act")
+    kwargs.setdefault("story_complete", False)
     return StoryBlueprint(**kwargs)
 
 

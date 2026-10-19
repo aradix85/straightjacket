@@ -1,9 +1,9 @@
 from typing import Any
 
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import RandomEvent, RollResult, ThreadEntry, ThreatEvent
+from straightjacket.engine.models import RandomEvent, RollResult, ThreatEvent
 from straightjacket.engine.ruleset.progress import new_track
-from tests._helpers import make_brain_result, make_game_state, make_random_event, make_threat
+from tests._helpers import make_brain_result, make_game_state, make_random_event, make_thread, make_threat
 
 
 def _roll(move: str) -> RollResult:
@@ -27,11 +27,11 @@ def _sworn_game() -> Any:
         new_track(id="vow_kira", name="Find Kira", track_type="vow", rank="formidable"),
     ]
     game.narrative.threads = [
-        ThreadEntry(
+        make_thread(
             id="thread_bell", name="Ring the bell", thread_type="vow", source="vow", linked_track_id="vow_bell"
         ),
-        ThreadEntry(id="thread_kira", name="Find Kira", thread_type="vow", source="vow", linked_track_id="vow_kira"),
-        ThreadEntry(id="thread_cult", name="Who cast the bell", thread_type="plot", source="ac"),
+        make_thread(id="thread_kira", name="Find Kira", thread_type="vow", source="vow", linked_track_id="vow_kira"),
+        make_thread(id="thread_cult", name="Who cast the bell", thread_type="plot", source="ac"),
     ]
     game.threats = [make_threat(id="threat_tide", name="The tide cult", linked_vow_id="vow_bell")]
     return game

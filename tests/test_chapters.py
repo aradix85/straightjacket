@@ -1,13 +1,14 @@
 import pytest
 
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import GameState, ThreadEntry
+from straightjacket.engine.models import GameState
 from tests._helpers import (
     make_clock,
     make_game_state,
     make_memory,
     make_npc,
     make_progress_track,
+    make_thread,
     make_threat,
 )
 from tests._mocks import MockProvider
@@ -31,7 +32,7 @@ def _populated_game(load_engine: None) -> GameState:
     g.impacts = ["wounded"]
     g.assets = ["asset_a"]
     g.narrative.threads = [
-        ThreadEntry(id="th1", name="Old thread", thread_type="vow", source="creation"),
+        make_thread(id="th1", name="Old thread", thread_type="vow", source="creation"),
     ]
     return g
 

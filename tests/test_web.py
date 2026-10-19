@@ -18,7 +18,16 @@ from straightjacket.web.serializers import (
     highlight_dialog,
 )
 from straightjacket.web.session import Session
-from tests._helpers import install_config, make_brain_result, make_clock, make_game_state, make_npc, make_scene_setup
+from tests._helpers import (
+    install_config,
+    make_act,
+    make_blueprint,
+    make_brain_result,
+    make_clock,
+    make_game_state,
+    make_npc,
+    make_scene_setup,
+)
 
 
 @pytest.fixture
@@ -189,24 +198,12 @@ class TestBuildNarrativeStatus:
         assert "act" not in text.lower() or "Story:" not in text
 
     def test_story_arc_present_with_blueprint(self, load_engine: None) -> None:
-        from straightjacket.engine.models import StoryAct, StoryBlueprint
-
         game = self._game()
-        game.narrative.story_blueprint = StoryBlueprint(
+        game.narrative.story_blueprint = make_blueprint(
             central_conflict="test",
             antagonist_force="villain",
             thematic_thread="theme",
-            structure_type="3act",
-            acts=[
-                StoryAct(
-                    phase="setup",
-                    title="Begin",
-                    goal="",
-                    scene_range=[1, 10],
-                    mood="dark",
-                    transition_trigger="",
-                )
-            ],
+            acts=[make_act(title="Begin", scene_range=[1, 10], mood="dark")],
         )
         text = build_narrative_status(game)
         assert "Begin" in text

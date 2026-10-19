@@ -1,8 +1,8 @@
 import pytest
 
 from straightjacket.engine.models import GameState
-from straightjacket.engine.models_story import ChapterSummary, PossibleEnding, StoryBlueprint
-from tests._helpers import make_game_state, make_npc
+from straightjacket.engine.models_story import ChapterSummary, PossibleEnding
+from tests._helpers import make_blueprint, make_game_state, make_npc, make_scene_log_entry
 
 
 def _opening_game() -> GameState:
@@ -67,15 +67,11 @@ def test_build_new_game_prompt_escapes_xml_in_player_name(load_engine: None) -> 
 
 
 def test_build_epilogue_prompt_renders(load_engine: None) -> None:
-    from straightjacket.engine.models import SceneLogEntry
     from straightjacket.engine.prompt_boundary import build_epilogue_prompt
 
     g = _opening_game()
-    g.narrative.story_blueprint = StoryBlueprint(
+    g.narrative.story_blueprint = make_blueprint(
         central_conflict="The archive holds a lethal truth",
-        antagonist_force="",
-        thematic_thread="",
-        structure_type="3act",
         possible_endings=[
             PossibleEnding(type="triumph", description="Reveal the truth"),
             PossibleEnding(type="tragedy", description="Suppress the truth"),
@@ -83,7 +79,7 @@ def test_build_epilogue_prompt_renders(load_engine: None) -> None:
     )
     g.npcs = [make_npc(id="npc_1", name="Kira", disposition="friendly", description="Smuggler")]
     g.narrative.session_log.append(
-        SceneLogEntry(scene=1, summary="Met Kira", scene_type="expected", result="STRONG_HIT")
+        make_scene_log_entry(scene=1, summary="Met Kira", move="adventure/face_danger", result="STRONG_HIT")
     )
     out = build_epilogue_prompt(g)
     assert '<scene type="epilogue">' in out

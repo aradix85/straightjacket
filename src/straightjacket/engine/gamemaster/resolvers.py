@@ -71,7 +71,7 @@ def _score_threat_clocks(game: GameState) -> int:
 
 def _score_position_factors(game: GameState, brain: BrainResult, kind: str) -> int:
     recent = game.narrative.session_log[-gm().chaos_resolver.recent_session_window :]
-    recent_outcomes = [outcome_of(e.result) for e in recent if e.result]
+    recent_outcomes = [outcome_of(e.result) for e in recent]
     advantage = gm().position_resolver.weights.secured_advantage if answers().gained_advantage(game) else 0
     return (
         _score_strain(game)
