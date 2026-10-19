@@ -23,8 +23,13 @@ information_gate:
   miss_stance:
     stance: withholding
     constraint: Does not give what was asked, unable or unwilling. A friend is sorry, a rival is pleased.
+  hit_stance:
+    stance: yielding
+    constraint: Gives what the roll won, doing what was asked or telling what was asked. Hostility shows in how they give it, never in whether.
+  refusing_stances: [hostile, stonewalling, confrontational, misleading]
   stance_caps:
     withholding: 1
+    yielding: 1
     aggressive: 1
     hostile: 1
     stonewalling: 0

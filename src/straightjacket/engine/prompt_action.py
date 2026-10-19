@@ -88,7 +88,9 @@ def build_action_prompt(
 
     miss = roll.result == "MISS"
     stance_cat = _resolve_stance_category(brain.move)
-    npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=stance_cat, miss=miss)
+    npc = _npc_block(
+        game, brain.target_npc, context_text=context_text, move_category=stance_cat, miss=miss, hit=not miss
+    )
     npcs_sect = _npcs_section(
         game, brain, context_text, activated_npcs, mentioned_npcs, move_category=stance_cat, miss=miss
     )

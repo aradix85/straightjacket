@@ -102,13 +102,19 @@ def _format_memories(
 
 
 def _npc_block(
-    game: GameState, target_id: str | None, context_text: str, move_category: str, *, miss: bool = False
+    game: GameState,
+    target_id: str | None,
+    context_text: str,
+    move_category: str,
+    *,
+    miss: bool = False,
+    hit: bool = False,
 ) -> str:
     target = find_npc(game, target_id) if target_id else None
     if not target:
         return ""
 
-    stance = resolve_npc_stance(game, target, move_category, miss=miss)
+    stance = resolve_npc_stance(game, target, move_category, miss=miss, hit=hit)
     gate = compute_npc_gate(game, target, game.narrative.scene_count, stance.stance)
     fact_budget = 0 if miss else eng().information_gate.fact_budget_by_gate[gate]
     log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance}) fact_budget={fact_budget}")
@@ -186,7 +192,7 @@ def _activated_npcs_block(
             loc_hint = f' last_seen="{_xa(loc)}"'
 
         arc_hint = f' arc="{_xa(npc.arc)}"' if npc.arc.strip() else ""
-        stance = resolve_npc_stance(game, npc, move_category, miss=miss)
+        stance = resolve_npc_stance(game, npc, move_category, miss=miss, hit=False)
         parts.append(
             f'<activated_npc name="{_xa(npc.name)}" stance="{_xa(stance.stance)}" '
             f'constraint="{_xa(stance.constraint)}"{arc_hint}{mem_hint}{loc_hint}/>'

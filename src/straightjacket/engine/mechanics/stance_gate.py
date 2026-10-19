@@ -6,9 +6,19 @@ from ..models import GameState, NpcData
 from ..npc import get_npc_bond
 
 
-def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str, *, miss: bool) -> StanceMatrixEntry:
+def resolve_npc_stance(
+    game: GameState, npc: NpcData, move_category: str, *, miss: bool, hit: bool
+) -> StanceMatrixEntry:
+    gate_cfg = eng().information_gate
     if miss:
-        return eng().information_gate.miss_stance
+        return gate_cfg.miss_stance
+    entry = _matrix_stance(game, npc, move_category)
+    if hit and entry.stance in gate_cfg.refusing_stances:
+        return gate_cfg.hit_stance
+    return entry
+
+
+def _matrix_stance(game: GameState, npc: NpcData, move_category: str) -> StanceMatrixEntry:
     matrix = eng().stance_matrix
     buckets = eng().stance_bond_buckets
 

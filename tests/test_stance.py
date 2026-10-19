@@ -1,8 +1,8 @@
-from straightjacket.engine.models import consequence
 import pytest
 
 from straightjacket.engine.mechanics import resolve_npc_stance
 from straightjacket.engine.models import (
+    consequence,
     GameState,
     NpcData,
     RollResult,
@@ -57,7 +57,7 @@ def _game(npc: NpcData | None = None, bond: int = 0) -> GameState:
 def test_hostile_low_combat() -> None:
     npc = _npc("hostile")
     game = _game(npc, bond=0)
-    stance = resolve_npc_stance(game, npc, "combat", miss=False)
+    stance = resolve_npc_stance(game, npc, "combat", miss=False, hit=False)
     assert stance.stance == "aggressive"
     assert "quarter" in stance.constraint.lower() or "hesitation" in stance.constraint.lower()
 
@@ -65,7 +65,7 @@ def test_hostile_low_combat() -> None:
 def test_distrustful_low_gather() -> None:
     npc = _npc("distrustful")
     game = _game(npc, bond=1)
-    stance = resolve_npc_stance(game, npc, "gather_information", miss=False)
+    stance = resolve_npc_stance(game, npc, "gather_information", miss=False, hit=False)
     assert stance.stance == "evasive"
     assert "silent" in stance.constraint.lower()
 
@@ -73,35 +73,35 @@ def test_distrustful_low_gather() -> None:
 def test_friendly_mid_social() -> None:
     npc = _npc("friendly")
     game = _game(npc, bond=2)
-    stance = resolve_npc_stance(game, npc, "social", miss=False)
+    stance = resolve_npc_stance(game, npc, "social", miss=False, hit=False)
     assert stance.stance == "confiding"
 
 
 def test_loyal_high_other() -> None:
     npc = _npc("loyal")
     game = _game(npc, bond=4)
-    stance = resolve_npc_stance(game, npc, "other", miss=False)
+    stance = resolve_npc_stance(game, npc, "other", miss=False, hit=False)
     assert stance.stance == "ride_or_die"
 
 
 def test_neutral_low_other() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=0)
-    stance = resolve_npc_stance(game, npc, "other", miss=False)
+    stance = resolve_npc_stance(game, npc, "other", miss=False, hit=False)
     assert stance.stance == "indifferent"
 
 
 def test_bond_range_mid() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=2)
-    stance = resolve_npc_stance(game, npc, "social", miss=False)
+    stance = resolve_npc_stance(game, npc, "social", miss=False, hit=False)
     assert stance.stance == "engaged"
 
 
 def test_bond_range_high() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=4)
-    stance = resolve_npc_stance(game, npc, "social", miss=False)
+    stance = resolve_npc_stance(game, npc, "social", miss=False, hit=False)
     assert stance.stance == "open"
 
 
@@ -109,7 +109,7 @@ def test_unknown_move_category_raises() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=1)
     with pytest.raises(KeyError):
-        resolve_npc_stance(game, npc, "unknown_category", miss=False)
+        resolve_npc_stance(game, npc, "unknown_category", miss=False, hit=False)
 
 
 def test_stance_constraint_not_empty() -> None:
@@ -118,7 +118,7 @@ def test_stance_constraint_not_empty() -> None:
             for cat in ("combat", "social", "gather_information", "other"):
                 npc = _npc(disp)
                 game = _game(npc, bond=bond)
-                stance = resolve_npc_stance(game, npc, cat, miss=False)
+                stance = resolve_npc_stance(game, npc, cat, miss=False, hit=False)
                 assert stance.constraint, f"Empty constraint for {disp}/{bond}/{cat}"
                 assert stance.stance, f"Empty stance for {disp}/{bond}/{cat}"
 
@@ -153,6 +153,53 @@ def test_stance_in_target_npc_block() -> None:
 
     assert 'disposition="distrustful"' not in prompt
     assert 'bond="1/4"' not in prompt
+
+
+def _compel_a_hostile_npc(result: str) -> str:
+    npc = _npc("hostile")
+    game = _game(npc, bond=0)
+    brain = make_brain_result(move="adventure/compel", stat="iron", target_npc="npc_1", player_intent="make them talk")
+    roll = RollResult(
+        d1=4,
+        c1=2,
+        c2=3,
+        stat_name="iron",
+        stat_value=1,
+        action_score=5,
+        result=result,
+        move="adventure/compel",
+        match=False,
+    )
+    return build_action_prompt(game, brain, roll, [], [], **action_prompt_kwargs(player_words="Talk."))
+
+
+@pytest.mark.parametrize(
+    ("result", "stance"), [("STRONG_HIT", "yielding"), ("WEAK_HIT", "yielding"), ("MISS", "withholding")]
+)
+def test_a_hostile_target_gives_way_to_a_hit(result: str, stance: str) -> None:
+    prompt = _compel_a_hostile_npc(result)
+    assert f'stance="{stance}"' in prompt
+    assert "Refuses to engage" not in prompt
+
+
+@pytest.mark.parametrize(
+    ("category", "bond", "without_a_roll", "on_a_hit"),
+    [
+        ("social", 0, "hostile", "yielding"),
+        ("gather_information", 0, "stonewalling", "yielding"),
+        ("social", 2, "confrontational", "yielding"),
+        ("gather_information", 2, "misleading", "yielding"),
+        ("social", 4, "bitter", "bitter"),
+        ("combat", 0, "aggressive", "aggressive"),
+    ],
+)
+def test_only_a_refusing_stance_gives_way_to_a_hit(
+    category: str, bond: int, without_a_roll: str, on_a_hit: str
+) -> None:
+    npc = _npc("hostile")
+    game = _game(npc, bond=bond)
+    assert resolve_npc_stance(game, npc, category, miss=False, hit=False).stance == without_a_roll
+    assert resolve_npc_stance(game, npc, category, miss=False, hit=True).stance == on_a_hit
 
 
 def test_stance_in_activated_npc_block() -> None:

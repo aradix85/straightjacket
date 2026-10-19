@@ -549,6 +549,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         stance_caps=dict(ig["stance_caps"]),
         fact_budget_by_gate={int(k): int(v) for k, v in ig["fact_budget_by_gate"].items()},
         miss_stance=_build_strict(StanceMatrixEntry, dict(ig["miss_stance"])),
+        hit_stance=_build_strict(StanceMatrixEntry, dict(ig["hit_stance"])),
+        refusing_stances=list(ig["refusing_stances"]),
     )
 
     stance_bond_buckets = _build_strict(StanceBondBuckets, dict(data["stance_bond_buckets"]))

@@ -380,6 +380,8 @@ class InformationGateConfig:
     stance_caps: dict[str, int]
     fact_budget_by_gate: dict[int, int]
     miss_stance: StanceMatrixEntry
+    hit_stance: StanceMatrixEntry
+    refusing_stances: list[str]
 
 
 @dataclass
