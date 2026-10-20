@@ -125,8 +125,8 @@ def brain_answer(**overrides: Any) -> dict[str, Any]:
 
 
 class TurnProvider:
-    def __init__(self, brain: dict[str, Any]) -> None:
-        self.brain = brain
+    def __init__(self, *brains: dict[str, Any]) -> None:
+        self.brains = list(brains)
         self.narrations: list[str] = []
         self.prompts: list[str] = []
 
@@ -136,8 +136,18 @@ class TurnProvider:
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
         props = spec.json_schema.get("properties", {}) if spec.json_schema else {}
+        if "correction_source" in props:
+            return self._json(
+                {
+                    "correction_source": "input_misread",
+                    "corrected_input": "I shoulder the vault door",
+                    "narrator_guidance": "The player used force, not finesse.",
+                    "director_useful": False,
+                    "state_ops": [],
+                }
+            )
         if "move" in props:
-            return self._json(self.brain)
+            return self._json(self.brains.pop(0) if len(self.brains) > 1 else self.brains[0])
         if "new_npcs" in props:
             return self._json(
                 {"new_npcs": [], "npc_renames": [], "npc_details": [], "deceased_npcs": [], "lore_npcs": []}
@@ -150,7 +160,7 @@ class TurnProvider:
         return AIResponse(content=text, usage={"input_tokens": 10, "output_tokens": 10})
 
 
-def force_miss(monkeypatch: pytest.MonkeyPatch) -> None:
+def force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
     from straightjacket.engine.game import turn
     from straightjacket.engine.ruleset import make_move
 
@@ -162,7 +172,7 @@ def force_miss(monkeypatch: pytest.MonkeyPatch) -> None:
             stat_name=stat_name,
             stat_value=stat_value,
             action_score=1 + stat_value,
-            result="MISS",
+            result=result,
             move=move,
             match=False,
         )
@@ -171,19 +181,12 @@ def force_miss(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
 
 
-def create_game(
-    setting_id: str,
-    *,
-    location: str,
-    npcs: Sequence[tuple[str, str, str]],
-    stats: tuple[int, int, int, int, int],
-    player_name: str,
-    background_vow: str,
-) -> GameState:
-    from straightjacket.engine.game import start_new_game
+def creation_data(
+    setting_id: str, *, stats: tuple[int, int, int, int, int], player_name: str, background_vow: str
+) -> dict[str, Any]:
     from straightjacket.engine.setting.packages import load_package
 
-    creation = {
+    return {
         "setting_id": setting_id,
         "tone": load_package(setting_id).default_tone,
         "stats": dict(zip(STAT_ORDER, stats, strict=True)),
@@ -199,6 +202,32 @@ def create_game(
         "wishes": "",
         "content_lines": "",
     }
-    provider = OpeningProvider(npcs, location)
-    game, _narration = start_new_game(provider, creation)
+
+
+def create_game(
+    setting_id: str,
+    *,
+    location: str,
+    npcs: Sequence[tuple[str, str, str]],
+    stats: tuple[int, int, int, int, int],
+    player_name: str,
+    background_vow: str,
+) -> GameState:
+    from straightjacket.engine.game import start_new_game
+
+    creation = creation_data(setting_id, stats=stats, player_name=player_name, background_vow=background_vow)
+    game, _narration = start_new_game(OpeningProvider(npcs, location), creation)
+    return game
+
+
+def library_game() -> GameState:
+    game = create_game(
+        "classic",
+        location="Abandoned Library",
+        npcs=[("Mira", "An archivist.", "friendly")],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Kael",
+        background_vow="Keep the archive whole",
+    )
+    game.resources.meters["momentum"] = 6
     return game

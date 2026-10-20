@@ -4,7 +4,7 @@ import pytest
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import GameState, Resources, RollResult, labels_of
-from tests._helpers import make_brain_result, make_clock, make_game_state
+from tests._helpers import make_clock, make_game_state
 
 WEAK_HIT_MOVES = ["adventure/gather_information", "adventure/compel"]
 
@@ -100,17 +100,22 @@ def test_a_complication_clock_fills_every_scene_and_strikes_when_full(load_engin
 
 
 @pytest.mark.parametrize(("result", "averted"), [("STRONG_HIT", True), ("WEAK_HIT", True), ("MISS", False)])
-def test_a_hit_aimed_at_a_complication_heads_it_off(load_engine: None, result: str, averted: bool) -> None:
-    from straightjacket.engine.game.action_resolution import _maybe_avert_complication
-    from straightjacket.engine.models import Consequence
+def test_a_hit_aimed_at_a_complication_heads_it_off(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str, averted: bool
+) -> None:
+    from straightjacket.engine.game import process_turn
+    from tests._creation import TurnProvider, brain_answer, force_result, library_game
 
-    game = _game()
-    game.world.clocks = [_complication(filled=2)]
-    brain = make_brain_result(move="adventure/face_danger", stat="wits", target_clock="A beacon calls the raiders")
-    consequences: list[Consequence] = []
-    _maybe_avert_complication(game, brain, _roll(result), consequences)
-    assert (game.world.clocks == []) is averted
-    assert (labels_of(consequences) == ["complication_averted A beacon calls the raiders"]) is averted
+    game = library_game()
+    game.world.clocks.append(_complication(filled=1))
+    force_result(monkeypatch, result)
+    brain = brain_answer(
+        target_clock="A beacon calls the raiders", location_change=None, track_name=None, track_rank=None
+    )
+    process_turn(TurnProvider(brain), game, "I smash the beacon.", stream=None)
+    assert all(c.name != "A beacon calls the raiders" for c in game.world.clocks) is averted
+    told = labels_of(game.narrative.session_log[-1].consequences)
+    assert ("complication_averted A beacon calls the raiders" in told) is averted
 
 
 def test_a_fired_or_unknown_complication_cannot_be_headed_off(load_engine: None) -> None:

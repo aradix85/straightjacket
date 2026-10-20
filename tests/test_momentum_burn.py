@@ -9,25 +9,12 @@ from straightjacket.engine.models import (
     NarrationEntry,
 )
 from straightjacket.engine.ruleset.config import rules
-from tests._creation import OPENING_TEXT, TurnProvider, brain_answer, create_game, force_miss
-
-
-def _game() -> GameState:
-    game = create_game(
-        "classic",
-        location="Abandoned Library",
-        npcs=[("Mira", "An archivist.", "friendly")],
-        stats=(2, 2, 1, 1, 3),
-        player_name="Kael",
-        background_vow="Keep the archive whole",
-    )
-    game.resources.meters["momentum"] = 6
-    return game
+from tests._creation import OPENING_TEXT, TurnProvider, brain_answer, force_result, library_game
 
 
 @pytest.fixture
 def forced_miss(monkeypatch: pytest.MonkeyPatch) -> None:
-    force_miss(monkeypatch)
+    force_result(monkeypatch, "MISS")
 
 
 def _turn_then_burn(provider: TurnProvider, game: GameState) -> tuple[GameState, str, Any]:
@@ -47,7 +34,7 @@ def _turn_then_burn(provider: TurnProvider, game: GameState) -> tuple[GameState,
 def test_burn_keeps_the_location_and_scene_count_of_the_turn(
     load_engine: None, stub_emotions: None, forced_miss: None
 ) -> None:
-    game, _narration, _director = _turn_then_burn(TurnProvider(brain_answer()), _game())
+    game, _narration, _director = _turn_then_burn(TurnProvider(brain_answer()), library_game())
 
     assert game.world.current_location == "Archive Vault"
     assert game.narrative.scene_count == 2
@@ -57,7 +44,7 @@ def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(
     load_engine: None, stub_emotions: None, forced_miss: None
 ) -> None:
     provider = TurnProvider(brain_answer())
-    game, narration, _director = _turn_then_burn(provider, _game())
+    game, narration, _director = _turn_then_burn(provider, library_game())
 
     history = game.narrative.narration_history
     assert [h.narration for h in history] == [OPENING_TEXT, narration]
@@ -70,7 +57,7 @@ def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(
 
 def test_burn_keeps_the_track_the_turn_created(load_engine: None, stub_emotions: None, forced_miss: None) -> None:
     brain = brain_answer(move="quest/swear_an_iron_vow", stat="heart", track_name="Recover the codex")
-    game, _narration, _director = _turn_then_burn(TurnProvider(brain), _game())
+    game, _narration, _director = _turn_then_burn(TurnProvider(brain), library_game())
 
     vows = [t for t in game.progress_tracks if t.track_type == "vow"]
     assert [t.name for t in vows] == ["Keep the archive whole", "Recover the codex"]
@@ -78,7 +65,7 @@ def test_burn_keeps_the_track_the_turn_created(load_engine: None, stub_emotions:
 
 def test_burn_updates_the_turn_snapshot(load_engine: None, stub_emotions: None, forced_miss: None) -> None:
 
-    game, narration, _director = _turn_then_burn(TurnProvider(brain_answer()), _game())
+    game, narration, _director = _turn_then_burn(TurnProvider(brain_answer()), library_game())
 
     snap = game.last_turn_snapshot
     assert snap is not None
@@ -94,11 +81,11 @@ def test_burn_runs_scene_end_bookkeeping_exactly_once(
 ) -> None:
     from straightjacket.engine.game import process_turn
 
-    reference = _game()
+    reference = library_game()
     _n, _r, _o, _d = process_turn(
         TurnProvider(brain_answer()), reference, "I slip past Mira into the archive vault", stream=None
     )
-    game, _narration, _director = _turn_then_burn(TurnProvider(brain_answer()), _game())
+    game, _narration, _director = _turn_then_burn(TurnProvider(brain_answer()), library_game())
 
     assert len(game.narrative.scene_intensity_history) == len(reference.narrative.scene_intensity_history)
     assert [c.weight for c in game.narrative.characters_list] == [c.weight for c in reference.narrative.characters_list]
@@ -106,7 +93,7 @@ def test_burn_runs_scene_end_bookkeeping_exactly_once(
 
 
 def test_restore_reverts_changes_inside_the_story_lists(load_engine: None) -> None:
-    game = _game()
+    game = library_game()
     snap = game.snapshot()
     game.narrative.threads[0].weight = 3
     game.narrative.threads[0].active = False
@@ -127,7 +114,7 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(
     from straightjacket.engine.game import process_momentum_burn, process_turn
     from tests.elvira.elvira_bot.invariants import check_turn_replacement
 
-    game = _game()
+    game = library_game()
     cap = gm().pacing.max_narration_history
     game.narrative.narration_history = [
         NarrationEntry(scene=n, prompt_summary=f"Scene {n}", narration=f"Earlier scene {n}.") for n in range(1, cap + 1)
@@ -158,7 +145,7 @@ def test_new_player_input_withdraws_a_pending_burn_offer(
     from straightjacket.web import handlers
     from straightjacket.web.session import new_session
 
-    game = _game()
+    game = library_game()
     _n, _r, offer, _d = process_turn(TurnProvider(brain_answer()), game, "I slip into the vault", stream=None)
     session = new_session()
     session.game = game

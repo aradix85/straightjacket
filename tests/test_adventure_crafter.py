@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import random
+from pathlib import Path
 
 import pytest
 
@@ -9,8 +11,6 @@ from straightjacket.engine.crafters.adventure_crafter import (
     PlotPointResult,
     ThemeAlternation,
     TurningPoint,
-    _create_plotline,
-    _validate_random_themes,
     assign_themes,
     load_ac_data,
     lookup_characters_template,
@@ -21,8 +21,9 @@ from straightjacket.engine.crafters.adventure_crafter import (
     roll_turning_point,
 )
 from straightjacket.engine.crafters.config import crafter
-from straightjacket.engine.crafters.meta_plot_points import _META_HANDLERS, _create_character, dispatch_meta
-from tests._helpers import make_narrative
+from straightjacket.engine.crafters.meta_plot_points import dispatch_meta
+from straightjacket.engine.models import CharacterListEntry, NarrativeState, PlotlineEntry
+from tests._helpers import make_character_entry, make_narrative, make_plotline
 
 _SPECIAL_BOUNDARIES = [
     (1, "conclusion"),
@@ -36,48 +37,37 @@ _SPECIAL_BOUNDARIES = [
 ]
 
 
-def test_ac_config_loads_required_fields():
-    cfg = crafter().adventure_crafter
-    assert cfg.themes == ["action", "tension", "mystery", "social", "personal"]
-    assert cfg.theme_slots == 5
-
-    assert len(cfg.theme_die_table) == 10
-    assert set(cfg.theme_die_table.values()) == set(cfg.themes)
-    sr = cfg.special_ranges
-    assert (sr.conclusion_min, sr.conclusion_max) == (1, 8)
-    assert (sr.none_min, sr.none_max) == (9, 24)
-    assert (sr.meta_min, sr.meta_max) == (96, 100)
+def _present(narrative: NarrativeState, name: str) -> CharacterListEntry:
+    entry = make_character_entry(
+        id=f"ac_char_{len(narrative.characters_list) + 1}", name=name, entry_type="ac", ac_status="present"
+    )
+    narrative.characters_list.append(entry)
+    return entry
 
 
-def test_ac_meta_handlers_config_loads():
-    cfg = crafter().adventure_crafter.meta_handlers
-    assert isinstance(cfg.weight_delta_step_up, int)
-    assert isinstance(cfg.weight_delta_step_down, int)
-    assert isinstance(cfg.weight_delta_upgrade, int)
-    assert isinstance(cfg.weight_delta_downgrade, int)
-    assert isinstance(cfg.weight_floor, int)
-    assert cfg.weight_floor >= 1
-    assert cfg.weight_delta_upgrade > cfg.weight_delta_step_up
-    assert cfg.weight_delta_downgrade < cfg.weight_delta_step_down
+def _plotline(narrative: NarrativeState, name: str) -> PlotlineEntry:
+    entry = make_plotline(id=f"ac_plot_{len(narrative.plotlines_list) + 1}", name=name)
+    narrative.plotlines_list.append(entry)
+    return entry
 
 
-def test_ac_data_validation_passes_on_real_data():
-    data = load_ac_data()
-    _validate_random_themes(data)
+def _meta(name: str, narrative: NarrativeState, active_plotline_id: str | None = None) -> None:
+    dispatch_meta(next(r for r in range(1, 101) if lookup_meta_plot_point(r) == name), narrative, active_plotline_id)
 
 
-def test_ac_data_validation_raises_on_theme_mismatch():
-    bad = {
-        "random_themes": [
-            {"min": 1, "max": 2, "theme": "action"},
-            {"min": 3, "max": 4, "theme": "tension"},
-            {"min": 5, "max": 6, "theme": "mystery"},
-            {"min": 7, "max": 8, "theme": "social"},
-            {"min": 9, "max": 10, "theme": "horror"},
-        ]
-    }
+def test_data_whose_themes_disagree_with_the_theme_die_refuses_to_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.crafters import adventure_crafter
+
+    data = json.loads(json.dumps(load_ac_data()))
+    data["random_themes"][-1]["theme"] = "horror"
+    bad = tmp_path / "adventure_crafter.json"
+    bad.write_text(json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr(adventure_crafter, "_AC_DATA_PATH", bad)
+    monkeypatch.setattr(adventure_crafter, "_ac_data", None)
     with pytest.raises(ValueError, match="theme_die_table"):
-        _validate_random_themes(bad)
+        load_ac_data()
 
 
 def test_assign_themes_returns_theme_slots_entries():
@@ -129,19 +119,6 @@ def test_plot_point_lookup_out_of_range_roll_raises(bad_roll: int):
         lookup_plot_point("action", bad_roll)
 
 
-def test_meta_handlers_match_json_names():
-    data = load_ac_data()
-    json_names = {entry["name"] for entry in data["meta_plot_points"]}
-    handler_names = set(_META_HANDLERS)
-    assert json_names == handler_names, f"drift between JSON {json_names} and handlers {handler_names}"
-
-
-def test_meta_lookup_covers_full_d100():
-    for roll in range(1, 101):
-        name = lookup_meta_plot_point(roll)
-        assert name in _META_HANDLERS
-
-
 @pytest.mark.parametrize(
     ("roll", "expected_name"),
     [
@@ -171,9 +148,9 @@ def test_meta_lookup_out_of_range_roll_raises(bad_roll: int):
         lookup_meta_plot_point(bad_roll)
 
 
-def test_dispatch_meta_routes_to_handler_without_raising():
+def test_every_meta_roll_dispatches_to_a_handler():
     narrative = make_narrative()
-    for roll in [1, 19, 28, 37, 56, 74, 83]:
+    for roll in range(1, 101):
         dispatch_meta(roll, narrative, None)
 
 
@@ -288,7 +265,7 @@ def test_a_turning_point_names_its_plotline_and_what_it_does_to_it():
 
 def test_roll_turning_point_reuses_advancing_plotline():
     narrative = make_narrative()
-    _create_plotline(narrative, "First")
+    _plotline(narrative, "First")
     rng = random.Random(0)
     themes = ["action", "tension", "mystery", "social", "personal"]
     roll_turning_point(rng, themes, narrative)
@@ -299,7 +276,7 @@ def test_roll_turning_point_reuses_advancing_plotline():
 
 def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeypatch):
     narrative = make_narrative()
-    _create_plotline(narrative, "First")
+    _plotline(narrative, "First")
     rng = random.Random(0)
     themes = ["action", "tension", "mystery", "social", "personal"]
 
@@ -317,118 +294,108 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
 
 
 def test_meta_character_exits_marks_active_character_exited():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_character_exits
 
     narrative = make_narrative()
-    char = _create_character(narrative, "Alice")
-    _meta_character_exits(narrative, None)
+    char = _present(narrative, "Alice")
+    _meta("Character Exits The Adventure", narrative)
     assert char.ac_status == "exited"
 
 
 def test_meta_character_returns_marks_exited_character_returned():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_character_returns
 
     narrative = make_narrative()
-    char = _create_character(narrative, "Alice")
+    char = _present(narrative, "Alice")
     char.ac_status = "exited"
-    _meta_character_returns(narrative, None)
+    _meta("Character Returns", narrative)
     assert char.ac_status == "returned"
 
 
 def test_meta_character_returns_creates_new_when_no_exited():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_character_returns
 
     narrative = make_narrative()
-    _meta_character_returns(narrative, None)
+    _meta("Character Returns", narrative)
     assert len(narrative.characters_list) == 1
     assert narrative.characters_list[0].ac_status == "returned"
 
 
 def test_meta_character_steps_up_increases_weight():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_character_steps_up
 
     narrative = make_narrative()
-    char = _create_character(narrative, "Alice")
+    char = _present(narrative, "Alice")
     initial = char.weight
-    _meta_character_steps_up(narrative, None)
+    _meta("Character Steps Up", narrative)
     expected = initial + crafter().adventure_crafter.meta_handlers.weight_delta_step_up
     assert char.weight == expected
 
 
 def test_meta_character_steps_down_decreases_weight_to_floor():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_character_steps_down
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
-    char = _create_character(narrative, "Alice")
+    char = _present(narrative, "Alice")
     char.weight = 5
-    _meta_character_steps_down(narrative, None)
+    _meta("Character Steps Down", narrative)
     assert char.weight == 5 + cfg.weight_delta_step_down
     char.weight = cfg.weight_floor
-    _meta_character_steps_down(narrative, None)
+    _meta("Character Steps Down", narrative)
     assert char.weight == cfg.weight_floor
 
 
 def test_meta_character_downgrade_marks_status_and_decreases_weight():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_character_downgrade
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
-    char = _create_character(narrative, "Alice")
+    char = _present(narrative, "Alice")
     char.weight = 5
-    _meta_character_downgrade(narrative, None)
+    _meta("Character Downgrade", narrative)
     assert char.ac_status == "downgraded"
     assert char.weight == max(cfg.weight_floor, 5 + cfg.weight_delta_downgrade)
 
 
 def test_meta_character_upgrade_marks_status_and_increases_weight():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_character_upgrade
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
-    char = _create_character(narrative, "Alice")
+    char = _present(narrative, "Alice")
     initial = char.weight
-    _meta_character_upgrade(narrative, None)
+    _meta("Character Upgrade", narrative)
     assert char.ac_status == "upgraded"
     assert char.weight == initial + cfg.weight_delta_upgrade
 
 
 def test_meta_plotline_combo_merges_two_advancing_plotlines():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
     narrative = make_narrative()
-    a = _create_plotline(narrative, "First")
-    b = _create_plotline(narrative, "Second")
-    _meta_plotline_combo(narrative, None)
+    a = _plotline(narrative, "First")
+    b = _plotline(narrative, "Second")
+    _meta("Plotline Combo", narrative)
     statuses = sorted([a.status, b.status])
     assert "merged" in statuses
     assert statuses.count("advancement") == 1
 
 
 def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
     narrative = make_narrative()
-    only = _create_plotline(narrative, "Only one")
-    _meta_plotline_combo(narrative, None)
+    only = _plotline(narrative, "Only one")
+    _meta("Plotline Combo", narrative)
     assert only.status == "advancement"
 
 
 def test_meta_plotline_combo_excludes_active_plotline_id():
-    from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
     narrative = make_narrative()
-    active = _create_plotline(narrative, "Active")
-    _create_plotline(narrative, "Other")
-    _meta_plotline_combo(narrative, active.id)
+    active = _plotline(narrative, "Active")
+    _plotline(narrative, "Other")
+    _meta("Plotline Combo", narrative, active.id)
     assert active.status == "advancement"
 
 
 def test_narrative_state_snapshot_restore_round_trips_plotlines_list():
     narrative = make_narrative()
-    _create_plotline(narrative, "Original")
+    _plotline(narrative, "Original")
     snap = narrative.snapshot()
-    _create_plotline(narrative, "Mid-turn add")
+    _plotline(narrative, "Mid-turn add")
     assert len(narrative.plotlines_list) == 2
     narrative.restore(snap)
     assert len(narrative.plotlines_list) == 1

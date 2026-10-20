@@ -6,8 +6,8 @@ from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene, evaluate_keyed_scenes
 from straightjacket.engine.gamemaster.scene import SceneSetup, check_scene
 from straightjacket.engine.models import GameState, KeyedScene
-from straightjacket.engine.prompt_shared import _pacing_block
 from tests._helpers import (
+    dialog_prompt,
     fix_dice,
     make_clock,
     make_game_state,
@@ -256,17 +256,17 @@ def test_keyed_scene_serialization_roundtrip():
     assert restored.narrative_hint == "test hint"
 
 
-def test_pacing_block_emits_keyed_scene_tag():
+def test_a_keyed_scene_reaches_the_narrator(load_engine: None) -> None:
     game = _seed_game()
     setup = make_scene_setup(scene_type="keyed", narrative_hint="The cult moves at dawn.")
-    block = _pacing_block(game, setup)
+    block = dialog_prompt(game, scene_setup=setup)
     assert "<keyed_scene>The cult moves at dawn.</keyed_scene>" in block
 
 
-def test_pacing_block_keyed_scene_xml_escapes_hint():
+def test_a_keyed_scenes_hint_reaches_the_narrator_escaped(load_engine: None) -> None:
     game = _seed_game()
     setup = make_scene_setup(scene_type="keyed", narrative_hint="A & B < C")
-    block = _pacing_block(game, setup)
+    block = dialog_prompt(game, scene_setup=setup)
     assert "<keyed_scene>" in block
 
     inner = block.split("<keyed_scene>")[1].split("</keyed_scene>")[0]

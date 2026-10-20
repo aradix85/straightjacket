@@ -1,5 +1,7 @@
 from typing import Any
 
+import pytest
+
 from straightjacket.engine.ruleset.progress import new_track
 from tests._helpers import make_brain_result, make_game_state, make_npc
 
@@ -10,7 +12,19 @@ def _starforged() -> Any:
     return game
 
 
-def test_check_your_gear_without_a_stat_is_rolled_with_supply_in_a_turn(load_engine: None) -> None:
+@pytest.mark.parametrize(
+    ("move", "stat", "dialog_only", "rolled"),
+    [
+        ("adventure/check_your_gear", "none", False, ("supply", 3)),
+        ("world_shaping", "wits", False, ("wits", 1)),
+        ("world_shaping", "none", False, None),
+        ("adventure/face_danger", "wits", True, None),
+        ("dialog", "none", False, None),
+    ],
+)
+def test_what_a_turn_rolls_with_or_plays_as_dialog(
+    load_engine: None, move: str, stat: str, dialog_only: bool, rolled: tuple[str, int] | None
+) -> None:
     from straightjacket.engine.game import process_turn
     from tests._creation import TurnProvider, brain_answer, create_game
 
@@ -24,11 +38,10 @@ def test_check_your_gear_without_a_stat_is_rolled_with_supply_in_a_turn(load_eng
     )
     game.resources.meters["supply"] = 3
     brain = brain_answer(
-        move="adventure/check_your_gear", stat="none", location_change=None, track_name=None, track_rank=None
+        move=move, stat=stat, dialog_only=dialog_only, location_change=None, track_name=None, track_rank=None
     )
-    _narration, roll, _offer, _director = process_turn(TurnProvider(brain), game, "I check my gear.", stream=None)
-    assert roll is not None
-    assert (roll.stat_name, roll.stat_value) == ("supply", 3)
+    _narration, roll, _offer, _director = process_turn(TurnProvider(brain), game, "I act.", stream=None)
+    assert (None if roll is None else (roll.stat_name, roll.stat_value)) == rolled
 
 
 def test_a_stat_the_brain_names_for_a_meter_move_is_ignored(load_engine: None) -> None:

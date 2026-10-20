@@ -11,7 +11,7 @@ from tests._helpers import (
 )
 
 
-def test_position_default_risky(stub_engine: None) -> None:
+def test_position_default_risky(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
@@ -20,7 +20,7 @@ def test_position_default_risky(stub_engine: None) -> None:
     assert resolve_position(game, brain) == "risky"
 
 
-def test_position_desperate_on_low_resources(stub_engine: None) -> None:
+def test_position_desperate_on_low_resources(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
@@ -32,7 +32,7 @@ def test_position_desperate_on_low_resources(stub_engine: None) -> None:
     assert resolve_position(game, brain) == "desperate"
 
 
-def test_position_controlled_on_high_resources_low_chaos(stub_engine: None) -> None:
+def test_position_controlled_on_high_resources_low_chaos(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
@@ -48,7 +48,7 @@ def test_position_controlled_on_high_resources_low_chaos(stub_engine: None) -> N
     assert resolve_position(game, brain) == "controlled"
 
 
-def test_position_hostile_npc_pushes_desperate(stub_engine: None) -> None:
+def test_position_hostile_npc_pushes_desperate(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
@@ -62,7 +62,7 @@ def test_position_hostile_npc_pushes_desperate(stub_engine: None) -> None:
     assert pos == "desperate"
 
 
-def test_position_friendly_npc_helps(stub_engine: None) -> None:
+def test_position_friendly_npc_helps(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
@@ -79,7 +79,7 @@ def test_position_friendly_npc_helps(stub_engine: None) -> None:
     assert pos in ("risky", "controlled")
 
 
-def test_position_consecutive_misses(stub_engine: None) -> None:
+def test_position_consecutive_misses(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
@@ -94,7 +94,7 @@ def test_position_consecutive_misses(stub_engine: None) -> None:
     assert pos in ("desperate", "risky")
 
 
-def test_position_threat_clock_pressure(stub_engine: None) -> None:
+def test_position_threat_clock_pressure(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
@@ -105,7 +105,7 @@ def test_position_threat_clock_pressure(stub_engine: None) -> None:
     assert pos in ("desperate", "risky")
 
 
-def test_position_combat_baseline(stub_engine: None) -> None:
+def test_position_combat_baseline(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
@@ -118,16 +118,20 @@ def test_position_combat_baseline(stub_engine: None) -> None:
     assert pos_combat != "controlled" or pos_recovery == "controlled"
 
 
-def test_a_move_category_without_a_baseline_raises(stub_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("setting", ["classic", "delve", "starforged", "sundered_isles"])
+def test_every_move_that_rolls_has_a_position(load_engine: None, setting: str) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
+    from straightjacket.engine.ruleset.config import rules
+    from straightjacket.engine.ruleset.moves import get_moves
 
-    baselines = {k: v for k, v in gm().position_resolver.move_baselines.items() if k != "combat"}
-    monkeypatch.setattr(gm().position_resolver, "move_baselines", baselines)
-    with pytest.raises(KeyError, match="combat"):
-        resolve_position(make_game_state(player_name="Test"), make_brain_result(move="combat/clash", stat="iron"))
+    game = make_game_state(player_name="Test", setting_id=setting)
+    rolled = [key for key, move in get_moves(setting).items() if move.is_action_roll or move.is_progress_roll]
+    for key in [*rolled, *rules().engine_moves]:
+        position = resolve_position(game, make_brain_result(move=key, stat="iron"))
+        assert position in gm().clocks.miss_ticks_by_position, key
 
 
-def test_effect_default_standard(stub_engine: None) -> None:
+def test_effect_default_standard(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_effect
 
     game = make_game_state(player_name="Test")
@@ -135,7 +139,7 @@ def test_effect_default_standard(stub_engine: None) -> None:
     assert resolve_effect(game, brain, "risky") == "standard"
 
 
-def test_effect_desperate_pushes_limited(stub_engine: None) -> None:
+def test_effect_desperate_pushes_limited(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_effect
 
     game = make_game_state(player_name="Test")
@@ -145,7 +149,7 @@ def test_effect_desperate_pushes_limited(stub_engine: None) -> None:
     assert effect in ("limited", "standard")
 
 
-def test_effect_controlled_pushes_great(stub_engine: None) -> None:
+def test_effect_controlled_pushes_great(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_effect
 
     game = make_game_state(player_name="Test")
@@ -162,7 +166,7 @@ def test_effect_controlled_pushes_great(stub_engine: None) -> None:
     assert effect == "great"
 
 
-def test_effect_strike_baseline(stub_engine: None) -> None:
+def test_effect_strike_baseline(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_effect
 
     game = make_game_state(player_name="Test")
@@ -172,13 +176,13 @@ def test_effect_strike_baseline(stub_engine: None) -> None:
     assert effect in ("standard", "great")
 
 
-def test_time_progression_dialog_is_none(stub_engine: None) -> None:
+def test_time_progression_dialog_is_none(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.world import resolve_time_progression
 
     assert resolve_time_progression("dialog", has_location_change=False) == "none"
 
 
-def test_the_game_master_s_own_moves_take_its_own_time(stub_engine: None) -> None:
+def test_the_game_master_s_own_moves_take_its_own_time(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.config import gm
     from straightjacket.engine.gamemaster.world import resolve_time_progression
 
@@ -186,25 +190,25 @@ def test_the_game_master_s_own_moves_take_its_own_time(stub_engine: None) -> Non
         assert resolve_time_progression(move, has_location_change=False) == spec.time
 
 
-def test_time_progression_gather_is_short(stub_engine: None) -> None:
+def test_time_progression_gather_is_short(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.world import resolve_time_progression
 
     assert resolve_time_progression("adventure/gather_information", has_location_change=False) == "short"
 
 
-def test_time_progression_resupply_is_moderate(stub_engine: None) -> None:
+def test_time_progression_resupply_is_moderate(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.world import resolve_time_progression
 
     assert resolve_time_progression("recover/resupply", has_location_change=False) == "moderate"
 
 
-def test_time_progression_location_change_is_long(stub_engine: None) -> None:
+def test_time_progression_location_change_is_long(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.world import resolve_time_progression
 
     assert resolve_time_progression("adventure/face_danger", has_location_change=True) == "long"
 
 
-def test_time_progression_unknown_move_uses_default(stub_engine: None) -> None:
+def test_time_progression_unknown_move_uses_default(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.world import resolve_time_progression
 
     assert resolve_time_progression("unknown_move", has_location_change=False) == "short"

@@ -4,10 +4,9 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from tests._creation import TurnProvider, brain_answer, force_miss
+from tests._creation import TurnProvider, brain_answer, force_result, library_game
 from tests._helpers import make_game_state, make_revelation
 from tests._mocks import MockProvider
-from tests.test_momentum_burn import _game
 
 
 class _FakeWS:
@@ -54,13 +53,13 @@ def test_a_failed_turn_is_rolled_back_and_reported(
     from straightjacket.web import handlers
     from straightjacket.web.session import new_session
 
-    game = _game()
+    game = library_game()
     before = game.to_dict()
     session = new_session()
     session.game = game
     ws = _FakeWS()
 
-    force_miss(monkeypatch)
+    force_result(monkeypatch, "MISS")
     monkeypatch.setattr(handlers, "get_provider", lambda: _NarratorDown(brain_answer()))
     monkeypatch.setattr(handlers, "_narration_stream", lambda _ws, _game: (None, []))
 

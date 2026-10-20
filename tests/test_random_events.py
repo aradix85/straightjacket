@@ -1,15 +1,15 @@
 import pytest
 
 from straightjacket.engine.gamemaster.random_events import (
-    _select_target,
     add_character_weight,
     add_thread_weight,
     consolidate_lists,
+    drain_pending_events,
     generate_random_event,
     roll_event_focus,
     roll_meaning_table,
 )
-from straightjacket.engine.models import RandomEvent
+from straightjacket.engine.models import GameState, RandomEvent
 from tests._helpers import fix_dice, make_character_entry, make_game_state, make_random_event, make_thread
 
 
@@ -55,52 +55,54 @@ def test_meaning_table_descriptions_returns_pair() -> None:
     assert w2
 
 
-def test_meaning_table_requires_table_name() -> None:
-    import pytest
+def _target(monkeypatch: pytest.MonkeyPatch, game: GameState, focus: str) -> tuple[str, str]:
+    from straightjacket.engine.gamemaster.mythic_data import load_mythic
 
-    with pytest.raises(TypeError):
-        roll_meaning_table()
+    fix_dice(monkeypatch, next(entry["min"] for entry in load_mythic()["event_focus"] if entry["focus"] == focus))
+    event = generate_random_event(game, "interrupt_scene")
+    drain_pending_events()
+    return event.target, event.target_id
 
 
-def test_target_npc_focus_selects_from_characters(load_engine: None) -> None:
+def test_target_npc_focus_selects_from_characters(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.characters_list = [
         make_character_entry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
     ]
-    name, target_id = _select_target("npc_action", game)
+    name, target_id = _target(monkeypatch, game, "npc_action")
     assert name == "Kira"
     assert target_id == "c1"
 
 
-def test_target_thread_focus_selects_from_threads(load_engine: None) -> None:
+def test_target_thread_focus_selects_from_threads(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.threads = [
         make_thread(id="t1", name="Find the vault", weight=1, active=True, source="creation", thread_type="vow"),
     ]
-    name, target_id = _select_target("move_toward_thread", game)
+    name, target_id = _target(monkeypatch, game, "move_toward_thread")
     assert name == "Find the vault"
     assert target_id == "t1"
 
 
-def test_target_empty_list_returns_empty() -> None:
+def test_target_empty_list_returns_empty(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
-    name, target_id = _select_target("npc_action", game)
+    name, target_id = _target(monkeypatch, game, "npc_action")
     assert name == ""
     assert target_id == ""
 
 
-def test_target_pc_focus_no_target() -> None:
+def test_target_pc_focus_no_target(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.characters_list = [
         make_character_entry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
     ]
-    name, _ = _select_target("pc_negative", game)
+    name, _ = _target(monkeypatch, game, "pc_negative")
     assert name == ""
-    name2, _ = _select_target("current_context", game)
+    name2, _ = _target(monkeypatch, game, "current_context")
     assert name2 == ""
 
 
-def test_target_respects_weight() -> None:
+def test_target_respects_weight(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.characters_list = [
         make_character_entry(id="c1", name="Rare", weight=1, active=True, entry_type="npc"),
@@ -108,20 +110,20 @@ def test_target_respects_weight() -> None:
     ]
     counts: dict[str, int] = {"Rare": 0, "Common": 0}
     for _ in range(200):
-        name, _ = _select_target("npc_action", game)
+        name, _ = _target(monkeypatch, game, "npc_action")
         if name in counts:
             counts[name] += 1
 
     assert counts["Common"] > counts["Rare"]
 
 
-def test_target_skips_inactive() -> None:
+def test_target_skips_inactive(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.threads = [
         make_thread(id="t1", name="Closed", weight=3, active=False, source="creation", thread_type="vow"),
         make_thread(id="t2", name="Open", weight=1, active=True, source="creation", thread_type="vow"),
     ]
-    name, _ = _select_target("move_toward_thread", game)
+    name, _ = _target(monkeypatch, game, "move_toward_thread")
     assert name == "Open"
 
 

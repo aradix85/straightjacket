@@ -81,6 +81,14 @@ def make_character_entry(**kwargs: Any) -> Any:
     return CharacterListEntry(**kwargs)
 
 
+def make_plotline(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import PlotlineEntry
+
+    kwargs.setdefault("status", "advancement")
+    kwargs.setdefault("turning_point_count", 0)
+    return PlotlineEntry(**kwargs)
+
+
 def make_keyed_scene(**kwargs: Any) -> Any:
     from straightjacket.engine.models import KeyedScene
 
@@ -328,6 +336,12 @@ def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("npc_agency", [])
     kwargs.setdefault("facts", [])
     return kwargs
+
+
+def dialog_prompt(game: Any, **kwargs: Any) -> str:
+    from straightjacket.engine.prompt_dialog import build_dialog_prompt
+
+    return build_dialog_prompt(game, make_brain_result(), **dialog_prompt_kwargs(**kwargs))
 
 
 def make_director_guidance(**kwargs: Any) -> dict:

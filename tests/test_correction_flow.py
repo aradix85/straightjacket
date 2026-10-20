@@ -5,7 +5,7 @@ import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.models import GameState
-from tests._creation import create_game, force_miss
+from tests._creation import create_game, force_result
 from tests._helpers import make_random_event, make_scene_setup
 
 _TURN_BRAIN = {
@@ -128,7 +128,7 @@ def _played_game(provider: MockProvider, monkeypatch: pytest.MonkeyPatch) -> Gam
         player_name="Kael",
         background_vow="Keep the archive whole",
     )
-    force_miss(monkeypatch)
+    force_result(monkeypatch, "MISS")
     _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard", stream=None)
     return game
 
@@ -267,7 +267,7 @@ def test_a_state_correction_retells_what_the_turn_told_without_moving_npc_clocks
     scheme = make_clock(name="The ledger vanishes", clock_type="scheme", owner_kind="npc", owner_id="Mira")
     game.world.clocks.append(scheme)
     game.narrative.scene_count = 4
-    force_miss(monkeypatch)
+    force_result(monkeypatch, "MISS")
     process_turn(provider, game, "I shove past the guard", stream=None)
     assert game.last_turn_snapshot is not None
     [told] = game.last_turn_snapshot.npc_agency

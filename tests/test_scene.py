@@ -1,6 +1,6 @@
 import pytest
 
-from straightjacket.engine.gamemaster.scene import SceneSetup, _roll_adjustments, adjustment_descriptions, check_scene
+from straightjacket.engine.gamemaster.scene import SceneSetup, adjustment_descriptions, check_scene
 from tests._helpers import fix_dice, make_game_state, make_random_event, make_scene_setup
 
 
@@ -60,24 +60,19 @@ def test_cf9_most_rolls_trigger(monkeypatch: pytest.MonkeyPatch) -> None:
     assert check_scene(game).scene_type == "interrupt"
 
 
-def test_single_adjustment(monkeypatch: pytest.MonkeyPatch) -> None:
-    for roll in range(1, 7):
-        fix_dice(monkeypatch, roll)
-        adjs = _roll_adjustments()
-        assert len(adjs) == 1
-        assert adjs[0] != "make_2_adjustments"
+def _altered(monkeypatch: pytest.MonkeyPatch, adjustment_roll: int) -> list[str]:
+    game = make_game_state()
+    game.world.chaos_factor = 9
+    fix_dice(monkeypatch, 1, adjustment_roll)
+    setup = check_scene(game)
+    assert setup.scene_type == "altered"
+    return setup.adjustments
 
 
-def test_double_adjustment(monkeypatch: pytest.MonkeyPatch) -> None:
-    fix_dice(monkeypatch, 7)
-    adjs = _roll_adjustments()
-    assert len(adjs) == 2
-    for a in adjs:
-        assert a != "make_2_adjustments"
-
-
-def test_adjustment_types(monkeypatch: pytest.MonkeyPatch) -> None:
-    expected = {
+def test_an_altered_scene_makes_one_of_the_six_adjustments(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    made = [_altered(monkeypatch, roll) for roll in range(1, 7)]
+    assert all(len(adjustments) == 1 for adjustments in made)
+    assert {adjustments[0] for adjustments in made} == {
         "remove_character",
         "add_character",
         "reduce_activity",
@@ -85,12 +80,12 @@ def test_adjustment_types(monkeypatch: pytest.MonkeyPatch) -> None:
         "remove_object",
         "add_object",
     }
-    seen = set()
-    for roll in range(1, 7):
-        fix_dice(monkeypatch, roll)
-        adjs = _roll_adjustments()
-        seen.add(adjs[0])
-    assert seen == expected
+
+
+def test_an_altered_scene_can_make_two_adjustments(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    adjustments = _altered(monkeypatch, 7)
+    assert len(adjustments) == 2
+    assert "make_2_adjustments" not in adjustments
 
 
 def test_adjustment_descriptions_maps_all() -> None:

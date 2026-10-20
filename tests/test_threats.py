@@ -1,13 +1,10 @@
-from typing import Any
-
 import pytest
 
 from straightjacket.engine.models import GameState, Resources, ThreatData, labels_of
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes, menace_per_mark
 from tests._helpers import (
-    dialog_prompt_kwargs,
-    make_brain_result,
+    dialog_prompt,
     make_game_state,
     make_outcome,
     make_progress_track,
@@ -15,12 +12,6 @@ from tests._helpers import (
     make_threat,
     make_world_state,
 )
-
-
-def _told(game: GameState, event: Any) -> str:
-    from straightjacket.engine.prompt_dialog import build_dialog_prompt
-
-    return build_dialog_prompt(game, make_brain_result(), **dialog_prompt_kwargs(threat_events=[event]))
 
 
 def _game_with_threat() -> GameState:
@@ -180,7 +171,9 @@ class TestAdvancesReachTheNarrator:
         assert (event.source, event.threat_name) == ("autonomous", "The Beast Awakens")
         assert threats.take_pending_threat_events(game) == [event]
         assert game.world.pending_threat_events == []
-        assert '<threat_advance name="The Beast Awakens" menace_full="False" offscreen="true"/>' in _told(game, event)
+        assert '<threat_advance name="The Beast Awakens" menace_full="False" offscreen="true"/>' in dialog_prompt(
+            game, threat_events=[event]
+        )
 
     def test_a_random_event_advance_is_told_in_its_own_turn(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import advance_threat_by_id, take_pending_threat_events
@@ -189,7 +182,7 @@ class TestAdvancesReachTheNarrator:
         advance_threat_by_id(game, "threat_beast")
         [event] = take_pending_threat_events(game)
         assert event.source == "random_event"
-        assert "offscreen" not in _told(game, event)
+        assert "offscreen" not in dialog_prompt(game, threat_events=[event])
 
     def test_delve_tells_what_the_threat_does_from_its_category(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import advance_menace_on_miss
@@ -200,7 +193,7 @@ class TestAdvancesReachTheNarrator:
         game.setting_id = "delve"
         [event] = advance_menace_on_miss(game)
         assert event.development in rows
-        assert f">{event.development}</threat_advance>" in _told(game, event)
+        assert f">{event.development}</threat_advance>" in dialog_prompt(game, threat_events=[event])
         game.setting_id = "starforged"
         game.threats[0].menace_ticks = 0
         assert advance_menace_on_miss(game)[0].development == ""
