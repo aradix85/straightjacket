@@ -11,7 +11,7 @@ How to change Straightjacket: the workflow, the rules every change keeps, the co
 5. A change to the turn pipeline, AI calls, prompts, or configuration first gets a short Elvira run (8 to 20 turns, `docs/elvira.md`), and every engine warning in its report is a finding.
 6. One CHANGELOG entry per finished piece of work, not one per measurement, and only after its checks have been read: what changed, why, what was measured, and the quality gate, in a few sentences. The version in `pyproject.toml` matches the newest entry.
 
-An outside contributor forks, branches, and opens a pull request that says what changed and why. The maintainer's sessions commit each finished release to main and push it.
+An outside contributor forks, branches, and opens a pull request that says what changed and why. The maintainer's sessions commit each finished release to main and push it, and hand off to sub-agents whatever reading, searching, or checking can be handed off, so that only findings fill a session's context (roadmap.md, Sessions with the user).
 
 ## Rules for a change
 

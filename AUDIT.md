@@ -21,6 +21,8 @@ A session also fixes what it meets that is ugly, illogical, or broken, even wher
 
 **Hit-lists, never verdicts.** "Is principle X satisfied?" becomes "where does the codebase fail principle X?", answered with a list, even an empty one.
 
+**Fan out to sub-agents.** The reading of a hit-list goes to sub-agents, one per submodule or per batch of hits, each returning its hits classified with file and line; the session merges their lists, checks a sample of each against the code, and makes the fixes itself. Only the lists enter the session's context (roadmap.md, Sessions with the user).
+
 **Grep first, reason second.** Whatever can be a grep query is run as one before any reading; the result is the candidate list, and reasoning happens per hit. Every query is run with an exact pattern, and its result count goes into the CHANGELOG entry. Where a principle needs reasoning that no grep captures, say so and read file by file within one submodule.
 
 **Read context before classifying.** Open each hit and read at least ten lines around it; never classify from the grep line alone.
