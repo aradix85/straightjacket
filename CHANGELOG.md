@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.21.0] — 2026-10-21
+
+ARCHITECTURE.md and CONTRIBUTING.md follow step 9r. The order of preference now says that every rule that decides something in the fiction names its origin, a source or an engine rule with its reason in the register (AUDIT.md, principle 6), and that what came from EdgeTales without a source is taken over in the step that names it and leaves only once that does its work. "Record every departure from a source" adds that a new rule without a source gets a register entry, and that a rule from EdgeTales leaves only in the change that replaces it or routes its work to a system the engine already has.
+
+Quality gate: 1767 tests, no code changed. Save format unchanged.
+
 ## [2026.10.20.30] — 2026-10-20
 
 The user's rule, in their words: a system from EdgeTales does something in play, so it never just goes. In the same step it is replaced, or its work is routed to a system the engine already has (Mythic's tables, lists, fate, and scene test, the Adventure Crafter, the ruleset and its Datasworn data, the engine's facts and time), and it leaves only once that does the work; only what never worked goes without one. The roadmap's decision "From EdgeTales to the sources" and AUDIT.md's principle 6 say so. In 9r nothing that worked was removed: the old way of telling an overcome threat moved to the vow that overcomes it, and the off-screen death vote never fired.
