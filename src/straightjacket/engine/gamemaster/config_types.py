@@ -21,7 +21,6 @@ class NpcConfig:
     reflection_threshold: int
     memory_recency_decay: float
     reflection_importance: int
-    death_corroboration_min_importance: int
     seed_importance_floor: int
     reflection_recency_floor: float
     about_npc_relevance_boost: float

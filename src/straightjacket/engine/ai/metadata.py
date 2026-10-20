@@ -1,6 +1,5 @@
 from typing import Any
 
-from ..engine_loader import eng
 from ..gamemaster.config import gm
 from ..gamemaster.npc.lifecycle import new_npc
 from ..gamemaster.npc.matching import apply_name_sanitization, find_npc, fuzzy_match_existing_npc, next_npc_id
@@ -18,7 +17,6 @@ def apply_narrator_metadata(
     process_npc_details(game, metadata["npc_details"], world_addition=world_addition)
     process_deceased_npcs_with_presence_check(game, metadata["deceased_npcs"], scene_present_ids=scene_present_ids)
     _process_lore_npcs(game, metadata["lore_npcs"])
-    _check_death_corroboration(game)
 
 
 def _reported_dead(game: GameState, entry: dict[str, Any]) -> NpcData | None:
@@ -96,48 +94,3 @@ def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
         apply_name_sanitization(npc)
         game.npcs.append(npc)
         log(f"[NPC] Lore figure created: {name} ({npc_id})")
-
-
-def _check_death_corroboration(game: GameState) -> None:
-    current_scene = game.narrative.scene_count
-    death_emotions = set(gm().death_emotions)
-    min_importance = gm().npc.death_corroboration_min_importance
-    voting = eng().metadata_voting
-
-    for npc in game.npcs:
-        if npc.status != "active":
-            continue
-        npc_id = npc.id
-        cross_votes = 0
-        self_votes = 0
-
-        for other in game.npcs:
-            if other.id == npc_id:
-                continue
-            for mem in other.memory:
-                if mem.type == "reflection":
-                    continue
-                if mem.scene != current_scene:
-                    continue
-                if (
-                    mem.about_npc == npc_id
-                    and mem.importance >= min_importance
-                    and mem.emotional_weight.lower() in death_emotions
-                ):
-                    cross_votes += 1
-
-        for mem in npc.memory:
-            if mem.type == "reflection":
-                continue
-            if mem.scene != current_scene:
-                continue
-            if mem.importance >= min_importance and mem.emotional_weight.lower() in death_emotions:
-                self_votes += 1
-
-        total = cross_votes + self_votes
-        if cross_votes >= voting.min_cross_votes and total >= voting.min_total_votes:
-            npc.status = "deceased"
-            log(
-                f"[NPC] Off-screen death detected: {npc.name} ({npc_id}) — "
-                f"cv={cross_votes} sv={self_votes} total={total}"
-            )

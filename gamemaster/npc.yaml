@@ -8,7 +8,6 @@ npc:
   reflection_threshold: 30
   memory_recency_decay: 0.92
   reflection_importance: 8
-  death_corroboration_min_importance: 9
   seed_importance_floor: 3
   reflection_recency_floor: 0.6
   about_npc_relevance_boost: 0.6

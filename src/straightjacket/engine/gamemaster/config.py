@@ -110,7 +110,6 @@ class GameMasterSettings(RawSections):
     clock_keyed_scenes: ClockKeyedScenesConfig
     clocks: ClocksConfig
     outcomes: OutcomesConfig
-    death_emotions: list[str]
     moves: dict[str, GameMasterMove]
 
     _raw: dict[str, Any] = field(default_factory=dict, repr=False)
@@ -318,7 +317,6 @@ def parse_gamemaster_yaml(data: dict[str, Any]) -> GameMasterSettings:
         keyed_scenes=_build_keyed_scenes(dict(data["keyed_scenes"])),
         clock_keyed_scenes=_build_clock_keyed_scenes(dict(data["clock_keyed_scenes"])),
         clocks=_build_clocks(dict(data["clocks"])),
-        death_emotions=list(data["death_emotions"]),
         moves={key: build_strict(GameMasterMove, dict(move)) for key, move in data["moves"].items()},
         _raw=data,
     )

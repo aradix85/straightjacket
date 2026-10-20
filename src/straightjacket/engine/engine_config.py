@@ -7,7 +7,6 @@ from .config_binding import RawSections, build_strict, reject_unknown
 from .engine_config_dataclasses import (
     AiTextConfig,
     CorrectionConfig,
-    MetadataVotingConfig,
     NarrativeDirectionConfig,
     NarrativeDirectionEntry,
     NarrativeIntensityThresholds,
@@ -27,7 +26,6 @@ from .engine_config_dataclasses import (
 class EngineSettings(RawSections):
     ai_text: AiTextConfig
     correction: CorrectionConfig
-    metadata_voting: MetadataVotingConfig
     narrative_direction: NarrativeDirectionConfig
     narrator_status_descriptions: dict[str, NarratorMeterDescription]
     parser: ParserConfig
@@ -47,7 +45,6 @@ class EngineSettings(RawSections):
 _SIMPLE_SECTIONS: dict[str, type] = {
     "ai_text": AiTextConfig,
     "correction": CorrectionConfig,
-    "metadata_voting": MetadataVotingConfig,
     "parser": ParserConfig,
     "persistence": PersistenceConfig,
     "prompt_display": PromptDisplayConfig,

@@ -82,12 +82,6 @@ class ParserConfig:
 
 
 @dataclass
-class MetadataVotingConfig:
-    min_cross_votes: int
-    min_total_votes: int
-
-
-@dataclass
 class StatusDescriptionsConfig:
     meters: dict[str, dict[int, str]]
     bond: dict[int, str]

@@ -85,34 +85,3 @@ def test_a_lore_figure_that_is_known_or_nameless_adds_no_npc(load_engine: None) 
         lore_npcs=[{"name": "Kira", "description": "Already exists"}, {"name": " ", "description": "No name"}],
     )
     assert [n.name for n in game.npcs] == ["Kira", "Borin"]
-
-
-def _grief(scene: int, **fields: Any) -> Any:
-    return make_memory(scene=scene, importance=9, emotional_weight="devastated", **fields)
-
-
-def test_an_off_screen_death_two_npcs_remember_is_taken(load_engine: None) -> None:
-    game = _game()
-    game.npcs[0].memory.append(_grief(5, event="Borin was killed", about_npc="npc_2"))
-    game.npcs[1].memory.append(_grief(5, event="I am dying"))
-    _apply(game, {"npc_1", "npc_2"})
-    assert game.npcs[1].status == "deceased"
-
-
-def test_an_off_screen_death_only_the_npc_itself_remembers_is_not_taken(load_engine: None) -> None:
-    game = _game()
-    game.npcs[1].memory += [_grief(5, event="I am dying"), _grief(5, event="Still dying")]
-    _apply(game, {"npc_1", "npc_2"})
-    assert game.npcs[1].status == "active"
-
-
-def test_an_off_screen_death_counts_neither_reflections_nor_earlier_scenes(load_engine: None) -> None:
-    reflected = _game()
-    reflected.npcs[0].memory.append(_grief(5, event="Borin was killed", about_npc="npc_2", type="reflection"))
-    reflected.npcs[1].memory.append(_grief(5, event="I am dying"))
-    earlier = _game()
-    earlier.npcs[0].memory.append(_grief(3, event="Borin was killed", about_npc="npc_2"))
-    earlier.npcs[1].memory.append(_grief(3, event="I am dying"))
-    for game in (reflected, earlier):
-        _apply(game, {"npc_1", "npc_2"})
-        assert game.npcs[1].status == "active"
