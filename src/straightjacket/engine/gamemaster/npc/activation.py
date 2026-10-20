@@ -5,7 +5,7 @@ from ...models import BrainResult, GameState, NpcData
 from ..config import gm
 from ..questions import answers
 from .lifecycle import reactivate_npc
-from .matching import find_npc
+from .matching import find_npc, named_in, proper_name_words, stands_in
 
 
 def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
@@ -71,10 +71,9 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
     return scores
 
 
-def _build_scan_text(brain: BrainResult, game: GameState, player_input: str) -> str:
+def _build_story_text(brain: BrainResult, game: GameState) -> str:
     _tf = gm().tf_idf
     scan_parts = [
-        player_input,
         brain.player_intent,
         brain.approach,
         game.world.current_scene_context,
@@ -82,30 +81,34 @@ def _build_scan_text(brain: BrainResult, game: GameState, player_input: str) -> 
     ]
     for s in game.narrative.session_log[-_tf.session_window :]:
         scan_parts.append(s.summary)
-    return " ".join(scan_parts).lower()
+    return " ".join(scan_parts)
+
+
+def _mentioned(label: str, player_input: str, story_text: str) -> bool:
+    return stands_in(label, player_input, ignore_case=True) or stands_in(label, story_text, ignore_case=False)
 
 
 def _score_npc(
     npc: NpcData,
     target_id: str | None,
-    scan_text: str,
+    player_input: str,
+    story_text: str,
     tfidf: float,
     game: GameState,
 ) -> float:
     _scores = gm().activation_scores
     _tf = gm().tf_idf
     score = 0.0
-    npc_name_lower = npc.name.lower()
 
     if npc.id == target_id:
         score += _scores.target
 
-    if npc_name_lower in scan_text:
+    if _mentioned(npc.name, player_input, story_text):
         score += _scores.name_match
-    elif any(len(part) >= _tf.token_min_length and part in scan_text for part in npc_name_lower.split()):
+    elif any(_mentioned(word, player_input, story_text) for word in proper_name_words(npc)):
         score += _scores.name_part
 
-    if any(alias.lower() in scan_text for alias in npc.aliases):
+    if any(_mentioned(alias, player_input, story_text) for alias in npc.aliases):
         score += _scores.alias_match
 
     if tfidf > _tf.score_floor:
@@ -149,8 +152,7 @@ def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], ga
                 continue
             if other.status not in gm().npc_status_groups.in_play:
                 continue
-            other_name = other.name.lower()
-            if other_name and other_name in ref_text.lower():
+            if named_in(other, ref_text):
                 secondary.append(other)
                 if len(secondary) >= gm().activation_scores.max_recursive:
                     break
@@ -163,8 +165,8 @@ def activate_npcs_for_prompt(
     game: GameState, brain: BrainResult, player_input: str
 ) -> tuple[list[NpcData], list[NpcData]]:
     target_id = brain.target_npc
-    scan_text = _build_scan_text(brain, game, player_input)
-    tfidf_scores = compute_npc_tfidf_scores(game.npcs, scan_text)
+    story_text = _build_story_text(brain, game)
+    tfidf_scores = compute_npc_tfidf_scores(game.npcs, f"{player_input} {story_text}")
 
     activated: list[NpcData] = []
     mentioned: list[NpcData] = []
@@ -174,7 +176,7 @@ def activate_npcs_for_prompt(
             continue
 
         tfidf = tfidf_scores.get(npc.id, 0.0)
-        score = _score_npc(npc, target_id, scan_text, tfidf, game)
+        score = _score_npc(npc, target_id, player_input, story_text, tfidf, game)
 
         if score >= gm().npc.activation_threshold:
             activated.append(npc)

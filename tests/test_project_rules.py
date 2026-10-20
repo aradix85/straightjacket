@@ -937,7 +937,12 @@ _ORPHAN_YAML_KEY_CARVE_OUT: set[tuple[str, str]] = set()
 
 
 def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
-    py_text = "\n".join(p.read_text(encoding="utf-8") for p in (*_iter_source_files(), *_iter_test_files()))
+    py_text = "\n".join(
+        line
+        for p in (*_iter_source_files(), *_iter_test_files())
+        for line in p.read_text(encoding="utf-8").splitlines()
+        if not line.lstrip().startswith(("from ", "import "))
+    )
     violations: list[Violation] = []
     for yfile in sorted(y for root in ENGINE_YAML_ROOTS for y in root.glob("*.yaml")):
         try:

@@ -2,7 +2,7 @@ import re
 
 from .ai.provider_base import AIUnavailableError
 from .engine_loader import eng
-from .gamemaster.config import gm
+from .gamemaster.npc.matching import named_in
 from .logging_util import log
 from .models import GameState
 
@@ -52,22 +52,9 @@ def _strip_markdown_formatting(text: str) -> str:
 
 
 def _mark_introduced_npcs(game: GameState, narration: str) -> None:
-    narration_lower = narration.lower()
-    min_part = eng().parser.min_line_length
-    titles = gm().name_titles
-
     for npc in game.npcs:
-        if npc.introduced:
-            continue
-        if npc.name.lower() in narration_lower:
+        if not npc.introduced and named_in(npc, narration):
             npc.introduced = True
-            continue
-
-        for part in npc.name.split():
-            part_clean = part.strip(".,;:!?\"'()-").lower()
-            if len(part_clean) >= min_part and part_clean not in titles and part_clean in narration_lower:
-                npc.introduced = True
-                break
 
 
 _CLEANUP_STEPS = (

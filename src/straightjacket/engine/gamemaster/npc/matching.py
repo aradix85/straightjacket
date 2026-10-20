@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from itertools import takewhile
 
 from ...ids import next_id
 from ...logging_util import log
@@ -7,6 +8,8 @@ from ...models import GameState, NpcData
 from ..config import gm
 
 NPC_ID_PREFIX = "npc_"
+
+_WORD_RE = re.compile(r"\w[\w'-]*")
 
 _ALIAS_HINT_RE = re.compile(
     r"\b(?:also\s+known\s+as|aka|called)\s+",
@@ -108,17 +111,38 @@ def _find_by_substring(game: GameState, ref_norm: str) -> NpcData | None:
     return best_match
 
 
+def _word_pattern(word: str, ignore_case: bool) -> str:
+    if ignore_case or not word[0].isupper() or word.lower() in gm().stopwords.general:
+        return f"(?i:{re.escape(word)})"
+    return re.escape(word)
+
+
+def stands_in(phrase: str, text: str, *, ignore_case: bool) -> bool:
+    words = _WORD_RE.findall(phrase)
+    if not words:
+        return False
+    body = r"\W+".join(_word_pattern(word, ignore_case) for word in words)
+    return re.search(rf"(?<!\w){body}(?!\w)", text) is not None
+
+
+def proper_name_words(npc: NpcData) -> list[str]:
+    stop = gm().stopwords.general
+    min_len = gm().fuzzy_match.named_in_min_word_length
+    words = _WORD_RE.findall(npc.name)
+    if not words or words[0].lower() in stop:
+        return []
+    lead = list(takewhile(lambda word: word[0].isupper(), words))
+    rest = words[len(lead) :]
+    if rest and len(rest[0]) >= min_len and rest[0].lower() not in stop:
+        return []
+    not_names = gm().name_titles | stop
+    return [word for word in lead if len(word) >= min_len and word.lower() not in not_names]
+
+
 def named_in(npc: NpcData, text: str) -> bool:
-    lowered = text.lower()
-    min_word = gm().fuzzy_match.named_in_min_word_length
-    for name in (npc.name, *npc.aliases):
-        whole = name.lower().strip()
-        if whole and whole in lowered:
-            return True
-        for part in name.split():
-            if len(part) >= min_word and re.search(rf"\b{re.escape(part.lower())}\b", lowered):
-                return True
-    return False
+    if any(stands_in(label, text, ignore_case=False) for label in (npc.name, *npc.aliases)):
+        return True
+    return any(stands_in(word, text, ignore_case=False) for word in proper_name_words(npc))
 
 
 def present_in_narration(game: GameState, in_prompt: set[str], target_id: str | None, narration: str) -> set[str]:

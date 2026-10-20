@@ -61,6 +61,8 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 **Revelations and Kishōtenketsu (9i).** Kishōtenketsu came from EdgeTales, where an AI wrote the whole blueprint, and skipped the Adventure Crafter; it is gone, so every chapter's plan comes from the Adventure Crafter, flexible and unpredictable as the user wants it. Each act has one revelation from its own turning point, which lands when its keyed scene fires, at the latest at its act's end, on a turn that does not fail, a dialog included (`docs/mechanics.md`, Revelations). The user's choices.
 
+**From EdgeTales to the sources (9r).** The user wants the engine to move as far as it can from what came with EdgeTales to its own systems and the sources. Every rule that decides facts, pacing, or behaviour in the fiction has an origin: a source, an engine rule with its register entry, or EdgeTales without a source, and a rule of the last kind goes to the step whose source replaces it. Technique that decides nothing in the fiction, such as the activation search, saves, streaming, and the correction, stays whatever its origin. The user's choice; 9r makes the list, and AUDIT.md's principle 6 keeps it.
+
 **Sources bought when a step needs them.** A Word Mill book or Mythic Magazine issue is bought only for a gap the setting's Datasworn data, Mythic 2e, and the Adventure Crafter leave, when a step needs it. A step with candidates starts by reading their product pages with the user; an issue costs $4.95, and a compilation of six $14.95 is chosen when several needed issues fall in the same six. A candidate that fills no gap leaves the list. The Creature Crafter is left out, since it adjusts stat blocks Ironsworn's foes do not have. Candidates, by title in Robin's subject index of Mythic Magazine (linked from Word Mill's Mythic Magazine page), not yet read:
 
 - 9j: #5 Combining Mythic With The Adventure Crafter, #57 Evolve Adventure Settings With The Adventure Crafter, #64 Adventure Crafting Mythic.
@@ -80,7 +82,36 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ---
 
-## NEXT STEP — 9j: Rules conformance: classic and the Adventure Crafter
+## NEXT STEP — 9r: Where each rule comes from
+
+Kishōtenketsu showed the need (9i): only a look at its origin found that it came from EdgeTales and skipped the Adventure Crafter. This step makes that look complete (Decisions, From EdgeTales to the sources). It changes no play; what it finds is built in the steps it names.
+
+**9r.1** The hit-list, by AUDIT.md's working method: every rule and structure in `gamemaster/`, `crafters/`, `ruleset/`, `game/`, the Director, and the prompts that decides facts, pacing, or behaviour in the fiction, each with its origin: a source (Datasworn, Mythic 2e, the Adventure Crafter, Blades, AIMS, the design document), an engine rule with its register entry, or EdgeTales without a source. The origin is read against the repository's first commit (a3b263f, version 0.31.0, which holds the code of the fork), EdgeTales's public code, and ORIGINS.md. EdgeTales built on the same design document, so a rule from EdgeTales may come from it; where that cannot be settled without the document, the item is marked for the user. Technique is listed as technique and stays.
+
+**9r.2** Each finding from EdgeTales without a source goes to the step whose source replaces it, or becomes a step of its own: a source first, in the order of ARCHITECTURE.md; else an engine rule with a register entry and its reason; else it goes. Candidates from 9i's first comparison, with a step already: a chapter's three acts and its epilogue (32b), the Director's agendas and arcs (11 to 13), what foes do (13c), places and encounters (10). Without one yet: the creativity seeds (Mythic's meaning tables, 33 and 34), the pacing hint from scene intensity (Mythic's chaos and scene test), the stance matrix and the information gate (Mythic's NPC behaviour, 13), the importance and reflection of NPC memories, and the chaos factor a vow's words set at the start. Found in 9i's Elvira run, to weigh with the information gate: a revelation told in a dialog drew a fact of the NPC's own beside it (a ring), past her fact budget; once, so only watched.
+
+**9r.3** AUDIT.md gains principle 6, every rule has a source, so that each later audit checks it again; its Status records this pass.
+
+### Definition of Done
+
+- Every item of 9r.1's hit-list has its origin, and each finding from EdgeTales without a source has its place: a step, the register, or gone. The CHANGELOG entry gives each query with its hits, as AUDIT.md's Output asks.
+- AUDIT.md has principle 6 and its Status line; the items that wait for the user are listed for them.
+- The quality gate is green. No Elvira run, since play does not change.
+
+### Reference patterns
+
+- The method: AUDIT.md, Working method and Output.
+- An origin that skipped its source: the decision "Revelations and Kishōtenketsu (9i)".
+- A kept engine rule: an entry of `docs/divergences.md`.
+- The fork's code: `git show a3b263f:<path>`; EdgeTales's public code is linked from ORIGINS.md.
+
+---
+
+## Next steps
+
+Sketches, in the order of work.
+
+### 9j — Rules conformance: classic and the Adventure Crafter
 
 Each substep starts by reading its rule in the book (the Datasworn texts, Delve, the Adventure Crafter) and builds what the reading settles; where the engine already follows the book, the CHANGELOG says so and nothing changes. Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence.
 
@@ -100,26 +131,20 @@ Each substep starts by reading its rule in the book (the Datasworn texts, Delve,
 
 **9j.10** Two labels the narrator receives read wrong, found by 9p.1's tests on the real data: a marked impact reaches the consequence tags of a dialog turn, the metadata call, and the engine's memories by its key (`mark permanently_harmed`, `consequence_labels.mark_impact` in `engine/ai_text.yaml`), where the sentence an action turn gets already uses its label; and classic's Pay the Price rows end in a period, so a result made worse reads `A new danger or foe is revealed., made worse` (`ruleset/move_effects.py` → `roll_oracle_result`).
 
-### Definition of Done
+#### Definition of Done
 
 - Each substep follows its source as the reading settles it, and the CHANGELOG entry names what each reading found.
 - The register entries the substeps name leave `docs/divergences.md`; one stays only where the book leaves the player a choice the engine fixes, then as a Permanent entry with its reason.
 - `dispatch_meta` and the Characters List template leave the orphan-symbol carve-out.
 - Each rule is tested through the real path, and the quality gate is green. An Elvira run only where a substep changes what the narrator is told (9j.8, 9j.10), with its cost named first.
 
-### Reference patterns
+#### Reference patterns
 
 - A condition that blocks recovery: `ruleset/impacts.py` → `blocks_recovery`, and the recovery handlers in `ruleset/move_handlers.py`.
 - A special track a move marks: `ruleset/legacy.py` → `mark_legacy`.
 - A table a move rolls: `ruleset/move_effects.py` → `roll_move_table`, with the rows `move_table_rows` in `ruleset/move_outcomes.yaml` names.
 - A weak hit's complication: the `complication` effect of Gather Information and Compel in `ruleset/move_outcomes.yaml`.
 - A test through the real path: `tests/_creation.py` → `create_game`, and a turn with `TurnProvider` and `force_result`.
-
----
-
-## Next steps
-
-Sketches, in the order of work.
 
 Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
@@ -345,3 +370,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9p — Test audit:** every test holds what the game does, through a public function, the real creation path, or a turn; turns go through `TurnProvider` with `brain_answer` and openings through `OpeningProvider` (`tests/_creation.py`), and a loader under test reads a temporary file or folder (`tests/_helpers.py` → `change_config`). The audit found and fixed the opening prompt's unreachable crisis branch and the chapter and successor openings that skipped their extraction (9p.6).
 - **9i — Revelations settled by the engine:** one revelation per act, seeded from its own turning point, lands when its keyed scene fires or at its act's end, on a turn that does not fail, and reaches the narrator as a `<revelation>` it must tell (`docs/mechanics.md`, Revelations); the revelation check, its cluster, and Kishōtenketsu are gone, and a chapter drops the old chapter's Adventure Crafter keyed scenes. Elvira, twenty turns of classic: the revelations of acts 1 and 2 landed at their act's end, in scenes 7 and 14, and both came across; the third act was not reached.
 - **9q — Elvira reaches what a scenario prepares:** a missed aim is a problem; a scenario fixes the results of its first turns through a seam in Elvira alone, or starts at its moment, such as a game over waiting for a successor, and plays in direct mode only (`docs/elvira.md`, Scenarios). Tested on the mock provider; the scenarios have not run on the real models.
+- **9s — NPCs named by whole names:** a text names an NPC by its name or an alias as whole words, or by a given name that keeps its capital, never by one word of a descriptive alias, which in 9i's Elvira run moved two NPCs along with the player (`docs/mechanics.md`, Memory and activation). Presence, introduction, moving along, opening memories, and activation use the one test.

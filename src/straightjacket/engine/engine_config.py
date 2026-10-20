@@ -18,7 +18,6 @@ from .engine_config_dataclasses import (
     RateLimitConfig,
     RecapLimitsConfig,
     RetryConfig,
-    SetupCommonConfig,
     StatusDescriptionsConfig,
     TruncationsConfig,
 )
@@ -37,7 +36,6 @@ class EngineSettings(RawSections):
     rate_limit: RateLimitConfig
     recap_limits: RecapLimitsConfig
     retry: RetryConfig
-    setup_common: SetupCommonConfig
     status_descriptions: StatusDescriptionsConfig
     truncations: TruncationsConfig
     scene_range_default: list[int]
@@ -56,7 +54,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "rate_limit": RateLimitConfig,
     "recap_limits": RecapLimitsConfig,
     "retry": RetryConfig,
-    "setup_common": SetupCommonConfig,
     "status_descriptions": StatusDescriptionsConfig,
     "truncations": TruncationsConfig,
 }

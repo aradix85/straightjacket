@@ -71,7 +71,6 @@ class ParserConfig:
     salvage_min_length: int
     role_prefixes: list[str]
     leaked_prompt_tags: list[str]
-    min_line_length: int
     stream_hold_markers: list[str]
     stream_sentence_boundary: str
     stream_abbreviations: list[str]
@@ -80,11 +79,6 @@ class ParserConfig:
     epilogue_heading: str
     think_open: str
     think_block: str
-
-
-@dataclass
-class SetupCommonConfig:
-    part_name_min_length: int
 
 
 @dataclass

@@ -1,25 +1,18 @@
 from typing import Any
 
-from ..engine_loader import eng
 from ..gamemaster.npc.lifecycle import new_npc
-from ..gamemaster.npc.matching import apply_name_sanitization, find_npc, fuzzy_match_existing_npc, next_npc_id
+from ..gamemaster.npc.matching import (
+    apply_name_sanitization,
+    find_npc,
+    fuzzy_match_existing_npc,
+    named_in,
+    next_npc_id,
+)
 from ..gamemaster.npc.memory import score_importance
 from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.world import update_location
 from ..logging_util import log
-from ..models import GameState, MemoryEntry, NarrationEntry, NpcData, SceneLogEntry
-
-
-def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
-    name_lower = npc_name.lower().strip()
-    min_part = eng().setup_common.part_name_min_length
-    for n in npcs:
-        if n.name.lower().strip() == name_lower:
-            return n
-        for part in npc_name.split():
-            if len(part) >= min_part and part.lower() in n.name.lower():
-                return n
-    return None
+from ..models import GameState, MemoryEntry, NarrationEntry, SceneLogEntry
 
 
 def register_extracted_npcs(game: GameState, npc_dicts: list[dict[str, Any]]) -> None:
@@ -55,7 +48,7 @@ def register_extracted_npcs(game: GameState, npc_dicts: list[dict[str, Any]]) ->
 
 def seed_opening_memories(game: GameState, memory_updates: list[dict[str, Any]]) -> None:
     for mu in memory_updates:
-        target = _find_npc_by_name(game.npcs, mu["npc_name"])
+        target = find_npc(game, mu["npc_name"]) or next((n for n in game.npcs if named_in(n, mu["npc_name"])), None)
         if not target:
             continue
         event = mu["event"]
