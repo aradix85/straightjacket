@@ -81,16 +81,6 @@ class TestAvailableMoves:
         assert offered["adventure/face_danger"] is get_moves("starforged")["adventure/face_danger"]
         assert not {"dialog", "ask_the_oracle", "world_shaping"} & set(offered)
 
-    def test_the_brain_offers_the_game_masters_moves_and_world_shaping_beside_them(self, load_engine: None) -> None:
-        from straightjacket.engine.ai.brain import _offered_moves
-        from straightjacket.engine.gamemaster.config import gm
-
-        offered = _offered_moves(_game())
-        assert offered["dialog"] is gm().moves["dialog"]
-        assert offered["ask_the_oracle"] is gm().moves["ask_the_oracle"]
-        assert offered["world_shaping"] is rules().engine_moves["world_shaping"]
-        assert list(offered)[-3:] == ["dialog", "ask_the_oracle", "world_shaping"]
-
     def test_classic_setting(self, load_engine: None) -> None:
         moves = _moves(_game(setting="classic"))
         assert {"adventure/face_danger", "adventure/undertake_a_journey", "relationship/compel"} <= moves

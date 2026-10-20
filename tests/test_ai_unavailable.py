@@ -4,10 +4,10 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from tests._creation import force_miss
+from tests._creation import TurnProvider, brain_answer, force_miss
 from tests._helpers import make_game_state, make_revelation
 from tests._mocks import MockProvider
-from tests.test_momentum_burn import _brain, _game, _Provider
+from tests.test_momentum_burn import _game
 
 
 class _FakeWS:
@@ -40,7 +40,7 @@ def test_an_empty_narration_raises(load_engine: None) -> None:
         narrate_scene(MockProvider(response_content=""), make_game_state(setting_id="starforged"), "<scene/>")
 
 
-class _NarratorDown(_Provider):
+class _NarratorDown(TurnProvider):
     def create_message(self, spec: AICallSpec) -> AIResponse:
         if spec.json_schema is None:
             raise ConnectionError("narrator unreachable")
@@ -61,7 +61,7 @@ def test_a_failed_turn_is_rolled_back_and_reported(
     ws = _FakeWS()
 
     force_miss(monkeypatch)
-    monkeypatch.setattr(handlers, "get_provider", lambda: _NarratorDown(_brain()))
+    monkeypatch.setattr(handlers, "get_provider", lambda: _NarratorDown(brain_answer()))
     monkeypatch.setattr(handlers, "_narration_stream", lambda _ws, _game: (None, []))
 
     asyncio.run(handlers.handle_player_input(session, ws, {"text": "I leap the gorge"}))

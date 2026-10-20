@@ -1,9 +1,13 @@
+from typing import Any
+
 import pytest
 
 from straightjacket.engine.models import GameState, Resources, ThreatData, labels_of
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes, menace_per_mark
 from tests._helpers import (
+    dialog_prompt_kwargs,
+    make_brain_result,
     make_game_state,
     make_outcome,
     make_progress_track,
@@ -11,6 +15,12 @@ from tests._helpers import (
     make_threat,
     make_world_state,
 )
+
+
+def _told(game: GameState, event: Any) -> str:
+    from straightjacket.engine.prompt_dialog import build_dialog_prompt
+
+    return build_dialog_prompt(game, make_brain_result(), **dialog_prompt_kwargs(threat_events=[event]))
 
 
 def _game_with_threat() -> GameState:
@@ -103,7 +113,7 @@ class TestThreatSnapshotRestore:
 
 
 class TestMenaceOnMiss:
-    def test_advance_on_miss(self, stub_engine: None) -> None:
+    def test_advance_on_miss(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import advance_menace_on_miss
 
         game = _game_with_threat()
@@ -112,7 +122,7 @@ class TestMenaceOnMiss:
         assert events[0].threat_name == "The Beast Awakens"
         assert game.threats[0].menace_ticks == 8
 
-    def test_no_advance_when_vow_completed(self, stub_engine: None) -> None:
+    def test_no_advance_when_vow_completed(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import advance_menace_on_miss
 
         game = _game_with_threat()
@@ -121,7 +131,7 @@ class TestMenaceOnMiss:
         assert events == []
         assert game.threats[0].menace_ticks == 0
 
-    def test_no_advance_when_threat_resolved(self, stub_engine: None) -> None:
+    def test_no_advance_when_threat_resolved(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import advance_menace_on_miss
 
         game = _game_with_threat()
@@ -129,7 +139,7 @@ class TestMenaceOnMiss:
         events = advance_menace_on_miss(game)
         assert events == []
 
-    def test_menace_full_event(self, stub_engine: None) -> None:
+    def test_menace_full_event(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import advance_menace_on_miss
 
         game = _game_with_threat()
@@ -141,24 +151,15 @@ class TestMenaceOnMiss:
 
 
 class TestAdvanceById:
-    def test_advance_specific_threat(self, stub_engine: None) -> None:
+    def test_a_random_event_marks_the_configured_menace(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import advance_threat_by_id
 
         game = _game_with_threat()
         advance_threat_by_id(game, "threat_beast")
-        assert game.threats[0].menace_ticks == 8
+        threat = game.threats[0]
+        assert threat.menace_ticks == rules().threats.menace_on_random_event * menace_per_mark(threat)
 
-    def test_a_random_event_marks_the_configured_menace(
-        self, stub_engine: None, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        from straightjacket.engine.ruleset.threats import advance_threat_by_id
-
-        monkeypatch.setattr(rules().threats, "menace_on_random_event", 2)
-        game = _game_with_threat()
-        advance_threat_by_id(game, "threat_beast")
-        assert game.threats[0].menace_ticks == 16
-
-    def test_advance_nonexistent_changes_nothing(self, stub_engine: None) -> None:
+    def test_advance_nonexistent_changes_nothing(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import advance_threat_by_id
 
         game = _game_with_threat()
@@ -170,7 +171,6 @@ class TestAdvancesReachTheNarrator:
     def test_an_autonomous_tick_waits_for_the_next_turn_as_off_screen(
         self, load_engine: None, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from straightjacket.engine.prompt_shared import _threat_events_block
         from straightjacket.engine.ruleset import threats
 
         monkeypatch.setattr(threats.random, "random", lambda: 0.0)
@@ -180,22 +180,18 @@ class TestAdvancesReachTheNarrator:
         assert (event.source, event.threat_name) == ("autonomous", "The Beast Awakens")
         assert threats.take_pending_threat_events(game) == [event]
         assert game.world.pending_threat_events == []
-        assert '<threat_advance name="The Beast Awakens" menace_full="False" offscreen="true"/>' in (
-            _threat_events_block([event])
-        )
+        assert '<threat_advance name="The Beast Awakens" menace_full="False" offscreen="true"/>' in _told(game, event)
 
     def test_a_random_event_advance_is_told_in_its_own_turn(self, load_engine: None) -> None:
-        from straightjacket.engine.prompt_shared import _threat_events_block
         from straightjacket.engine.ruleset.threats import advance_threat_by_id, take_pending_threat_events
 
         game = _game_with_threat()
         advance_threat_by_id(game, "threat_beast")
         [event] = take_pending_threat_events(game)
         assert event.source == "random_event"
-        assert "offscreen" not in _threat_events_block([event])
+        assert "offscreen" not in _told(game, event)
 
     def test_delve_tells_what_the_threat_does_from_its_category(self, load_engine: None) -> None:
-        from straightjacket.engine.prompt_shared import _threat_events_block
         from straightjacket.engine.ruleset.threats import advance_menace_on_miss
         from straightjacket.engine.setting.packages import load_package
 
@@ -204,7 +200,7 @@ class TestAdvancesReachTheNarrator:
         game.setting_id = "delve"
         [event] = advance_menace_on_miss(game)
         assert event.development in rows
-        assert f">{event.development}</threat_advance>" in _threat_events_block([event])
+        assert f">{event.development}</threat_advance>" in _told(game, event)
         game.setting_id = "starforged"
         game.threats[0].menace_ticks = 0
         assert advance_menace_on_miss(game)[0].development == ""
@@ -236,7 +232,7 @@ class TestThreatsStatus:
 
 
 class TestResolveForsakeVow:
-    def test_menace_full_fails_vow(self, stub_engine: None) -> None:
+    def test_menace_full_fails_vow(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import resolve_full_menace
 
         game = _game_with_threat()
@@ -247,7 +243,7 @@ class TestResolveForsakeVow:
         assert game.progress_tracks[0].status == "failed"
         assert game.threats[0].status == "resolved"
 
-    def test_menace_full_damages_spirit(self, stub_engine: None) -> None:
+    def test_menace_full_damages_spirit(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import resolve_full_menace
 
         game = _game_with_threat()
@@ -259,7 +255,7 @@ class TestResolveForsakeVow:
         assert labels_of(result.consequences) == ['forsake the vow "Hunt the beast"', "spirit -2"]
         assert result.follow_up_moves == []
 
-    def test_classic_forsakes_through_endure_stress(self, stub_engine: None) -> None:
+    def test_classic_forsakes_through_endure_stress(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import resolve_full_menace
 
         game = _game_with_threat()
@@ -269,7 +265,7 @@ class TestResolveForsakeVow:
         resolve_full_menace(game, result)
         assert result.follow_up_moves == ["suffer/endure_stress"]
 
-    def test_menace_full_deactivates_thread(self, stub_engine: None) -> None:
+    def test_menace_full_deactivates_thread(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import resolve_full_menace
 
         game = _game_with_threat()
@@ -287,7 +283,7 @@ class TestResolveForsakeVow:
         resolve_full_menace(game, make_outcome())
         assert not game.narrative.threads[0].active
 
-    def test_menace_not_full_no_effect(self, stub_engine: None) -> None:
+    def test_menace_not_full_no_effect(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import resolve_full_menace
 
         game = _game_with_threat()
@@ -297,7 +293,7 @@ class TestResolveForsakeVow:
         assert game.progress_tracks[0].status == "active"
         assert game.threats[0].status == "active"
 
-    def test_resolved_threat_skipped(self, stub_engine: None) -> None:
+    def test_resolved_threat_skipped(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import resolve_full_menace
 
         game = _game_with_threat()
@@ -306,7 +302,7 @@ class TestResolveForsakeVow:
         events = resolve_full_menace(game, make_outcome())
         assert events == []
 
-    def test_menace_full_vow_already_gone(self, stub_engine: None) -> None:
+    def test_menace_full_vow_already_gone(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import resolve_full_menace
 
         game = _game_with_threat()
@@ -380,11 +376,11 @@ class TestAVowSwornAgainstAThreat:
 
     def test_the_brain_sees_threats_and_may_name_one_without_a_vow(self, load_engine: None) -> None:
         from straightjacket.engine.ai.brain import call_brain
-        from tests.test_brain_move_availability import _BrainAnswers
+        from tests._creation import BrainAnswers
 
         game = _game_with_threat()
         game.threats.append(make_threat(id="threat_ac_1", name="The Hollow Choir"))
-        provider = _BrainAnswers("adventure/face_danger", target_threat="threat_ac_1")
+        provider = BrainAnswers("adventure/face_danger", target_threat="threat_ac_1")
         result = call_brain(provider, game, "I swear to silence the choir.")
         message = provider.user_messages[0]
         assert "The Beast Awakens (id:threat_beast) menace 0/10, the vow Hunt the beast is sworn against it" in message

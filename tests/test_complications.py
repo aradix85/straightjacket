@@ -129,13 +129,13 @@ def test_a_fired_or_unknown_complication_cannot_be_headed_off(load_engine: None)
 
 def test_the_brain_sees_open_complications_and_may_aim_at_one(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
-    from tests.test_brain_move_availability import _BrainAnswers
+    from tests._creation import BrainAnswers
 
     game = _game()
     fired = _complication(name="Old danger", filled=4)
     fired.fired = True
     game.world.clocks = [_complication(filled=1), fired]
-    provider = _BrainAnswers("adventure/face_danger", target_clock="A beacon calls the raiders")
+    provider = BrainAnswers("adventure/face_danger", target_clock="A beacon calls the raiders")
     result = call_brain(provider, game, "I smash the beacon.")
     assert "<dangers>\n  A beacon calls the raiders 1/4\n</dangers>" in provider.user_messages[0]
     assert "Old danger" not in provider.user_messages[0]

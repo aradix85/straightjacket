@@ -10,14 +10,25 @@ def _starforged() -> Any:
     return game
 
 
-def test_check_your_gear_rolls_with_supply(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.make_move import roll_move
+def test_check_your_gear_without_a_stat_is_rolled_with_supply_in_a_turn(load_engine: None) -> None:
+    from straightjacket.engine.game import process_turn
+    from tests._creation import TurnProvider, brain_answer, create_game
 
-    game = _starforged()
+    game = create_game(
+        "starforged",
+        location="Drift Station",
+        npcs=[],
+        stats=(3, 2, 2, 1, 1),
+        player_name="Kael",
+        background_vow="Keep the station running",
+    )
     game.resources.meters["supply"] = 3
-    outcome = roll_move(game, make_brain_result(move="adventure/check_your_gear", stat="none"), None)
-    assert outcome.roll.stat_name == "supply"
-    assert outcome.roll.stat_value == 3
+    brain = brain_answer(
+        move="adventure/check_your_gear", stat="none", location_change=None, track_name=None, track_rank=None
+    )
+    _narration, roll, _offer, _director = process_turn(TurnProvider(brain), game, "I check my gear.", stream=None)
+    assert roll is not None
+    assert (roll.stat_name, roll.stat_value) == ("supply", 3)
 
 
 def test_a_stat_the_brain_names_for_a_meter_move_is_ignored(load_engine: None) -> None:
@@ -50,11 +61,3 @@ def test_a_connection_without_a_bond_gives_develop_your_relationship_nothing_to_
     game.progress_tracks.append(new_track(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous"))
     develop = get_moves("starforged")["connection/develop_your_relationship"]
     assert roll_source_without_stat(game, develop, "npc_1") is None
-
-
-def test_a_meter_move_does_not_turn_into_dialog(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import _sanitize_brain_output
-
-    brain = make_brain_result(move="adventure/check_your_gear", stat="none", dialog_only=False)
-    _sanitize_brain_output(_starforged(), brain)
-    assert brain.dialog_only is False

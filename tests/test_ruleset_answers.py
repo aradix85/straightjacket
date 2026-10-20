@@ -42,16 +42,18 @@ def test_a_label_the_ruleset_does_not_know_raises(load_engine: None) -> None:
         questions.outcome_of("MATCH")
 
 
-def test_the_narrator_is_told_the_rulesets_own_result_names(load_engine: None) -> None:
-    from straightjacket.engine.prompt_blocks import task_action
-    from straightjacket.engine.prompt_loader import _ensure_loaded
+def test_the_narrator_is_told_the_rulesets_own_result_names(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine import prompt_blocks
 
     names = answers.results_by_outcome()
     assert names == {"success": "STRONG_HIT", "partial": "WEAK_HIT", "failure": "MISS"}
-    templates = _ensure_loaded()
-    for key in ("narrator_system", "task_action"):
-        assert not any(name in templates[key] for name in names.values()), key
-    assert names["success"] in task_action()
+    assert names["success"] in prompt_blocks.task_action()
+    other = {"success": "TRIUMPH", "partial": "COST", "failure": "SETBACK"}
+    monkeypatch.setattr(prompt_blocks, "results_by_outcome", lambda: other)
+    game = make_game_state(player_name="Test")
+    for told in (prompt_blocks.get_narrator_system(game)[0], prompt_blocks.task_action()):
+        assert "TRIUMPH" in told
+        assert not any(name in told for name in names.values())
 
 
 def test_the_ruleset_says_which_threats_are_active_and_which_overcome_ones_press_on(load_engine: None) -> None:

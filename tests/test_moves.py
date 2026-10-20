@@ -1,34 +1,16 @@
 import pytest
 
-from straightjacket.engine.ruleset import moves as moves_module
-from straightjacket.engine.ruleset.datasworn import load_ruleset
-from straightjacket.engine.ruleset.moves import (
-    Move,
-    _load_moves,
-    _parse_move,
-    get_moves,
-    move_table,
-    offers_table,
-)
+from straightjacket.engine.ruleset.moves import get_moves, move_table, offers_table
 from straightjacket.engine.setting.packages import load_package
-
-
-def _own_moves(setting_id: str) -> dict[str, Move]:
-    return _load_moves(load_ruleset(setting_id).setting_file)
-
-
-@pytest.fixture(autouse=True)
-def _empty_moves_cache(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(moves_module, "_cache", {})
 
 
 class TestStarforgedMoves:
     def test_move_count(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         assert len(moves) == 56
 
     def test_roll_type_distribution(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         by_type: dict[str, int] = {}
         for m in moves.values():
             by_type[m.roll_type] = by_type.get(m.roll_type, 0) + 1
@@ -38,7 +20,7 @@ class TestStarforgedMoves:
         assert by_type["special_track"] == 2
 
     def test_face_danger_structure(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         fd = moves["adventure/face_danger"]
         assert fd.name == "Face Danger"
         assert fd.roll_type == "action_roll"
@@ -48,7 +30,7 @@ class TestStarforgedMoves:
         assert "miss" in fd.outcomes
 
     def test_scene_challenge_face_danger_separate(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         assert "adventure/face_danger" in moves
         assert "scene_challenge/face_danger" in moves
         adv = moves["adventure/face_danger"]
@@ -57,7 +39,7 @@ class TestStarforgedMoves:
         assert sc.name == "Face Danger (Scene Challenge)"
 
     def test_endure_harm_highest_method(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         eh = moves["suffer/endure_harm"]
         assert eh.roll_type == "action_roll"
         assert eh.valid_stats == ["iron"]
@@ -66,7 +48,7 @@ class TestStarforgedMoves:
         ] == ["health"]
 
     def test_endure_stress_highest_method(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         es = moves["suffer/endure_stress"]
         assert es.valid_stats == ["heart"]
         assert [
@@ -74,37 +56,37 @@ class TestStarforgedMoves:
         ] == ["spirit"]
 
     def test_fulfill_your_vow_progress_roll(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         fv = moves["quest/fulfill_your_vow"]
         assert fv.roll_type == "progress_roll"
         assert fv.track_category == "Vow"
 
     def test_forge_a_bond_progress_roll(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         fb = moves["connection/forge_a_bond"]
         assert fb.roll_type == "progress_roll"
         assert fb.track_category == "Connection"
 
     def test_take_decisive_action(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         tda = moves["combat/take_decisive_action"]
         assert tda.roll_type == "progress_roll"
         assert tda.track_category == "Combat"
 
     def test_no_roll_move(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         fv = moves["quest/forsake_your_vow"]
         assert fv.roll_type == "no_roll"
         assert fv.outcomes == {}
         assert fv.conditions == []
 
     def test_special_track_move(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         od = moves["threshold/overcome_destruction"]
         assert od.roll_type == "special_track"
 
     def test_continue_a_legacy_all_method(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         cal = moves["legacy/continue_a_legacy"]
         assert cal.roll_type == "special_track"
         usings = {ro.using for c in cal.conditions for ro in c.roll_options}
@@ -113,7 +95,7 @@ class TestStarforgedMoves:
         assert "discoveries_legacy" in usings
 
     def test_develop_your_relationship_custom(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         dyr = moves["connection/develop_your_relationship"]
         assert dyr.roll_type == "action_roll"
         custom_options = [ro for c in dyr.conditions for ro in c.roll_options if ro.using == "custom"]
@@ -122,26 +104,26 @@ class TestStarforgedMoves:
         assert values == {1, 2, 3, 4, 5}
 
     def test_companion_takes_a_hit_asset_control(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         cth = moves["suffer/companion_takes_a_hit"]
         asset_options = [ro for c in cth.conditions for ro in c.roll_options if ro.using == "asset_control"]
         assert len(asset_options) >= 1
 
     def test_withstand_damage_asset_control(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         wd = moves["suffer/withstand_damage"]
         asset_options = [ro for c in wd.conditions for ro in c.roll_options if ro.using == "asset_control"]
         assert len(asset_options) >= 1
 
     def test_check_your_gear_condition_meter(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         cyg = moves["adventure/check_your_gear"]
         assert [
             ro.condition_meter for c in cyg.conditions for ro in c.roll_options if ro.using == "condition_meter"
         ] == ["supply"]
 
     def test_all_categories_present(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         categories = {key.split("/")[0] for key in moves}
         expected = {
             "session",
@@ -160,12 +142,12 @@ class TestStarforgedMoves:
         assert categories == expected
 
     def test_all_moves_have_a_name(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         for key, move in moves.items():
             assert move.name, f"{key} missing name"
 
     def test_action_rolls_have_outcomes(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         for key, move in moves.items():
             if move.roll_type == "action_roll":
                 assert "strong_hit" in move.outcomes, f"{key} missing strong_hit"
@@ -173,13 +155,13 @@ class TestStarforgedMoves:
                 assert "miss" in move.outcomes, f"{key} missing miss"
 
     def test_progress_rolls_have_outcomes(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         for key, move in moves.items():
             if move.roll_type == "progress_roll":
                 assert "strong_hit" in move.outcomes, f"{key} missing strong_hit"
 
     def test_action_rolls_have_conditions(self) -> None:
-        moves = _own_moves("starforged")
+        moves = get_moves("starforged")
         for key, move in moves.items():
             if move.roll_type == "action_roll":
                 assert len(move.conditions) > 0, f"{key} has no trigger conditions"
@@ -187,11 +169,11 @@ class TestStarforgedMoves:
 
 class TestClassicMoves:
     def test_move_count(self) -> None:
-        moves = _own_moves("classic")
+        moves = get_moves("classic")
         assert len(moves) == 35
 
     def test_roll_type_distribution(self) -> None:
-        moves = _own_moves("classic")
+        moves = get_moves("classic")
         by_type: dict[str, int] = {}
         for m in moves.values():
             by_type[m.roll_type] = by_type.get(m.roll_type, 0) + 1
@@ -201,24 +183,24 @@ class TestClassicMoves:
         assert by_type["special_track"] == 1
 
     def test_classic_specific_moves(self) -> None:
-        moves = _own_moves("classic")
+        moves = get_moves("classic")
         assert "relationship/draw_the_circle" in moves
         assert "adventure/undertake_a_journey" in moves
         assert "adventure/make_camp" in moves
         assert "relationship/write_your_epilogue" in moves
 
     def test_write_your_epilogue_special_track(self) -> None:
-        moves = _own_moves("classic")
+        moves = get_moves("classic")
         we = moves["relationship/write_your_epilogue"]
         assert we.roll_type == "special_track"
 
     def test_classic_face_danger(self) -> None:
-        moves = _own_moves("classic")
+        moves = get_moves("classic")
         fd = moves["adventure/face_danger"]
         assert fd.valid_stats == ["edge", "heart", "iron", "shadow", "wits"]
 
     def test_make_camp_condition_meter(self) -> None:
-        moves = _own_moves("classic")
+        moves = get_moves("classic")
         mc = moves["adventure/make_camp"]
         assert [
             ro.condition_meter for c in mc.conditions for ro in c.roll_options if ro.using == "condition_meter"
@@ -226,13 +208,10 @@ class TestClassicMoves:
 
 
 class TestDelveMoves:
-    def test_expansion_move_count(self) -> None:
-        moves = _own_moves("delve")
-        assert len(moves) == 13
-
-    def test_merged_move_count(self) -> None:
-        moves = get_moves("delve")
-        assert len(moves) == 35 + 13
+    def test_delve_adds_thirteen_moves_to_classic_and_replaces_none(self) -> None:
+        delve, classic = get_moves("delve"), get_moves("classic")
+        assert len(set(delve) - set(classic)) == 13
+        assert all(delve[key] == move for key, move in classic.items())
 
     def test_delve_specific_moves_present(self) -> None:
         moves = get_moves("delve")
@@ -260,26 +239,18 @@ class TestDelveMoves:
 
 
 class TestSunderedIslesMoves:
-    def test_expansion_move_count(self) -> None:
-        moves = _own_moves("sundered_isles")
-        assert len(moves) == 8
-
-    def test_merged_move_count(self) -> None:
-        moves = get_moves("sundered_isles")
-        assert len(moves) == 56
-
-    def test_si_overrides_starforged(self) -> None:
-        moves = get_moves("sundered_isles")
-        assert moves["recover/repair"] == _own_moves("sundered_isles")["recover/repair"]
-        assert moves["recover/repair"] != get_moves("starforged")["recover/repair"]
-
-    def test_non_overridden_moves_preserved(self) -> None:
-        moves = get_moves("sundered_isles")
-        assert moves["adventure/face_danger"] == get_moves("starforged")["adventure/face_danger"]
-
-    def test_si_withstand_damage(self) -> None:
-        moves = get_moves("sundered_isles")
-        assert moves["suffer/withstand_damage"] == _own_moves("sundered_isles")["suffer/withstand_damage"]
+    def test_sundered_isles_replaces_seven_of_starforgeds_moves_and_adds_none(self) -> None:
+        isles, starforged = get_moves("sundered_isles"), get_moves("starforged")
+        assert set(isles) == set(starforged)
+        assert sorted(key for key in starforged if isles[key] != starforged[key]) == [
+            "combat/enter_the_fray",
+            "exploration/confront_chaos",
+            "exploration/make_a_discovery",
+            "exploration/set_a_course",
+            "recover/repair",
+            "recover/resupply",
+            "suffer/withstand_damage",
+        ]
 
     def test_replaced_moves_roll_their_own_tables(self) -> None:
         isles = get_moves("sundered_isles")
@@ -357,96 +328,7 @@ class TestRollMethods:
         ]
 
 
-class TestGetMoves:
-    def test_starforged_cached(self) -> None:
-        m1 = get_moves("starforged")
-        m2 = get_moves("starforged")
-        assert m1 is m2
-
-    def test_classic_cached(self) -> None:
-        m1 = get_moves("classic")
-        m2 = get_moves("classic")
-        assert m1 is m2
-
-    def test_delve_auto_parent(self) -> None:
-        moves = get_moves("delve")
-        assert "adventure/face_danger" in moves
-        assert "delve/delve_the_depths" in moves
-
-    def test_sundered_isles_auto_parent(self) -> None:
-        moves = get_moves("sundered_isles")
-        assert "adventure/face_danger" in moves
-        assert moves["recover/repair"] != get_moves("starforged")["recover/repair"]
-
-
-class TestParsing:
-    def test_parse_move_minimal(self) -> None:
-        raw = {
-            "_id": "test/moves/test_cat/test_move",
-            "type": "move",
-            "name": "Test Move",
-            "roll_type": "no_roll",
-            "text": "Do the thing.",
-            "trigger": {"conditions": None, "text": "When you do the thing..."},
-            "outcomes": None,
-            "allow_momentum_burn": False,
-        }
-        move = _parse_move(raw)
-        assert move.name == "Test Move"
-        assert move.roll_type == "no_roll"
-        assert move.conditions == []
-        assert move.outcomes == {}
-        assert move.valid_stats == []
-
-    def test_parse_move_with_outcomes(self) -> None:
-        raw = {
-            "_id": "test/moves/cat/m",
-            "type": "move",
-            "name": "M",
-            "roll_type": "action_roll",
-            "text": "...",
-            "trigger": {
-                "conditions": [
-                    {
-                        "method": "player_choice",
-                        "roll_options": [{"using": "stat", "stat": "iron"}],
-                    }
-                ],
-                "text": "...",
-            },
-            "outcomes": {
-                "strong_hit": {"text": "You win."},
-                "weak_hit": {"text": "Partial."},
-                "miss": {"text": "Fail."},
-            },
-            "allow_momentum_burn": True,
-        }
-        move = _parse_move(raw)
-        assert move.valid_stats == ["iron"]
-        assert move.outcomes["strong_hit"].text == "You win."
-
-    def test_valid_stats_deduplication(self) -> None:
-        raw = {
-            "_id": "test/moves/cat/m",
-            "type": "move",
-            "name": "M",
-            "roll_type": "action_roll",
-            "text": "...",
-            "trigger": {
-                "conditions": [
-                    {
-                        "method": "player_choice",
-                        "roll_options": [{"using": "stat", "stat": "iron"}],
-                    },
-                    {
-                        "method": "player_choice",
-                        "roll_options": [{"using": "stat", "stat": "iron"}],
-                    },
-                ],
-                "text": "...",
-            },
-            "outcomes": {"strong_hit": {"text": "ok"}, "weak_hit": {"text": "ok"}, "miss": {"text": "ok"}},
-            "allow_momentum_burn": True,
-        }
-        move = _parse_move(raw)
-        assert move.valid_stats == ["iron"]
+class TestStats:
+    def test_a_stat_that_two_ways_share_is_offered_once(self) -> None:
+        assert get_moves("starforged")["recover/heal"].valid_stats == ["iron", "wits", "heart"]
+        assert get_moves("classic")["adventure/heal"].valid_stats == ["wits", "iron"]

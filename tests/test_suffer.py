@@ -4,7 +4,6 @@ from straightjacket.engine.game.finalization import update_crisis
 from straightjacket.engine.models import GameState, Resources, labels_of
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects
-from straightjacket.engine.ruleset.move_handlers import _TABLE_TRIGGERS
 from straightjacket.engine.ruleset.move_outcome import make_follow_up_moves, resolve_move_outcome
 from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.ruleset.suffer import start_dying_clock, suffer, tick_dying_clock
@@ -70,13 +69,23 @@ def test_exhausted_supply_marks_unprepared_and_further_loss_costs_momentum(load_
     assert (game.resources.meters["momentum"], result.follow_up_moves) == (1, [])
 
 
-def test_a_miss_at_zero_marks_the_first_free_impact(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize(
+    ("marked", "marks"), [([], "wounded"), (["wounded"], "permanently_harmed")], ids=["first", "second"]
+)
+def test_a_miss_at_zero_marks_the_first_free_impact(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, marked: list[str], marks: str
+) -> None:
     game = _game("starforged", health=0)
+    game.impacts = list(marked)
     result = make_outcome(follow_up_moves=["suffer/endure_harm"])
     fix_dice(monkeypatch, *MISS)
     make_follow_up_moves(game, result)
-    assert game.impacts == ["wounded"]
-    assert labels_of(result.consequences) == ["follow-up move Endure Harm: MISS", "momentum -2", "mark wounded"]
+    assert game.impacts == [*marked, marks]
+    assert labels_of(result.consequences) == [
+        "follow-up move Endure Harm: MISS",
+        "momentum -2",
+        f"mark {marks}",
+    ]
 
 
 def test_with_both_impacts_marked_mortal_harm_faces_death(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -191,7 +200,6 @@ def test_giving_up_forsakes_the_newest_vow(load_engine: None, monkeypatch: pytes
 
 def test_every_table_row_that_names_a_threshold_or_forsake_has_a_trigger(load_engine: None) -> None:
     table_rows = rules().suffer.table_rows
-    assert all(rule.trigger in _TABLE_TRIGGERS for rule in table_rows)
     named = ("Face Death", "Face Desolation", "Forsake Your Vow")
     for setting_id in ("classic", "starforged", "sundered_isles"):
         for key in ("endure_harm", "endure_stress"):

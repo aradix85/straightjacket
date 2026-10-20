@@ -57,9 +57,9 @@ def test_the_brain_offers_the_boasts_of_the_rules(load_engine: None) -> None:
 def test_the_brain_rejects_an_unknown_boast(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
     from straightjacket.engine.ai.provider_base import AIUnavailableError
+    from tests._creation import brain_answer
     from tests._mocks import MockProvider
-    from tests.test_fact_resolution import _brain, _game
 
-    content = json.dumps(_brain(undetermined_facts=[], boasts=["fight_naked"]))
+    content = json.dumps(brain_answer(location_change=None, boasts=["fight_naked"]))
     with pytest.raises(AIUnavailableError, match="boasts"):
-        call_brain(MockProvider(response_content=content), _game(), "I challenge him")
+        call_brain(MockProvider(response_content=content), make_game_state(setting_id="classic"), "I challenge him")

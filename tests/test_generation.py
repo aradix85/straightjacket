@@ -4,9 +4,9 @@ import pytest
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.setting.loader import OracleTable, Setting
-from tests._creation import force_miss
+from tests._creation import TurnProvider, brain_answer, force_miss
 from tests.test_correction_replay import _Provider as _ReplayProvider
-from tests.test_momentum_burn import _brain, _game, _Provider
+from tests.test_momentum_burn import _game
 
 
 @pytest.fixture
@@ -152,7 +152,7 @@ def test_an_npc_name_comes_from_the_setting_tables(load_engine: None) -> None:
 def test_a_move_to_an_unknown_place_generates_it(load_engine: None, stub_emotions: None, miss: None) -> None:
     from straightjacket.engine.game import process_turn
 
-    provider = _Provider(_brain(location_change={"name": "Archive Vault", "kind": "settlement"}))
+    provider = TurnProvider(brain_answer(location_change={"name": "Archive Vault", "kind": "settlement"}))
     game = _game()
     _n, _r, _o, _d = process_turn(provider, game, "I slip past Mira into the archive vault", stream=None)
 
@@ -169,7 +169,7 @@ def test_a_place_already_seen_is_not_generated(load_engine: None, stub_emotions:
 
     game = _game()
     game.world.location_history = ["Archive Vault"]
-    provider = _Provider(_brain())
+    provider = TurnProvider(brain_answer())
     _n, _r, _o, _d = process_turn(provider, game, "I go back to the vault", stream=None)
 
     assert game.world.current_location == "Archive Vault"
@@ -180,7 +180,7 @@ def test_a_place_already_seen_is_not_generated(load_engine: None, stub_emotions:
 def test_staying_put_generates_nothing(load_engine: None, stub_emotions: None, miss: None) -> None:
     from straightjacket.engine.game import process_turn
 
-    provider = _Provider(_brain(location_change=None))
+    provider = TurnProvider(brain_answer(location_change=None))
     game = _game()
     _n, _r, _o, _d = process_turn(provider, game, "I search the shelves", stream=None)
     assert game.world.places == []
@@ -190,7 +190,7 @@ def test_a_misread_correction_keeps_the_generated_place(load_engine: None, stub_
     from straightjacket.engine.correction import process_correction
     from straightjacket.engine.game import process_turn
 
-    provider = _ReplayProvider(_brain(), _brain(stat="iron"))
+    provider = _ReplayProvider(brain_answer(), brain_answer(stat="iron"))
     game = _game()
     _n, _r, _o, _d = process_turn(provider, game, "I slip into the vault", stream=None)
     before = [p.to_dict() for p in game.world.places]

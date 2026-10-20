@@ -1,66 +1,15 @@
 import asyncio
-import json
 from typing import Any
 
 import pytest
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import (
     GameState,
     NarrationEntry,
 )
 from straightjacket.engine.ruleset.config import rules
-from tests._creation import OPENING_TEXT, create_game, force_miss
-
-
-def _brain(**overrides: Any) -> dict[str, Any]:
-    brain: dict[str, Any] = {
-        "move": "adventure/face_danger",
-        "stat": "wits",
-        "approach": "quietly",
-        "target_npc": None,
-        "dialog_only": False,
-        "player_intent": "I slip past Mira into the archive vault",
-        "world_addition": None,
-        "location_change": {"name": "Archive Vault", "kind": "location"},
-        "track_name": "Reach the vault",
-        "track_rank": "dangerous",
-        "target_track": None,
-        "target_clock": None,
-        "target_threat": None,
-        "bonus_id": None,
-        "undetermined_facts": [],
-        "boasts": [],
-    }
-    brain.update(overrides)
-    return brain
-
-
-class _Provider:
-    def __init__(self, brain: dict[str, Any]) -> None:
-        self.brain = brain
-        self.narrations: list[str] = []
-        self.prompts: list[str] = []
-
-    @staticmethod
-    def _json(payload: dict[str, Any]) -> AIResponse:
-        return AIResponse(content=json.dumps(payload), usage={"input_tokens": 10, "output_tokens": 10})
-
-    def create_message(self, spec: AICallSpec) -> AIResponse:
-        props = spec.json_schema.get("properties", {}) if spec.json_schema else {}
-        if "move" in props:
-            return self._json(self.brain)
-        if "new_npcs" in props:
-            return self._json(
-                {"new_npcs": [], "npc_renames": [], "npc_details": [], "deceased_npcs": [], "lore_npcs": []}
-            )
-        if "revelation_confirmed" in props:
-            return self._json({"revelation_confirmed": False, "reasoning": "Absent."})
-        text = f"Scene text number {len(self.narrations) + 1}. Dust drifts through the lamplight."
-        self.narrations.append(text)
-        self.prompts.append(str(spec.messages[-1]["content"]))
-        return AIResponse(content=text, usage={"input_tokens": 10, "output_tokens": 10})
+from tests._creation import OPENING_TEXT, TurnProvider, brain_answer, create_game, force_miss
 
 
 def _game() -> GameState:
@@ -81,7 +30,7 @@ def forced_miss(monkeypatch: pytest.MonkeyPatch) -> None:
     force_miss(monkeypatch)
 
 
-def _turn_then_burn(provider: _Provider, game: GameState) -> tuple[GameState, str, Any]:
+def _turn_then_burn(provider: TurnProvider, game: GameState) -> tuple[GameState, str, Any]:
     from straightjacket.engine.game import process_momentum_burn, process_turn
 
     _narration, roll, offer, _director = process_turn(
@@ -98,7 +47,7 @@ def _turn_then_burn(provider: _Provider, game: GameState) -> tuple[GameState, st
 def test_burn_keeps_the_location_and_scene_count_of_the_turn(
     load_engine: None, stub_emotions: None, forced_miss: None
 ) -> None:
-    game, _narration, _director = _turn_then_burn(_Provider(_brain()), _game())
+    game, _narration, _director = _turn_then_burn(TurnProvider(brain_answer()), _game())
 
     assert game.world.current_location == "Archive Vault"
     assert game.narrative.scene_count == 2
@@ -107,7 +56,7 @@ def test_burn_keeps_the_location_and_scene_count_of_the_turn(
 def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(
     load_engine: None, stub_emotions: None, forced_miss: None
 ) -> None:
-    provider = _Provider(_brain())
+    provider = TurnProvider(brain_answer())
     game, narration, _director = _turn_then_burn(provider, _game())
 
     history = game.narrative.narration_history
@@ -120,8 +69,8 @@ def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(
 
 
 def test_burn_keeps_the_track_the_turn_created(load_engine: None, stub_emotions: None, forced_miss: None) -> None:
-    brain = _brain(move="quest/swear_an_iron_vow", stat="heart", track_name="Recover the codex")
-    game, _narration, _director = _turn_then_burn(_Provider(brain), _game())
+    brain = brain_answer(move="quest/swear_an_iron_vow", stat="heart", track_name="Recover the codex")
+    game, _narration, _director = _turn_then_burn(TurnProvider(brain), _game())
 
     vows = [t for t in game.progress_tracks if t.track_type == "vow"]
     assert [t.name for t in vows] == ["Keep the archive whole", "Recover the codex"]
@@ -129,7 +78,7 @@ def test_burn_keeps_the_track_the_turn_created(load_engine: None, stub_emotions:
 
 def test_burn_updates_the_turn_snapshot(load_engine: None, stub_emotions: None, forced_miss: None) -> None:
 
-    game, narration, _director = _turn_then_burn(_Provider(_brain()), _game())
+    game, narration, _director = _turn_then_burn(TurnProvider(brain_answer()), _game())
 
     snap = game.last_turn_snapshot
     assert snap is not None
@@ -147,9 +96,9 @@ def test_burn_runs_scene_end_bookkeeping_exactly_once(
 
     reference = _game()
     _n, _r, _o, _d = process_turn(
-        _Provider(_brain()), reference, "I slip past Mira into the archive vault", stream=None
+        TurnProvider(brain_answer()), reference, "I slip past Mira into the archive vault", stream=None
     )
-    game, _narration, _director = _turn_then_burn(_Provider(_brain()), _game())
+    game, _narration, _director = _turn_then_burn(TurnProvider(brain_answer()), _game())
 
     assert len(game.narrative.scene_intensity_history) == len(reference.narrative.scene_intensity_history)
     assert [c.weight for c in game.narrative.characters_list] == [c.weight for c in reference.narrative.characters_list]
@@ -183,7 +132,7 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(
     game.narrative.narration_history = [
         NarrationEntry(scene=n, prompt_summary=f"Scene {n}", narration=f"Earlier scene {n}.") for n in range(1, cap + 1)
     ]
-    provider = _Provider(_brain())
+    provider = TurnProvider(brain_answer())
     _n, _r, offer, _d = process_turn(provider, game, "I slip past Mira into the archive vault", stream=None)
     assert offer is not None
     before = copy.deepcopy(game)
@@ -210,7 +159,7 @@ def test_new_player_input_withdraws_a_pending_burn_offer(
     from straightjacket.web.session import new_session
 
     game = _game()
-    _n, _r, offer, _d = process_turn(_Provider(_brain()), game, "I slip into the vault", stream=None)
+    _n, _r, offer, _d = process_turn(TurnProvider(brain_answer()), game, "I slip into the vault", stream=None)
     session = new_session()
     session.game = game
     session.pending_burn = offer

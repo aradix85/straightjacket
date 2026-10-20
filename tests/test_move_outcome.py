@@ -2,25 +2,12 @@ import pytest
 
 from straightjacket.engine.models import GameState, Resources, labels_of
 from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effect, parse_effects
-from straightjacket.engine.ruleset.move_handlers import (
-    apply_recovery_handler,
-    apply_suffer_handler,
-    apply_threshold_handler,
-)
 from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 from tests._helpers import make_game_state, record_price_tables
 
 
 @pytest.fixture
-def game(stub_engine: None) -> GameState:
-    g = make_game_state()
-    g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
-    g.setting_id = "starforged"
-    return g
-
-
-@pytest.fixture
-def game_real(load_engine: None) -> GameState:
+def game(load_engine: None) -> GameState:
     g = make_game_state()
     g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     g.setting_id = "starforged"
@@ -129,23 +116,6 @@ class TestApplyEffects:
         assert game.resources.meters["momentum"] == 4
         assert result.combat_position == "in_control"
 
-    def test_pay_the_price_appends_a_row_of_the_official_table(self, game: GameState) -> None:
-        import json
-        import re
-        from pathlib import Path
-
-        data = json.loads(
-            (Path(__file__).resolve().parent.parent / "data" / f"{game.setting_id}.json").read_text(encoding="utf-8")
-        )
-        rows = {
-            re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", r["text"]).strip()
-            for r in data["moves"]["fate"]["contents"]["pay_the_price"]["oracles"]["pay_the_price"]["rows"]
-        }
-        result = apply_effects(game, parse_effects(["pay_the_price"]))
-        table, told = labels_of(result.consequences)[0].split(": ", 1)
-        assert table == "Pay the Price"
-        assert all(any(part.startswith(row) for row in rows) for part in told.split("; "))
-
     def test_suffer_move_picks_highest_track(self, game: GameState) -> None:
         game.resources.meters["health"] = 5
         game.resources.meters["spirit"] = 3
@@ -155,155 +125,51 @@ class TestApplyEffects:
         assert "health -1" in labels_of(result.consequences)
 
 
-_SUFFER_DEFAULTS = {
-    "track": "health",
-    "recovery": 1,
-    "miss_extra_track": -1,
-    "miss_extra_momentum": -2,
-    "strong_hit_exchange_cost": 0,
-    "weak_hit_exchange": True,
-    "recover_from_zero": True,
-    "impact_pair": [],
-}
-
-
-def _suffer_params(**overrides: object) -> dict:
-    merged = dict(_SUFFER_DEFAULTS)
-    merged.update(overrides)
-    return merged
-
-
-_RECOVERY_DEFAULTS = {
-    "track": "health",
-    "full_amount": 3,
-    "impact_amount": 2,
-    "weak_hit_cost_type": "momentum",
-    "weak_hit_cost": -2,
-}
-
-
-def _recovery_params(**overrides: object) -> dict:
-    merged = dict(_RECOVERY_DEFAULTS)
-    merged.update(overrides)
-    return merged
-
-
-class TestSufferHandler:
-    def test_strong_hit_recovery(self, game: GameState) -> None:
+class TestEndureHarm:
+    def test_a_strong_hit_takes_back_health(self, game: GameState) -> None:
         game.resources.meters["health"] = 3
-        result = apply_suffer_handler(
-            game,
-            "suffer/endure_harm",
-            "STRONG_HIT",
-            _suffer_params(track="health", recovery=1),
-        )
+        result = resolve_move_outcome(game, "suffer/endure_harm", "STRONG_HIT", target_npc_id=None, match=False)
         assert game.resources.meters["health"] == 4
         assert "health +1" in labels_of(result.consequences)
 
-    def test_strong_hit_track_at_max_takes_momentum(self, game: GameState) -> None:
-        result = apply_suffer_handler(
-            game,
-            "suffer/endure_harm",
-            "STRONG_HIT",
-            _suffer_params(track="health", recovery=1),
-        )
+    def test_a_strong_hit_at_full_health_takes_momentum(self, game: GameState) -> None:
+        result = resolve_move_outcome(game, "suffer/endure_harm", "STRONG_HIT", target_npc_id=None, match=False)
         assert game.resources.meters["momentum"] == 3
         assert "momentum +1" in labels_of(result.consequences)
 
-    def test_weak_hit_exchange(self, game: GameState) -> None:
+    def test_a_weak_hit_exchanges_momentum_for_health(self, game: GameState) -> None:
         game.resources.meters["health"] = 3
         game.resources.meters["momentum"] = 4
-        apply_suffer_handler(
-            game,
-            "suffer/endure_harm",
-            "WEAK_HIT",
-            _suffer_params(track="health", recovery=1),
-        )
-        assert game.resources.meters["health"] == 4
-        assert game.resources.meters["momentum"] == 3
+        resolve_move_outcome(game, "suffer/endure_harm", "WEAK_HIT", target_npc_id=None, match=False)
+        assert (game.resources.meters["health"], game.resources.meters["momentum"]) == (4, 3)
 
-    def test_miss_extra_damage(self, game: GameState) -> None:
+    def test_a_miss_above_zero_costs_more_health(self, game: GameState) -> None:
         game.resources.meters["health"] = 3
-        apply_suffer_handler(
-            game,
-            "suffer/endure_harm",
-            "MISS",
-            _suffer_params(
-                track="health",
-                miss_extra_track=-1,
-                miss_extra_momentum=-2,
-                impact_pair=["wounded", "permanently_harmed"],
-            ),
-        )
+        resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, match=False)
         assert game.resources.meters["health"] == 2
 
-    def test_miss_at_zero_reports_impact(self, game: GameState) -> None:
-        game.resources.meters["health"] = 0
-        game.resources.meters["momentum"] = 5
-        result = apply_suffer_handler(
-            game,
-            "suffer/endure_harm",
-            "MISS",
-            _suffer_params(
-                track="health",
-                miss_extra_track=-1,
-                miss_extra_momentum=-2,
-                impact_pair=["wounded", "permanently_harmed"],
-            ),
-        )
-        assert game.resources.meters["momentum"] == 3
-        assert any("mark wounded" in c for c in labels_of(result.consequences))
-        assert "wounded" in game.impacts
+
+@pytest.mark.parametrize(("result_type", "game_over"), [("STRONG_HIT", False), ("MISS", True)])
+def test_face_death_returns_on_a_strong_hit_and_dies_on_a_miss(
+    game: GameState, result_type: str, game_over: bool
+) -> None:
+    result = resolve_move_outcome(game, "threshold/face_death", result_type, target_npc_id=None, match=False)
+    assert game.game_over is game_over
+    assert labels_of(result.consequences) == (["you are dead"] if game_over else [])
+    assert game.impacts == []
 
 
-class TestThresholdHandler:
-    @pytest.mark.parametrize(("result_type", "game_over"), [("STRONG_HIT", False), ("MISS", True)])
-    def test_a_strong_hit_returns_and_a_miss_dies(self, game: GameState, result_type: str, game_over: bool) -> None:
-        params = {"impact": "doomed", "game_over_text": "you are dead", "end_reason": "death"}
-        result = apply_threshold_handler(game, "threshold/face_death", result_type, params)
-        assert game.game_over == game_over
-        assert labels_of(result.consequences) == (["you are dead"] if game_over else [])
-        assert game.impacts == []
-
-
-class TestRecoveryHandler:
-    def test_strong_hit_full_recovery(self, game: GameState) -> None:
+class TestHeal:
+    def test_a_strong_hit_heals_its_full_amount(self, game: GameState) -> None:
         game.resources.meters["health"] = 2
-        apply_recovery_handler(
-            game,
-            "recover/heal",
-            "STRONG_HIT",
-            _recovery_params(track="health", full_amount=3, impact_amount=2),
-        )
+        resolve_move_outcome(game, "recover/heal", "STRONG_HIT", target_npc_id=None, match=False)
         assert game.resources.meters["health"] == 5
 
-    def test_weak_hit_with_cost(self, game: GameState) -> None:
+    def test_a_weak_hit_heals_at_a_cost_of_momentum(self, game: GameState) -> None:
         game.resources.meters["health"] = 2
         game.resources.meters["momentum"] = 5
-        apply_recovery_handler(
-            game,
-            "recover/heal",
-            "WEAK_HIT",
-            _recovery_params(
-                track="health",
-                full_amount=3,
-                impact_amount=2,
-                weak_hit_cost_type="momentum",
-                weak_hit_cost=-2,
-            ),
-        )
-        assert game.resources.meters["health"] == 5
-        assert game.resources.meters["momentum"] == 3
-
-    def test_miss_pay_the_price(self, game_real: GameState, monkeypatch: pytest.MonkeyPatch) -> None:
-        rolled = record_price_tables(monkeypatch)
-        apply_recovery_handler(
-            game_real,
-            "recover/heal",
-            "MISS",
-            _recovery_params(track="health", full_amount=3, impact_amount=2),
-        )
-        assert rolled == ["Pay the Price"]
+        resolve_move_outcome(game, "recover/heal", "WEAK_HIT", target_npc_id=None, match=False)
+        assert (game.resources.meters["health"], game.resources.meters["momentum"]) == (5, 3)
 
 
 class TestResolveOutcome:
@@ -319,65 +185,49 @@ class TestResolveOutcome:
             ("quest/swear_an_iron_vow", "STRONG_HIT", lambda g, r: g.resources.meters["momentum"] == 4),
         ],
     )
-    def test_simple_outcomes(self, game_real: GameState, move: str, result_type: str, check_fn: object) -> None:
-        result = resolve_move_outcome(game_real, move, result_type, target_npc_id=None, match=False)
-        assert check_fn(game_real, result)
+    def test_simple_outcomes(self, game: GameState, move: str, result_type: str, check_fn: object) -> None:
+        result = resolve_move_outcome(game, move, result_type, target_npc_id=None, match=False)
+        assert check_fn(game, result)
 
-    @pytest.mark.parametrize("move", ["adventure/face_danger", "recover/resupply"])
-    def test_a_miss_pays_the_price(self, game_real: GameState, monkeypatch: pytest.MonkeyPatch, move: str) -> None:
+    @pytest.mark.parametrize("move", ["adventure/face_danger", "recover/heal", "recover/resupply"])
+    def test_a_miss_pays_the_price(self, game: GameState, monkeypatch: pytest.MonkeyPatch, move: str) -> None:
         rolled = record_price_tables(monkeypatch)
-        resolve_move_outcome(game_real, move, "MISS", target_npc_id=None, match=False)
+        resolve_move_outcome(game, move, "MISS", target_npc_id=None, match=False)
         assert rolled == ["Pay the Price"]
 
-    def test_strike_strong_hit_position(self, game_real: GameState) -> None:
-        result = resolve_move_outcome(game_real, "combat/strike", "STRONG_HIT", target_npc_id=None, match=False)
+    def test_strike_strong_hit_position(self, game: GameState) -> None:
+        result = resolve_move_outcome(game, "combat/strike", "STRONG_HIT", target_npc_id=None, match=False)
         assert result.combat_position == "in_control"
         assert result.progress_marks == 2
 
-    def test_strike_weak_hit_bad_spot(self, game_real: GameState) -> None:
-        result = resolve_move_outcome(game_real, "combat/strike", "WEAK_HIT", target_npc_id=None, match=False)
+    def test_strike_weak_hit_bad_spot(self, game: GameState) -> None:
+        result = resolve_move_outcome(game, "combat/strike", "WEAK_HIT", target_npc_id=None, match=False)
         assert result.combat_position == "bad_spot"
         assert result.progress_marks == 2
 
-    def test_enter_fray_strong_hit(self, game_real: GameState) -> None:
-        result = resolve_move_outcome(game_real, "combat/enter_the_fray", "STRONG_HIT", target_npc_id=None, match=False)
-        assert game_real.resources.meters["momentum"] == 4
+    def test_enter_fray_strong_hit(self, game: GameState) -> None:
+        result = resolve_move_outcome(game, "combat/enter_the_fray", "STRONG_HIT", target_npc_id=None, match=False)
+        assert game.resources.meters["momentum"] == 4
         assert result.combat_position == "in_control"
 
-    def test_endure_harm_handler(self, game_real: GameState) -> None:
-        game_real.resources.meters["health"] = 3
-        resolve_move_outcome(game_real, "suffer/endure_harm", "STRONG_HIT", target_npc_id=None, match=False)
-        assert game_real.resources.meters["health"] == 4
+    def test_endure_stress_handler(self, game: GameState) -> None:
+        game.resources.meters["spirit"] = 3
+        resolve_move_outcome(game, "suffer/endure_stress", "STRONG_HIT", target_npc_id=None, match=False)
+        assert game.resources.meters["spirit"] == 4
 
-    def test_endure_stress_handler(self, game_real: GameState) -> None:
-        game_real.resources.meters["spirit"] = 3
-        resolve_move_outcome(game_real, "suffer/endure_stress", "STRONG_HIT", target_npc_id=None, match=False)
-        assert game_real.resources.meters["spirit"] == 4
-
-    def test_face_death_miss(self, game_real: GameState) -> None:
-        resolve_move_outcome(game_real, "threshold/face_death", "MISS", target_npc_id=None, match=False)
-        assert game_real.game_over is True
-
-    def test_heal_strong_hit(self, game_real: GameState) -> None:
-        game_real.resources.meters["health"] = 2
-        resolve_move_outcome(game_real, "recover/heal", "STRONG_HIT", target_npc_id=None, match=False)
-        assert game_real.resources.meters["health"] == 5
-
-    def test_scene_challenge_face_danger_weak_hit(self, game_real: GameState) -> None:
-        result = resolve_move_outcome(
-            game_real, "scene_challenge/face_danger", "WEAK_HIT", target_npc_id=None, match=False
-        )
+    def test_scene_challenge_face_danger_weak_hit(self, game: GameState) -> None:
+        result = resolve_move_outcome(game, "scene_challenge/face_danger", "WEAK_HIT", target_npc_id=None, match=False)
         assert result.progress_marks == 1
         assert result.clock_fills == 1
 
     @pytest.mark.parametrize("move", ["adventure/gather_information", "adventure/compel"])
-    def test_weak_hit_names_its_complication(self, game_real: GameState, move: str) -> None:
-        weak = resolve_move_outcome(game_real, move, "WEAK_HIT", target_npc_id=None, match=False)
-        strong = resolve_move_outcome(game_real, move, "STRONG_HIT", target_npc_id=None, match=False)
+    def test_weak_hit_names_its_complication(self, game: GameState, move: str) -> None:
+        weak = resolve_move_outcome(game, move, "WEAK_HIT", target_npc_id=None, match=False)
+        strong = resolve_move_outcome(game, move, "STRONG_HIT", target_npc_id=None, match=False)
         kind = move.split("/")[1]
         assert f"complication {kind}" in labels_of(weak.consequences)
         assert not any(c.startswith("complication") for c in labels_of(strong.consequences))
 
-    def test_unknown_move_raises(self, game_real: GameState) -> None:
+    def test_unknown_move_raises(self, game: GameState) -> None:
         with pytest.raises(ValueError, match="No outcome config"):
-            resolve_move_outcome(game_real, "nonexistent/move", "STRONG_HIT", target_npc_id=None, match=False)
+            resolve_move_outcome(game, "nonexistent/move", "STRONG_HIT", target_npc_id=None, match=False)

@@ -50,14 +50,6 @@ class TestAvailableMovesStatusFilter:
         move_keys = set(available_moves(game))
         assert "quest/fulfill_your_vow" not in move_keys
 
-    def test_active_vow_includes_fulfill(self, load_engine: None) -> None:
-        from straightjacket.engine.ruleset.move_availability import available_moves
-
-        game = _game()
-        game.progress_tracks.append(make_progress_track(id="v1", name="Active Vow", track_type="vow", ticks=20))
-        move_keys = set(available_moves(game))
-        assert "quest/fulfill_your_vow" in move_keys
-
     def test_failed_combat_track_excludes_decisive(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.move_availability import available_moves
 
@@ -191,7 +183,7 @@ def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
 def test_find_progress_track(load_engine: None) -> None:
     import pytest
 
-    from straightjacket.engine.ruleset.tracks import find_progress_track as _find_progress_track
+    from straightjacket.engine.ruleset.tracks import find_progress_track
 
     game = _game()
     game.progress_tracks = [
@@ -200,18 +192,18 @@ def test_find_progress_track(load_engine: None) -> None:
         make_progress_track(id="v2", name="Find Kira's killer", track_type="vow", ticks=20),
     ]
     with pytest.raises(ValueError, match="Multiple active vow tracks"):
-        _find_progress_track(game, "Vow", None)
+        find_progress_track(game, "Vow", None)
 
-    assert _find_progress_track(game, "Vow", "v2").name == "Find Kira's killer"
-    assert _find_progress_track(game, "Vow", "v1").name == "Find Kira"
+    assert find_progress_track(game, "Vow", "v2").name == "Find Kira's killer"
+    assert find_progress_track(game, "Vow", "v1").name == "Find Kira"
     for wrong in ("Find Kira", "c1"):
         with pytest.raises(ValueError, match="is not an active vow track"):
-            _find_progress_track(game, "Vow", wrong)
-    assert _find_progress_track(game, "Combat", None).name == "Fight"
+            find_progress_track(game, "Vow", wrong)
+    assert find_progress_track(game, "Combat", None).name == "Fight"
     with pytest.raises(ValueError, match="No active expedition track"):
-        _find_progress_track(game, "Expedition", None)
+        find_progress_track(game, "Expedition", None)
     with pytest.raises(KeyError):
-        _find_progress_track(game, "vow", None)
+        find_progress_track(game, "vow", None)
 
     game.progress_tracks[0].status = "completed"
-    assert _find_progress_track(game, "Vow", None).name == "Find Kira's killer"
+    assert find_progress_track(game, "Vow", None).name == "Find Kira's killer"

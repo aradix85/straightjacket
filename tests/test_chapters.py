@@ -62,6 +62,8 @@ def test_a_new_chapter_keeps_the_character_and_the_clocks(load_engine: None) -> 
 
 def test_a_created_game_moves_into_its_next_chapter(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.game.chapters import start_new_chapter
+    from straightjacket.engine.ruleset.legacy import mark_legacy
+    from straightjacket.engine.ruleset.progress import filled_boxes
     from tests._creation import OPENING_TEXT, OpeningProvider, create_game
     from tests.elvira.elvira_bot.invariants import assert_game_state
 
@@ -74,6 +76,10 @@ def test_a_created_game_moves_into_its_next_chapter(load_engine: None, stub_emot
         background_vow="Keep the station running",
     )
     game.npcs[0].agenda = "keep her ship"
+    mark_legacy(game, "quests", "epic")
+    mark_legacy(game, "bonds", "formidable")
+    game.campaign.xp_spent = 2
+    experience = (game.campaign.xp, game.campaign.xp_spent)
     provider = OpeningProvider(
         [("Kira", "A pilot.", "friendly"), ("Dace Orrin", "A dockhand.", "neutral")], "Ring Dock"
     )
@@ -87,6 +93,12 @@ def test_a_created_game_moves_into_its_next_chapter(load_engine: None, stub_emot
     assert game.narrative.story_blueprint is not None
     assert sorted(n.name for n in game.npcs) == ["Dace Orrin", "Kira Vance"]
     assert [t.id for t in game.progress_tracks] == ["vow_background"]
+    assert (game.campaign.xp, game.campaign.xp_spent) == experience
+    assert {name: filled_boxes(track) for name, track in game.campaign.legacy.items()} == {
+        "quests": 3,
+        "bonds": 1,
+        "discoveries": 0,
+    }
     assert assert_game_state(game, turn=1) == []
 
 

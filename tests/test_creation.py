@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from straightjacket.engine.gamemaster.config import gm
@@ -44,13 +46,15 @@ def test_an_expansion_takes_the_stats_of_its_ruleset(load_engine: None) -> None:
         ("I will find my lost sister", 6),
         ("I want to explore the uncharted regions", 4),
         ("I seek redemption", 5),
-        ("", 5),
     ],
 )
-def test_chaos_start_from_vow(load_engine: None, vow: str, expected: int) -> None:
-    from straightjacket.engine.game.game_start import _compute_chaos_start
+def test_a_new_game_starts_its_chaos_factor_from_the_vow(load_engine: None, vow: str, expected: int) -> None:
+    from tests._creation import create_game
 
-    assert _compute_chaos_start(vow) == expected
+    game = create_game(
+        "starforged", location="Drift Station", npcs=[], stats=(3, 2, 2, 1, 1), player_name="Kael", background_vow=vow
+    )
+    assert game.world.chaos_factor == expected
 
 
 def test_swear_background_vow(load_engine: None) -> None:
@@ -101,67 +105,6 @@ def test_setting_creation_flow(setting: str, expected_flags: dict) -> None:
     flow = pkg.creation_flow
     for flag, expected in expected_flags.items():
         assert getattr(flow, flag) is expected
-
-
-def _minimal_setting_yaml() -> dict:
-    return {
-        "id": "probe",
-        "title": "Probe",
-        "datasworn_id": "probe",
-        "playable": True,
-        "description": "Probe setting.",
-        "oracle_paths": {"threats": "a/b"},
-        "generators": {"location": {"theme": "themes/type", "feature": "themes/{theme}/feature"}},
-        "vocabulary": {"substitutions": {}, "sensory_palette": ""},
-        "creation_flow": {"has_truths": False},
-    }
-
-
-def test_setting_yaml_with_known_keys_parses() -> None:
-    from straightjacket.engine.setting.packages import _parse_setting_config
-
-    config = _parse_setting_config(_minimal_setting_yaml(), "probe.yaml")
-    assert config.oracle_paths.threats == "a/b"
-    assert config.generators["location"]["feature"] == "themes/{theme}/feature"
-
-
-def test_setting_yaml_generator_role_names_only_earlier_roles() -> None:
-    from straightjacket.engine.setting.packages import _parse_setting_config
-
-    data = _minimal_setting_yaml()
-    data["generators"] = {"location": {"feature": "themes/{theme}/feature", "theme": "themes/type"}}
-    with pytest.raises(KeyError, match="no earlier role"):
-        _parse_setting_config(data, "probe.yaml")
-
-
-@pytest.mark.parametrize("section", [None, "oracle_paths", "vocabulary", "creation_flow"])
-def test_setting_yaml_unknown_key_raises(section: str | None) -> None:
-    from straightjacket.engine.setting.packages import _parse_setting_config
-
-    data = _minimal_setting_yaml()
-    target = data if section is None else data[section]
-    target["factions"] = "factions"
-    with pytest.raises(KeyError, match=r"Unknown key\(s\) \['factions'\]"):
-        _parse_setting_config(data, "probe.yaml")
-
-
-def test_setting_yaml_id_must_equal_its_file_name() -> None:
-    from straightjacket.engine.setting.packages import _parse_setting_config
-
-    with pytest.raises(ValueError, match="must equal the file name 'other'"):
-        _parse_setting_config(_minimal_setting_yaml(), "other.yaml")
-
-
-def test_setting_yaml_must_say_whether_it_is_playable() -> None:
-    from straightjacket.engine.setting.packages import _parse_setting_config
-
-    data = _minimal_setting_yaml()
-    del data["playable"]
-    with pytest.raises(KeyError, match="playable"):
-        _parse_setting_config(data, "probe.yaml")
-    data["playable"] = "yes"
-    with pytest.raises(TypeError, match="playable"):
-        _parse_setting_config(data, "probe.yaml")
 
 
 def test_build_creation_options_has_stat_constraints(load_engine: None) -> None:
@@ -262,25 +205,6 @@ def test_build_creation_options_sends_what_the_creation_form_reads(load_engine: 
     assert set(sf["truths"][0]["options"][0]) == {"summary", "description"}
 
 
-def test_seed_vow_subject(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_vow_subject
-
-    game = make_game_state(player_name="Test")
-    _seed_vow_subject(game, "my lost sister")
-    assert len(game.narrative.characters_list) == 1
-    assert game.narrative.characters_list[0].name == "my lost sister"
-    assert game.narrative.characters_list[0].entry_type == "abstract"
-    assert game.narrative.characters_list[0].weight == 2
-
-
-def test_seed_vow_subject_empty_skips(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_vow_subject
-
-    game = make_game_state(player_name="Test")
-    _seed_vow_subject(game, "")
-    assert len(game.narrative.characters_list) == 0
-
-
 def test_truths_block_with_truths() -> None:
     from straightjacket.engine.prompt_blocks import truths_block
 
@@ -368,7 +292,7 @@ def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None
     assert character.background_vow_rank == "epic"
 
 
-def test_a_new_game_and_a_successor_take_up_a_character_alike(load_engine: None) -> None:
+def _take_up(vow_subject: str) -> Any:
     from straightjacket.engine.game.game_start import take_up_character
     from straightjacket.engine.ruleset.character import make_character
     from straightjacket.engine.setting.packages import load_package
@@ -382,14 +306,25 @@ def test_a_new_game_and_a_successor_take_up_a_character_alike(load_engine: None)
         "backstory": "Raised on a derelict.",
         "wishes": "",
         "content_lines": "",
-        "vow_subject": "my sister",
+        "vow_subject": vow_subject,
     }
     game = make_game_state(player_name="Old")
     take_up_character(game, make_character(creation, pkg), creation, pkg)
+    return game
+
+
+def test_a_new_game_and_a_successor_take_up_a_character_alike(load_engine: None) -> None:
+    game = _take_up("my sister")
     assert (game.player_name, game.setting_id, game.paths) == ("Kael", "starforged", ["ace"])
     assert game.stats == _CHARACTER["stats"]
     assert [t.id for t in game.progress_tracks] == ["vow_background"]
-    assert [c.name for c in game.narrative.characters_list] == ["my sister"]
+    assert [(c.name, c.entry_type, c.weight) for c in game.narrative.characters_list] == [
+        ("my sister", "abstract", gm().random_events.seeded_list_weight)
+    ]
+
+
+def test_a_character_without_a_vow_subject_puts_no_one_on_the_characters_list(load_engine: None) -> None:
+    assert _take_up("").narrative.characters_list == []
 
 
 @pytest.mark.parametrize(

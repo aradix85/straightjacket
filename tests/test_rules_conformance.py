@@ -3,7 +3,6 @@ from __future__ import annotations
 import random
 import re
 from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml
@@ -386,24 +385,11 @@ def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
     assert all(p.status != "conclusion" for p in narrative.plotlines_list)
 
 
-_ROLL_TWICE = {"oracle": None, "auto": True, "number_of_rolls": 2, "dice": None}
+def _price_dice(monkeypatch: pytest.MonkeyPatch, *dice: int) -> None:
+    from straightjacket.engine.setting import loader
 
-
-class _FakePriceMove:
-    def __init__(self, *rows: Any) -> None:
-        from straightjacket.engine.setting.loader import OracleTable
-
-        self.order = list(rows)
-        self.table = OracleTable(id="moves/pay_the_price", title="Pay the Price", rows=list(rows))
-        self.table.roll = lambda: self.order.pop(0)
-        self.tables = {"pay_the_price": self.table}
-
-
-def _price_row(text: str, duplicates: str | None = None) -> Any:
-    from straightjacket.engine.setting.loader import OracleRow
-
-    rolls = [{**_ROLL_TWICE, "duplicates": duplicates}] if duplicates else None
-    return OracleRow(min=1, max=1, text=text, oracle_rolls=rolls)
+    rolls = list(dice)
+    monkeypatch.setattr(loader.random, "randint", lambda low, high: rolls.pop(0))
 
 
 @pytest.mark.parametrize("setting", ["starforged", "classic"])
@@ -429,28 +415,29 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
 
 
 def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.ruleset import move_effects
+    from straightjacket.engine.ruleset.move_effects import pay_the_price
     from tests._helpers import make_game_state, make_outcome
 
-    monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(_price_row("You are harmed")))
+    _price_dice(monkeypatch, 75)
     game = make_game_state(setting_id="starforged")
     game.resources.meters["health"] = 4
-    move_effects.pay_the_price(game, make_outcome())
+    result = make_outcome()
+    pay_the_price(game, result)
+    assert labels_of(result.consequences)[0] == "Pay the Price: You are harmed"
     assert game.resources.meters["health"] == 3
 
 
 def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.ruleset import move_effects
+    from straightjacket.engine.ruleset.move_effects import pay_the_price
     from tests._helpers import make_game_state, make_outcome
 
-    rows = (_price_row("Roll twice", "reroll"), _price_row("You are stressed"), _price_row("A new enemy is revealed"))
-    monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
+    _price_dice(monkeypatch, 96, 82, 45)
     game = make_game_state(setting_id="starforged")
     game.resources.meters["spirit"] = 4
     result = make_outcome()
-    move_effects.pay_the_price(game, result)
+    pay_the_price(game, result)
     assert labels_of(result.consequences)[0] == "Pay the Price: You are stressed; A new enemy is revealed"
     assert game.resources.meters["spirit"] == 3
 
@@ -458,31 +445,27 @@ def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
 def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.ruleset import move_effects
+    from straightjacket.engine.ruleset.move_effects import pay_the_price
     from tests._helpers import make_game_state, make_outcome
 
-    enemy = _price_row("A new enemy is revealed")
-    rows = (_price_row("Roll twice more on this table.", "make_it_worse"), enemy, enemy)
-    monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
+    _price_dice(monkeypatch, 99, 42, 42)
     result = make_outcome()
-    move_effects.pay_the_price(make_game_state(setting_id="classic"), result)
-    assert labels_of(result.consequences) == ["Pay the Price: A new enemy is revealed, made worse"]
+    pay_the_price(make_game_state(setting_id="classic"), result)
+    assert labels_of(result.consequences) == ["Pay the Price: A new danger or foe is revealed., made worse"]
 
 
 def test_classic_roll_again_tells_the_next_result_made_worse(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.ruleset import move_effects
+    from straightjacket.engine.ruleset.move_effects import pay_the_price
     from tests._helpers import make_game_state, make_outcome
 
-    again = _price_row("Roll again and apply that result but make it worse. If you roll this result yet again, ...")
-    rows = (again, _price_row("You are harmed"))
-    monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
+    _price_dice(monkeypatch, 1, 60)
     game = make_game_state(setting_id="classic")
     game.resources.meters["health"] = 4
     result = make_outcome()
-    move_effects.pay_the_price(game, result)
-    assert labels_of(result.consequences)[0] == "Pay the Price: You are harmed, made worse"
+    pay_the_price(game, result)
+    assert labels_of(result.consequences)[0] == "Pay the Price: It is harmful., made worse"
     assert game.resources.meters["health"] == 3
 
 
@@ -795,14 +778,14 @@ def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine:
 def test_mending_your_own_wounds_rolls_the_lower_stat(
     load_engine: None, iron: int, wits: int, rolled: tuple[str, int]
 ) -> None:
-    from straightjacket.engine.ruleset.make_move import _roll_source
-    from straightjacket.engine.ruleset.moves import get_moves
+    from straightjacket.engine.ruleset.make_move import roll_move
     from tests._helpers import make_brain_result, make_game_state
 
     game = make_game_state(setting_id="starforged")
+    game.last_turn_snapshot = game.snapshot()
     game.stats.update(iron=iron, wits=wits)
-    brain = make_brain_result(move="recover/heal", stat="lowest")
-    assert _roll_source(game, brain, get_moves("starforged")["recover/heal"]) == rolled
+    roll = roll_move(game, make_brain_result(move="recover/heal", stat="lowest"), None).roll
+    assert (roll.stat_name, roll.stat_value) == rolled
 
 
 def test_an_engine_chosen_roll_keeps_a_lowest_way_low(load_engine: None) -> None:

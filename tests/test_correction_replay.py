@@ -4,8 +4,9 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from tests._creation import brain_answer
 from tests._helpers import fix_dice
-from tests.test_momentum_burn import _brain, _game
+from tests.test_momentum_burn import _game
 
 
 class _Provider:
@@ -81,7 +82,7 @@ def _turn_then_correct(provider: _Provider) -> tuple[Any, Any, str, Any]:
 def test_a_misread_correction_keeps_the_dice_and_scores_the_new_stat(
     load_engine: None, stub_emotions: None, dice: dict[str, int]
 ) -> None:
-    before, game, _narration, _offer = _turn_then_correct(_Provider(_brain(), _brain(stat="iron")))
+    before, game, _narration, _offer = _turn_then_correct(_Provider(brain_answer(), brain_answer(stat="iron")))
 
     assert before.narrative.session_log[-1].result == "WEAK_HIT"
     assert game.narrative.session_log[-1].result == "MISS"
@@ -95,7 +96,7 @@ def test_a_misread_correction_keeps_the_dice_and_scores_the_new_stat(
 def test_a_misread_correction_with_the_same_stat_keeps_its_result(
     load_engine: None, stub_emotions: None, dice: dict[str, int]
 ) -> None:
-    _before, game, _narration, _offer = _turn_then_correct(_Provider(_brain(), _brain()))
+    _before, game, _narration, _offer = _turn_then_correct(_Provider(brain_answer(), brain_answer()))
 
     last = game.narrative.session_log[-1]
     assert (last.move, last.result) == ("adventure/face_danger", "WEAK_HIT")
@@ -105,7 +106,7 @@ def test_a_misread_correction_keeps_the_scene_and_carries_the_correction_to_the_
     load_engine: None, stub_emotions: None, dice: dict[str, int]
 ) -> None:
     dice["scene_roll"] = 2
-    provider = _Provider(_brain(), _brain(stat="iron"))
+    provider = _Provider(brain_answer(), brain_answer(stat="iron"))
     _turn_then_correct(provider)
 
     assert dice["scenes"] == 1
@@ -114,7 +115,7 @@ def test_a_misread_correction_keeps_the_scene_and_carries_the_correction_to_the_
 
 
 def test_a_corrected_miss_can_offer_a_burn(load_engine: None, stub_emotions: None, dice: dict[str, int]) -> None:
-    _before, _game_after, _narration, offer = _turn_then_correct(_Provider(_brain(), _brain(stat="iron")))
+    _before, _game_after, _narration, offer = _turn_then_correct(_Provider(brain_answer(), brain_answer(stat="iron")))
 
     assert offer is not None
     assert offer.new_result == "WEAK_HIT"
@@ -128,10 +129,10 @@ def test_elvira_accepts_a_replayed_turn_and_a_burn(
     from straightjacket.engine.game import process_momentum_burn
     from tests.elvira.elvira_bot.invariants import check_turn_replacement
 
-    before, game, narration, offer = _turn_then_correct(_Provider(_brain(), _brain(stat="iron")))
+    before, game, narration, offer = _turn_then_correct(_Provider(brain_answer(), brain_answer(stat="iron")))
     assert check_turn_replacement(before, game, narration, 1, "correction", keeps_location=False) == []
 
     assert offer is not None
     before_burn = copy.deepcopy(game)
-    narration, _director = process_momentum_burn(_Provider(_brain(stat="iron")), game, offer)
+    narration, _director = process_momentum_burn(_Provider(brain_answer(stat="iron")), game, offer)
     assert check_turn_replacement(before_burn, game, narration, 1, "momentum burn", keeps_location=True) == []

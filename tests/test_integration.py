@@ -254,7 +254,7 @@ class _ScriptedBrain(MockProvider):
         self.answers = list(answers)
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
-        from tests.test_brain_move_availability import BRAIN_FIELDS
+        from tests._creation import BRAIN_FIELDS
 
         if spec.json_schema and "move" in spec.json_schema["properties"]:
             answer = {**BRAIN_FIELDS, **self.answers.pop(0)}
