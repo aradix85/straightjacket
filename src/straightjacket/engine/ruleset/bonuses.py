@@ -10,6 +10,7 @@ from ..setting.oracle_rolls import plain_text
 from ..xml_utils import xe as _xe
 from .assets import asset_data, enabled_abilities
 from .config import rules
+from .datasworn import load_ruleset
 from .meters import adjust_momentum
 
 _ADD = re.compile(r"\badd \+(\d)", re.IGNORECASE)
@@ -48,7 +49,7 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
                     momentum_on_hit=int(momentum.group(1)) if momentum else 0,
                 )
             )
-    aid = cfg.connection_aid
+    aid = cfg.connection_aid[load_ruleset(game.setting_id).id]
     for track in game.progress_tracks:
         if track.track_type == "connection" and track.status in ("active", "bonded"):
             options.append(

@@ -3,7 +3,7 @@ from __future__ import annotations
 from ..logging_util import log
 from ..models import GameState, NpcData, ProgressTrack
 from .config import rules
-from .progress import filled_boxes
+from .progress import filled_boxes, new_track, ranks
 
 
 def connection_track_id(npc_id: str) -> str:
@@ -25,6 +25,16 @@ def bonded_tracks(game: GameState) -> list[ProgressTrack]:
 def connection_track(game: GameState, npc_id: str) -> ProgressTrack | None:
     track_id = connection_track_id(npc_id)
     return next((t for t in game.progress_tracks if t.id == track_id and t.status in ("active", "bonded")), None)
+
+
+def seal_bond(game: GameState, npc: NpcData) -> ProgressTrack:
+    track = connection_track(game, npc.id)
+    if track is None:
+        track = new_track(id=connection_track_id(npc.id), name=npc.name, track_type="connection", rank=ranks()[-1])
+        game.progress_tracks.append(track)
+    track.status = "bonded"
+    track.ticks = track.max_ticks
+    return track
 
 
 def get_npc_bond(game: GameState, npc_id: str) -> int:

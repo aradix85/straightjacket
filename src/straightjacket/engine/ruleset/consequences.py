@@ -45,6 +45,8 @@ def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
         return f"complication_{values['kind']}", "", ""
     if c.kind in ("complication_clock", "complication_averted"):
         return c.kind, "", values["name"]
+    if c.kind == "bond_sealed":
+        return "bond_sealed", values["name"], ""
     if c.kind == "bond_request":
         return "bond_request", "", ""
     if c.kind == "recommit":

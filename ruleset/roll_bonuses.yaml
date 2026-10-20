@@ -1,7 +1,13 @@
 roll_bonuses:
   condition_chars: 220
   connection_aid:
-    add: 1
-    bonded_add: 2
-    momentum_on_hit: 1
-    condition: "{name} aids you on a move closely associated with their role"
+    starforged:
+      add: 1
+      bonded_add: 2
+      momentum_on_hit: 1
+      condition: "{name} aids you on a move closely associated with their role"
+    classic:
+      add: 1
+      bonded_add: 1
+      momentum_on_hit: 0
+      condition: "You share a bond with {name}, and the move adds +1 if you share a bond"

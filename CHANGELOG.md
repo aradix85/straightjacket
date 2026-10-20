@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.21.5] — 2026-10-21
+
+Step 9j, 9j.2, with the user's choices. Classic Ironsworn has no connection tracks, so every NPC's closeness stayed 0 there and the stance, the information gate, position, and the fifteen bond-keyed plot points never moved. Classic's Forge a Bond, an action roll on the target NPC, now seals a bond on a hit as a bonded connection at full progress (`ruleset/bond.py` → `seal_bond`, the `seal_bond` effect, which needs a target like the other NPC effects), so the NPC's closeness is 10 (the user's choice, register entry "A classic bond is full closeness"); it marks a tick on classic's bonds legacy track, as the book says, takes +1 spirit on a strong hit, a fixed choice where the book offers +2 momentum too, and on a weak hit tells what they ask first, as Starforged's does. A connection aids by its ruleset's rule: `connection_aid` in `ruleset/roll_bonuses.yaml` is keyed by ruleset, Starforged's as before and classic's +1 for a shared bond without momentum. The narrator hears the sealed bond (`bond_sealed`). The roadmap records the user's decision "Each ruleset by its own books": classic advances threats by Delve's Advance a Threat (9j.6), and new step 9v gives Starforged and Sundered Isles their book's campaign clocks in place of Delve's menace.
+
+Quality gate: 1785 tests, coverage 95.25%. Save format unchanged. No Elvira run: a classic run reaches Forge a Bond only by chance; the run of 9j.11, which plays classic, can steer for it.
+
 ## [2026.10.21.4] — 2026-10-21
 
 Step 9j, 9j.8. Starforged's Make a Connection makes the connection on a weak hit "with a complication or cost. Envision what they reveal or demand", and classic's Compel agrees on a weak hit "but they ask something of you in return"; the engine told neither. Both weak hits now carry the `complication` effect that Gather Information and Starforged's Compel have (`ruleset/move_outcomes.yaml`): the narrator gets the cost as a consequence to tell, worded from the move text (`complication_make_a_connection` in `engine/consequence_templates.yaml`, and classic's demand shares Compel's sentence), and it may start a complication clock like theirs. Roadmap 9j.11 loses Compel's price. Also fixed: since 2026.10.21.3 a test of classic's Pay the Price failed whenever its roll came out worse, since it did not read the new `made worse: ` label.

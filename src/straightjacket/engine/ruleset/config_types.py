@@ -227,7 +227,7 @@ class ConnectionAidConfig:
 @dataclass
 class RollBonusesConfig:
     condition_chars: int
-    connection_aid: ConnectionAidConfig
+    connection_aid: dict[str, ConnectionAidConfig]
 
 
 MoveAvailabilityCondition = ActiveTrackCondition | NoActiveTrackCondition | BondedTrackCondition | CombatPosCondition

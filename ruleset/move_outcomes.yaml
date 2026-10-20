@@ -391,8 +391,14 @@ move_outcomes:
     miss:
     - pay_the_price
   relationship/forge_a_bond:
-    strong_hit: []
-    weak_hit: []
+    strong_hit:
+    - seal_bond
+    - legacy_ticks bonds 1
+    - spirit +1
+    weak_hit:
+    - seal_bond
+    - legacy_ticks bonds 1
+    - bond_request
     miss:
     - pay_the_price
   relationship/sojourn:

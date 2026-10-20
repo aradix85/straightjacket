@@ -639,6 +639,7 @@ def test_develop_your_relationship_match_raises_the_connection_rank(
         ("disposition_shift", "needs a target NPC"),
         ("bond +1", "needs a target NPC"),
         ("raise_connection_rank", "needs a target NPC"),
+        ("seal_bond", "needs a target NPC"),
     ],
 )
 def test_an_npc_effect_without_a_target_raises(load_engine: None, effect: str, message: str) -> None:
@@ -668,7 +669,7 @@ def test_a_connection_effect_on_an_npc_without_a_connection_raises(load_engine: 
         ("starforged", "connection/develop_your_relationship", True),
         ("starforged", "connection/forge_a_bond", False),
         ("starforged", "adventure/face_danger", False),
-        ("classic", "relationship/forge_a_bond", False),
+        ("classic", "relationship/forge_a_bond", True),
     ],
 )
 def test_which_moves_act_on_an_npc(load_engine: None, setting: str, move: str, acts: bool) -> None:

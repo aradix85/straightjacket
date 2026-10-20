@@ -148,7 +148,10 @@ def _build_roll_bonuses(rb_raw: dict[str, Any]) -> RollBonusesConfig:
     reject_unknown(RollBonusesConfig, rb_raw)
     return RollBonusesConfig(
         condition_chars=rb_raw["condition_chars"],
-        connection_aid=build_strict(ConnectionAidConfig, dict(rb_raw["connection_aid"])),
+        connection_aid={
+            ruleset: build_strict(ConnectionAidConfig, dict(aid))
+            for ruleset, aid in dict(rb_raw["connection_aid"]).items()
+        },
     )
 
 

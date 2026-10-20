@@ -14,14 +14,14 @@ from ..models import Consequence, GameState, NpcData, ProgressTrack, consequence
 from ..setting.loader import OracleTable
 from ..setting.oracle_rolls import plain_text, roll_rows, roll_table
 from ..setting.packages import load_package
-from .bond import connection_track
+from .bond import connection_track, seal_bond
 from .config import rules
 from .impacts import blocks_recovery, clear_impact, get_impacts, impact_consequence
 from .legacy import shifted_rank
 from .meters import adjust_momentum, condition_meters, gain, is_condition_meter
 from .moves import Move, get_moves, move_table, offers_table
 from .outcome_result import OutcomeResult, new_outcome
-from .progress import mark_progress
+from .progress import filled_boxes, mark_progress
 from .suffer import suffer
 
 
@@ -82,7 +82,7 @@ def parse_effect(effect_str: str) -> MoveEffect:
     if m:
         return MoveEffect(type="table", value=0, target=m.group(1))
 
-    if effect_str in ("pay_the_price", "disposition_shift", "raise_connection_rank", "bond_request"):
+    if effect_str in ("pay_the_price", "disposition_shift", "raise_connection_rank", "bond_request", "seal_bond"):
         return MoveEffect(type=effect_str, value=0, target="")
 
     raise ValueError(f"Unknown move effect {effect_str!r}")
@@ -165,6 +165,13 @@ def _apply_meter_effect(game: GameState, effect: MoveEffect, result: OutcomeResu
         suffer(game, effect.type, abs(effect.value), result)
 
 
+def _apply_seal_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    npc = _required_target(effect, target)
+    track = seal_bond(game, npc)
+    result.consequences.append(consequence("bond_sealed", name=npc.name))
+    log(f"[Bond] {npc.name}: bond sealed ({filled_boxes(track)} boxes)")
+
+
 def _apply_bond_request_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
@@ -222,7 +229,7 @@ def _apply_suffer_move_effect(
     _apply_generic_suffer(game, abs(effect.value), result)
 
 
-NPC_EFFECTS = frozenset({"bond", "raise_connection_rank", "disposition_shift"})
+NPC_EFFECTS = frozenset({"bond", "raise_connection_rank", "disposition_shift", "seal_bond"})
 
 
 def _required_target(effect: MoveEffect, target: NpcData | None) -> NpcData:
@@ -358,6 +365,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "disposition_shift": _apply_disposition_shift_effect,
     "clear_condition": _apply_clear_condition_effect,
     "bond_request": _apply_bond_request_effect,
+    "seal_bond": _apply_seal_bond_effect,
 }
 
 
