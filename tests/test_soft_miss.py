@@ -124,13 +124,14 @@ def _rolled_rows(consequence: str) -> list[str]:
     return consequence.split(": ", 1)[1].split("; ")
 
 
+@pytest.mark.parametrize("move_key", ["adventure/face_danger", "recover/heal"])
 def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, move_key: str
 ) -> None:
     rolled = record_price_tables(monkeypatch)
     game = _game("starforged")
     rows = _complication_rows(game)
-    outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=True, target_npc_id=None)
+    outcome = resolve_move_outcome(game, move_key, "MISS", match=True, target_npc_id=None)
     assert rolled == ["Story Complication"]
     assert all(row in rows for row in _rolled_rows(labels_of(outcome.consequences)[-1]))
 

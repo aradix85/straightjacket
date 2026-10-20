@@ -19,10 +19,10 @@ def build_new_game_prompt(game: GameState) -> str:
     paths_tag = "\n" + get_prompt("block_paths", paths=_xe(", ".join(game.paths))) if game.paths else ""
     vow_tag = "\n" + get_prompt("block_vow", vow=_xe(game.background_vow))
 
-    pronouns_hint = get_prompt("opening_pronouns_hint", pronouns=game.pronouns) if game.pronouns else ""
+    pronouns_hint = get_prompt("opening_pronouns_hint", pronouns=_xe(game.pronouns)) if game.pronouns else ""
     task = get_prompt(
         "task_opening",
-        player_name=game.player_name,
+        player_name=_xe(game.player_name),
         pronouns_hint=pronouns_hint,
         seed=seed,
     )

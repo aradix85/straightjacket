@@ -114,6 +114,18 @@ def has_story_complication(game: GameState) -> bool:
     return offers_table(game.setting_id, _pay_the_price_move(game), rules().pay_the_price.match_miss_table)
 
 
+def complication_replaces_price(game: GameState, match: bool) -> bool:
+    return match and has_story_complication(game)
+
+
+def roll_story_complication(game: GameState, result: OutcomeResult) -> None:
+    _rows, told = roll_oracle_result(
+        move_table(game.setting_id, _pay_the_price_move(game), rules().pay_the_price.match_miss_table)
+    )
+    log(f"[StoryComplication] {told.label}")
+    result.consequences.append(told)
+
+
 def roll_move_table(game: GameState, move_key: str, key: str, result: OutcomeResult) -> None:
     table = move_table(game.setting_id, get_moves(game.setting_id)[move_key], key)
     text = plain_text(roll_table(load_package(game.setting_id), table).text)
@@ -186,11 +198,7 @@ def _apply_pay_the_price_effect(
 def _apply_story_complication_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    _rows, told = roll_oracle_result(
-        move_table(game.setting_id, _pay_the_price_move(game), rules().pay_the_price.match_miss_table)
-    )
-    log(f"[StoryComplication] {told.label}")
-    result.consequences.append(told)
+    roll_story_complication(game, result)
 
 
 def _apply_next_move_bonus_effect(

@@ -90,8 +90,17 @@ def _cluster(data: dict[str, Any]) -> dict[str, Any]:
         (lambda data: _cluster(data).pop("provider"), "missing required fields"),
         (lambda data: data["ai"]["clusters"].update(classification="qwen"), "must be a mapping"),
         (lambda data: _cluster(data).update(provider="elsewhere"), r"not defined under ai\.providers"),
+        (lambda data: data["ai"]["role_cluster"].update(recap="creative"), r"not defined under ai\.clusters"),
     ],
-    ids=["empty", "unknown_top_key", "unknown_cluster_key", "missing_field", "not_a_mapping", "unknown_provider"],
+    ids=[
+        "empty",
+        "unknown_top_key",
+        "unknown_cluster_key",
+        "missing_field",
+        "not_a_mapping",
+        "unknown_provider",
+        "unknown_cluster",
+    ],
 )
 def test_a_config_file_that_does_not_fit_stops_loading(
     read_config: Callable[[dict[str, Any]], None], change: Callable[[dict[str, Any]], object], message: str

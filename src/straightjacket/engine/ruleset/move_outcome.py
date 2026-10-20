@@ -6,7 +6,14 @@ from ..logging_util import log
 from ..models import GameState, consequence
 from .config import rules
 from .meters import momentum
-from .move_effects import NPC_EFFECTS, MoveEffect, apply_effects, has_story_complication, parse_effects, roll_move_table
+from .move_effects import (
+    NPC_EFFECTS,
+    MoveEffect,
+    apply_effects,
+    complication_replaces_price,
+    parse_effects,
+    roll_move_table,
+)
 from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_threshold_handler
 from .moves import get_moves
 from .outcome_result import OutcomeResult, move_outcome_config
@@ -23,7 +30,7 @@ def resolve_move_outcome(
     handler = move_cfg.get("handler")
     if handler:
         params_dict = dict(move_cfg["params"])
-        return _dispatch_handler(game, move_key, handler, roll_result, params_dict)
+        return _dispatch_handler(game, move_key, handler, roll_result, params_dict, match)
 
     match_key = f"{result_key}_match"
     effects_raw = move_cfg[match_key] if match and match_key in move_cfg else move_cfg.get(result_key)
@@ -31,7 +38,7 @@ def resolve_move_outcome(
         raise ValueError(f"No effects for {move_key}/{result_key}. Add it to ruleset/move_outcomes.yaml.")
 
     effects = parse_effects(effects_raw)
-    if match and roll_result not in rules().dice.hit_results and has_story_complication(game):
+    if roll_result not in rules().dice.hit_results and complication_replaces_price(game, match):
         effects = [
             MoveEffect(type="story_complication", value=0, target="") if e.type == "pay_the_price" else e
             for e in effects
@@ -64,7 +71,7 @@ def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:
 
 
 def _dispatch_handler(
-    game: GameState, move_key: str, handler: str, roll_result: str, params: dict[str, Any]
+    game: GameState, move_key: str, handler: str, roll_result: str, params: dict[str, Any], match: bool
 ) -> OutcomeResult:
     handlers = {
         "suffer": apply_suffer_handler,
@@ -73,4 +80,4 @@ def _dispatch_handler(
     }
     if handler not in handlers:
         raise ValueError(f"Unknown move-outcome handler {handler!r}. Valid: {sorted(handlers)}.")
-    return handlers[handler](game, move_key, roll_result, params)
+    return handlers[handler](game, move_key, roll_result, params, match)

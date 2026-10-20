@@ -127,14 +127,12 @@ class AIUnavailableError(Exception):
 
 
 def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
-    from ..engine_loader import eng as _eng
-
     attempt = 0
     while True:
         try:
             response = provider.create_message(spec)
         except Exception as e:
-            _retry_cfg = _eng().retry
+            _retry_cfg = eng().retry
             status_code = getattr(e, "status_code", None)
             is_connection_error = any("Connection" in cls.__name__ for cls in type(e).__mro__)
             is_retryable_status = status_code in _retry_cfg.retryable_http_codes
@@ -146,7 +144,7 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
                 if retry_after is not None
                 else _retry_cfg.backoff_base**attempt
             )
-            error_desc = f"HTTP {status_code}" if status_code else str(e)[: _eng().truncations.log_medium]
+            error_desc = f"HTTP {status_code}" if status_code else str(e)[: eng().truncations.log_medium]
             log(f"[AI] {error_desc}, retry {attempt + 1}/{spec.max_retries} in {wait}s", level="warning")
             _time.sleep(wait)
             attempt += 1

@@ -92,6 +92,15 @@ def test_handle_select_player_missing_name_errors(load_engine: None, session: Se
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
+def test_a_refused_player_name_leaves_the_session_as_it_was(session: Session, fake_ws: _FakeWS, users: Path) -> None:
+    from straightjacket.engine.user_management import InvalidNameError
+    from straightjacket.web.handlers import handle_select_player
+
+    with pytest.raises(InvalidNameError):
+        _run(handle_select_player(session, fake_ws, {"name": "../elsewhere"}))
+    assert (session.player, fake_ws.sent) == (new_session().player, [])
+
+
 def test_handle_select_player_no_game_returns_creation_options(
     load_engine: None, session: Session, fake_ws: _FakeWS, monkeypatch, tmp_path
 ) -> None:

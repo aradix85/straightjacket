@@ -38,7 +38,7 @@ from .quality_checks import (
 )
 from .recorder import record_turn
 from .report import write_report
-from .runner import RUNS_DIR, _EventCapture, selectable_settings
+from .runner import RUNS_DIR, _EventCapture, aggregate_token_stats, selectable_settings
 from .tokens import TokenMeter
 
 SEPARATOR = "=" * 62
@@ -403,6 +403,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     if slog.ended_reason == "unknown":
         slog.ended_reason = ch_rec.ended_reason if slog.chapters else "complete"
     slog.burn_stats = {"offered": burns_offered, "taken": burns_taken, "failed": burns_failed}
+    slog.token_summary = aggregate_token_stats(slog)
 
     print_summary(slog, game)
 

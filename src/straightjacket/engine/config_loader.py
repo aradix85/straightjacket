@@ -130,6 +130,13 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
             extra_body=dict(cdata["extra_body"]),
         )
 
+    for role, cname in ad["role_cluster"].items():
+        if cname not in clusters:
+            raise ValueError(
+                f"Role '{role}' maps to cluster '{cname}', which is not defined under ai.clusters. "
+                f"Defined clusters: {sorted(clusters)}."
+            )
+
     ai = AIConfig(
         providers=providers,
         prompts_dir=ad["prompts_dir"],
@@ -182,13 +189,7 @@ def _cluster_for_role(role: str) -> ClusterConfig:
             f"Role '{role}' has no cluster assignment in config.yaml. "
             f"Add '{role}: <cluster_name>' under ai.role_cluster."
         )
-    cluster_name = _c.ai.role_cluster[role]
-    if cluster_name not in _c.ai.clusters:
-        raise ValueError(
-            f"Role '{role}' maps to cluster '{cluster_name}', but no such cluster "
-            f"is defined under ai.clusters in config.yaml."
-        )
-    return _c.ai.clusters[cluster_name]
+    return _c.ai.clusters[_c.ai.role_cluster[role]]
 
 
 def provider_for_role(role: str) -> str:

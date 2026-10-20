@@ -111,14 +111,15 @@ async def handle_select_player(session: Session, ws: WebSocket, msg: dict[str, A
     if name is None:
         return
 
-    session.player = name
-    session.save_name = eng().persistence.default_save_name
+    save_name = eng().persistence.default_save_name
     try:
-        game, messages = load_game(name, session.save_name)
+        game, messages = load_game(name, save_name)
     except IncompatibleSaveError as e:
         log(f"[Load] {e}", level="warning")
         await _send(ws, {"type": "error", "text": t("actions.save_incompatible")})
         game, messages = None, []
+    session.player = name
+    session.save_name = save_name
     if game is None:
         session.clear_game()
     else:

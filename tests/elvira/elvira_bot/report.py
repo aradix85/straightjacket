@@ -7,7 +7,6 @@ from pathlib import Path
 
 from straightjacket.engine.config_loader import model_for_role
 
-from .ai_helpers import ELVIRA_ROLE, bot_model
 from .coverage import Coverage
 from .judge import CRITERIA
 from .models import SessionLog, TurnRecord
@@ -55,15 +54,8 @@ def _cost_lines(slog: SessionLog, prices: dict[str, list[float]]) -> list[str]:
     lines: list[str] = []
     total = 0.0
     for role, usage in sorted(slog.token_summary.get("by_role", {}).items()):
-        elvira = role == ELVIRA_ROLE
-        if elvira:
-            model = bot_model()
-        else:
-            try:
-                model = model_for_role(role)
-            except (KeyError, ValueError):
-                model = "unknown"
-        label = f"{role} ({model}{', her own player and judge, not in the total' if elvira else ''})"
+        model = model_for_role(role)
+        label = f"{role} ({model})"
         price = prices.get(model)
         if price is None:
             lines.append(
@@ -71,8 +63,7 @@ def _cost_lines(slog: SessionLog, prices: dict[str, list[float]]) -> list[str]:
             )
             continue
         cost = usage["input"] * price[0] / 1e6 + usage["output"] * price[1] / 1e6
-        if not elvira:
-            total += cost
+        total += cost
         lines.append(
             f"- {label}: {usage['calls']} calls, {usage['input']} in, {usage['output']} out, about ${cost:.3f}"
         )

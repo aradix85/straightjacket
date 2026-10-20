@@ -296,7 +296,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     )
     slog.character = {"name": game.player_name, "concept": game.character_concept, "setting": game.setting_id}
     slog.quality_summary = _aggregate_quality_stats(slog)
-    slog.token_summary = _aggregate_token_stats(slog)
+    slog.token_summary = aggregate_token_stats(slog)
     slog.burn_stats = {
         "offered": burns_offered,
         "taken": burns_taken,
@@ -879,7 +879,7 @@ def _aggregate_quality_stats(slog: SessionLog) -> dict:
     }
 
 
-def _aggregate_token_stats(slog: SessionLog) -> dict:
+def aggregate_token_stats(slog: SessionLog) -> dict:
     by_role: dict[str, dict[str, int]] = {}
     total_input = 0
     total_output = 0

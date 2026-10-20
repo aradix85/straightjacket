@@ -63,7 +63,7 @@ def list_saves_with_info(username: str) -> list[dict[str, Any]]:
                     "saved_at": data["saved_at"],
                 }
             )
-        except (OSError, json.JSONDecodeError, KeyError) as e:
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as e:
             log(f"[Persistence] Skipping corrupt save '{path.name}': {e}", level="warning")
             continue
     infos.sort(key=lambda x: str(x["saved_at"]), reverse=True)

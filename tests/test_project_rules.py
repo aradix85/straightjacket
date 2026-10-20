@@ -33,17 +33,14 @@ _AI_CALL_CARVE_OUT_FILES = {
 
 
 _AI_CALL_CARVE_OUT_TESTS = {
-    "test_integration.py",
     "elvira/elvira_bot/creation.py",
     "elvira/elvira_bot/runner.py",
-    "elvira/elvira_bot/invariants.py",
     "elvira/elvira_bot/ws_runner.py",
     "elvira/elvira_bot/judge.py",
 }
 
 
 _HARDCODED_MODEL_NAME_TEST_WHITELIST = {
-    "test_config_loader.py",
     "test_project_rules.py",
 }
 
@@ -463,31 +460,33 @@ def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
 _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
     ("engine/gamemaster/npc/naming.py", "roll_oracle_name"),
     ("engine/ai/api_client.py", "build_adapter"),
-    ("engine/ai/provider_base.py", "create_with_retry"),
     ("engine/gamemaster/fate.py", "resolve_fate"),
     ("engine/gamemaster/engine_memories.py", "generate_engine_memories"),
-    ("engine/gamemaster/world.py", "apply_brain_location_time"),
 }
 
 
-def _check_inline_imports_only_in_whitelist() -> tuple[str, list[Violation]]:
-    violations: list[Violation] = []
+def _inline_imports() -> list[tuple[str, str, int, str]]:
+    found: list[tuple[str, str, int, str]] = []
     for path in _iter_source_files():
         rel = _rel(path)
         _, lines, tree, _ = _load(path)
-
         for func in ast.walk(tree):
             if not isinstance(func, ast.FunctionDef | ast.AsyncFunctionDef):
                 continue
             for node in ast.walk(func):
-                if node is func:
-                    continue
-                if not isinstance(node, ast.Import | ast.ImportFrom):
-                    continue
-                if (rel, func.name) in _INLINE_IMPORT_WHITELIST:
+                if node is func or not isinstance(node, ast.Import | ast.ImportFrom):
                     continue
                 snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-                violations.append(Violation(rel, node.lineno, f"{snippet}  [in {func.name}]"))
+                found.append((rel, func.name, node.lineno, snippet))
+    return found
+
+
+def _check_inline_imports_only_in_whitelist() -> tuple[str, list[Violation]]:
+    violations = [
+        Violation(rel, lineno, f"{snippet}  [in {func}]")
+        for rel, func, lineno, snippet in _inline_imports()
+        if (rel, func) not in _INLINE_IMPORT_WHITELIST
+    ]
     return "INLINE IMPORT outside whitelist", violations
 
 
@@ -551,7 +550,6 @@ def _check_dataclasses_in_models_inherit_serializablemixin() -> tuple[str, list[
 _PROVIDER_IMPORT_ALLOWED = {
     "engine/ai/provider_anthropic.py",
     "engine/ai/provider_openai.py",
-    "engine/ai/api_client.py",
 }
 
 _FORBIDDEN_SDK_MODULES = ("anthropic", "openai")
@@ -827,30 +825,8 @@ def _check_ruff_format_clean() -> tuple[str, list[Violation]]:
 
 
 _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
-    ("AppConfig", "engine/config_loader.py"),
-    ("AIConfig", "engine/config_loader.py"),
-    ("ServerConfig", "engine/config_loader.py"),
-    ("ClusterConfig", "engine/config_loader.py"),
-    ("LanguageConfig", "engine/config_loader.py"),
-    ("OraclePaths", "engine/setting/packages.py"),
-    ("CreationFlow", "engine/setting/packages.py"),
-    ("VocabularyConfig", "engine/setting/packages.py"),
-    ("OracleRow", "engine/setting/loader.py"),
-    ("RollOption", "engine/ruleset/moves.py"),
-    ("TriggerCondition", "engine/ruleset/moves.py"),
-    ("MoveEffect", "engine/ruleset/move_effects.py"),
-    ("ActionOutcome", "engine/game/finalization.py"),
-    ("homepage", "web/server.py"),
-    ("websocket_endpoint", "web/server.py"),
-    ("build_director_prompt", "engine/director.py"),
-    ("apply_engine_memories", "engine/game/finalization.py"),
-    ("query_game_state", "engine/tools/builtins.py"),
-    ("CharacterTraits", "engine/crafters/character_traits.py"),
     ("check_configured_models", "engine/ai/api_client.py"),
     ("roll_character_traits", "engine/crafters/character_traits.py"),
-    ("lookup_character_special_trait", "engine/crafters/character_traits.py"),
-    ("lookup_character_identity", "engine/crafters/character_traits.py"),
-    ("lookup_character_descriptor", "engine/crafters/character_traits.py"),
     ("dispatch_meta", "engine/crafters/meta_plot_points.py"),
     ("lookup_characters_template", "engine/crafters/adventure_crafter.py"),
 }
@@ -863,13 +839,10 @@ def _collect_public_symbols() -> dict[tuple[str, Path], None]:
             tree = ast.parse(path.read_text(encoding="utf-8"))
         except SyntaxError:
             continue
-        rel = _rel(path)
         for node in tree.body:
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 continue
             if node.name.startswith("_"):
-                continue
-            if (node.name, rel) in _ORPHAN_SYMBOL_CARVE_OUT:
                 continue
             defs[(node.name, path)] = None
     return defs
@@ -907,10 +880,10 @@ def _collect_src_uses() -> dict[Path, set[str]]:
     return uses
 
 
-def _check_no_orphan_public_symbols() -> tuple[str, list[Violation]]:
+def _orphan_public_symbols() -> set[tuple[str, str]]:
     defs = _collect_public_symbols()
     uses = _collect_src_uses()
-    violations: list[Violation] = []
+    orphans: set[tuple[str, str]] = set()
     for name, defining_file in defs:
         external_use = any(name in refs for f, refs in uses.items() if f != defining_file)
         if external_use:
@@ -920,8 +893,15 @@ def _check_no_orphan_public_symbols() -> tuple[str, list[Violation]]:
         )
         if intra_uses > 0:
             continue
-        rel = _rel(defining_file)
-        violations.append(Violation(rel, 0, f"public symbol {name!r} has no consumer"))
+        orphans.add((name, _rel(defining_file)))
+    return orphans
+
+
+def _check_no_orphan_public_symbols() -> tuple[str, list[Violation]]:
+    violations = [
+        Violation(rel, 0, f"public symbol {name!r} has no consumer")
+        for name, rel in sorted(_orphan_public_symbols() - _ORPHAN_SYMBOL_CARVE_OUT)
+    ]
     return "orphan public symbol (defined but never used)", violations
 
 
@@ -985,7 +965,7 @@ def _has_broad_except(path: Path) -> bool:
     )
 
 
-def _check_no_stale_carve_out_entries() -> tuple[str, list[Violation]]:
+def _stale_file_entries() -> list[Violation]:
     violations: list[Violation] = []
     for rel in sorted(_AI_CALL_CARVE_OUT_FILES):
         path = SRC_ROOT / rel
@@ -993,31 +973,45 @@ def _check_no_stale_carve_out_entries() -> tuple[str, list[Violation]]:
             violations.append(Violation(rel, 0, "AI-call carve-out file does not exist"))
         elif not _has_broad_except(path):
             violations.append(Violation(rel, 0, "AI-call carve-out file has no broad except to carve out"))
-    for rel in sorted(_AI_CALL_CARVE_OUT_TESTS | _HARDCODED_MODEL_NAME_TEST_WHITELIST):
-        if not (TESTS_ROOT / rel).exists():
-            violations.append(Violation(rel, 0, "test carve-out file does not exist"))
+    for rel in sorted(_AI_CALL_CARVE_OUT_TESTS):
+        path = TESTS_ROOT / rel
+        if not path.exists() or not _has_broad_except(path):
+            violations.append(Violation(rel, 0, "test carve-out file has no broad except to carve out"))
+    for rel in sorted(_HARDCODED_MODEL_NAME_TEST_WHITELIST):
+        path = TESTS_ROOT / rel
+        if not path.exists() or not _scan_model_names(path, rel):
+            violations.append(Violation(rel, 0, "model-name whitelist file names no model"))
     for rel in sorted(_PROVIDER_IMPORT_ALLOWED):
-        if not (SRC_ROOT / rel).exists():
-            violations.append(Violation(rel, 0, "provider-import allowance for a file that does not exist"))
-    for name, rel in sorted(_ORPHAN_SYMBOL_CARVE_OUT):
-        if not _defines(SRC_ROOT / rel, name):
-            violations.append(Violation(rel, 0, f"orphan carve-out {name!r} is not defined there"))
-    for rel, name in sorted(_INLINE_IMPORT_WHITELIST):
-        if not _defines(SRC_ROOT / rel, name):
-            violations.append(Violation(rel, 0, f"inline-import whitelist function {name!r} is not defined there"))
-    for rel, name in sorted(_EXTERNAL_STRUCTURE_DATACLASSES):
-        if not _defines(SRC_ROOT / rel, name):
-            violations.append(Violation(rel, 0, f"external-structure dataclass {name!r} is not defined there"))
+        path = SRC_ROOT / rel
+        if not path.exists() or not _scan_provider_sdk(path, rel):
+            violations.append(Violation(rel, 0, "provider-import allowance for a file that imports no provider SDK"))
     for rel in sorted(_CONFIG_BINDING_FILES):
         if not (SRC_ROOT / rel).exists():
             violations.append(Violation(rel, 0, "config binding file does not exist"))
-    for rel, name in sorted(_COMPLEXITY_TEST_WHITELIST):
-        if not _defines(TESTS_ROOT / rel, name):
-            violations.append(Violation(rel, 0, f"complexity whitelist function {name!r} is not defined there"))
     for stem in sorted(_CORE_BASE):
         if not (SRC_ROOT / "engine" / f"{stem}.py").exists():
             violations.append(Violation(f"engine/{stem}.py", 0, "import-layer base file does not exist"))
-    return "STALE carve-out or whitelist entry", violations
+    return violations
+
+
+def _stale_symbol_entries() -> list[Violation]:
+    violations: list[Violation] = []
+    for name, rel in sorted(_ORPHAN_SYMBOL_CARVE_OUT - _orphan_public_symbols()):
+        violations.append(Violation(rel, 0, f"orphan carve-out {name!r} is not an orphan, or not defined there"))
+    inline = {(rel, func) for rel, func, _, _ in _inline_imports()}
+    for rel, name in sorted(_INLINE_IMPORT_WHITELIST - inline):
+        violations.append(Violation(rel, 0, f"inline-import whitelist function {name!r} holds no inline import"))
+    for rel, name in sorted(_EXTERNAL_STRUCTURE_DATACLASSES):
+        if not _defines(SRC_ROOT / rel, name):
+            violations.append(Violation(rel, 0, f"external-structure dataclass {name!r} is not defined there"))
+    for rel, name in sorted(_COMPLEXITY_TEST_WHITELIST):
+        if not _defines(TESTS_ROOT / rel, name):
+            violations.append(Violation(rel, 0, f"complexity whitelist function {name!r} is not defined there"))
+    return violations
+
+
+def _check_no_stale_carve_out_entries() -> tuple[str, list[Violation]]:
+    return "STALE carve-out or whitelist entry", _stale_file_entries() + _stale_symbol_entries()
 
 
 _SKIP_PATTERN = re.compile(r"pytest\.(mark\.)?(skip|skipif|xfail)\b")

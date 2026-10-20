@@ -115,6 +115,8 @@ def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
 
     (save_root / "missing_fields.json").write_text(json.dumps({"saved_at": "2026-01-01"}), encoding="utf-8")
 
+    (save_root / "not_an_object.json").write_text(json.dumps(["saved_at"]), encoding="utf-8")
+
     result = list_saves_with_info("mixed")
     names = {s["name"] for s in result}
     assert names == {"good_save"}
@@ -151,6 +153,14 @@ def test_a_save_with_a_value_where_an_object_belongs_does_not_load(load_engine: 
     data = _game().to_dict()
     data["resources"] = 5
     with pytest.raises(ValueError, match="Resources needs an object"):
+        GameState.from_dict(data)
+    data = _game().to_dict()
+    data["world"]["clocks"] = "Doom"
+    with pytest.raises(ValueError, match="needs a list"):
+        GameState.from_dict(data)
+    data = _game().to_dict()
+    data["truths"] = ["cataclysm"]
+    with pytest.raises(ValueError, match="needs an object"):
         GameState.from_dict(data)
 
 

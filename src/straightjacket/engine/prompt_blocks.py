@@ -65,7 +65,7 @@ def truths_block(game: GameState) -> str:
         return ""
     header = get_prompt("block_world_truths_header")
     lines = [
-        get_prompt("block_world_truths_line", truth_id=truth_id, summary=summary)
+        get_prompt("block_world_truths_line", truth_id=_xe(truth_id), summary=_xe(summary))
         for truth_id, summary in game.truths.items()
     ]
     return "\n" + get_prompt("block_world_truths_wrapper", header=header, lines="\n".join(lines))

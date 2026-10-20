@@ -87,17 +87,23 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
             raise ValueError(f"{inner.__name__} needs an object, got {type(val).__name__}")
         return deserialize(inner, val)
 
-    item_type = _resolve_item_type(inner)
-    if item_type is not None and isinstance(val, list):
+    origin = get_origin(inner)
+    if origin is list:
+        if not isinstance(val, list):
+            raise ValueError(f"{inner} needs a list, got {type(val).__name__}")
+        item_type = _resolve_item_type(inner)
+        if item_type is None:
+            return list(val)
         if not all(isinstance(item, dict) for item in val):
             raise ValueError(f"a list of {item_type.__name__} holds an entry that is not an object")
         return [deserialize(item_type, item) for item in val]
 
-    if get_origin(inner) is list and isinstance(val, list):
-        return list(val)
-
-    if get_origin(inner) is dict and isinstance(val, dict) and _is_dataclass_type(value_type := get_args(inner)[1]):
-        return {key: deserialize(value_type, item) for key, item in val.items()}
+    if origin is dict:
+        if not isinstance(val, dict):
+            raise ValueError(f"{inner} needs an object, got {type(val).__name__}")
+        if _is_dataclass_type(value_type := get_args(inner)[1]):
+            return {key: deserialize(value_type, item) for key, item in val.items()}
+        return dict(val)
 
     if isinstance(val, dict):
         return dict(val)

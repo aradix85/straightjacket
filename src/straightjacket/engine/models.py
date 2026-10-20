@@ -106,6 +106,7 @@ class TurnSnapshot(SerializableMixin):
     progress_tracks: list[dict[str, Any]] = field(default_factory=list)
     threats: list[dict[str, Any]] = field(default_factory=list)
     impacts: list[str] = field(default_factory=list)
+    backstory: str
     crisis_mode: bool
     end_reason: str
     player_input: str
@@ -169,6 +170,7 @@ class GameState(SerializableMixin):
             progress_tracks=[t.to_dict() for t in self.progress_tracks],
             threats=[t.to_dict() for t in self.threats],
             impacts=list(self.impacts),
+            backstory=self.backstory,
             crisis_mode=self.crisis_mode,
             end_reason=self.end_reason,
             player_input="",
@@ -188,6 +190,7 @@ class GameState(SerializableMixin):
         self.progress_tracks = [ProgressTrack.from_dict(t) for t in snap.progress_tracks]
         self.threats = [ThreatData.from_dict(t) for t in snap.threats]
         self.impacts = list(snap.impacts)
+        self.backstory = snap.backstory
         self.crisis_mode = snap.crisis_mode
         self.end_reason = snap.end_reason
         meters = " ".join(f"{name}={value}" for name, value in self.resources.meters.items())

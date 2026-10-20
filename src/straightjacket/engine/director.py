@@ -175,7 +175,7 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
     if tool_response.stop_reason == "tool_use" and tool_response.tool_calls:
         results = [execute_tool_call(call.name, call.arguments, game) for call in tool_response.tool_calls]
         prompt += "\n" + get_prompt(
-            "director_tool_results", results="\n".join(results)[: eng().truncations.prompt_xxlong]
+            "director_tool_results", results=_xe("\n".join(results)[: eng().truncations.prompt_xxlong])
         )
         log(f"[Director] Phase 1: {len(results)} tool calls")
     else:

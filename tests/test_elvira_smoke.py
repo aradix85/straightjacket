@@ -135,6 +135,7 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
     assert session.query_issues == []
     assert session.stream_issues == []
     assert all(t.token_usage for t in played)
+    assert session.token_summary["by_role"]["narrator"]["calls"] >= 2
     assert list((tmp_path / "runs").glob("*.md"))
 
 
