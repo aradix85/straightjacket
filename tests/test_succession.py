@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import random
 from typing import Any
 
@@ -8,8 +7,6 @@ import pytest
 
 from straightjacket.engine.game.succession import (
     END_REASONS,
-    _replace_character_identity,
-    _reset_for_successor,
     prepare_succession,
     start_succession_with_character,
 )
@@ -24,7 +21,7 @@ from straightjacket.engine.ruleset.succession import (
     seed_successor_legacy,
     threads_for_successor,
 )
-from tests._creation import create_game
+from tests._creation import OPENING_TEXT, OpeningProvider, create_game, creation_data
 from tests._helpers import (
     make_character_entry,
     make_game_state,
@@ -303,115 +300,66 @@ def test_pending_succession_serialises_through_to_dict(aria: GameState) -> None:
     assert fresh.pending_succession is True
 
 
-def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> None:
+def _successor(**changes: Any) -> dict[str, Any]:
+    return {
+        **creation_data("classic", stats=(3, 2, 2, 1, 1), player_name="Bryn", background_vow="carry on the work"),
+        **changes,
+    }
+
+
+def _succeed(game: GameState, creation: dict[str, Any]) -> str:
+    game.end_reason = "death"
+    prepare_succession(game)
+    provider = OpeningProvider([("Mara Voss", "A ferrywoman.", "neutral")], "Memorial")
+    return start_succession_with_character(provider, game, creation)
+
+
+def test_a_successor_takes_up_a_fresh_character_in_the_same_world(aria: GameState) -> None:
     aria.impacts = ["wounded", "shaken"]
-    aria.assets = ["asset_a"]
     aria.resources.meters["health"] = 1
     aria.resources.meters["spirit"] = 0
-    aria.world.clocks = []
-    aria.narrative.story_blueprint = None
-    surviving_threats = [make_threat(id="thr_1", name="Faction war")]
-
-    _reset_for_successor(
-        aria,
-        surviving_threads=[make_thread(id="t1", name="Faction war", thread_type="subplot", source="director")],
-        surviving_threats=surviving_threats,
-        surviving_npcs=[],
-        surviving_connection_tracks=[],
-    )
-
-    assert aria.impacts == []
-    assert aria.assets == []
-    assert aria.resources == starting_resources(aria.setting_id)
-    assert aria.world.clocks == []
-    assert aria.narrative.scene_count == 1
-    assert aria.crisis_mode is False
-    assert aria.game_over is False
-    assert len(aria.threats) == 1
-    assert aria.threats[0].id == "thr_1"
-
-
-def test_a_fight_the_predecessor_died_in_ends_with_them(aria: GameState) -> None:
-
+    aria.crisis_mode = True
+    aria.threats = [make_threat(id="thr_1", name="Faction war")]
     aria.progress_tracks.append(new_track(id="combat_raid", name="Raid", track_type="combat", rank="dangerous"))
     aria.world.combat_position = "bad_spot"
-    _reset_for_successor(
-        aria, surviving_threads=[], surviving_threats=[], surviving_npcs=[], surviving_connection_tracks=[]
-    )
-    assert aria.progress_tracks == []
-    assert aria.world.combat_position == ""
-
-
-def test_a_successor_cannot_correct_the_predecessors_last_turn(aria: GameState) -> None:
     aria.last_turn_snapshot = aria.snapshot()
-    _reset_for_successor(
-        aria, surviving_threads=[], surviving_threats=[], surviving_npcs=[], surviving_connection_tracks=[]
-    )
+    old_clocks = {c.name for c in aria.world.clocks}
+
+    assert _succeed(aria, _successor()) == OPENING_TEXT
+
+    assert aria.player_name == "Bryn"
+    assert aria.campaign.pending_succession is False
+    assert (aria.impacts, aria.assets) == ([], [])
+    assert aria.resources == starting_resources(aria.setting_id)
+    assert not old_clocks & {c.name for c in aria.world.clocks}
+    assert [t.id for t in aria.progress_tracks] == ["vow_background"]
+    assert aria.world.combat_position == ""
+    assert (aria.narrative.scene_count, aria.crisis_mode, aria.game_over) == (1, False, False)
+    assert "thr_1" in [t.id for t in aria.threats]
     assert aria.last_turn_snapshot is None
+    assert [e.result for e in aria.narrative.session_log] == ["opening"]
 
 
-def test_reset_for_successor_filters_characters_list(aria: GameState) -> None:
-    keeper_npc = make_npc(id="npc_keep", name="Keep", status="active")
-    aria.narrative.characters_list = [
-        make_character_entry(id="npc_keep", name="Keep", entry_type="npc", weight=1),
-        make_character_entry(id="npc_dropped", name="Dropped", entry_type="npc", weight=1),
-        make_character_entry(id="char_vow_subject", name="Sister", entry_type="abstract", weight=2),
-    ]
-    _reset_for_successor(
-        aria,
-        surviving_threads=[],
-        surviving_threats=[],
-        surviving_npcs=[keeper_npc],
-        surviving_connection_tracks=[],
+def test_a_successors_characters_list_holds_only_who_is_still_there(aria: GameState) -> None:
+    aria.narrative.characters_list.append(
+        make_character_entry(id="char_vow_subject", name="Sister", entry_type="abstract", weight=2)
     )
-    kept_ids = {c.id for c in aria.narrative.characters_list}
-    assert kept_ids == {"npc_keep"}
+    _succeed(aria, _successor())
+    npc_ids = {n.id for n in aria.npcs}
+    assert all(entry.id in npc_ids for entry in aria.narrative.characters_list)
 
 
-def test_replace_character_identity_strict_required_fields(aria: GameState) -> None:
-    base = {
-        "setting_id": "classic",
-        "tone": "dark_gritty",
-        "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
-        "player_name": "Bryn",
-        "pronouns": "they/them",
-        "background_vow": "find truth",
-        "paths": [],
-        "backstory": "",
-        "background_vow_rank": "",
-        "vow_subject": "",
-        "assets": [],
-        "truths": {},
-        "wishes": "",
-        "content_lines": "",
-    }
-    for missing in ("player_name", "pronouns", "background_vow", "paths", "backstory"):
-        creation_data = {k: v for k, v in base.items() if k != missing}
-        with pytest.raises(KeyError, match=missing):
-            _replace_character_identity(aria, creation_data)
+@pytest.mark.parametrize("missing", ["player_name", "pronouns", "background_vow", "paths", "backstory"])
+def test_a_successor_without_a_field_of_its_creation_raises(aria: GameState, missing: str) -> None:
+    creation = {k: v for k, v in _successor().items() if k != missing}
+    with pytest.raises(KeyError, match=missing):
+        _succeed(aria, creation)
 
 
 @pytest.mark.parametrize("empty_field", ["background_vow", "player_name"])
-def test_replace_character_identity_empty_field_raises(aria: GameState, empty_field: str) -> None:
-    creation_data = {
-        "setting_id": "classic",
-        "tone": "dark_gritty",
-        "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
-        "player_name": "Bryn",
-        "pronouns": "they/them",
-        "background_vow": "find truth",
-        "paths": [],
-        "backstory": "",
-        "background_vow_rank": "",
-        "vow_subject": "",
-        "assets": [],
-        "truths": {},
-        "wishes": "",
-        "content_lines": "",
-    }
-    creation_data[empty_field] = ""
+def test_a_successor_with_an_empty_name_or_vow_raises(aria: GameState, empty_field: str) -> None:
     with pytest.raises(ValueError, match=empty_field):
-        _replace_character_identity(aria, creation_data)
+        _succeed(aria, _successor(**{empty_field: ""}))
 
 
 def test_start_succession_without_pending_raises(aria: GameState) -> None:
@@ -465,164 +413,9 @@ def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
     assert set(summary) == {"title", "headline", "history", "inheritance"}
 
 
-class _SuccessionMockProvider:
-    def __init__(self, narration: str = "Successor's first scene.") -> None:
-        self.narration = narration
-
-    def create_message(self, spec: object) -> object:
-        from straightjacket.engine.ai.provider_base import AIResponse
-
-        json_schema = spec.json_schema
-        if not json_schema:
-            return AIResponse(content=self.narration, usage={"input_tokens": 10, "output_tokens": 10})
-
-        props = set(json_schema.get("properties", {}).keys())
-
-        if "central_conflict" in props:
-            user_msg = "\n".join(m.get("content", "") for m in spec.messages)
-            act_count = sum(1 for line in user_msg.splitlines() if line.startswith("act "))
-            if act_count == 0:
-                act_count = 3
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "central_conflict": "Continue the legacy",
-                        "antagonist_force": "Old foe",
-                        "thematic_thread": "inheritance",
-                        "acts": [
-                            {"title": f"Act {i + 1}", "goal": "g", "mood": "tense", "transition_trigger": "t"}
-                            for i in range(act_count)
-                        ],
-                        "revelations": [{"content": f"reveal {i + 1}"} for i in range(3)],
-                        "possible_endings": [{"type": "earned", "description": f"end {i + 1}"} for i in range(3)],
-                    }
-                ),
-                usage={"input_tokens": 10, "output_tokens": 10},
-            )
-        if "npcs" in props and "scene_context" in props:
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "npcs": [
-                            {
-                                "name": "Mara Voss",
-                                "description": "A ferrywoman",
-                                "agenda": "Keep the crossing open",
-                                "instinct": "Bargain first",
-                                "secrets": ["She owes the toll-keeper"],
-                                "disposition": "neutral",
-                            }
-                        ],
-                        "location": "Memorial",
-                        "scene_context": "A new dawn",
-                        "memory_updates": [],
-                        "deceased_npcs": [],
-                    }
-                ),
-                usage={"input_tokens": 10, "output_tokens": 10},
-            )
-        if "new_npcs" in props:
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "new_npcs": [],
-                        "npc_renames": [],
-                        "npc_details": [],
-                        "deceased_npcs": [],
-                        "lore_npcs": [],
-                    }
-                ),
-                usage={"input_tokens": 10, "output_tokens": 10},
-            )
-        return AIResponse(content="{}", usage={"input_tokens": 10, "output_tokens": 10})
-
-
-def _successor_creation_data() -> dict:
-    return {
-        "setting_id": "classic",
-        "tone": "dark_gritty",
-        "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
-        "player_name": "Bryn",
-        "pronouns": "they/them",
-        "background_vow": "carry on the work",
-        "paths": [],
-        "backstory": "",
-        "background_vow_rank": "",
-        "vow_subject": "",
-        "assets": [],
-        "truths": {},
-        "wishes": "",
-        "content_lines": "",
-    }
-
-
-def test_start_succession_with_character_happy_path(aria: GameState) -> None:
-
-    aria.world.current_location = "Tavern"
-    aria.end_reason = "death"
-    prepare_succession(aria)
-
-    provider = _SuccessionMockProvider("The successor steps forward.")
-    narration = start_succession_with_character(provider, aria, _successor_creation_data())
-
-    assert aria.player_name == "Bryn"
-    assert "successor" in narration.lower()
-    assert aria.campaign.pending_succession is False
-
-
-def test_start_succession_resets_resources(aria: GameState) -> None:
-
-    aria.resources.meters["health"] = 0
-    aria.resources.meters["spirit"] = 0
-    aria.world.current_location = "Tavern"
-    aria.end_reason = "death"
-    prepare_succession(aria)
-
-    provider = _SuccessionMockProvider()
-    start_succession_with_character(provider, aria, _successor_creation_data())
-
-    assert aria.resources == starting_resources(aria.setting_id)
-
-
-def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None:
-
-    aria.world.current_location = "Tavern"
-    aria.end_reason = "death"
-    prepare_succession(aria)
-
-    provider = _SuccessionMockProvider()
-    start_succession_with_character(provider, aria, _successor_creation_data())
-
-    quest_filled = filled_boxes(aria.campaign.legacy["quests"])
-    bond_filled = filled_boxes(aria.campaign.legacy["bonds"])
-    disc_filled = filled_boxes(aria.campaign.legacy["discoveries"])
-    assert quest_filled >= 0
-    assert bond_filled >= 0
-    assert disc_filled >= 0
-
-
-def test_start_succession_records_session_log(aria: GameState) -> None:
-
-    aria.world.current_location = "Tavern"
-    aria.end_reason = "death"
-    prepare_succession(aria)
-
-    provider = _SuccessionMockProvider()
-    start_succession_with_character(provider, aria, _successor_creation_data())
-
-    assert len(aria.narrative.session_log) == 1
-    assert aria.narrative.session_log[0].result == "opening"
-
-
-def test_start_succession_applies_the_opening_setup_and_the_engines_time(aria: GameState) -> None:
-
+def test_a_successors_opening_registers_its_people_at_the_engines_time(aria: GameState) -> None:
     aria.npcs = []
-    aria.world.current_location = "Tavern"
-    aria.end_reason = "death"
-    prepare_succession(aria)
-
-    start_succession_with_character(_SuccessionMockProvider(), aria, _successor_creation_data())
-
+    _succeed(aria, _successor())
     assert [n.name for n in aria.npcs] == ["Mara Voss"]
-    assert aria.world.current_scene_context == "A new dawn"
+    assert aria.world.current_location == "Memorial"
     assert aria.world.time_of_day == gm().opening.time_of_day

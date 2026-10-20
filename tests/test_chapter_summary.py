@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import pytest
-
-from straightjacket.engine.game.chapters import _close_previous_chapter, _reset_chapter_mechanics
-from straightjacket.engine.models import ChapterSummary, GameState, PlotlineEntry
+from straightjacket.engine.models import ChapterSummary, GameState
 from tests._helpers import (
     make_blueprint,
-    make_game_state,
     make_npc,
+    make_plotline,
     make_progress_track,
     make_thread,
     make_threat,
@@ -24,80 +21,48 @@ def _populated_summary() -> ChapterSummary:
 
 
 class TestChapterSummaryRoundTrip:
-    def test_round_trip_preserves_scalar_fields(self, stub_engine: None) -> None:
+    def test_round_trip_preserves_scalar_fields(self, load_engine: None) -> None:
         original = _populated_summary()
         restored = ChapterSummary.from_dict(original.to_dict())
         assert restored.chapter == 3
         assert restored.title == "Title 3"
         assert restored.summary == "What happened."
 
-    def test_round_trip_preserves_unresolved_threads(self, stub_engine: None) -> None:
+    def test_round_trip_preserves_unresolved_threads(self, load_engine: None) -> None:
         original = _populated_summary()
         restored = ChapterSummary.from_dict(original.to_dict())
         assert restored.unresolved_threads == ["thread1", "thread2"]
 
 
-class TestChapterSummaryRequiredFields:
-    def test_missing_field_raises(self, stub_engine: None) -> None:
-        with pytest.raises(TypeError):
-            ChapterSummary(
-                chapter=1,
-                title="t",
-                summary="s",
-            )
+def _closed(game: GameState) -> ChapterSummary:
+    from straightjacket.engine.game.chapters import start_new_chapter
+    from tests._creation import OpeningProvider
+
+    start_new_chapter(OpeningProvider([], "Ring Dock"), game)
+    return game.campaign.campaign_history[-1]
 
 
-class TestChapterTransitionCarriesStateOver:
-    def _populated_game(self) -> GameState:
-        game = make_game_state(player_name="Hero", setting_id="starforged")
-        game.progress_tracks = [
-            make_progress_track(id="vow_main", name="Find the truth", track_type="vow"),
-            make_progress_track(id="vow_side", name="Help Alice", track_type="vow"),
-        ]
-        game.threats = [make_threat(id="cult", name="The Cult")]
-        game.impacts = ["wounded"]
-        game.assets = ["asset_compass"]
-        game.narrative.threads = [
-            make_thread(id="thr1", name="Truth", thread_type="vow", weight=2, source="creation"),
-        ]
-        return game
+def _game() -> GameState:
+    from tests._creation import create_game
 
-    def test_close_and_reset_keep_what_carries_over(self, load_engine: None) -> None:
-        game = self._populated_game()
-        track_ids_before = {t.id for t in game.progress_tracks}
-        threat_ids_before = {t.id for t in game.threats}
-        thread_ids_before = {t.id for t in game.narrative.threads}
-
-        _close_previous_chapter(game)
-        _reset_chapter_mechanics(game)
-
-        assert {t.id for t in game.progress_tracks} == track_ids_before
-        assert {t.id for t in game.threats} == threat_ids_before
-        assert game.impacts == ["wounded"]
-        assert game.assets == ["asset_compass"]
-        assert {t.id for t in game.narrative.threads} == thread_ids_before
-
-    def test_reset_starts_the_chapter_state_fresh(self, load_engine: None) -> None:
-        game = self._populated_game()
-        game.narrative.scene_count = 17
-        game.world.location_history = ["Old dock"]
-        _reset_chapter_mechanics(game)
-        assert game.narrative.scene_count == 1
-        assert game.world.location_history == []
-        assert game.narrative.story_blueprint is None
+    return create_game(
+        "starforged",
+        location="Old tollhouse",
+        npcs=[],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Hero",
+        background_vow="Ring it",
+    )
 
 
 class TestChapterRecord:
     def test_the_record_is_built_from_the_game_state(self, load_engine: None) -> None:
-        game = make_game_state(player_name="Hero", setting_id="starforged")
-        game.world.current_location = "Old tollhouse"
+        game = _game()
         game.narrative.story_blueprint = make_blueprint(central_conflict="The drowned bell")
         fulfilled = make_progress_track(id="v1", name="Ring the bell", track_type="vow")
         fulfilled.status = "completed"
         game.progress_tracks = [fulfilled, make_progress_track(id="v2", name="Find Kira", track_type="vow")]
-        game.narrative.plotlines_list = [
-            PlotlineEntry(id="p1", name="The bell", status="conclusion", turning_point_count=0)
-        ]
+        game.narrative.plotlines_list = [make_plotline(id="p1", name="The bell", status="conclusion")]
         game.narrative.threads = [
             make_thread(id="thr1", name="Who cast the bell", thread_type="plot", source="ac"),
             make_thread(id="thr2", name="Find Kira", thread_type="vow", source="vow"),
@@ -108,7 +73,7 @@ class TestChapterRecord:
         ]
         game.threats = [make_threat(id="th1", name="The tide cult")]
 
-        summary = _close_previous_chapter(game)
+        summary = _closed(game)
 
         assert summary.title == "Chapter 1"
         assert summary.summary.startswith("The conflict: The drowned bell")
@@ -125,12 +90,11 @@ class TestChapterRecord:
             assert part in summary.summary
         assert summary.unresolved_threads == ["Who cast the bell", "Find Kira"]
         assert summary.summary.count("Find Kira") == 1
-        assert game.campaign.campaign_history[-1] is summary
 
     def test_a_chapter_without_a_blueprint_has_no_conflict_line(self, load_engine: None) -> None:
-        game = make_game_state(player_name="Hero", setting_id="starforged")
+        game = _game()
         game.narrative.story_blueprint = None
         game.campaign.chapter_number = 2
-        summary = _close_previous_chapter(game)
+        summary = _closed(game)
         assert summary.title == "Chapter 2"
         assert "The conflict" not in summary.summary

@@ -192,7 +192,7 @@ def test_the_ranks_run_from_troublesome_to_epic_in_every_rank_table(load_engine:
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged", "sundered_isles"])
 def test_a_created_game_plays_a_turn_in_every_playable_setting(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch, setting_id: str
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, setting_id: str
 ) -> None:
     from straightjacket.engine.game import process_turn
     from tests._creation import TurnProvider, brain_answer, create_game, force_result

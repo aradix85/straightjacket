@@ -473,13 +473,20 @@ def test_facts_survive_a_save_round_trip(load_engine: None) -> None:
     assert GameState.from_dict(game.to_dict()).world.facts == game.world.facts
 
 
-def test_a_fact_type_with_an_unknown_subject_raises() -> None:
+@pytest.mark.parametrize(
+    ("section", "value", "message"),
+    [("types", "room", "subject"), ("information_miss_settles", {"alert": "yes"}, "not a place fact type")],
+)
+def test_fact_resolution_yaml_with_a_wrong_value_refuses_to_load(section: str, value: Any, message: str) -> None:
     from straightjacket.engine.gamemaster.config import _CONFIG_DIR, parse_gamemaster_yaml
     from straightjacket.engine.yaml_merge import load_yaml_dir
 
     data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="")
-    data["fact_resolution"]["types"]["locked"]["subject"] = "room"
-    with pytest.raises(ValueError, match="subject"):
+    if section == "types":
+        data["fact_resolution"]["types"]["locked"]["subject"] = value
+    else:
+        data["fact_resolution"][section] = value
+    with pytest.raises(ValueError, match=message):
         parse_gamemaster_yaml(data)
 
 

@@ -14,7 +14,7 @@ def _npc(name: str, description: str, disposition: str) -> dict[str, Any]:
     }
 
 
-def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
+def test_register_extracted_npcs_skips_player(load_engine: None) -> None:
     from straightjacket.engine.game.setup_common import register_extracted_npcs
 
     game = make_game_state(player_name="Hero")
@@ -31,7 +31,7 @@ def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
     assert [(n.id, n.name) for n in game.npcs] == [("npc_1", "Mira")]
 
 
-def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
+def test_register_extracted_npcs_skips_returning(load_engine: None) -> None:
     from straightjacket.engine.game.setup_common import register_extracted_npcs
 
     game = make_game_state(player_name="Hero")
@@ -49,7 +49,7 @@ def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
     assert "Borin" in names
 
 
-def test_a_chapter_opening_does_not_split_a_returning_npc_by_a_shorter_name(stub_all: None) -> None:
+def test_a_chapter_opening_does_not_split_a_returning_npc_by_a_shorter_name(load_engine: None) -> None:
     from straightjacket.engine.game.setup_common import apply_opening_setup
 
     game = make_game_state(player_name="Hero")
@@ -64,7 +64,7 @@ def test_a_chapter_opening_does_not_split_a_returning_npc_by_a_shorter_name(stub
     assert [n.name for n in game.npcs] == ["Maren Silk"]
 
 
-def test_seed_opening_memories_matches_and_skips(stub_all: None) -> None:
+def test_seed_opening_memories_matches_and_skips(load_engine: None) -> None:
     from straightjacket.engine.game.setup_common import seed_opening_memories
 
     game = make_game_state(player_name="Hero")
@@ -80,7 +80,7 @@ def test_seed_opening_memories_matches_and_skips(stub_all: None) -> None:
     assert len(game.npcs[0].memory) == 1
 
 
-def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and_time(stub_all: None) -> None:
+def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and_time(load_engine: None) -> None:
     from straightjacket.engine.game.setup_common import apply_opening_setup
 
     game = make_game_state(player_name="Hero")
@@ -95,7 +95,7 @@ def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and
     assert game.world.time_of_day == "morning"
 
 
-def test_opening_setup_schema_leaves_clocks_and_time_to_the_engine(stub_all: None) -> None:
+def test_opening_setup_schema_leaves_clocks_and_time_to_the_engine(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_opening_setup_schema
 
     properties = get_opening_setup_schema()["properties"]

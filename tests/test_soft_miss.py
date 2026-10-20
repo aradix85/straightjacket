@@ -77,13 +77,11 @@ def test_the_settled_facts_reach_the_narrator(load_engine: None) -> None:
 
 
 def test_a_miss_on_any_move_the_ruleset_counts_as_gathering_information_settles_the_place(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None,
 ) -> None:
-    monkeypatch.setattr(rules(), "information_moves", ["adventure/face_danger"])
-    game = _game()
-    facts = settle_facts_by_miss(game, [], "adventure/face_danger", "failure")
-    assert [(f.fact_type, f.answer) for f in facts] == [("useful", "no")]
-    assert settle_facts_by_miss(_game(), [], "adventure/gather_information", "failure") == []
+    for move in rules().information_moves:
+        facts = settle_facts_by_miss(_game(), [], move, "failure")
+        assert [(f.fact_type, f.answer) for f in facts] == [("useful", "no")], move
 
 
 @pytest.mark.parametrize(
@@ -215,28 +213,6 @@ def test_everyone_present_withholds_on_a_miss(load_engine: None, monkeypatch: py
         "east gate" not in prompt,
     )
     assert withheld == ((True, True, True) if result == "MISS" else (False, False, False))
-
-
-def test_only_place_facts_can_be_settled_by_a_miss() -> None:
-    from straightjacket.engine.gamemaster.config import _build_fact_resolution
-
-    raw = {
-        "place_reference": "here",
-        "max_per_turn": 2,
-        "information_miss_settles": {"alert": "yes"},
-        "types": {
-            "alert": {
-                "subject": "npc",
-                "description": "on guard",
-                "base_score": 0,
-                "inputs": {},
-                "cleared_by_hit": False,
-                "no_releases_target": False,
-            }
-        },
-    }
-    with pytest.raises(ValueError, match="not a place fact type"):
-        _build_fact_resolution(raw)
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT", "STRONG_HIT"])

@@ -31,18 +31,14 @@ def _turn_then_burn(provider: TurnProvider, game: GameState) -> tuple[GameState,
     return game, narration, director
 
 
-def test_burn_keeps_the_location_and_scene_count_of_the_turn(
-    load_engine: None, stub_emotions: None, forced_miss: None
-) -> None:
+def test_burn_keeps_the_location_and_scene_count_of_the_turn(load_engine: None, forced_miss: None) -> None:
     game, _narration, _director = _turn_then_burn(TurnProvider(brain_answer()), library_game())
 
     assert game.world.current_location == "Archive Vault"
     assert game.narrative.scene_count == 2
 
 
-def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(
-    load_engine: None, stub_emotions: None, forced_miss: None
-) -> None:
+def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(load_engine: None, forced_miss: None) -> None:
     provider = TurnProvider(brain_answer())
     game, narration, _director = _turn_then_burn(provider, library_game())
 
@@ -55,7 +51,7 @@ def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(
     assert "<momentum_burn>" in provider.prompts[-1]
 
 
-def test_burn_keeps_the_track_the_turn_created(load_engine: None, stub_emotions: None, forced_miss: None) -> None:
+def test_burn_keeps_the_track_the_turn_created(load_engine: None, forced_miss: None) -> None:
     brain = brain_answer(move="quest/swear_an_iron_vow", stat="heart", track_name="Recover the codex")
     game, _narration, _director = _turn_then_burn(TurnProvider(brain), library_game())
 
@@ -63,7 +59,7 @@ def test_burn_keeps_the_track_the_turn_created(load_engine: None, stub_emotions:
     assert [t.name for t in vows] == ["Keep the archive whole", "Recover the codex"]
 
 
-def test_burn_updates_the_turn_snapshot(load_engine: None, stub_emotions: None, forced_miss: None) -> None:
+def test_burn_updates_the_turn_snapshot(load_engine: None, forced_miss: None) -> None:
 
     game, narration, _director = _turn_then_burn(TurnProvider(brain_answer()), library_game())
 
@@ -76,9 +72,7 @@ def test_burn_updates_the_turn_snapshot(load_engine: None, stub_emotions: None, 
     assert game.resources.meters["momentum"] == rules().momentum.start + 1
 
 
-def test_burn_runs_scene_end_bookkeeping_exactly_once(
-    load_engine: None, stub_emotions: None, forced_miss: None
-) -> None:
+def test_burn_runs_scene_end_bookkeeping_exactly_once(load_engine: None, forced_miss: None) -> None:
     from straightjacket.engine.game import process_turn
 
     reference = library_game()
@@ -106,9 +100,7 @@ def test_restore_reverts_changes_inside_the_story_lists(load_engine: None) -> No
     assert game.narrative.characters_list[0].weight == 1
 
 
-def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(
-    load_engine: None, stub_emotions: None, forced_miss: None
-) -> None:
+def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(load_engine: None, forced_miss: None) -> None:
     import copy
 
     from straightjacket.engine.game import process_momentum_burn, process_turn
@@ -138,7 +130,7 @@ class _FakeWS:
 
 
 def test_new_player_input_withdraws_a_pending_burn_offer(
-    load_engine: None, stub_emotions: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.ai.provider_base import AIUnavailableError
     from straightjacket.engine.game import process_turn
@@ -156,7 +148,6 @@ def test_new_player_input_withdraws_a_pending_burn_offer(
 
     monkeypatch.setattr(handlers, "process_turn", failing_turn)
     monkeypatch.setattr(handlers, "get_provider", lambda: None)
-    monkeypatch.setattr(handlers, "_narration_stream", lambda _ws, _game: (None, []))
 
     asyncio.run(handlers.handle_player_input(session, _FakeWS(), {"text": "I walk away"}))
 

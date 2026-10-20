@@ -7,7 +7,6 @@ import pytest
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import labels_of
-from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.progress import menace_per_mark, ticks_per_mark
 from tests._helpers import (
     action_prompt_kwargs,
@@ -311,7 +310,7 @@ def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
 
 @pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
 def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_develops_by_rank(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch, result: str
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
     from straightjacket.engine.game.turn import process_turn
     from tests._creation import create_game
@@ -415,7 +414,9 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
     from tests._helpers import make_threat
 
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
-    monkeypatch.setattr(rules().threats, "autonomous_tick_chance", 1.0)
+    from straightjacket.engine.ruleset import threats as threats_module
+
+    monkeypatch.setattr(threats_module.random, "random", lambda: 0.0)
     game = _make_game()
     [vow] = [t for t in game.progress_tracks if t.track_type == "vow"]
     threat = make_threat(id="t_king", name="The Hollow King", linked_vow_id=vow.id, rank="dangerous")
@@ -508,7 +509,7 @@ def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.
     assert [scene_type(roll) for roll in (10, 9, 8)] == ["expected", "altered", "interrupt"]
 
 
-def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
+def test_dialog_prompt_contains_world_and_character(load_engine: None) -> None:
     from straightjacket.engine.prompt_dialog import build_dialog_prompt
 
     game = _make_game()
@@ -525,7 +526,7 @@ def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
     assert "dialog" in prompt
 
 
-def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
+def test_action_prompt_contains_result_and_position(load_engine: None) -> None:
     from straightjacket.engine.models import RollResult
     from straightjacket.engine.prompt_action import build_action_prompt
 
@@ -565,7 +566,7 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
     assert "Search" in prompt or "search" in prompt
 
 
-def test_narrator_system_prompt_includes_constraints(stub_engine: None) -> None:
+def test_narrator_system_prompt_includes_constraints(load_engine: None) -> None:
     from straightjacket.engine.prompt_blocks import get_narrator_system
 
     game = _make_game()
@@ -581,7 +582,7 @@ def test_narrator_system_prompt_includes_constraints(stub_engine: None) -> None:
     assert "<character_state" not in cached_prefix
 
 
-def test_correction_brain_parses_response(stub_engine: None) -> None:
+def test_correction_brain_parses_response(load_engine: None) -> None:
     from straightjacket.engine.correction.analysis import call_correction_brain
 
     provider = MockProvider()
@@ -689,7 +690,7 @@ def test_story_completion_triggers() -> None:
     assert act.act_number == 2
 
 
-def test_correction_state_ops_npc_edit(stub_engine: None) -> None:
+def test_correction_state_ops_npc_edit(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
@@ -714,7 +715,7 @@ def test_correction_state_ops_npc_edit(stub_engine: None) -> None:
     assert game.npcs[0].name == original_name
 
 
-def test_correction_state_ops_npc_rename(stub_engine: None) -> None:
+def test_correction_state_ops_npc_rename(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
@@ -737,7 +738,7 @@ def test_correction_state_ops_npc_rename(stub_engine: None) -> None:
     assert "Mira" in game.npcs[0].aliases
 
 
-def test_correction_state_ops_location_edit(stub_engine: None) -> None:
+def test_correction_state_ops_location_edit(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
@@ -759,7 +760,7 @@ def test_correction_state_ops_location_edit(stub_engine: None) -> None:
     assert game.world.current_location == "The Dark Tower"
 
 
-def test_correction_state_ops_npc_split(stub_engine: None) -> None:
+def test_correction_state_ops_npc_split(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
@@ -798,7 +799,7 @@ def _op(op: str, **fields: object) -> dict[str, object]:
 
 
 def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
-    stub_engine: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import ops
 
@@ -810,7 +811,7 @@ def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
     assert warnings == ["[Correction] npc_edit: Mira keeps its name, the analysis gave an empty one"]
 
 
-def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole(stub_engine: None) -> None:
+def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
@@ -834,20 +835,20 @@ def test_a_split_without_a_name_rolls_one_and_numbers_the_npc(
     assert twin.last_location == "Abandoned Library"
 
 
-@pytest.mark.parametrize(
-    "op",
-    [
-        _op("npc_edit"),
-        _op("npc_split"),
-        _op("npc_merge", npc_id="npc_1", merge_source_id="npc_1"),
-        _op("location_edit", value=""),
-        _op("scene_context"),
-        _op("time_edit", value="teatime"),
-        _op("backstory_append"),
-    ],
-)
+_UNAPPLICABLE_OPS = [
+    _op("npc_edit"),
+    _op("npc_split"),
+    _op("npc_merge", npc_id="npc_1", merge_source_id="npc_1"),
+    _op("location_edit", value=""),
+    _op("scene_context"),
+    _op("time_edit", value="teatime"),
+    _op("backstory_append"),
+]
+
+
+@pytest.mark.parametrize("op", _UNAPPLICABLE_OPS)
 def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
-    stub_engine: None, monkeypatch: pytest.MonkeyPatch, op: dict[str, object]
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, op: dict[str, object]
 ) -> None:
     from straightjacket.engine.correction import ops
 
@@ -861,14 +862,13 @@ def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
     assert warning.startswith(f"[Correction] {op['op']} skipped: ")
 
 
-def test_every_correction_op_has_a_handler(load_engine: None) -> None:
-    from straightjacket.engine.correction.ops import _OP_HANDLERS
+def test_every_correction_op_the_analysis_is_offered_is_applied_above(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
 
-    assert list(_OP_HANDLERS) == eng().correction.ops
+    assert sorted(op["op"] for op in _UNAPPLICABLE_OPS) == sorted(eng().correction.ops)
 
 
-def test_description_match_catches_identity_reveal(stub_engine: None) -> None:
+def test_description_match_catches_identity_reveal(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
 
     game = _make_game()
@@ -882,7 +882,7 @@ def test_description_match_catches_identity_reveal(stub_engine: None) -> None:
     assert match.name == "Mira"
 
 
-def test_description_match_rejects_short_descriptions(stub_engine: None) -> None:
+def test_description_match_rejects_short_descriptions(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
 
     game = _make_game()
@@ -890,7 +890,7 @@ def test_description_match_rejects_short_descriptions(stub_engine: None) -> None
     assert match is None
 
 
-def test_merge_npc_identity_updates_clock_owner(stub_engine: None) -> None:
+def test_merge_npc_identity_updates_clock_owner(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
 
     game = _make_game()
@@ -902,7 +902,7 @@ def test_merge_npc_identity_updates_clock_owner(stub_engine: None) -> None:
     assert game.world.clocks[0].owner_id == "Captain Voss"
 
 
-def test_correction_state_ops_npc_merge(stub_engine: None) -> None:
+def test_correction_state_ops_npc_merge(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
@@ -921,7 +921,7 @@ def test_correction_state_ops_npc_merge(stub_engine: None) -> None:
     assert "Stranger" in target.aliases, "source name should become alias"
 
 
-def test_chapter_about_npc_id_remap(stub_engine: None) -> None:
+def test_chapter_about_npc_id_remap(load_engine: None) -> None:
     npc_a = make_npc(id="npc_1", name="Kira", memory=[make_memory(scene=3, event="trusts Borin", about_npc="npc_2")])
     npc_b = make_npc(id="npc_2", name="Borin", memory=[make_memory(scene=3, event="suspects Kira", about_npc="npc_1")])
 

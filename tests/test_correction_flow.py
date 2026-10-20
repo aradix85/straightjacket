@@ -133,9 +133,7 @@ def _played_game(provider: MockProvider, monkeypatch: pytest.MonkeyPatch) -> Gam
     return game
 
 
-def test_correction_input_misread_full_flow(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_correction_input_misread_full_flow(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.correction import process_correction
 
     provider = MockProvider(correction_source="input_misread")
@@ -157,7 +155,7 @@ def test_correction_input_misread_full_flow(
 
 
 def test_correction_to_dialog_does_not_roll_even_with_a_stat(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import process_correction
 
@@ -171,9 +169,7 @@ def test_correction_to_dialog_does_not_roll_even_with_a_stat(
     assert game.narrative.session_log[-1].result == "dialog"
 
 
-def test_correction_state_error_full_flow(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_correction_state_error_full_flow(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.correction import process_correction
 
     provider = MockProvider(correction_source="state_error")
@@ -190,7 +186,7 @@ def test_correction_state_error_full_flow(
 
 
 def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import process_correction
 
@@ -209,7 +205,7 @@ def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
 
 
 def test_a_state_correction_does_not_tell_a_clock_that_filled_after_the_turn(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import process_correction
     from straightjacket.engine.models import ClockEvent
@@ -226,7 +222,7 @@ def test_a_state_correction_does_not_tell_a_clock_that_filled_after_the_turn(
 
 
 def test_a_state_correction_extracts_with_the_turns_world_addition(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import process_correction
     from straightjacket.engine.game import finalization
@@ -248,7 +244,7 @@ def test_a_state_correction_extracts_with_the_turns_world_addition(
 
 
 def test_a_state_correction_retells_what_the_turn_told_without_moving_npc_clocks_again(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import process_correction
     from straightjacket.engine.game import process_turn
@@ -281,7 +277,7 @@ def test_a_state_correction_retells_what_the_turn_told_without_moving_npc_clocks
 
 
 def test_a_state_correction_retells_the_turns_events_and_filled_clocks(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import process_correction
     from straightjacket.engine.models import ClockFillResult, ThreatEvent
@@ -308,9 +304,7 @@ def test_a_state_correction_retells_the_turns_events_and_filled_clocks(
     assert "Smoke fills the stacks" in retold
 
 
-def test_a_snapshot_without_a_played_turn_is_refused(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_snapshot_without_a_played_turn_is_refused(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.correction import process_correction
 
     provider = MockProvider(correction_source="state_error")
@@ -321,7 +315,7 @@ def test_a_snapshot_without_a_played_turn_is_refused(
         process_correction(provider, game, "Mira should be loyal")
 
 
-def test_correction_no_snapshot(load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_correction_no_snapshot(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.correction import process_correction
 
     provider = MockProvider()

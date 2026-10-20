@@ -70,14 +70,14 @@ def test_query_game_state_returns_threads_clocks_and_npcs_at_once() -> None:
 
 
 def test_query_game_state_shows_the_memories_the_reflection_block_shows(load_engine: None) -> None:
-    from straightjacket.engine.director import _build_reflection_block
+    from straightjacket.engine.director import build_director_prompt
 
     game = _game_with_data()
     kira = game.npcs[0]
     kira.memory.append(make_memory(scene=4, event="Doubts the player", importance=6, type="reflection"))
     shown = next(n for n in query_game_state(game)["npcs"] if n["id"] == "npc_1")["recent_memories"]
     assert [m["event"] for m in shown] == ["Met at the docks", "Broke a promise"]
-    block = _build_reflection_block(game, kira)
+    block = build_director_prompt(game, "Kira hesitates.")
     assert all(m["event"] in block for m in shown)
 
 

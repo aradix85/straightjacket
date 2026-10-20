@@ -42,9 +42,7 @@ def _turn_then_correct(provider: TurnProvider) -> tuple[Any, Any, str, Any]:
     return before, game, narration, offer
 
 
-def test_a_misread_correction_keeps_the_dice_and_scores_the_new_stat(
-    load_engine: None, stub_emotions: None, dice: dict[str, int]
-) -> None:
+def test_a_misread_correction_keeps_the_dice_and_scores_the_new_stat(load_engine: None, dice: dict[str, int]) -> None:
     before, game, _narration, _offer = _turn_then_correct(TurnProvider(brain_answer(), brain_answer(stat="iron")))
 
     assert before.narrative.session_log[-1].result == "WEAK_HIT"
@@ -56,9 +54,7 @@ def test_a_misread_correction_keeps_the_dice_and_scores_the_new_stat(
     assert dice["rolls"] == 1
 
 
-def test_a_misread_correction_with_the_same_stat_keeps_its_result(
-    load_engine: None, stub_emotions: None, dice: dict[str, int]
-) -> None:
+def test_a_misread_correction_with_the_same_stat_keeps_its_result(load_engine: None, dice: dict[str, int]) -> None:
     _before, game, _narration, _offer = _turn_then_correct(TurnProvider(brain_answer(), brain_answer()))
 
     last = game.narrative.session_log[-1]
@@ -66,7 +62,7 @@ def test_a_misread_correction_with_the_same_stat_keeps_its_result(
 
 
 def test_a_misread_correction_keeps_the_scene_and_carries_the_correction_to_the_narrator(
-    load_engine: None, stub_emotions: None, dice: dict[str, int]
+    load_engine: None, dice: dict[str, int]
 ) -> None:
     dice["scene_roll"] = 2
     provider = TurnProvider(brain_answer(), brain_answer(stat="iron"))
@@ -77,7 +73,7 @@ def test_a_misread_correction_keeps_the_scene_and_carries_the_correction_to_the_
     assert "<correction_context>" in provider.prompts[-1]
 
 
-def test_a_corrected_miss_can_offer_a_burn(load_engine: None, stub_emotions: None, dice: dict[str, int]) -> None:
+def test_a_corrected_miss_can_offer_a_burn(load_engine: None, dice: dict[str, int]) -> None:
     _before, _game_after, _narration, offer = _turn_then_correct(
         TurnProvider(brain_answer(), brain_answer(stat="iron"))
     )
@@ -86,9 +82,7 @@ def test_a_corrected_miss_can_offer_a_burn(load_engine: None, stub_emotions: Non
     assert offer.new_result == "WEAK_HIT"
 
 
-def test_elvira_accepts_a_replayed_turn_and_a_burn(
-    load_engine: None, stub_emotions: None, dice: dict[str, int]
-) -> None:
+def test_elvira_accepts_a_replayed_turn_and_a_burn(load_engine: None, dice: dict[str, int]) -> None:
     import copy
 
     from straightjacket.engine.game import process_momentum_burn
