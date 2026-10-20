@@ -20,15 +20,18 @@ from .moves import get_moves
 from .outcome_result import OutcomeResult, move_outcome_config
 from .roll_sources import best_roll_option
 from .rolls import roll_action
+from .sojourn import apply_sojourn_handler
 
 
 def resolve_move_outcome(
-    game: GameState, move_key: str, roll_result: str, target_npc_id: str | None, match: bool
+    game: GameState, move_key: str, roll_result: str, target_npc_id: str | None, aided_by: str | None, match: bool
 ) -> OutcomeResult:
     move_cfg = move_outcome_config(game, move_key)
     result_key = roll_result.lower()
 
     handler = move_cfg.get("handler")
+    if handler == "sojourn":
+        return apply_sojourn_handler(game, move_key, roll_result, dict(move_cfg["params"]), match, aided_by)
     if handler:
         params_dict = dict(move_cfg["params"])
         return _dispatch_handler(game, move_key, handler, roll_result, params_dict, match)
@@ -73,7 +76,7 @@ def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:
         stat, value = best_roll_option(game, move)
         roll = roll_action(stat, value, move_key, momentum(game), 0)
         log(f"[FollowUp] {move_key} ({stat}={value}): {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}")
-        follow = resolve_move_outcome(game, move_key, roll.result, target_npc_id=None, match=roll.match)
+        follow = resolve_move_outcome(game, move_key, roll.result, target_npc_id=None, aided_by=None, match=roll.match)
         make_follow_up_moves(game, follow)
         result.consequences.append(consequence("chained_move", move=move.name, result=roll.result))
         result.consequences.extend(follow.consequences)

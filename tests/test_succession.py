@@ -300,7 +300,7 @@ def test_a_miss_at_the_threshold_records_why_the_game_ended(load_engine: None, m
 
     g = make_game_state(setting_id="classic" if move.startswith("suffer/") else "starforged")
     g.resources.meters["health"], g.resources.meters["spirit"] = 0, 0
-    resolve_move_outcome(g, move, "MISS", target_npc_id=None, match=False)
+    resolve_move_outcome(g, move, "MISS", target_npc_id=None, aided_by=None, match=False)
     assert (g.game_over, g.end_reason) == (True, reason)
 
 

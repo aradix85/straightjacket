@@ -30,7 +30,7 @@ def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: N
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
     )
-    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="npc_1", match=False)
+    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="npc_1", aided_by=None, match=False)
     conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
     assert conn.ticks == 0
     assert npc.disposition == "neutral"
@@ -46,7 +46,7 @@ def test_test_bond_disposition_shift(load_engine: None) -> None:
         make_progress_track(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
     )
     outcome = resolve_move_outcome(
-        game, "connection/test_your_relationship", "STRONG_HIT", target_npc_id="npc_1", match=False
+        game, "connection/test_your_relationship", "STRONG_HIT", target_npc_id="npc_1", aided_by=None, match=False
     )
     conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
     assert outcome.chained_move == "connection/develop_your_relationship"

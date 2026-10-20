@@ -222,7 +222,7 @@ class TestRecoveryHandlerClearsImpact:
         game = _game()
         game.resources.meters["spirit"] = 2
         apply_impact(game, marked)
-        resolve_move_outcome(game, "recover/hearten", "STRONG_HIT", target_npc_id=None, match=False)
+        resolve_move_outcome(game, "recover/hearten", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
         assert (marked not in game.impacts) is cleared
         assert game.resources.meters["spirit"] == spirit
 
@@ -234,7 +234,9 @@ class TestRecoveryHandlerClearsImpact:
         game = _game()
         if wounded:
             apply_impact(game, "wounded")
-        result = resolve_move_outcome(game, "recover/heal", "STRONG_HIT", target_npc_id=None, match=False)
+        result = resolve_move_outcome(
+            game, "recover/heal", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
+        )
         assert game.impacts == []
         assert any("wounded" in c for c in labels_of(result.consequences)) is wounded
 

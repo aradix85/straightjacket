@@ -131,7 +131,7 @@ def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
     rolled = record_price_tables(monkeypatch)
     game = _game("starforged")
     rows = _complication_rows(game)
-    outcome = resolve_move_outcome(game, move_key, "MISS", match=True, target_npc_id=None)
+    outcome = resolve_move_outcome(game, move_key, "MISS", aided_by=None, match=True, target_npc_id=None)
     assert rolled == ["Story Complication"]
     assert all(row in rows for row in _rolled_rows(labels_of(outcome.consequences)[-1]))
 
@@ -144,7 +144,9 @@ def test_other_misses_pay_the_price(
     game = _game(setting_id)
     rows = _complication_rows(_game("starforged"))
     for _ in range(20):
-        outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=match, target_npc_id=None)
+        outcome = resolve_move_outcome(
+            game, "adventure/face_danger", "MISS", aided_by=None, match=match, target_npc_id=None
+        )
         assert rolled.pop() == "Pay the Price"
         price = next(c for c in labels_of(outcome.consequences) if c.startswith("Pay the Price: "))
         assert not any(row in rows for row in _rolled_rows(price))

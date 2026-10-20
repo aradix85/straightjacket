@@ -250,7 +250,7 @@ def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytes
     rolled = record_price_tables(monkeypatch)
     game = library_game()
 
-    result = resolve_move_outcome(game, "adventure/face_danger", "MISS", target_npc_id=None, match=False)
+    result = resolve_move_outcome(game, "adventure/face_danger", "MISS", target_npc_id=None, aided_by=None, match=False)
 
     assert rolled == ["Pay the Price"]
     assert labels_of(result.consequences)

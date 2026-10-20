@@ -38,7 +38,7 @@ def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = _game(setting)
-    outcome = resolve_move_outcome(game, move, "WEAK_HIT", target_npc_id="npc_1", match=False)
+    outcome = resolve_move_outcome(game, move, "WEAK_HIT", target_npc_id="npc_1", aided_by=None, match=False)
     [clock] = open_complications(game)
     assert (clock.clock_type, clock.owner_kind, clock.segments, clock.filled) == ("threat", "world", 4, 0)
     assert clock.name
@@ -52,7 +52,7 @@ def test_a_strong_hit_starts_no_complication(load_engine: None, setting: str, mo
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = _game(setting)
-    resolve_move_outcome(game, move, "STRONG_HIT", target_npc_id="npc_1", match=False)
+    resolve_move_outcome(game, move, "STRONG_HIT", target_npc_id="npc_1", aided_by=None, match=False)
     assert game.world.clocks == []
 
 
@@ -65,7 +65,9 @@ def test_without_a_story_complication_table_a_meaning_pair_names_the_danger(
 
     monkeypatch.setattr(move_effects, "roll_meaning_table", lambda table: ("Oppose", "Plans"))
     game = _game("classic")
-    resolve_move_outcome(game, "adventure/gather_information", "WEAK_HIT", target_npc_id=None, match=False)
+    resolve_move_outcome(
+        game, "adventure/gather_information", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
+    )
     assert [c.name for c in open_complications(game)] == ["Oppose Plans"]
 
 
@@ -75,7 +77,9 @@ def test_the_emergent_clock_cap_leaves_the_complication_without_a_clock(load_eng
     game = _game()
     cap = gm().clocks.max_open_emergent
     game.world.clocks = [make_clock(name=f"Event {i}", creation_source=f"random_event:x:{i}") for i in range(cap)]
-    outcome = resolve_move_outcome(game, "adventure/gather_information", "WEAK_HIT", target_npc_id=None, match=False)
+    outcome = resolve_move_outcome(
+        game, "adventure/gather_information", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
+    )
     assert len(game.world.clocks) == cap
     assert "complication gather_information" in labels_of(outcome.consequences)
     assert not any(c.startswith("complication_clock") for c in labels_of(outcome.consequences))
@@ -86,7 +90,7 @@ def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one(
 
     game = _game()
     game.world.clocks = [_complication(filled=1)]
-    outcome = resolve_move_outcome(game, "adventure/compel", "WEAK_HIT", target_npc_id=None, match=False)
+    outcome = resolve_move_outcome(game, "adventure/compel", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False)
     assert [c.name for c in game.world.clocks] == ["A beacon calls the raiders"]
     assert "complication compel" in labels_of(outcome.consequences)
     assert not any(c.startswith("complication_clock") for c in labels_of(outcome.consequences))

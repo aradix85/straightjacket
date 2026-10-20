@@ -16,7 +16,7 @@ from ..setting.oracle_rolls import plain_text, roll_rows, roll_table
 from ..setting.packages import load_package
 from .bond import connection_track, seal_bond
 from .config import rules
-from .impacts import blocks_recovery, clear_impact, get_impacts, impact_consequence
+from .impacts import blocks_recovery
 from .legacy import shifted_rank
 from .meters import adjust_momentum, condition_meters, gain, is_condition_meter
 from .moves import Move, get_moves, move_table, offers_table
@@ -197,21 +197,6 @@ def _apply_told_effect(game: GameState, effect: MoveEffect, result: OutcomeResul
     result.consequences.append(consequence(effect.type))
 
 
-def _apply_clear_condition_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
-) -> None:
-    impacts = get_impacts(game.setting_id)
-    condition = next((key for key in game.impacts if impacts[key].prevents_recovery), None)
-    if condition is None:
-        return
-    meter = impacts[condition].prevents_recovery[0]
-    clear_impact(game, condition)
-    result.consequences.append(impact_consequence(game, "clear_impact", condition))
-    gained = gain(game, meter, effect.value)
-    if gained:
-        result.consequences.append(consequence("track_gain", track=meter, n=gained))
-
-
 def _apply_mark_progress_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
@@ -383,7 +368,6 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "complication": _apply_complication_effect,
     "bond": _apply_bond_effect,
     "disposition_shift": _apply_disposition_shift_effect,
-    "clear_condition": _apply_clear_condition_effect,
     "bond_request": _apply_told_effect,
     "obstacle": _apply_told_effect,
     "loyalty_test": _apply_told_effect,

@@ -103,7 +103,7 @@ def test_an_impact_is_labelled_and_told_by_its_rulesets_label(load_engine: None)
     game = _game()
     game.resources.meters["health"] = 0
     game.impacts = ["wounded"]
-    result = resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, match=False)
+    result = resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, aided_by=None, match=False)
     marked = [c for c in result.consequences if c.kind == "mark_impact"]
     assert [c.label for c in marked] == ["mark permanently harmed"]
     assert "permanently harmed" in resolve_consequence_sentence(marked[0], "Ash", "", "")

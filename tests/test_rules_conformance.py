@@ -138,7 +138,9 @@ def test_secure_an_advantage_weak_hit_follows_each_rulebook(load_engine: None, s
 
     game = make_game_state(setting_id=setting)
     game.resources.meters["momentum"] = 0
-    resolve_move_outcome(game, "adventure/secure_an_advantage", "WEAK_HIT", target_npc_id=None, match=False)
+    resolve_move_outcome(
+        game, "adventure/secure_an_advantage", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
+    )
     assert game.resources.meters["momentum"] == expected
 
 
@@ -166,7 +168,7 @@ def test_endure_harm_follows_each_rulebook(
     game.resources.meters["health"] = health
     game.resources.meters["momentum"] = 2
     game.impacts = []
-    resolve_move_outcome(game, "suffer/endure_harm", result, target_npc_id=None, match=False)
+    resolve_move_outcome(game, "suffer/endure_harm", result, target_npc_id=None, aided_by=None, match=False)
     assert (game.resources.meters["health"], game.resources.meters["momentum"]) == expected
 
 
@@ -179,7 +181,9 @@ def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id="starforged")
-    outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", "WEAK_HIT", target_npc_id=None, match=False)
+    outcome = resolve_move_outcome(
+        game, "quest/fulfill_your_vow", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
+    )
     apply_progress_and_legacy(game, outcome, make_brain_result(), make_progress_track(rank=vow_rank))
     assert game.campaign.legacy["quests"].ticks == expected_ticks
 
@@ -201,7 +205,9 @@ def test_classic_fulfill_your_vow_marks_experience_by_rank(
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id="classic")
-    outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", result, target_npc_id=None, match=False)
+    outcome = resolve_move_outcome(
+        game, "quest/fulfill_your_vow", result, target_npc_id=None, aided_by=None, match=False
+    )
     apply_progress_and_legacy(game, outcome, make_brain_result(), make_progress_track(rank=vow_rank))
     assert game.campaign.xp == expected_xp
     assert all(track.ticks == 0 for track in game.campaign.legacy.values())
@@ -214,7 +220,7 @@ def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> N
 
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(
-        game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id=None, match=False
+        game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
     )
     apply_progress_and_legacy(game, outcome, make_brain_result(), None)
     assert game.campaign.legacy["bonds"].ticks == 2
@@ -228,7 +234,7 @@ def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id
 
     game = make_game_state(setting_id=setting_id)
     game.progress_tracks.append(make_progress_track(id="combat_raider", name="Raider", track_type="combat"))
-    outcome = resolve_move_outcome(game, "combat/strike", "STRONG_HIT", target_npc_id=None, match=False)
+    outcome = resolve_move_outcome(game, "combat/strike", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
     apply_progress_and_legacy(game, outcome, make_brain_result(move="combat/strike"), None)
     assert game.progress_tracks[-1].ticks > 0
 
@@ -249,7 +255,9 @@ def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
 
     game = make_game_state(setting_id="starforged")
     game.resources.meters["momentum"] = 2
-    resolve_move_outcome(game, "connection/make_a_connection", "WEAK_HIT", target_npc_id=None, match=False)
+    resolve_move_outcome(
+        game, "connection/make_a_connection", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
+    )
     assert game.resources.meters["momentum"] == 2
 
 
@@ -479,7 +487,12 @@ def test_enter_the_fray_miss_pays_the_price_only_in_classic(
 
     rolled = record_price_tables(monkeypatch)
     resolve_move_outcome(
-        make_game_state(setting_id=setting), "combat/enter_the_fray", "MISS", target_npc_id=None, match=False
+        make_game_state(setting_id=setting),
+        "combat/enter_the_fray",
+        "MISS",
+        target_npc_id=None,
+        aided_by=None,
+        match=False,
     )
     assert bool(rolled) is pays
 
@@ -495,7 +508,12 @@ def test_every_enter_the_fray_result_sets_who_is_in_control(
     from tests._helpers import make_game_state
 
     outcome = resolve_move_outcome(
-        make_game_state(setting_id=setting), "combat/enter_the_fray", result, target_npc_id=None, match=False
+        make_game_state(setting_id=setting),
+        "combat/enter_the_fray",
+        result,
+        target_npc_id=None,
+        aided_by=None,
+        match=False,
     )
     assert outcome.combat_position == position
 
@@ -538,7 +556,7 @@ def test_scene_challenge_match_outcomes(
     from tests._helpers import make_game_state
 
     outcome = resolve_move_outcome(
-        make_game_state(setting_id="starforged"), move, result, match=match, target_npc_id=None
+        make_game_state(setting_id="starforged"), move, result, aided_by=None, match=match, target_npc_id=None
     )
     assert (outcome.progress_marks, outcome.clock_fills) == (progress, clock)
 
@@ -629,7 +647,9 @@ def test_develop_your_relationship_match_raises_the_connection_rank(
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank=rank, ticks=0)
     game.progress_tracks.append(track)
-    resolve_move_outcome(game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id="npc_1", match=True)
+    resolve_move_outcome(
+        game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id="npc_1", aided_by=None, match=True
+    )
     assert track.rank == expected
 
 
@@ -700,7 +720,7 @@ def test_lasting_harm_uses_each_rulebooks_names(
     track = "health" if move.endswith("harm") else "spirit"
     game.resources.meters[track] = 0
     game.impacts = [first]
-    resolve_move_outcome(game, move, "MISS", target_npc_id=None, match=False)
+    resolve_move_outcome(game, move, "MISS", target_npc_id=None, aided_by=None, match=False)
     assert lasting in game.impacts
 
 
@@ -742,7 +762,9 @@ def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
     game = make_game_state(setting_id="starforged")
     game.resources.meters["spirit"] = 3
     game.resources.meters["supply"] = 3
-    outcome = resolve_move_outcome(game, "combat/take_decisive_action", "WEAK_HIT", target_npc_id=None, match=False)
+    outcome = resolve_move_outcome(
+        game, "combat/take_decisive_action", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
+    )
     assert labels_of(outcome.consequences)[0] == f"Take Decisive Action: {worse}"
     assert game.resources.meters["health"] == 3
     assert rolled == []
@@ -757,7 +779,9 @@ def test_gather_information_rolls_a_story_clue_where_the_move_has_one(
 
     for result in ("STRONG_HIT", "WEAK_HIT"):
         game = make_game_state(setting_id=setting)
-        outcome = resolve_move_outcome(game, "adventure/gather_information", result, target_npc_id=None, match=False)
+        outcome = resolve_move_outcome(
+            game, "adventure/gather_information", result, target_npc_id=None, aided_by=None, match=False
+        )
         assert any(c.startswith("Story Clue: ") for c in labels_of(outcome.consequences)) is clue
 
 

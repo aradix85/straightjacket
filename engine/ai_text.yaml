@@ -46,6 +46,8 @@ ai_text:
     bond_cleared: '{name}: bond cleared'
     obstacle: obstacle
     loyalty_test: loyalty_test
+    focus_roll: '{action}, rolled again: {result}'
+    focus_lost: '{action} goes badly; its benefit is lost'
     recommit: recommit {track}
     oracle_result: '{table}: {result}'
     oracle_worse: 'made worse: {result}'

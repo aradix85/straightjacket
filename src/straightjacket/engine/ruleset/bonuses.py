@@ -9,10 +9,12 @@ from ..prompt_loader import get_prompt
 from ..setting.oracle_rolls import plain_text
 from ..xml_utils import xe as _xe
 from .assets import asset_data, enabled_abilities
+from .bond import connection_track, is_bonded
 from .config import rules
 from .datasworn import load_ruleset
 from .meters import adjust_momentum
 
+_CONNECTION = "connection:"
 _ADD = re.compile(r"\badd \+(\d)", re.IGNORECASE)
 _MOMENTUM_ON_HIT = re.compile(r"add \+\d and take \+(\d) momentum on a hit", re.IGNORECASE)
 
@@ -54,7 +56,7 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
         if track.track_type == "connection" and track.status in ("active", "bonded"):
             options.append(
                 RollBonus(
-                    id=f"connection:{track.id.removeprefix('connection_')}",
+                    id=f"{_CONNECTION}{track.id.removeprefix('connection_')}",
                     source=track.name,
                     condition=aid.condition.format(name=track.name),
                     add=aid.bonded_add if track.status == "bonded" else aid.add,
@@ -72,6 +74,14 @@ def chosen_bonus(game: GameState, bonus_id: str | None) -> RollBonus | None:
             log(f"[Bonus] {option.source}: +{option.add}")
             return option
     raise ValueError(f"Bonus {bonus_id!r} is not on offer")
+
+
+def bond_of_bonus(game: GameState, bonus_id: str | None) -> str | None:
+    if bonus_id is None or not bonus_id.startswith(_CONNECTION):
+        return None
+    npc_id = bonus_id.removeprefix(_CONNECTION)
+    track = connection_track(game, npc_id)
+    return npc_id if track is not None and is_bonded(track) else None
 
 
 def apply_momentum_on_hit(game: GameState, bonus: RollBonus, result: str) -> None:

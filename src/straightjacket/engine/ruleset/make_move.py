@@ -10,7 +10,7 @@ from ..setting.loader import OracleTable
 from ..setting.oracle_rolls import plain_text, roll_rows
 from .boasts import apply_boasts
 from .bond import connection_track, is_bonded
-from .bonuses import apply_momentum_on_hit, chosen_bonus
+from .bonuses import apply_momentum_on_hit, bond_of_bonus, chosen_bonus
 from .config import rules
 from .legacy import mark_legacy_ticks
 from .meters import momentum
@@ -92,7 +92,14 @@ def _log_action_roll(roll: RollResult, adds: int, cancelled: bool) -> None:
 
 
 def resolve_move(game: GameState, brain: BrainResult, roll: RollResult) -> OutcomeResult:
-    outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc, match=roll.match)
+    outcome = resolve_move_outcome(
+        game,
+        brain.move,
+        roll.result,
+        target_npc_id=brain.target_npc,
+        aided_by=bond_of_bonus(game, brain.bonus_id),
+        match=roll.match,
+    )
     if outcome.chained_move:
         _chain_move(game, brain, outcome)
     if outcome.boast_slots:
@@ -154,7 +161,7 @@ def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> 
     roll = roll_action(label, stat_value, outcome.chained_move, momentum(game), adds)
     game.resources.next_move_bonus = 0
     chained = resolve_move_outcome(
-        game, outcome.chained_move, roll.result, target_npc_id=brain.target_npc, match=roll.match
+        game, outcome.chained_move, roll.result, target_npc_id=brain.target_npc, aided_by=None, match=roll.match
     )
     log(
         f"[Chain] {outcome.chained_move} ({label}={stat_value}, +{adds}): score {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}"

@@ -144,7 +144,7 @@ def test_dying_gives_two_turns_to_raise_health(load_engine: None, monkeypatch: p
     game = _game("starforged", health=0)
     game.impacts = ["wounded", "permanently_harmed"]
     fix_dice(monkeypatch, 15)
-    resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, match=False)
+    resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, aided_by=None, match=False)
     assert _dying(game) == ["Dying"]
 
     first, second = make_outcome(), make_outcome()
@@ -176,7 +176,7 @@ def test_unconscious_faces_death_only_in_a_fight(
     if in_a_fight:
         game.progress_tracks.append(make_progress_track(id="combat_raiders", track_type="combat"))
     fix_dice(monkeypatch, 25)
-    result = resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, match=False)
+    result = resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, aided_by=None, match=False)
     assert labels_of(result.consequences)[-1].startswith("Endure Harm: You are unconscious")
     assert result.follow_up_moves == follow_ups
 
@@ -189,7 +189,7 @@ def test_giving_up_forsakes_the_newest_vow(load_engine: None, monkeypatch: pytes
         make_progress_track(id="vow_new", name="New"),
     ]
     fix_dice(monkeypatch, 15)
-    result = resolve_move_outcome(game, "suffer/endure_stress", "MISS", target_npc_id=None, match=False)
+    result = resolve_move_outcome(game, "suffer/endure_stress", "MISS", target_npc_id=None, aided_by=None, match=False)
     assert [t.status for t in game.progress_tracks] == ["active", "failed"]
     assert labels_of(result.consequences) == [
         "momentum -2",
@@ -217,27 +217,10 @@ def test_meters_at_zero_bring_crisis_but_not_death(load_engine: None) -> None:
     assert (game.crisis_mode, game.game_over) == (True, False)
 
 
-def test_classic_sojourn_clears_a_marked_condition_first(load_engine: None) -> None:
-    game = _game("classic", health=3, spirit=2)
-    game.impacts = ["shaken"]
-    result = resolve_move_outcome(game, "relationship/sojourn", "WEAK_HIT", target_npc_id=None, match=False)
-    assert (game.impacts, game.resources.meters["spirit"], game.resources.meters["health"]) == ([], 3, 4)
-    assert labels_of(result.consequences)[:2] == ["clear shaken", "spirit +1"]
-
-
-@pytest.mark.parametrize(
-    ("setting_id", "move_key", "roll_result", "impacts"),
-    [
-        ("starforged", "recover/sojourn", "STRONG_HIT", ["wounded"]),
-        ("classic", "relationship/sojourn", "WEAK_HIT", ["shaken", "wounded"]),
-    ],
-)
-def test_a_marked_condition_keeps_its_meter_from_rising_outside_the_move_that_clears_it(
-    load_engine: None, setting_id: str, move_key: str, roll_result: str, impacts: list[str]
-) -> None:
-    game = _game(setting_id, health=3, spirit=2)
-    game.impacts = list(impacts)
-    result = resolve_move_outcome(game, move_key, roll_result, target_npc_id=None, match=False)
+def test_a_marked_condition_keeps_its_meter_from_rising_outside_the_move_that_clears_it(load_engine: None) -> None:
+    game = _game("starforged", health=3, spirit=2)
+    game.impacts = ["wounded"]
+    result = resolve_move_outcome(game, "recover/sojourn", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
     assert (game.impacts, game.resources.meters["health"], game.resources.meters["spirit"]) == (["wounded"], 3, 3)
     assert "spirit +1" in labels_of(result.consequences)
     assert not [label for label in labels_of(result.consequences) if label.startswith("health")]
@@ -245,5 +228,5 @@ def test_a_marked_condition_keeps_its_meter_from_rising_outside_the_move_that_cl
 
 def test_classic_heal_gives_two_health(load_engine: None) -> None:
     game = _game("classic", health=1)
-    resolve_move_outcome(game, "adventure/heal", "STRONG_HIT", target_npc_id=None, match=False)
+    resolve_move_outcome(game, "adventure/heal", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
     assert game.resources.meters["health"] == 3

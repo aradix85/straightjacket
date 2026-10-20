@@ -403,15 +403,34 @@ move_outcomes:
     miss:
     - pay_the_price
   relationship/sojourn:
-    strong_hit:
-    - clear_condition +1
-    - health +1
-    - spirit +1
-    weak_hit:
-    - clear_condition +1
-    - health +1
-    miss:
-    - pay_the_price
+    handler: sojourn
+    params:
+      picks:
+        strong_hit: 2
+        weak_hit: 1
+      bond_picks: 1
+      clear_a_condition:
+        wounded:
+          action: Mend
+          meter: health
+        shaken:
+          action: Hearten
+          meter: spirit
+        unprepared:
+          action: Equip
+          meter: supply
+      clear_gain: 1
+      recover:
+        health: Recuperate
+        spirit: Consort
+        supply: Provision
+        momentum: Plan
+      recover_gain: 2
+      focus_stat: heart
+      focus_bond_add: 1
+      focus_gain:
+        strong_hit: 2
+        weak_hit: 1
   relationship/test_your_bond:
     strong_hit:
     - spirit +1
