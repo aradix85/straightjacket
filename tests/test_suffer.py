@@ -70,10 +70,12 @@ def test_exhausted_supply_marks_unprepared_and_further_loss_costs_momentum(load_
 
 
 @pytest.mark.parametrize(
-    ("marked", "marks"), [([], "wounded"), (["wounded"], "permanently_harmed")], ids=["first", "second"]
+    ("marked", "marks", "label"),
+    [([], "wounded", "wounded"), (["wounded"], "permanently_harmed", "permanently harmed")],
+    ids=["first", "second"],
 )
 def test_a_miss_at_zero_marks_the_first_free_impact(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, marked: list[str], marks: str
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, marked: list[str], marks: str, label: str
 ) -> None:
     game = _game("starforged", health=0)
     game.impacts = list(marked)
@@ -84,7 +86,7 @@ def test_a_miss_at_zero_marks_the_first_free_impact(
     assert labels_of(result.consequences) == [
         "follow-up move Endure Harm: MISS",
         "momentum -2",
-        f"mark {marks}",
+        f"mark {label}",
     ]
 
 
@@ -221,6 +223,24 @@ def test_classic_sojourn_clears_a_marked_condition_first(load_engine: None) -> N
     result = resolve_move_outcome(game, "relationship/sojourn", "WEAK_HIT", target_npc_id=None, match=False)
     assert (game.impacts, game.resources.meters["spirit"], game.resources.meters["health"]) == ([], 3, 4)
     assert labels_of(result.consequences)[:2] == ["clear shaken", "spirit +1"]
+
+
+@pytest.mark.parametrize(
+    ("setting_id", "move_key", "roll_result", "impacts"),
+    [
+        ("starforged", "recover/sojourn", "STRONG_HIT", ["wounded"]),
+        ("classic", "relationship/sojourn", "WEAK_HIT", ["shaken", "wounded"]),
+    ],
+)
+def test_a_marked_condition_keeps_its_meter_from_rising_outside_the_move_that_clears_it(
+    load_engine: None, setting_id: str, move_key: str, roll_result: str, impacts: list[str]
+) -> None:
+    game = _game(setting_id, health=3, spirit=2)
+    game.impacts = list(impacts)
+    result = resolve_move_outcome(game, move_key, roll_result, target_npc_id=None, match=False)
+    assert (game.impacts, game.resources.meters["health"], game.resources.meters["spirit"]) == (["wounded"], 3, 3)
+    assert "spirit +1" in labels_of(result.consequences)
+    assert not [label for label in labels_of(result.consequences) if label.startswith("health")]
 
 
 def test_classic_heal_gives_two_health(load_engine: None) -> None:

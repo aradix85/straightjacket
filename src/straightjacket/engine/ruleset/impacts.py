@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..logging_util import log
-from ..models import GameState
+from ..models import Consequence, GameState, consequence
 from ..setting.oracle_rolls import plain_text
 from .datasworn import load_ruleset
 from .meters import cap_momentum, max_momentum
@@ -70,3 +70,7 @@ def blocks_recovery(game: GameState, track: str) -> str:
 
 def impact_label(game: GameState, key: str) -> str:
     return get_impacts(game.setting_id)[key].label
+
+
+def impact_consequence(game: GameState, kind: str, key: str) -> Consequence:
+    return consequence(kind, impact=impact_label(game, key))

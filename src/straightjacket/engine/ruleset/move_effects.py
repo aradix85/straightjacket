@@ -16,7 +16,7 @@ from ..setting.oracle_rolls import plain_text, roll_rows, roll_table
 from ..setting.packages import load_package
 from .bond import connection_track
 from .config import rules
-from .impacts import clear_impact, get_impacts
+from .impacts import blocks_recovery, clear_impact, get_impacts, impact_consequence
 from .legacy import shifted_rank
 from .meters import adjust_momentum, condition_meters, gain, is_condition_meter
 from .moves import Move, get_moves, move_table, offers_table
@@ -154,6 +154,10 @@ def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeR
 
 def _apply_meter_effect(game: GameState, effect: MoveEffect, result: OutcomeResult) -> None:
     if effect.value > 0:
+        blocking = blocks_recovery(game, effect.type)
+        if blocking:
+            log(f"[Impact] {blocking} keeps {effect.type} from rising")
+            return
         gained = gain(game, effect.type, effect.value)
         if gained:
             result.consequences.append(consequence("track_gain", track=effect.type, n=gained))
@@ -176,7 +180,7 @@ def _apply_clear_condition_effect(
         return
     meter = impacts[condition].prevents_recovery[0]
     clear_impact(game, condition)
-    result.consequences.append(consequence("clear_impact", impact=condition))
+    result.consequences.append(impact_consequence(game, "clear_impact", condition))
     gained = gain(game, meter, effect.value)
     if gained:
         result.consequences.append(consequence("track_gain", track=meter, n=gained))

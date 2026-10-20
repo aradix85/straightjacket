@@ -7,7 +7,7 @@ from ..gamemaster.moves import roll_oracle_answer
 from ..logging_util import log
 from ..models import GameState, consequence
 from .config import rules
-from .impacts import apply_impact, blocks_recovery, clear_impact
+from .impacts import apply_impact, blocks_recovery, clear_impact, impact_consequence
 from .meters import adjust_momentum, condition_meters, gain, is_condition_meter, is_momentum, lose, momentum
 from .move_effects import (
     apply_effects,
@@ -87,7 +87,7 @@ def apply_suffer_handler(
             free = [impact for impact in params["impact_pair"] if impact not in game.impacts]
             if free:
                 apply_impact(game, free[0])
-                result.consequences.append(consequence("mark_impact", impact=free[0]))
+                result.consequences.append(impact_consequence(game, "mark_impact", free[0]))
             else:
                 _roll_endure_table(game, move_key, params, result)
 
@@ -152,7 +152,7 @@ def _return_with_a_vow(game: GameState, params: dict[str, Any], result: OutcomeR
         consequence("threshold_vow", vow=vow.name, rank=vow.rank, oracle=roll_oracle_answer(game))
     )
     if apply_impact(game, params["impact"]):
-        result.consequences.append(consequence("mark_impact", impact=params["impact"]))
+        result.consequences.append(impact_consequence(game, "mark_impact", params["impact"]))
 
 
 def apply_threshold_handler(
@@ -182,7 +182,7 @@ def apply_recovery_handler(
     if roll_result in rules().dice.hit_results:
         amount = impact_amount if has_impact else full_amount
         if has_impact and clear_impact(game, blocking_impact):
-            result.consequences.append(consequence("clear_impact", impact=blocking_impact))
+            result.consequences.append(impact_consequence(game, "clear_impact", blocking_impact))
 
         if is_condition_meter(game, track):
             gained = gain(game, track, amount)

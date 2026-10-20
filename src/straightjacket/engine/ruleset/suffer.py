@@ -4,7 +4,7 @@ from ..gamemaster.clocks import new_clock
 from ..logging_util import log
 from ..models import ClockData, GameState, consequence
 from .config import rules
-from .impacts import apply_impact
+from .impacts import apply_impact, impact_consequence
 from .meters import adjust_momentum, lose
 from .outcome_result import OutcomeResult, move_outcome_config
 
@@ -21,7 +21,7 @@ def suffer(game: GameState, meter: str, amount: int, result: OutcomeResult) -> N
     if meter in rules().suffer.exhausted_impacts:
         impact = rules().suffer.exhausted_impacts[meter]
         if at_zero and apply_impact(game, impact):
-            result.consequences.append(consequence("mark_impact", impact=impact))
+            result.consequences.append(impact_consequence(game, "mark_impact", impact))
         return
     endure = rules().suffer.endure_moves[meter]
     if at_zero or move_outcome_config(game, endure)["params"]["endure_always"]:

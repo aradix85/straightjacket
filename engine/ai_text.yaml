@@ -44,7 +44,7 @@ ai_text:
     bond_request: bond_request
     recommit: recommit {track}
     oracle_result: '{table}: {result}'
-    oracle_worse: '{result}, made worse'
+    oracle_worse: 'made worse: {result}'
     told: '{text}'
   narrator_defaults:
     unknown_location: unknown

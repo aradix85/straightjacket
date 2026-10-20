@@ -7,7 +7,6 @@ from ..engine_loader import eng
 from ..gamemaster.npc.matching import find_npc
 from ..models import BrainResult, ClockEvent, Consequence, GameState
 from .config import rules
-from .impacts import Impact, get_impacts
 
 
 def pick_template(key: str) -> str:
@@ -26,7 +25,7 @@ def _meter_event(meter: str, change: int) -> str | None:
     return event if event in templates else None
 
 
-def _sentence_event(c: Consequence, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:
+def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
     values = c.values
     event: str | None
     if c.kind in ("track_gain", "track_loss"):
@@ -41,7 +40,7 @@ def _sentence_event(c: Consequence, impacts: dict[str, Impact]) -> tuple[str, st
     if c.kind == "disposition_shift":
         return "disposition_shift", values["name"], ""
     if c.kind in ("mark_impact", "clear_impact"):
-        return ("impact_mark" if c.kind == "mark_impact" else "impact_clear"), "", impacts[values["impact"]].label
+        return ("impact_mark" if c.kind == "mark_impact" else "impact_clear"), "", values["impact"]
     if c.kind == "complication":
         return f"complication_{values['kind']}", "", ""
     if c.kind in ("complication_clock", "complication_averted"):
@@ -63,12 +62,11 @@ def generate_consequence_sentences(
     player = game.player_name
     npc_name = target.name if target else ""
     location = game.world.current_location
-    impacts = get_impacts(game.setting_id)
 
     sentences: list[str] = []
 
     for c in consequences:
-        sentence = resolve_consequence_sentence(c, player, npc_name, location, impacts)
+        sentence = resolve_consequence_sentence(c, player, npc_name, location)
         if sentence:
             sentences.append(sentence)
 
@@ -82,10 +80,8 @@ def generate_consequence_sentences(
     return sentences
 
 
-def resolve_consequence_sentence(
-    c: Consequence, player: str, npc_name: str, location: str, impacts: dict[str, Impact]
-) -> str:
-    event = _sentence_event(c, impacts)
+def resolve_consequence_sentence(c: Consequence, player: str, npc_name: str, location: str) -> str:
+    event = _sentence_event(c)
     if event is None:
         return ""
     event_code, subject, detail = event

@@ -153,9 +153,8 @@ def test_the_brain_sees_open_complications_and_may_aim_at_one(load_engine: None)
 def test_a_danger_with_commas_is_told_whole(verb: str) -> None:
     from straightjacket.engine.models import consequence
     from straightjacket.engine.ruleset.consequences import resolve_consequence_sentence
-    from straightjacket.engine.ruleset.impacts import get_impacts
 
     danger = "Weather, terrain, or a creature blocks the way"
-    sentence = resolve_consequence_sentence(consequence(verb, name=danger), "Ash", "", "", get_impacts("starforged"))
+    sentence = resolve_consequence_sentence(consequence(verb, name=danger), "Ash", "", "")
     assert danger in sentence
     assert "{" not in sentence

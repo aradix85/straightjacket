@@ -14,7 +14,7 @@ from straightjacket.engine.ruleset.consequences import (
     pick_template,
     resolve_consequence_sentence,
 )
-from straightjacket.engine.ruleset.impacts import get_impacts
+from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc
 
 
@@ -70,7 +70,7 @@ def test_pick_template_unknown_key_raises() -> None:
     ],
 )
 def test_resolve_consequence_produces_sentence(cons: Consequence, npc: str, must_contain: str) -> None:
-    sentence = resolve_consequence_sentence(cons, "Ash", npc, "The Docks", get_impacts("starforged"))
+    sentence = resolve_consequence_sentence(cons, "Ash", npc, "The Docks")
     assert sentence != ""
     assert "{" not in sentence
     if must_contain:
@@ -79,9 +79,7 @@ def test_resolve_consequence_produces_sentence(cons: Consequence, npc: str, must
 
 @pytest.mark.parametrize("kind", ["gather_information", "compel"])
 def test_a_complication_is_told_as_a_sentence_naming_the_player(kind: str) -> None:
-    sentence = resolve_consequence_sentence(
-        consequence("complication", kind=kind), "Ash", "", "", get_impacts("starforged")
-    )
+    sentence = resolve_consequence_sentence(consequence("complication", kind=kind), "Ash", "", "")
     assert "Ash" in sentence
     assert "{" not in sentence
 
@@ -98,13 +96,17 @@ def test_a_complication_is_told_as_a_sentence_naming_the_player(kind: str) -> No
     ],
 )
 def test_a_consequence_without_a_sentence_of_its_own_is_not_told_as_one(cons: Consequence) -> None:
-    assert resolve_consequence_sentence(cons, "Ash", "Kira", "", get_impacts("starforged")) == ""
+    assert resolve_consequence_sentence(cons, "Ash", "Kira", "") == ""
 
 
-def test_a_real_impact_mark_is_told_with_its_label() -> None:
-    assert "permanently harmed" in resolve_consequence_sentence(
-        consequence("mark_impact", impact="permanently_harmed"), "Ash", "", "", get_impacts("starforged")
-    )
+def test_an_impact_is_labelled_and_told_by_its_rulesets_label(load_engine: None) -> None:
+    game = _game()
+    game.resources.meters["health"] = 0
+    game.impacts = ["wounded"]
+    result = resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, match=False)
+    marked = [c for c in result.consequences if c.kind == "mark_impact"]
+    assert [c.label for c in marked] == ["mark permanently harmed"]
+    assert "permanently harmed" in resolve_consequence_sentence(marked[0], "Ash", "", "")
 
 
 def test_a_momentum_change_labels_its_sign() -> None:

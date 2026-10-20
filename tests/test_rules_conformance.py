@@ -451,7 +451,7 @@ def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
     _price_dice(monkeypatch, 99, 42, 42)
     result = make_outcome()
     pay_the_price(make_game_state(setting_id="classic"), result)
-    assert labels_of(result.consequences) == ["Pay the Price: A new danger or foe is revealed., made worse"]
+    assert labels_of(result.consequences) == ["Pay the Price: made worse: A new danger or foe is revealed."]
 
 
 def test_classic_roll_again_tells_the_next_result_made_worse(
@@ -465,7 +465,7 @@ def test_classic_roll_again_tells_the_next_result_made_worse(
     game.resources.meters["health"] = 4
     result = make_outcome()
     pay_the_price(game, result)
-    assert labels_of(result.consequences)[0] == "Pay the Price: It is harmful., made worse"
+    assert labels_of(result.consequences)[0] == "Pay the Price: made worse: It is harmful."
     assert game.resources.meters["health"] == 3
 
 
@@ -724,7 +724,7 @@ def test_sundered_isles_discovers_from_its_own_table(load_engine: None) -> None:
         roll = RollResult(3, 3, 3, "wits", 2, 5, "STRONG_HIT", "exploration/explore_a_waypoint", match=True)
         action = resolve_action_consequences(game, brain, roll, "risky")
         found = next(c for c in labels_of(action.consequences) if c.startswith("follow-up move Make a Discovery: "))
-        assert set(found.split(": ", 1)[1].removesuffix(", made worse").split("; ")) <= own
+        assert set(found.split(": ", 1)[1].removeprefix("made worse: ").split("; ")) <= own
 
 
 def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
