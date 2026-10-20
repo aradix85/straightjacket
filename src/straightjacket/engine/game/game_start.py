@@ -6,16 +6,11 @@ from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..crafters.blueprint import (
-    assemble_blueprint_seed_from_ac,
-    assemble_blueprint_seed_kishotenketsu,
-    materialize_blueprint,
-)
+from ..crafters.blueprint import assemble_blueprint_seed_from_ac, materialize_blueprint
 from ..director import new_guidance
 from ..gamemaster.clocks import start_opening_clock
 from ..gamemaster.config import gm
 from ..gamemaster.random_events import add_character
-from ..gamemaster.story import choose_story_structure
 from ..gamemaster.world import new_world
 from ..logging_util import log
 from ..models import GameState, NarrativeState, PlayerPreferences
@@ -36,7 +31,7 @@ def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> Non
     if creation_data["truths"] and not pkg.creation_flow.has_truths:
         raise ValueError(f"Setting '{pkg.id}' does not support truths")
     tone = creation_data["tone"]
-    tones = gm().story.kishotenketsu_probability
+    tones = gm().story.tones
     if tone not in tones:
         raise ValueError(f"Unknown tone '{tone}' (valid: {sorted(tones)})")
 
@@ -115,13 +110,8 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
 
     log(f"[NewGame] Character: {game.player_name}, paths={game.paths}, assets={game.assets}")
 
-    structure = choose_story_structure(game.setting_tone)
-    rng = _random_module.Random()
-    if structure == "kishotenketsu":
-        seed = assemble_blueprint_seed_kishotenketsu(rng, game)
-    else:
-        seed = assemble_blueprint_seed_from_ac(rng, game)
-    log(f"[NewGame] Blueprint seed assembled: structure={seed.structure_type}, themes={seed.themes}")
+    seed = assemble_blueprint_seed_from_ac(_random_module.Random(), game)
+    log(f"[NewGame] Blueprint seed assembled: themes={seed.themes}")
 
     narrator_prompt = build_new_game_prompt(game)
 

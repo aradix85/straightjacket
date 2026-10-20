@@ -55,7 +55,11 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 **Categorisation follows implementation.** `available_moves` keeps `no_roll` and `special_track` moves from the Brain, so `test_every_implemented_move_has_real_category` checks implemented moves only; a filter change that brings such moves back gives them their category and outcomes in the same commit (9k, 13b).
 
-**Tone (9h).** The player picks a tone at character creation, preset to the setting's `default_tone`; it decides each chapter's story structure (`story.kishotenketsu_probability`) and is the narrator's tone authority.
+**Tone (9h).** The player picks a tone at character creation, preset to the setting's `default_tone`; it is the narrator's tone authority. Since 9i it no longer picks a chapter's structure.
+
+**Other systems later (9i).** The user wants to play other systems later under the same game master, Mythic, with the Adventure Crafter and later the Location Crafter, so that the engine and not the AI decides whatever system is played. What a step builds above the ruleset speaks the game master's words (an action's outcome, not Ironsworn's hit and miss), and step 37 tests the split with a ruleset that is not Ironsworn.
+
+**Revelations and Kishōtenketsu (9i).** Kishōtenketsu came from EdgeTales, where an AI wrote the whole blueprint, and skipped the Adventure Crafter; it is gone, so every chapter's plan comes from the Adventure Crafter, flexible and unpredictable as the user wants it. Each act has one revelation from its own turning point, which lands when its keyed scene fires, at the latest at its act's end, on a turn that does not fail, a dialog included (`docs/mechanics.md`, Revelations). The user's choices.
 
 **Sources bought when a step needs them.** A Word Mill book or Mythic Magazine issue is bought only for a gap the setting's Datasworn data, Mythic 2e, and the Adventure Crafter leave, when a step needs it. A step with candidates starts by reading their product pages with the user; an issue costs $4.95, and a compilation of six $14.95 is chosen when several needed issues fall in the same six. A candidate that fills no gap leaves the list. The Creature Crafter is left out, since it adjusts stat blocks Ironsworn's foes do not have. Candidates, by title in Robin's subject index of Mythic Magazine (linked from Word Mill's Mythic Magazine page), not yet read:
 
@@ -70,54 +74,21 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 - 27: #3 Random Dungeon Crawl Generation, only where a site's own tables leave a gap.
 - 29: #32 "Gather A Crew" Mythic Adventures, #54 Simplify Playing Parties Solo.
 - 32: #34 Fluid Scene Structure, #10 Starting, And Ending, Scenes, against the register entry "Chaos factor per turn".
+- 32b: the 9j candidates #5 Combining Mythic With The Adventure Crafter and #64 Adventure Crafting Mythic, where Mythic 2e and the Adventure Crafter leave open when an adventure ends.
 - 33 and 34: #18 Specialized Meaning Tables, #22 MORE Specialized Meaning Tables!, #40 Meaning Table Collections, beyond the 45 tables of Mythic 2e.
 - 35: #56 Detail Check Revisited, #61 Degrees of Fate.
 
 ---
 
-## NEXT STEP — 9i: Revelations settled by the engine
+## NEXT STEP — 9j: Rules conformance: classic and the Adventure Crafter
 
-A blueprint holds three revelations (`crafters/adventure_crafter.yaml` → `revelations_per_blueprint`), voiced from the first plot points of the Adventure Crafter's turning points (`crafters/blueprint.py` → `_flatten_revelation_seeds`, so mostly from the first act's turning point) or, in a Kishōtenketsu chapter, from the central conflict. Every revelation gets the first act's opening scene as `earliest_scene` (`materialize_blueprint`), so all three are pending from the first scene; the narrator receives the first pending one as `<revelation_ready>` on every turn that is not a miss (`prompt_blocks.py` → `story_context_block`), and after narration a separate AI call judges whether the prose carried it (`ai/brain.py` → `call_revelation_check`, from `game/scene_finalization.py`), which marks it revealed and makes the Director run (`director.py` → `should_call_director`, `revelation_used`). That call is the post-hoc validator `docs/divergences.md` rules out. Instead the engine decides when a revelation lands, tells it as a mandatory element, and marks it revealed itself.
-
-**9i.0** Elvira measures it first: on every turn whose narrator prompt holds a revelation, her judge also answers whether the narration conveyed it, and her report gives how often it did and in which scene each revelation was first conveyed. One run of about twenty turns after 9i.3, through all three acts of the default chapter (`engine/creativity_seeds.yaml` → `scene_range_default`, 1 to 20), shows whether the narration conveys each revelation where it lands. The engine before 9i gets no run: the decision is taken, and that it offers every revelation from the first scene is known from the code (Sessions with the user).
-
-**9i.1** Where each revelation lands, decided with the user: in the act of the turning point it was seeded from, at the moment a trigger of its own fires there, at the latest at the end of that act, and only on a hit, a miss holding it to the next hit even past its act (the user's choice, for a story that follows play while keeping its shape). The three turning points are rolled one per act already (`crafters/blueprint.py` → `assemble_blueprint_seed_from_ac`), but the seeds take the first plot points of the first turning point; they take one per turning point instead, so each act has its revelation, and an act whose turning point gives no seed, or a Kishōtenketsu chapter, takes its revelation from the central conflict as the voicing does today. The trigger is the keyed scene the Adventure Crafter maps to the seed's plot point (`crafters/adventure_crafter.yaml` → `keyed_scene_mapping`), which a turning point spawns at chapter start; a plot point without one has only the act's end. `Revelation.earliest_scene` gives way to what this needs; the save format breaks.
-
-**9i.2** On the turn a revelation lands, the narrator receives it as a mandatory element in the way it receives a `<consequence>`, worded in `prompts/blocks.yaml` and the narrator's task texts, and the engine marks it revealed in the same turn; the Director's revelation trigger reads the engine's mark.
-
-**9i.3** What only the check used goes: `call_revelation_check`, `get_revelation_check_schema`, the role `revelation_check` and the cluster `judgment` it alone uses in `config.yaml`, its prompts in `prompts/brain.yaml`, its entries in `engine/ai_text.yaml`, and the tag `revelation_ready` in `engine/parser.yaml` if the element is renamed. `docs/ai.md` (Roles, Model assignment), ARCHITECTURE.md (What the AI still decides), and `docs/mechanics.md` follow, and the register entry "An AI call judges whether a revelation was told" leaves.
-
-**9i.4** Tests through played turns: a revelation lands where 9i.1 places it, waits as 9i.1 decides, reaches the narrator as a mandatory element, is marked revealed, and makes the Director run that turn.
-
-### Definition of Done
-
-- No AI call judges the narration after the fact, and nothing that only the revelation check read remains.
-- Each revelation lands where the engine places it, reaches the narrator as a mandatory element, and is marked revealed by the engine; the register entry leaves `docs/divergences.md`.
-- The quality gate is green, and Elvira's run after 9i gives how often the narration conveys a revelation and in which scenes, which the CHANGELOG entry reports.
-
-### Reference patterns
-
-- A mandatory element for the narrator: the `<consequence>` tags (`prompt_shared.py` → `_consequence_tags`) and how the action and dialog prompts place them.
-- A beat the engine schedules: keyed scenes (`gamemaster/keyed_scenes.py` → `add_keyed_scene`) and act transitions (`story_state.py` → `check_act_transition`).
-- A test through the real path: `tests/_creation.py` → `create_game`, and a turn as `tests/test_integration.py` plays it with `TurnProvider` and `force_result`.
-
----
-
-## Next steps
-
-Sketches, in the order of work.
-
-Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
-
-Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and whether a planned tool becomes a new one or part of it when its step becomes NEXT STEP. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
-
-### 9j — Rules conformance: classic and the Adventure Crafter
+Each substep starts by reading its rule in the book (the Datasworn texts, Delve, the Adventure Crafter) and builds what the reading settles; where the engine already follows the book, the CHANGELOG says so and nothing changes. Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence.
 
 **9j.1** Which gains a marked condition blocks, per ruleset. In Starforged and Sundered Isles a meter whose condition is marked rises only through the move that clears it, while the engine checks only in Endure and the recovery moves, so Sojourn's gains still raise it. Classic's move texts ask only for the meter above 0, but its Datasworn rules text (`rules.impacts.conditions`) says a condition blocks its track; which holds is settled first. The register entries "Classic Ironsworn borrows one Starforged impact rule" and "Marked conditions block only Endure and the recovery moves" leave.
 
 **9j.2** Classic's bonds special track, which the campaign holds since 9n.2c: Forge a Bond marks it, and Write Your Epilogue (13b) rolls it. Today classic's Forge a Bond marks nothing on a hit (`relationship/forge_a_bond` in `ruleset/move_outcomes.yaml`).
 
-**9j.3** The Adventure Crafter's theme translation lets the adventure's tone pick a theme for the blueprint.
+**9j.3** The Adventure Crafter's theme translation lets the adventure's tone pick a theme for the blueprint. Since 9i every chapter's blueprint comes from the Adventure Crafter, so the tone (`story.tones` in `gamemaster/story.yaml`) reaches each one.
 
 **9j.4** The words of the oracle and meaning tables are checked against the books.
 
@@ -129,7 +100,30 @@ Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, 
 
 **9j.10** Two labels the narrator receives read wrong, found by 9p.1's tests on the real data: a marked impact reaches the consequence tags of a dialog turn, the metadata call, and the engine's memories by its key (`mark permanently_harmed`, `consequence_labels.mark_impact` in `engine/ai_text.yaml`), where the sentence an action turn gets already uses its label; and classic's Pay the Price rows end in a period, so a result made worse reads `A new danger or foe is revealed., made worse` (`ruleset/move_effects.py` → `roll_oracle_result`).
 
-Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence.
+### Definition of Done
+
+- Each substep follows its source as the reading settles it, and the CHANGELOG entry names what each reading found.
+- The register entries the substeps name leave `docs/divergences.md`; one stays only where the book leaves the player a choice the engine fixes, then as a Permanent entry with its reason.
+- `dispatch_meta` and the Characters List template leave the orphan-symbol carve-out.
+- Each rule is tested through the real path, and the quality gate is green. An Elvira run only where a substep changes what the narrator is told (9j.8, 9j.10), with its cost named first.
+
+### Reference patterns
+
+- A condition that blocks recovery: `ruleset/impacts.py` → `blocks_recovery`, and the recovery handlers in `ruleset/move_handlers.py`.
+- A special track a move marks: `ruleset/legacy.py` → `mark_legacy`.
+- A table a move rolls: `ruleset/move_effects.py` → `roll_move_table`, with the rows `move_table_rows` in `ruleset/move_outcomes.yaml` names.
+- A weak hit's complication: the `complication` effect of Gather Information and Compel in `ruleset/move_outcomes.yaml`.
+- A test through the real path: `tests/_creation.py` → `create_game`, and a turn with `TurnProvider` and `force_result`.
+
+---
+
+## Next steps
+
+Sketches, in the order of work.
+
+Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
+
+Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and whether a planned tool becomes a new one or part of it when its step becomes NEXT STEP. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
 
 ### 9k — Scene challenges
 
@@ -305,6 +299,10 @@ Mythic's thread progress track (Option C) with its phases and Flashpoints, disco
 
 Mythic's chaos variants, each with its own fate chart, and the prepared-adventure event focus while a blueprint is active, since a blueprint is a prepared adventure.
 
+### 32b — A chapter's structure from Mythic and the Adventure Crafter
+
+A chapter's three acts of about twenty scenes (`engine/creativity_seeds.yaml` → `scene_range_default`, `blueprint.act_phases` in `crafters/adventure_crafter.yaml`), with one turning point rolled for each at chapter start, came from EdgeTales, not from a source. Read against Mythic 2e and the Adventure Crafter first: when the books roll a turning point and when an adventure ends; the chapter then follows them, its revelations (9i) staying bound to its turning points, and a departure the reading finds goes to the register. Read beside the register entry "Chaos factor per turn" and step 32. Found in 9i's Elvira run: both revelations landed at their act's end, since their keyed scenes were bond thresholds (6 and 7) that eighteen scenes did not reach; fifteen of the 33 plot points of `keyed_scene_mapping` wait for a bond, at thresholds the engine chose, not the book.
+
 ### 33 — Themed element tables
 
 `gamemaster/random_events.py` → `roll_meaning_table` reads only actions and descriptions; the 45 themed tables in `mythic_gme_2e.json` → `meaning_tables.elements` join random events by context, six high-use tables first.
@@ -320,6 +318,10 @@ Follow-up fate questions whose odds start from the answer before, at most three,
 ### 36 — Setting authoring tooling
 
 A command that checks a new setting package (its yaml against the Datasworn file, every oracle path it names, its inheritance) and reports what a generator category still lacks, as the design document suggests for setting authors.
+
+### 37 — A ruleset that is not Ironsworn
+
+The user's aim (Decisions, Other systems later): a system that is no Ironsworn plays under the same game master, the Adventure Crafter, and the Location Crafter (10.8). A ruleset package of its own beside the shared layers (`docs/settings.md`, Adding a new ruleset) answers the game master's questions (`gamemaster/questions.py` → `RulesetAnswers`), and what the step finds bound to Ironsworn outside `ruleset/` moves there. Which system, and with which setting, is decided with the user when the step becomes NEXT STEP.
 
 ---
 
@@ -341,4 +343,5 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9n — Four layers:** the setting, the game master, the crafters, and the ruleset each have a package, a yaml folder, and an accessor, and a scan holds their imports to the direction (ARCHITECTURE.md, The four layers); the game master asks the ruleset only its questions (`docs/mechanics.md`, Game master and ruleset). The ruleset owns what a system decides, from its Datasworn rules and its own yaml, and code outside it names none of its words; dialog and asking the oracle are the game master's own moves, and every Datasworn file is at 0.1.0, pinned to one commit (the user's choices). A setting plays the ruleset its Datasworn file names (`docs/settings.md`, Rulesets). Principle 1 is done, and the code the split wrote or rewrote had the queries of principles 2 and 3 (AUDIT.md, Status).
 - **9o — Dataclass defaults and prompt markup:** no dataclass field has a default but an empty collection, held by a scan whose carve-out is the external structures (`tests/test_project_rules.py` → `_check_no_dataclass_defaults`); every tag, label, and marker of a prompt comes from `prompts/*.yaml`, and the player's words are escaped wherever a prompt shows them (SECURITY.md).
 - **9p — Test audit:** every test holds what the game does, through a public function, the real creation path, or a turn; turns go through `TurnProvider` with `brain_answer` and openings through `OpeningProvider` (`tests/_creation.py`), and a loader under test reads a temporary file or folder (`tests/_helpers.py` → `change_config`). The audit found and fixed the opening prompt's unreachable crisis branch and the chapter and successor openings that skipped their extraction (9p.6).
+- **9i — Revelations settled by the engine:** one revelation per act, seeded from its own turning point, lands when its keyed scene fires or at its act's end, on a turn that does not fail, and reaches the narrator as a `<revelation>` it must tell (`docs/mechanics.md`, Revelations); the revelation check, its cluster, and Kishōtenketsu are gone, and a chapter drops the old chapter's Adventure Crafter keyed scenes. Elvira, twenty turns of classic: the revelations of acts 1 and 2 landed at their act's end, in scenes 7 and 14, and both came across; the third act was not reached.
 - **9q — Elvira reaches what a scenario prepares:** a missed aim is a problem; a scenario fixes the results of its first turns through a seam in Elvira alone, or starts at its moment, such as a game over waiting for a successor, and plays in direct mode only (`docs/elvira.md`, Scenarios). Tested on the mock provider; the scenarios have not run on the real models.

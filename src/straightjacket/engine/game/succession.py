@@ -8,10 +8,11 @@ from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..crafters.blueprint import assemble_blueprint_seed_from_ac, assemble_blueprint_seed_kishotenketsu
+from ..crafters.blueprint import assemble_blueprint_seed_from_ac
 from ..director import new_guidance
 from ..gamemaster.config import gm
-from ..gamemaster.story import choose_story_structure
+from ..gamemaster.keyed_scenes import drop_keyed_scenes_from
+from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX, CLOCK_KEYED_SOURCE_PREFIX
 from ..gamemaster.world import clear_facts
 from ..logging_util import log
 from ..models import GameState, PredecessorRecord, ProgressTrack, ThreadEntry, ThreatData
@@ -77,6 +78,7 @@ def _reset_for_successor(
     game.campaign.epilogue_dismissed = False
 
     game.world.clocks = []
+    drop_keyed_scenes_from(game.narrative, (AC_SOURCE_PREFIX, CLOCK_KEYED_SOURCE_PREFIX))
     game.world.combat_position = ""
     game.world.time_of_day = gm().opening.time_of_day
     game.world.location_history = []
@@ -168,13 +170,8 @@ def start_succession_with_character(
 
 
 def _generate_succession_opening(provider: AIProvider, game: GameState) -> str:
-    structure = choose_story_structure(game.setting_tone)
-    rng = _random_module.Random()
-    if structure == "kishotenketsu":
-        seed = assemble_blueprint_seed_kishotenketsu(rng, game)
-    else:
-        seed = assemble_blueprint_seed_from_ac(rng, game)
-    log(f"[Succession] Blueprint seed assembled: structure={seed.structure_type}")
+    seed = assemble_blueprint_seed_from_ac(_random_module.Random(), game)
+    log(f"[Succession] Blueprint seed assembled: themes={seed.themes}")
 
     narrator_prompt = build_new_game_prompt(game)
 

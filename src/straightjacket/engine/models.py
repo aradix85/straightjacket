@@ -118,6 +118,7 @@ class TurnSnapshot(SerializableMixin):
     threat_events: list[ThreatEvent] = field(default_factory=list)
     clock_fill_results: list[ClockFillResult] = field(default_factory=list)
     npc_agency: list[str] = field(default_factory=list)
+    revelation: Revelation | None
 
 
 @dataclass(kw_only=True)
@@ -175,6 +176,7 @@ class GameState(SerializableMixin):
             roll=None,
             narration=None,
             scene_setup=None,
+            revelation=None,
         )
 
     def restore(self, snap: TurnSnapshot) -> None:

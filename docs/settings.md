@@ -26,11 +26,11 @@ Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml`.
 2. Give its moves what Datasworn does not carry: their outcomes in `ruleset/move_outcomes.yaml`, under `move_outcome_overrides.<id>` where they differ from the shared ones, and their categories and availability in `ruleset/move_categories.yaml` and `ruleset/move_availability.yaml` for moves no ruleset has yet.
 3. Add a setting whose Datasworn file is the ruleset or an expansion of it (Adding a new setting).
 
-This holds for a ruleset of the Ironsworn family. A system that is no Ironsworn needs a ruleset package of its own beside the shared layers (ARCHITECTURE.md, The four layers), which no step has built yet.
+This holds for a ruleset of the Ironsworn family. A system that is no Ironsworn needs a ruleset package of its own beside the shared layers (ARCHITECTURE.md, The four layers), which roadmap step 37 builds.
 
 ## Settings yaml format
 
-Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `generators`, `vocabulary`. Optional: `parent`, and `default_tone` and `creation_flow` for a setting whose parent chain supplies them (Inheritance). `default_tone` is one of the tones in `story.kishotenketsu_probability`, the one character creation offers first; the player's choice decides the chapters' story structure and reaches the narrator (`docs/mechanics.md`, Blueprint). A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `generators`, `vocabulary`. Optional: `parent`, and `default_tone` and `creation_flow` for a setting whose parent chain supplies them (Inheritance). `default_tone` is one of the tones in `story.tones` (`gamemaster/story.yaml`), the one character creation offers first; the player's choice reaches the narrator as its tone authority (`docs/mechanics.md`, Blueprint). A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
 
 ```yaml
 id: your_setting

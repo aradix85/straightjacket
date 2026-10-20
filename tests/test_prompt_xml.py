@@ -101,8 +101,15 @@ def test_blueprint_voicing_escapes_player_text(load_engine: None) -> None:
 def test_blueprint_voicing_sees_each_turning_points_plotline(load_engine: None) -> None:
     msg, seed = _voicing_request(make_game_state(setting_id="starforged"))
     first = seed.acts[0].turning_point
-    assert first is not None
     assert f"plotline={first.plotline} plotline_turn=opens" in msg
+
+
+def test_blueprint_voicing_sees_each_acts_revelation_seed(load_engine: None) -> None:
+    msg, seed = _voicing_request(make_game_state(setting_id="starforged"))
+    for n, act in enumerate(seed.acts, start=1):
+        hit = act.revelation_seed
+        line = f"act {n}: none" if hit is None else f"act {n}: {hit.name} (theme={hit.theme})"
+        assert line in msg
 
 
 def test_the_target_npcs_memories_are_escaped(load_engine: None) -> None:

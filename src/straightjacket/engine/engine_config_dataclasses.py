@@ -112,7 +112,6 @@ class AiTextConfig:
     no_stat: str
     no_roll_type: str
     brain_trigger_hints: dict[str, str]
-    schema_descriptions: dict[str, dict[str, str]]
     consequence_labels: dict[str, str]
     narrator_defaults: dict[str, Any]
 

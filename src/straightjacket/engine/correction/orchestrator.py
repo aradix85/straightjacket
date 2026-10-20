@@ -60,6 +60,7 @@ def _rewrite_prompt(
             clock_fill_results=snap.clock_fill_results,
             npc_agency=snap.npc_agency,
             facts=facts,
+            revelation=snap.revelation,
         )
         return prompt, facts
 
@@ -85,6 +86,7 @@ def _rewrite_prompt(
         threat_events=snap.threat_events,
         clock_fill_results=snap.clock_fill_results,
         facts=facts,
+        revelation=snap.revelation,
     )
     return prompt, facts
 
@@ -114,7 +116,7 @@ def _maybe_queue_director(
         roll_result=roll.result if roll else "dialog",
         chaos_used=False,
         new_npcs_found=bool(metadata["new_npcs"]),
-        revelation_used=False,
+        revelation_landed=False,
     )
     if not director_reason:
         return None

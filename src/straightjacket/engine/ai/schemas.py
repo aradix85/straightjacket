@@ -148,7 +148,7 @@ def _counted_arr(item_schema: dict[str, Any], count: int) -> dict[str, Any]:
     return {"type": "array", "items": item_schema, "minItems": count, "maxItems": count}
 
 
-def get_blueprint_voicing_schema(acts: int, revelations: int, endings: int) -> dict[str, Any]:
+def get_blueprint_voicing_schema(acts: int, endings: int) -> dict[str, Any]:
     return _obj_root(
         {
             "central_conflict": _str(),
@@ -165,7 +165,7 @@ def get_blueprint_voicing_schema(acts: int, revelations: int, endings: int) -> d
                 ),
                 acts,
             ),
-            "revelations": _counted_arr(_obj({"content": _str()}), revelations),
+            "revelations": _counted_arr(_obj({"content": _str()}), acts),
             "possible_endings": _counted_arr(_obj({"type": _str(), "description": _str()}), endings),
         },
         eng().ai_text.schema_titles["blueprint_voicing_output"],
@@ -271,15 +271,4 @@ def get_correction_output_schema(npc_ids: list[str]) -> dict[str, Any]:
             ),
         },
         eng().ai_text.schema_titles["correction_output"],
-    )
-
-
-def get_revelation_check_schema() -> dict[str, Any]:
-    descs = eng().ai_text.schema_descriptions["revelation_check"]
-    return _obj_root(
-        {
-            "revelation_confirmed": {**_bool(), "description": descs["revelation_confirmed"]},
-            "reasoning": {**_str(), "description": descs["reasoning"]},
-        },
-        eng().ai_text.schema_titles["revelation_check"],
     )

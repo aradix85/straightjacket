@@ -16,7 +16,7 @@ from ..gamemaster.moves import asks_the_oracle, is_dialog_branch, roll_oracle_an
 from ..gamemaster.npc.activation import activate_npcs_for_prompt
 from ..gamemaster.npc.lifecycle import reactivate_npc
 from ..gamemaster.npc.matching import find_npc
-from ..gamemaster.questions import answers
+from ..gamemaster.questions import answers, outcome_of
 from ..gamemaster.random_events import drain_pending_events
 from ..gamemaster.scene import check_scene
 from ..gamemaster.world import apply_brain_location_time
@@ -28,6 +28,7 @@ from ..models import (
     PlaceRecord,
     RandomEvent,
     ResolvedFact,
+    Revelation,
     RollResult,
     SceneLogEntry,
     SceneSetup,
@@ -47,7 +48,7 @@ from ..ruleset.outcome_result import new_outcome
 from ..ruleset.rolls import can_burn_momentum
 from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
-from ..story_state import get_pending_revelations
+from ..story_state import land_revelation
 from .action_resolution import resolve_action_phase
 from .finalization import narrate_scene, update_crisis
 from .scene_finalization import finalize_scene
@@ -191,12 +192,14 @@ def _keep_what_the_turn_told(
     threat_events: list[ThreatEvent],
     clock_fill_results: list[ClockFillResult],
     npc_agency: list[str],
+    revelation: Revelation | None,
 ) -> None:
     snapshot = _snapshot_of_turn(game)
     snapshot.random_events = list(random_events)
     snapshot.threat_events = list(threat_events)
     snapshot.clock_fill_results = list(clock_fill_results)
     snapshot.npc_agency = list(npc_agency)
+    snapshot.revelation = revelation
 
 
 def _begin_turn(game: GameState, player_message: str) -> None:
@@ -249,7 +252,6 @@ def build_scene_context(
 ) -> SceneContext:
     activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, player_message)
     prompt_npc_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
-    pending_revs = get_pending_revelations(game)
 
     return SceneContext(
         provider=provider,
@@ -258,7 +260,7 @@ def build_scene_context(
         player_message=player_message,
         scene_setup=scene_setup,
         prompt_npc_ids=prompt_npc_ids,
-        pending_revs=pending_revs,
+        revelation=None,
         facts=facts,
         summary_label=summary_label,
         activated_npcs=activated_npcs,
@@ -273,6 +275,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     game = ctx.game
     brain = ctx.brain
     is_oracle = asks_the_oracle(brain.move)
+    result = "oracle" if is_oracle else "dialog"
     game.narrative.scene_count += 1
 
     oracle_answer = roll_oracle_answer(game) if is_oracle and not ctx.facts else ""
@@ -287,7 +290,8 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     threat_events.extend(resolve_full_menace(game, engine_moves))
     make_follow_up_moves(game, engine_moves)
     update_crisis(game)
-    _keep_what_the_turn_told(game, ctx.pending_random_events, threat_events, pending_fills, npc_agency)
+    ctx.revelation = land_revelation(game, outcome_of(result))
+    _keep_what_the_turn_told(game, ctx.pending_random_events, threat_events, pending_fills, npc_agency, ctx.revelation)
 
     prompt = build_dialog_prompt(
         game,
@@ -303,6 +307,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         clock_fill_results=pending_fills,
         npc_agency=npc_agency,
         facts=ctx.facts,
+        revelation=ctx.revelation,
     )
     prompt = _with_narrator_note(prompt, ctx.narrator_note)
     narration = narrate_scene(
@@ -322,7 +327,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
             scene_type=ctx.scene_setup.scene_type,
             summary=brain.player_intent or ctx.player_message,
             move=brain.move,
-            result="oracle" if is_oracle else "dialog",
+            result=result,
             consequences=engine_moves.consequences,
             position="",
             effect="",
@@ -368,6 +373,7 @@ def resolve_and_narrate_action(ctx: SceneContext, roll_outcome: RollOutcome) -> 
     clear_facts_settled_by_hit(ctx.game, ctx.facts, outcome)
     ctx.facts = overrule_facts_by_hit(ctx.game, ctx.facts, outcome)
     ctx.facts = settle_facts_by_miss(ctx.game, ctx.facts, ctx.brain.move, outcome)
+    ctx.revelation = land_revelation(ctx.game, outcome)
     return _narrate_action_and_finalize(ctx, roll_outcome, action_res)
 
 
@@ -395,6 +401,7 @@ def _narrate_action_and_finalize(
         action_res.threat_events,
         action_res.clock_fill_results,
         action_res.npc_agency,
+        ctx.revelation,
     )
 
     prompt = build_action_prompt(
@@ -414,6 +421,7 @@ def _narrate_action_and_finalize(
         threat_events=action_res.threat_events,
         clock_fill_results=action_res.clock_fill_results,
         facts=ctx.facts,
+        revelation=ctx.revelation,
     )
     prompt = _with_narrator_note(prompt, ctx.narrator_note)
     narration = narrate_scene(

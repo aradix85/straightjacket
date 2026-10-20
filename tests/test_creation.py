@@ -158,7 +158,7 @@ def test_every_setting_offers_a_known_tone_as_its_default(load_engine: None) -> 
 
     opts = build_creation_options()
     tones = [tone["id"] for tone in opts["tones"]]
-    assert tones == list(gm().story.kishotenketsu_probability)
+    assert tones == gm().story.tones
     assert all(tone["label"] != f"tone.{tone['id']}" for tone in opts["tones"])
     assert {s["id"]: s["default_tone"] for s in opts["settings"]} == {
         "classic": "dark_gritty",

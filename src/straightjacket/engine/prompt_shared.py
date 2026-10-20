@@ -21,6 +21,7 @@ from .models import (
     NpcData,
     RandomEvent,
     ResolvedFact,
+    Revelation,
     SceneSetup,
     ThreatEvent,
 )
@@ -303,6 +304,14 @@ def _world_add_tag(addition: str | None) -> str:
 
 def _consequence_tags(texts: Iterable[str]) -> str:
     return "".join("\n" + get_prompt("block_consequence", consequence=_xe(text)) for text in texts)
+
+
+def _revelation_tag(revelation: Revelation | None) -> str:
+    if revelation is None:
+        return ""
+    return "\n" + get_prompt(
+        "block_revelation", weight=_xa(revelation.dramatic_weight), content=_xe(revelation.content)
+    )
 
 
 def _npc_agency_block(npc_agency: Sequence[str]) -> str:

@@ -343,6 +343,7 @@ def action_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("threat_events", [])
     kwargs.setdefault("clock_fill_results", [])
     kwargs.setdefault("facts", [])
+    kwargs.setdefault("revelation", None)
     return kwargs
 
 
@@ -358,6 +359,7 @@ def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("clock_fill_results", [])
     kwargs.setdefault("npc_agency", [])
     kwargs.setdefault("facts", [])
+    kwargs.setdefault("revelation", None)
     return kwargs
 
 
@@ -393,7 +395,8 @@ def make_revelation(**kwargs: Any) -> Any:
 
     kwargs.setdefault("id", "r1")
     kwargs.setdefault("content", "")
-    kwargs.setdefault("earliest_scene", 1)
+    kwargs.setdefault("act_number", 1)
+    kwargs.setdefault("keyed_scene_source", "")
     kwargs.setdefault("dramatic_weight", "medium")
     return Revelation(**kwargs)
 
@@ -412,7 +415,6 @@ def make_blueprint(**kwargs: Any) -> Any:
     kwargs.setdefault("central_conflict", "")
     kwargs.setdefault("antagonist_force", "")
     kwargs.setdefault("thematic_thread", "")
-    kwargs.setdefault("structure_type", "3act")
     kwargs.setdefault("story_complete", False)
     return StoryBlueprint(**kwargs)
 

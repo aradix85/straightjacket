@@ -235,7 +235,7 @@ def build_creation_options() -> dict[str, Any]:
             "pronoun_options": rules().creation.pronoun_options,
             "vow_ranks": ranks(),
         },
-        "tones": [{"id": tone, "label": t(f"tone.{tone}")} for tone in gm().story.kishotenketsu_probability],
+        "tones": [{"id": tone, "label": t(f"tone.{tone}")} for tone in gm().story.tones],
     }
 
 

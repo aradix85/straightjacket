@@ -258,7 +258,6 @@ class SessionLog:
         if self.story_blueprint:
             bp = self.story_blueprint
             d["story"] = {
-                "structure": bp.get("structure_type", ""),
                 "conflict": bp.get("central_conflict", "")[:200],
                 "thematic": bp.get("thematic_thread", "")[:200],
                 "acts": [f"{a.get('phase', '?')}: {a.get('title', '?')}" for a in bp.get("acts", [])],

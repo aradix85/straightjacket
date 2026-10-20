@@ -5,7 +5,7 @@ import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from tests._creation import TurnProvider, brain_answer, force_result, library_game
-from tests._helpers import make_game_state, make_revelation
+from tests._helpers import make_game_state
 from tests._mocks import MockProvider
 
 
@@ -23,12 +23,6 @@ def test_a_brain_failure_raises_instead_of_becoming_dialog(load_engine: None) ->
 
     with pytest.raises(AIUnavailableError, match="brain"):
         call_brain(MockProvider(fail=True), make_game_state(setting_id="starforged"), "I look around")
-
-
-def test_a_failed_revelation_check_counts_as_not_yet_confirmed(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_revelation_check
-
-    assert call_revelation_check(MockProvider(fail=True), "The ledger burns.", make_revelation()) is False
 
 
 def test_an_empty_narration_raises(load_engine: None) -> None:

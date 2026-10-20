@@ -31,7 +31,7 @@ def should_call_director(
     roll_result: str,
     chaos_used: bool,
     new_npcs_found: bool,
-    revelation_used: bool,
+    revelation_landed: bool,
 ) -> str | None:
     if game.campaign.epilogue_dismissed and not game.post_epilogue_director_done:
         game.post_epilogue_director_done = True
@@ -43,7 +43,7 @@ def should_call_director(
         return "chaos"
     if new_npcs_found:
         return "new_npcs"
-    if revelation_used:
+    if revelation_landed:
         return "revelation"
 
     for npc in game.npcs:
@@ -111,7 +111,6 @@ def _build_story_arc_block(game: GameState) -> str:
     scene_range = act.scene_range
     info = "\n" + get_prompt(
         "director_story_arc",
-        structure=_xa(bp.structure_type),
         act_number=str(act.act_number),
         total_acts=str(act.total_acts),
         phase=_xa(act.phase),

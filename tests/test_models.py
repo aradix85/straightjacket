@@ -126,17 +126,16 @@ def test_story_blueprint_triggered_director_phases_snapshot() -> None:
         central_conflict="c",
         antagonist_force="a",
         thematic_thread="t",
-        structure_type="3act",
         revealed=[],
         triggered_transitions=[],
         story_complete=False,
     )
-    bp.triggered_director_phases.append("resolution")
+    bp.triggered_director_phases.append("setup")
     game.narrative.story_blueprint = bp
     snap = game.narrative.snapshot()
     bp.triggered_director_phases.append("climax")
     game.narrative.restore(snap)
-    assert game.narrative.story_blueprint.triggered_director_phases == ["resolution"]
+    assert game.narrative.story_blueprint.triggered_director_phases == ["setup"]
 
 
 def test_phase_trigger_dedup(load_engine: None) -> None:
@@ -148,22 +147,23 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
         central_conflict="c",
         antagonist_force="a",
         thematic_thread="t",
-        structure_type="3act",
         revealed=[],
         triggered_transitions=["act_0"],
         story_complete=False,
     )
     bp.acts = [
         StoryAct(phase="setup", title="Setup", goal="", scene_range=[1, 5], mood="", transition_trigger=""),
-        StoryAct(phase="climax", title="Climax", goal="", scene_range=[6, 10], mood="", transition_trigger=""),
-        StoryAct(phase="resolution", title="Resolution", goal="", scene_range=[11, 15], mood="", transition_trigger=""),
+        StoryAct(
+            phase="confrontation", title="Confrontation", goal="", scene_range=[6, 10], mood="", transition_trigger=""
+        ),
+        StoryAct(phase="climax", title="Climax", goal="", scene_range=[11, 15], mood="", transition_trigger=""),
     ]
     game.narrative.story_blueprint = bp
 
-    triggers = {"roll_result": "dialog", "chaos_used": False, "new_npcs_found": False, "revelation_used": False}
-    assert should_call_director(game, **triggers) == "phase:resolution"
-    assert bp.triggered_director_phases == ["resolution"]
-    assert should_call_director(game, **triggers) != "phase:resolution"
+    triggers = {"roll_result": "dialog", "chaos_used": False, "new_npcs_found": False, "revelation_landed": False}
+    assert should_call_director(game, **triggers) == "phase:climax"
+    assert bp.triggered_director_phases == ["climax"]
+    assert should_call_director(game, **triggers) != "phase:climax"
 
 
 def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:

@@ -43,21 +43,12 @@ adventure_crafter:
     weight_floor: 1
 
   blueprint:
-    turning_points_pre_rolled: 3
-    acts_three_act: 3
-    acts_kishotenketsu: 4
-    revelations_per_blueprint: 3
     possible_endings_per_blueprint: 3
     voicing_count_retries: 1
-    three_act_phases:
+    act_phases:
       - setup
       - confrontation
       - climax
-    kishotenketsu_phases:
-      - ki_introduction
-      - sho_development
-      - ten_twist
-      - ketsu_resolution
 
   max_keyed_scenes_per_chapter: 4
 

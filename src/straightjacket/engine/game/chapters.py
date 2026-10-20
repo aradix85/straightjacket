@@ -8,17 +8,13 @@ from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..crafters.blueprint import (
-    BlueprintSeed,
-    assemble_blueprint_seed_from_ac,
-    assemble_blueprint_seed_kishotenketsu,
-    materialize_blueprint,
-)
+from ..crafters.blueprint import BlueprintSeed, assemble_blueprint_seed_from_ac, materialize_blueprint
 from ..director import new_guidance
 from ..engine_loader import eng
 from ..gamemaster.config import gm
+from ..gamemaster.keyed_scenes import drop_keyed_scenes_from
 from ..gamemaster.npc.memory import consolidate_memory
-from ..gamemaster.story import choose_story_structure
+from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX
 from ..gamemaster.world import clear_facts
 from ..logging_util import log
 from ..models import ChapterSummary, GameState
@@ -145,6 +141,7 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.narrative.narration_history = []
     game.narrative.scene_intensity_history = []
     game.narrative.story_blueprint = None
+    drop_keyed_scenes_from(game.narrative, (AC_SOURCE_PREFIX,))
     game.world.time_of_day = gm().opening.time_of_day
     game.world.location_history = []
     clear_facts(game)
@@ -174,15 +171,8 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 
 
 def _generate_chapter_opening(provider: AIProvider, game: GameState) -> tuple[str, dict[str, Any]]:
-    structure = choose_story_structure(game.setting_tone)
-    rng = _random_module.Random()
-    if structure == "kishotenketsu":
-        seed = assemble_blueprint_seed_kishotenketsu(rng, game)
-    else:
-        seed = assemble_blueprint_seed_from_ac(rng, game)
-    log(
-        f"[Campaign] Blueprint seed assembled for chapter {game.campaign.chapter_number}: structure={seed.structure_type}"
-    )
+    seed = assemble_blueprint_seed_from_ac(_random_module.Random(), game)
+    log(f"[Campaign] Blueprint seed assembled for chapter {game.campaign.chapter_number}: themes={seed.themes}")
 
     chapter_prompt = build_new_chapter_prompt(game)
     voicing_game = copy.copy(game)

@@ -78,6 +78,23 @@ def test_a_new_chapter_restarts_what_belongs_to_one_chapter(load_engine: None) -
     assert game.last_turn_snapshot is None
 
 
+def test_a_new_chapter_drops_only_the_old_adventures_keyed_scenes(load_engine: None) -> None:
+    from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
+
+    game = _game()
+    game.narrative.keyed_scenes = []
+    for source in ("ac:Old Plot Point", "clock:The flood rises:2", "random_event:pc_negative:npc_1"):
+        add_keyed_scene(
+            game.narrative, trigger_type="scene_count", trigger_value="99", priority=1, narrative_hint="", source=source
+        )
+
+    _next_chapter(game)
+
+    sources = {ks.source for ks in game.narrative.keyed_scenes}
+    assert "ac:Old Plot Point" not in sources
+    assert {"clock:The flood rises:2", "random_event:pc_negative:npc_1"} <= sources
+
+
 def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none(load_engine: None) -> None:
     from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 

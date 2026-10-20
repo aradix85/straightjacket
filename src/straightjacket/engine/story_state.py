@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .engine_loader import eng
 from .gamemaster.config import gm
+from .gamemaster.keyed_scenes import has_keyed_scene_from
 from .logging_util import log
 from .models import CurrentAct, GameState, Revelation
 
@@ -93,20 +94,28 @@ def check_act_transition(game: GameState) -> None:
     )
 
 
-def get_pending_revelations(game: GameState) -> list[Revelation]:
-    bp = game.narrative.story_blueprint
-    if bp is None:
-        return []
-    revealed = set(bp.revealed)
-    return [
-        rev for rev in bp.revelations if rev.id not in revealed and game.narrative.scene_count >= rev.earliest_scene
-    ]
+def _revelation_ready(game: GameState, act: CurrentAct, revelation: Revelation) -> bool:
+    if act.act_number != revelation.act_number:
+        return act.act_number > revelation.act_number
+    if revelation.keyed_scene_source and not has_keyed_scene_from(game.narrative, revelation.keyed_scene_source):
+        return True
+    return game.narrative.scene_count >= act.scene_range[1]
 
 
-def mark_revelation_used(game: GameState, rev_id: str) -> None:
+def land_revelation(game: GameState, outcome: str) -> Revelation | None:
     bp = game.narrative.story_blueprint
-    if bp and rev_id not in bp.revealed:
-        bp.revealed.append(rev_id)
+    if bp is None or outcome not in gm().story_state.revelation_outcomes:
+        return None
+    act = get_current_act(game)
+    for revelation in bp.revelations:
+        if revelation.id not in bp.revealed and _revelation_ready(game, act, revelation):
+            bp.revealed.append(revelation.id)
+            log(
+                f"[Story] Revelation '{revelation.id}' of act {revelation.act_number} lands in scene "
+                f"{game.narrative.scene_count}"
+            )
+            return revelation
+    return None
 
 
 def check_story_completion(game: GameState) -> None:

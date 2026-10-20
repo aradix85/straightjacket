@@ -88,7 +88,8 @@ class CurrentAct:
 class Revelation(SerializableMixin):
     id: str
     content: str
-    earliest_scene: int
+    act_number: int
+    keyed_scene_source: str
     dramatic_weight: str
 
 
@@ -103,7 +104,6 @@ class StoryBlueprint(SerializableMixin):
     central_conflict: str
     antagonist_force: str
     thematic_thread: str
-    structure_type: str
     acts: list[StoryAct] = field(default_factory=list)
     revelations: list[Revelation] = field(default_factory=list)
     possible_endings: list[PossibleEnding] = field(default_factory=list)

@@ -106,22 +106,3 @@
   narrator_guidance: one sentence for the narrator. director_useful: true when an NPC's state changed.
   Write all text in {lang}.
   </rules>
-"revelation_check_system": |-
-  You check story consistency for a roleplaying game: did a planned revelation actually happen in a passage of narration?
-
-  Count the revelation as present (revelation_confirmed=true) when:
-  - its core insight or twist is clearly present in the narration, or
-  - it is strongly and unambiguously foreshadowed, beyond a vague hint, or
-  - a character explicitly reveals information that matches it.
-
-  Count it as absent (revelation_confirmed=false) when the narration does not touch it, or touches it only so lightly that a reader would not recognise it.
-
-  The narration is in {lang}. Reason in {lang} if that helps, and always fill both JSON fields.
-"revelation_check_question": |-
-  Was this revelation meaningfully present in the narration above?
-"revelation_check_prompt": |-
-  <revelation weight="{weight}">{content}</revelation>
-
-  <narration>{narration}</narration>
-
-  {question}

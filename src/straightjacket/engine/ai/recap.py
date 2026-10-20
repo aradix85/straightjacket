@@ -39,7 +39,6 @@ def call_recap(provider: AIProvider, game: GameState) -> str:
         act = get_current_act(game)
         arc_info = "\n" + get_prompt(
             "recap_story_arc",
-            structure=game.narrative.story_blueprint.structure_type,
             act_number=str(act.act_number),
             total_acts=str(act.total_acts),
             phase=act.phase,

@@ -375,7 +375,7 @@ def test_should_call_on_miss(load_engine: None) -> None:
 
     game = _game()
     assert (
-        should_call_director(game, roll_result="MISS", chaos_used=False, new_npcs_found=False, revelation_used=False)
+        should_call_director(game, roll_result="MISS", chaos_used=False, new_npcs_found=False, revelation_landed=False)
         == "miss"
     )
 
@@ -385,7 +385,7 @@ def test_should_call_on_chaos(load_engine: None) -> None:
 
     game = _game()
     assert (
-        should_call_director(game, roll_result="dialog", chaos_used=True, new_npcs_found=False, revelation_used=False)
+        should_call_director(game, roll_result="dialog", chaos_used=True, new_npcs_found=False, revelation_landed=False)
         == "chaos"
     )
 
@@ -395,7 +395,7 @@ def test_should_call_on_reflection_needed(load_engine: None) -> None:
 
     game = _game()
     reason = should_call_director(
-        game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_used=False
+        game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_landed=False
     )
     assert reason is not None
     assert "reflection" in reason
@@ -408,7 +408,9 @@ def test_should_call_on_interval(load_engine: None) -> None:
     game.npcs = []
     game.narrative.scene_count = 9
     assert (
-        should_call_director(game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_used=False)
+        should_call_director(
+            game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_landed=False
+        )
         == "interval"
     )
 
@@ -420,7 +422,9 @@ def test_should_call_returns_none_when_no_trigger(load_engine: None) -> None:
     game.npcs = []
     game.narrative.scene_count = 7
     assert (
-        should_call_director(game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_used=False)
+        should_call_director(
+            game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_landed=False
+        )
         is None
     )
 

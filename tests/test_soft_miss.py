@@ -171,24 +171,11 @@ def test_the_narrator_gets_no_npc_knowledge_on_a_miss(
         assert "tar-black hands" in prompt
 
 
-def _hidden_sources_game() -> GameState:
-    from tests._helpers import make_act, make_blueprint, make_revelation
-
-    game = _game()
-    game.narrative.scene_count = 5
-    game.narrative.story_blueprint = make_blueprint(
-        acts=[make_act()],
-        revelations=[make_revelation(content="The harbourmaster sold the route", dramatic_weight="high")],
-    )
-    game.narrative.director_guidance.narrator_guidance = "Let Kira name the buyer"
-    return game
-
-
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT"])
-def test_director_guidance_and_revelations_wait_for_a_hit(load_engine: None, result: str) -> None:
-    prompt = _prompt(_hidden_sources_game(), result)
-    shown = ("Let Kira name the buyer" in prompt, "sold the route" in prompt)
-    assert shown == ((False, False) if result == "MISS" else (True, True))
+def test_director_guidance_waits_for_a_hit(load_engine: None, result: str) -> None:
+    game = _game()
+    game.narrative.director_guidance.narrator_guidance = "Let Kira name the buyer"
+    assert ("Let Kira name the buyer" in _prompt(game, result)) == (result != "MISS")
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT"])

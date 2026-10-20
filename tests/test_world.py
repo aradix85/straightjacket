@@ -252,20 +252,3 @@ def test_record_scene_intensity_caps_at_window(load_engine: None) -> None:
     for _ in range(window + 5):
         record_scene_intensity(g, "action")
     assert len(g.narrative.scene_intensity_history) == window
-
-
-def test_choose_story_structure_follows_the_tone(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    import random
-
-    from straightjacket.engine.gamemaster.story import choose_story_structure
-
-    monkeypatch.setattr(random, "random", lambda: 0.5)
-    assert choose_story_structure("dark_gritty") == "3act"
-    assert choose_story_structure("cozy") == "kishotenketsu"
-
-
-def test_choose_story_structure_rejects_an_unknown_tone(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.story import choose_story_structure
-
-    with pytest.raises(KeyError):
-        choose_story_structure("nonsense_tone")

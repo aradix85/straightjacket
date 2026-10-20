@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from typing import Any
 
-from ..ai.brain import call_revelation_check
 from ..director import should_call_director
 from ..gamemaster.chaos import update_chaos_factor
 from ..gamemaster.clocks import tick_autonomous_clocks
@@ -28,7 +27,7 @@ from ..models import (
 )
 from ..ruleset.threats import tick_autonomous_threats
 from ..ruleset.tracks import vow_acted_on
-from ..story_state import check_act_transition, check_story_completion, mark_revelation_used
+from ..story_state import check_act_transition, check_story_completion
 from .finalization import apply_post_narration
 from .turn_types import DirectorCall, SceneContext
 
@@ -97,12 +96,6 @@ def finalize_scene(
         consequences=log_entry.consequences,
     )
 
-    revelation_confirmed = False
-    if ctx.pending_revs:
-        revelation_confirmed = call_revelation_check(ctx.provider, narration, ctx.pending_revs[0])
-        if revelation_confirmed:
-            mark_revelation_used(game, ctx.pending_revs[0].id)
-
     scene_type = ctx.scene_setup.scene_type if ctx.scene_setup.scene_type != "expected" else pacing_type
     record_scene_intensity(game, scene_type)
 
@@ -144,7 +137,7 @@ def finalize_scene(
         roll_result=log_entry.result,
         chaos_used=ctx.scene_setup.scene_type != "expected",
         new_npcs_found=bool(metadata["new_npcs"]),
-        revelation_used=revelation_confirmed,
+        revelation_landed=ctx.revelation is not None,
     )
     if director_reason:
         director_ctx = DirectorCall(narration=narration)

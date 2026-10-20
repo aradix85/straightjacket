@@ -1,17 +1,18 @@
 story:
-  kishotenketsu_probability:
-    dark_gritty: 0.15
-    epic_heroic: 0.15
-    slow_burn_horror: 0.15
-    pulp: 0.15
-    serious_balanced: 0.4
-    grounded_drama: 0.4
-    tragicomic: 0.4
-    melancholic: 0.7
-    cozy: 0.7
-    fairy_tale: 0.7
+  tones:
+    - dark_gritty
+    - epic_heroic
+    - slow_burn_horror
+    - pulp
+    - serious_balanced
+    - grounded_drama
+    - tragicomic
+    - melancholic
+    - cozy
+    - fairy_tale
 story_state:
   act_early_share: 0.3
   act_mid_share: 0.7
   crisis_scene_offset: 5
   approaching_end_progress: [mid, late]
+  revelation_outcomes: [success, partial, dialog, oracle]

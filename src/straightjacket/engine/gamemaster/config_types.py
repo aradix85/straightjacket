@@ -276,7 +276,7 @@ class GenerationConfig:
 
 @dataclass
 class StoryConfig:
-    kishotenketsu_probability: dict[str, float]
+    tones: list[str]
 
 
 @dataclass
@@ -374,6 +374,7 @@ class StoryStateConfig:
     act_mid_share: float
     crisis_scene_offset: int
     approaching_end_progress: list[str]
+    revelation_outcomes: list[str]
 
 
 @dataclass

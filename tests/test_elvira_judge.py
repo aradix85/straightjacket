@@ -98,7 +98,7 @@ def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_i
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     judge, seen = _judge_with_capture(monkeypatch)
-    prompt = '<scene>\n<revelation_ready weight="high">The harbourmaster sold the maps.</revelation_ready>\n</scene>'
+    prompt = '<scene>\n<revelation weight="high">The harbourmaster sold the maps.</revelation>\n</scene>'
     revelation = judge.revelation_in(prompt)
     assert revelation == "The harbourmaster sold the maps."
     assert judge.revelation_in("<scene>\n</scene>") == ""

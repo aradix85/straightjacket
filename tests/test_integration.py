@@ -406,7 +406,6 @@ def test_story_completion_triggers() -> None:
     game = library_game()
     game.narrative.story_blueprint = StoryBlueprint.from_dict(
         {
-            "structure_type": "3act",
             "central_conflict": "The shadow threatens all",
             "antagonist_force": "The creeping darkness",
             "thematic_thread": "What is worth saving?",

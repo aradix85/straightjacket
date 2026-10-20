@@ -11,6 +11,10 @@ from .adventure_crafter import TurningPoint
 from .config import crafter
 
 
+def plot_point_source(plot_point: str) -> str:
+    return f"{AC_SOURCE_PREFIX}{plot_point}"
+
+
 def _ac_keyed_scene_count(narrative: NarrativeState) -> int:
     return sum(1 for ks in narrative.keyed_scenes if ks.source.startswith(AC_SOURCE_PREFIX))
 
@@ -25,7 +29,7 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
             continue
         if hit.name not in mapping:
             continue
-        source = f"{AC_SOURCE_PREFIX}{hit.name}"
+        source = plot_point_source(hit.name)
         if has_keyed_scene_from(narrative, source):
             continue
         if _ac_keyed_scene_count(narrative) >= cap:
@@ -51,7 +55,7 @@ def spawn_dangers_for_turning_point(game: GameState, turning_point: TurningPoint
     danger_plot_points = crafter().adventure_crafter.danger_plot_points
     for hit in turning_point.plot_points:
         if hit.special_range is None and hit.name in danger_plot_points:
-            answers().add_danger(game, hit.name, f"{AC_SOURCE_PREFIX}{hit.name}", None)
+            answers().add_danger(game, hit.name, plot_point_source(hit.name), None)
 
 
 def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint) -> None:
@@ -63,5 +67,5 @@ def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint)
                 base_name=hit.name,
                 clock_type=mapping[hit.name].clock_type,
                 trigger_description=hit.name,
-                source=f"{AC_SOURCE_PREFIX}{hit.name}",
+                source=plot_point_source(hit.name),
             )

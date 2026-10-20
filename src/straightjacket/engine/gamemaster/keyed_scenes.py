@@ -226,6 +226,10 @@ def has_keyed_scene_from(narrative: NarrativeState, source: str) -> bool:
     return any(ks.source == source for ks in narrative.keyed_scenes)
 
 
+def drop_keyed_scenes_from(narrative: NarrativeState, prefixes: tuple[str, ...]) -> None:
+    narrative.keyed_scenes = [ks for ks in narrative.keyed_scenes if not ks.source.startswith(prefixes)]
+
+
 def add_keyed_scene(
     narrative: NarrativeState, *, trigger_type: str, trigger_value: str, priority: int, narrative_hint: str, source: str
 ) -> KeyedScene:

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 
 from ..ai.provider_base import AIProvider, NarrationSink
 from ..models import (
@@ -11,6 +10,7 @@ from ..models import (
     NpcData,
     RandomEvent,
     ResolvedFact,
+    Revelation,
     RollResult,
     SceneSetup,
     ThreatEvent,
@@ -27,7 +27,7 @@ class SceneContext:
     player_message: str
     scene_setup: SceneSetup
     prompt_npc_ids: set[str]
-    pending_revs: list[Any]
+    revelation: Revelation | None
     facts: list[ResolvedFact]
     summary_label: str
     activated_npcs: list[NpcData]

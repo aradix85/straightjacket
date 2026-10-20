@@ -197,7 +197,7 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(lo
                 "antagonist_force": "The tide-priests",
                 "thematic_thread": "Memory as debt",
                 "acts": [{"title": "t", "goal": "g", "mood": "m", "transition_trigger": "x"} for _ in seed.acts],
-                "revelations": [{"content": "r"} for _ in range(blueprint.revelations_per_blueprint)],
+                "revelations": [{"content": "r"} for _ in seed.acts],
                 "possible_endings": [{"type": "t", "description": "d"} for _ in range(endings)],
             }
         )
@@ -218,7 +218,7 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(lo
     props = good.specs[0].json_schema["properties"]
     for key, count in (
         ("acts", len(seed.acts)),
-        ("revelations", blueprint.revelations_per_blueprint),
+        ("revelations", len(seed.acts)),
         ("possible_endings", blueprint.possible_endings_per_blueprint),
     ):
         assert (props[key]["minItems"], props[key]["maxItems"]) == (count, count)

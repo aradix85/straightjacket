@@ -6,7 +6,6 @@ ai_text:
     narrator_metadata: narrator_metadata
     opening_setup: opening_setup
     correction_output: correction_output
-    revelation_check: revelation_check
   no_stat: none
   no_roll_type: none
   brain_trigger_hints:
@@ -21,10 +20,6 @@ ai_text:
       learn something unknown; gaining a tactical edge is secure_an_advantage
     adventure/secure_an_advantage: preparing, positioning, setting up, hiding, or scouting ahead before acting, to gain a
       tactical edge for the next action; learning something new is gather_information
-  schema_descriptions:
-    revelation_check:
-      revelation_confirmed: True if the narration clearly contains or foreshadows the revelation.
-      reasoning: One sentence explaining why.
   consequence_labels:
     momentum_change: momentum {n:+d}
     track_gain: '{track} +{n}'

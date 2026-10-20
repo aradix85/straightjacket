@@ -55,6 +55,6 @@
 "director_last_tone_attr": ' last_tone="{tone}"'
 "director_last_tone_key_attr": ' last_tone_key="{tone_key}"'
 "director_needs_profile_attr": ' needs_profile="true"'
-"director_story_arc": '<story_arc structure="{structure}" act="{act_number}/{total_acts}" phase="{phase}" progress="{progress}" current_scene="{scene}" scene_range="{first}-{last}"{past_range} conflict="{conflict}" antagonist="{antagonist}"{thematic}/>'
+"director_story_arc": '<story_arc act="{act_number}/{total_acts}" phase="{phase}" progress="{progress}" current_scene="{scene}" scene_range="{first}-{last}"{past_range} conflict="{conflict}" antagonist="{antagonist}"{thematic}/>'
 "director_past_range_attr": ' PAST_RANGE="true"'
 "director_transition_trigger": '<transition_trigger act="{act_number}">{trigger}</transition_trigger>'

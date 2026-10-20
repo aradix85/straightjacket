@@ -238,6 +238,25 @@ def test_filter_drops_creation_threads_regardless_of_type() -> None:
     assert kept_ids == {"t2", "t3"}
 
 
+def test_a_successor_starts_without_the_old_adventures_and_clocks_keyed_scenes(aria: GameState) -> None:
+    from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
+
+    aria.narrative.keyed_scenes = []
+    for source in ("ac:Old Plot Point", "clock:The flood rises:2", "random_event:pc_negative:npc_1"):
+        add_keyed_scene(
+            aria.narrative, trigger_type="scene_count", trigger_value="99", priority=1, narrative_hint="", source=source
+        )
+    aria.end_reason = "death"
+    prepare_succession(aria)
+    successor = creation_data("starforged", stats=(3, 2, 2, 1, 1), player_name="Ayla", background_vow="Find Aria")
+
+    start_succession_with_character(OpeningProvider([], "Ring Dock"), aria, successor)
+
+    sources = {ks.source for ks in aria.narrative.keyed_scenes}
+    assert not sources & {"ac:Old Plot Point", "clock:The flood rises:2"}
+    assert "random_event:pc_negative:npc_1" in sources
+
+
 def test_prepare_succession_archives_and_sets_flag(aria: GameState) -> None:
     aria.end_reason = "death"
     prepare_succession(aria)

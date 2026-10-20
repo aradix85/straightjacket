@@ -17,39 +17,37 @@ from .schemas import get_blueprint_voicing_schema
 
 
 def _act_line(n: int, act_seed: ActSeed) -> str:
-    turning_point = ""
     tp = act_seed.turning_point
-    if tp is not None:
-        if tp.opens_plotline:
-            turn = get_prompt("blueprint_turn_opens")
-        elif tp.concludes_plotline:
-            turn = get_prompt("blueprint_turn_concludes")
-        else:
-            turn = get_prompt("blueprint_turn_advances")
-        turning_point = get_prompt(
-            "blueprint_turning_point",
-            beats="; ".join(h.name for h in tp.plot_points if h.special_range != "none"),
-            plotline=tp.plotline,
-            turn=turn,
-        )
+    if tp.opens_plotline:
+        turn = get_prompt("blueprint_turn_opens")
+    elif tp.concludes_plotline:
+        turn = get_prompt("blueprint_turn_concludes")
+    else:
+        turn = get_prompt("blueprint_turn_advances")
     return get_prompt(
         "blueprint_act",
         n=str(n),
         phase=act_seed.phase,
         first=str(act_seed.scene_range[0]),
         last=str(act_seed.scene_range[1]),
-        turning_point=turning_point,
+        beats="; ".join(h.name for h in tp.plot_points if h.special_range != "none"),
+        plotline=tp.plotline,
+        turn=turn,
     )
 
 
+def _revelation_seed_line(n: int, act_seed: ActSeed) -> str:
+    hit = act_seed.revelation_seed
+    if hit is None:
+        return get_prompt("blueprint_revelation_seed_none", n=str(n))
+    return get_prompt("blueprint_revelation_seed", n=str(n), seed=hit.name, theme=hit.theme)
+
+
 def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
-    revelation_seeds = ""
-    if seed.revelation_seeds:
-        lines = [
-            get_prompt("blueprint_revelation_seed", n=str(i), seed=hit.name, theme=hit.theme)
-            for i, hit in enumerate(seed.revelation_seeds, start=1)
-        ]
-        revelation_seeds = "\n" + get_prompt("blueprint_revelation_seeds", lines="\n".join(lines))
+    revelation_seeds = get_prompt(
+        "blueprint_revelation_seeds",
+        lines="\n".join(_revelation_seed_line(i, act_seed) for i, act_seed in enumerate(seed.acts, start=1)),
+    )
 
     ending_seeds = ""
     if seed.ending_seeds:
@@ -70,7 +68,6 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
     blueprint = crafter().adventure_crafter.blueprint
     return get_prompt(
         "blueprint_request",
-        structure=seed.structure_type,
         themes=", ".join(seed.themes),
         genre=game.setting_genre,
         tone=game.setting_tone,
@@ -82,7 +79,6 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
         if game.world.current_location
         else "",
         acts=str(len(seed.acts)),
-        revelations=str(blueprint.revelations_per_blueprint),
         endings=str(blueprint.possible_endings_per_blueprint),
         act_lines="\n".join(_act_line(i, act_seed) for i, act_seed in enumerate(seed.acts, start=1)),
         revelation_seeds=revelation_seeds,
@@ -105,10 +101,10 @@ def call_blueprint_voicing(
 
     expected = {
         "acts": len(seed.acts),
-        "revelations": blueprint.revelations_per_blueprint,
+        "revelations": len(seed.acts),
         "possible_endings": blueprint.possible_endings_per_blueprint,
     }
-    schema = get_blueprint_voicing_schema(expected["acts"], expected["revelations"], expected["possible_endings"])
+    schema = get_blueprint_voicing_schema(expected["acts"], expected["possible_endings"])
     model = model_for_role("blueprint_voicing")
     params = sampling_params("blueprint_voicing")
     messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
@@ -140,7 +136,7 @@ def call_blueprint_voicing(
         if not mismatch:
             log(
                 f"[BlueprintVoicing] Succeeded: conflict={conflict[: eng().truncations.log_medium]}, "
-                f"acts={expected['acts']}, revelations={expected['revelations']}"
+                f"acts={expected['acts']}"
             )
             return voicing
         log(f"[BlueprintVoicing] Wrong counts ({', '.join(mismatch)}), asking again")

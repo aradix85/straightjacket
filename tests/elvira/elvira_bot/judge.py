@@ -25,7 +25,7 @@ JUDGE_SCHEMA: dict[str, Any] = {
     },
 }
 
-_REVELATION = re.compile(r"<revelation(?:_ready)?\b[^>]*>(.*?)</revelation(?:_ready)?>", re.S)
+_REVELATION = re.compile(r"<revelation\b[^>]*>(.*?)</revelation>", re.S)
 
 
 def revelation_in(narrator_prompt: str) -> str:

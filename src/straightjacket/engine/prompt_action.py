@@ -9,6 +9,7 @@ from .models import (
     NpcData,
     RandomEvent,
     ResolvedFact,
+    Revelation,
     RollResult,
     SceneSetup,
     ThreatEvent,
@@ -31,6 +32,7 @@ from .prompt_shared import (
     _player_words_tag,
     _random_events_block,
     _resolve_stance_category,
+    _revelation_tag,
     _scene_enrichment,
     _scene_header,
     _threat_events_block,
@@ -91,6 +93,7 @@ def build_action_prompt(
     threat_events: Sequence[ThreatEvent],
     clock_fill_results: Sequence[ClockFillResult],
     facts: Sequence[ResolvedFact],
+    revelation: Revelation | None,
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
 
@@ -124,6 +127,7 @@ def build_action_prompt(
         player_words=_player_words_tag(player_words),
         result=constraint,
         consequences=_consequence_tags(consequence_sentences),
+        revelation=_revelation_tag(revelation),
         threats=threat_tags,
         clocks=f"\n{clock_block}" if clock_block else "",
         facts=_facts_block(facts),
@@ -142,7 +146,7 @@ def build_action_prompt(
         events=events_block,
         director=director,
         direction=narrative_direction_block(game, outcome),
-        story=story_context_block(game, miss=miss),
+        story=story_context_block(game),
         recent=recent_events_block(game),
         task=task_action(),
     )

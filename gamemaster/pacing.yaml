@@ -12,4 +12,4 @@ pacing:
   npc_agency_interval: 5
   npc_agency_clock_types: [scheme, threat]
   intense_scene_types: [action, interrupt]
-  director_phases: [climax, resolution, ten_twist, ketsu_resolution]
+  director_phases: [climax]

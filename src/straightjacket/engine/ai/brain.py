@@ -1,4 +1,3 @@
-import html
 import json
 from typing import Any, NoReturn
 
@@ -8,7 +7,7 @@ from ..gamemaster.clocks import open_complications
 from ..gamemaster.config import gm
 from ..gamemaster.config_types import GameMasterMove
 from ..logging_util import log
-from ..models import BrainResult, GameState, Revelation, ThreatData
+from ..models import BrainResult, GameState, ThreatData
 from ..prompt_blocks import (
     content_boundaries_block,
     world_tag,
@@ -28,7 +27,7 @@ from ..ruleset.threats import active_threats, vow_against
 from ..ruleset.tracks import active_tracks, track_category_of_move
 from ..xml_utils import xe as _xe
 from .provider_base import AICallSpec, AIProvider, AIUnavailableError, create_with_retry
-from .schemas import get_brain_output_schema, get_revelation_check_schema
+from .schemas import get_brain_output_schema
 
 
 def _ways(move: Move) -> list[str]:
@@ -340,37 +339,3 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
             }
         )
     _refuse(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")
-
-
-def call_revelation_check(provider: AIProvider, narration: str, revelation: Revelation) -> bool:
-    lang = narration_language()
-    rev_content = revelation.content
-    rev_weight = revelation.dramatic_weight
-
-    system = get_prompt("revelation_check_system", lang=lang)
-
-    prompt = get_prompt(
-        "revelation_check_prompt",
-        weight=html.escape(rev_weight, quote=True),
-        content=html.escape(rev_content),
-        narration=narration,
-        question=get_prompt("revelation_check_question"),
-    )
-
-    spec = AICallSpec(
-        model=model_for_role("revelation_check"),
-        system=system,
-        messages=[{"role": "user", "content": prompt}],
-        json_schema=get_revelation_check_schema(),
-        log_role="revelation_check",
-        **sampling_params("revelation_check"),
-    )
-    try:
-        result = json.loads(create_with_retry(provider, spec).content)
-        confirmed: bool = result["revelation_confirmed"]
-        reasoning = result["reasoning"]
-        log(f"[Revelation] Check for '{revelation.id}': confirmed={confirmed} — {reasoning}")
-        return confirmed
-    except Exception as e:
-        log(f"[Revelation] Check failed ({type(e).__name__}: {e}), counting as not yet confirmed", level="warning")
-        return False

@@ -2,31 +2,30 @@
   <role>You voice a story blueprint for a solo roleplaying game: you translate a plot structure the engine rolled into the specific setting.</role>
   {content_boundaries_block}
   <rules>
-  The engine has rolled a plot skeleton: a structure type, themes, acts with their phases, turning-point seeds per act, revelation seeds, and ending seeds. You do not invent plot; you translate the skeleton into this setting, using the world, the character, and the tone provided.
+  The engine has rolled a plot skeleton: themes, acts with their phases and turning points, a revelation seed per act, and ending seeds. You do not invent plot; you translate the skeleton into this setting, using the world, the character, and the tone provided.
   Fill central_conflict (one sentence: the surface tension and the deeper question, in the setting's voice), antagonist_force (one phrase: what opposes the protagonist, in the setting's voice), and thematic_thread (one phrase: what the story is about beneath the events).
   For each act, fill title (three to five words), goal (one sentence: what the act is trying to achieve in this story), mood (one or two words from physical reality, with no supernatural register unless the setting has one), and transition_trigger (one phrase: what moves the act forward).
   An act's turning point belongs to a plotline, and plotline_turn says what it does to it: opens starts that plotline as a new thread in the act, advances moves it on, concludes brings it to its end. Let the act's goal follow that, and let an ending seed that names a plotline end that thread.
-  Fill exactly the number of revelations given in required_counts, each with content (one sentence: what is revealed, grounded in this setting). Base them on the revelation seeds in order, using each seed's plot-point name as a starting point in the setting's voice; when there are fewer seeds than required, base the rest on the central conflict.
+  Fill one revelation per act, in act order, each with content (one sentence: what comes to light in that act, grounded in this setting). Base each on its act's revelation seed, using the seed's plot-point name as a starting point in the setting's voice; an act whose seed is none takes its revelation from the central conflict.
   Fill exactly the number of possible endings given in required_counts, each with type (one word: earned, bittersweet, tragic, or similar, as fits the setting) and description (one sentence: what this ending looks like, grounded in setting and character). Base them on the ending seeds in order; when there are fewer seeds than required, the remaining endings resolve the same central conflict, each with a different type.
   Stay within the world's vocabulary, using the substitutions and the sensory palette from the setting context. Add no plot beats that the seeds do not contain. Write all text in {lang}.
   </rules>
 "blueprint_voicing_count_retry": |-
   Your blueprint has the wrong number of entries: {mismatch}. Write the whole blueprint again with exactly the counts in required_counts, keeping what fits.
 "blueprint_request": |-
-  structure_type:{structure}
   themes:{themes}
   genre:{genre}
   tone:{tone}
   world:{world}
   character:{player} — {concept}{backstory}{location}
-  required_counts: acts={acts} revelations={revelations} possible_endings={endings}
+  required_counts: acts={acts} revelations={acts} possible_endings={endings}
   <acts>
   {act_lines}
-  </acts>{revelation_seeds}{ending_seeds}{campaign}
+  </acts>
+  {revelation_seeds}{ending_seeds}{campaign}
 "blueprint_backstory": 'backstory:{backstory}'
 "blueprint_location": 'location:{location}'
-"blueprint_act": 'act {n} phase={phase} scene_range={first}-{last}{turning_point}'
-"blueprint_turning_point": ' turning_point_beats=[{beats}] plotline={plotline} plotline_turn={turn}'
+"blueprint_act": 'act {n} phase={phase} scene_range={first}-{last} turning_point_beats=[{beats}] plotline={plotline} plotline_turn={turn}'
 "blueprint_turn_opens": 'opens'
 "blueprint_turn_concludes": 'concludes'
 "blueprint_turn_advances": 'advances'
@@ -34,7 +33,8 @@
   <revelation_seeds>
   {lines}
   </revelation_seeds>
-"blueprint_revelation_seed": 'revelation {n}: {seed} (theme={theme})'
+"blueprint_revelation_seed": 'act {n}: {seed} (theme={theme})'
+"blueprint_revelation_seed_none": 'act {n}: none'
 "blueprint_ending_seeds": |-
   <ending_seeds>
   {lines}

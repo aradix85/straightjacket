@@ -857,7 +857,6 @@ def _log_story_blueprint(game: GameState, slog: SessionLog) -> None:
     if not bp:
         return
     slog.story_blueprint = {
-        "structure_type": bp.structure_type,
         "central_conflict": bp.central_conflict,
         "thematic_thread": bp.thematic_thread,
         "acts": [a.to_dict() for a in bp.acts],

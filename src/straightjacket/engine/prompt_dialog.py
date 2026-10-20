@@ -9,6 +9,7 @@ from .models import (
     NpcData,
     RandomEvent,
     ResolvedFact,
+    Revelation,
     SceneSetup,
     ThreatEvent,
 )
@@ -28,6 +29,7 @@ from .prompt_shared import (
     _pacing_block,
     _player_words_tag,
     _random_events_block,
+    _revelation_tag,
     _scene_enrichment,
     _scene_header,
     _threat_events_block,
@@ -52,6 +54,7 @@ def build_dialog_prompt(
     clock_fill_results: Sequence[ClockFillResult],
     npc_agency: Sequence[str],
     facts: Sequence[ResolvedFact],
+    revelation: Revelation | None,
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
     move_cat = "social"
@@ -84,6 +87,7 @@ def build_dialog_prompt(
         player_words=_player_words_tag(player_words),
         oracle=oracle_tag,
         consequences=_consequence_tags(c.label for c in consequences),
+        revelation=_revelation_tag(revelation),
         facts=_facts_block(facts),
         threats=_threat_events_block(threat_events),
         clocks=f"\n{clock_block}" if clock_block else "",

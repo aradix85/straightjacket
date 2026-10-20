@@ -126,8 +126,6 @@ class TurnProvider:
             return self._json(
                 {"new_npcs": [], "npc_renames": [], "npc_details": [], "deceased_npcs": [], "lore_npcs": []}
             )
-        if "revelation_confirmed" in props:
-            return self._json({"revelation_confirmed": False, "reasoning": "Absent."})
         if "scene_summary" in props:
             return self._json(
                 {

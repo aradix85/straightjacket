@@ -6,7 +6,7 @@ from .models import GameState
 from .prompt_loader import get_prompt, get_prompt_prefix
 from .ruleset.answers import results_by_outcome
 from .setting.packages import load_package
-from .story_state import get_current_act, get_pending_revelations
+from .story_state import get_current_act
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
 
@@ -124,17 +124,11 @@ def status_context_block(game: GameState) -> str:
     )
 
 
-def story_context_block(game: GameState, *, miss: bool = False) -> str:
+def story_context_block(game: GameState) -> str:
     bp = game.narrative.story_blueprint
     if bp is None:
         return ""
     act = get_current_act(game)
-
-    pending = get_pending_revelations(game)
-    rev_block = ""
-    if pending and not miss:
-        rev = pending[0]
-        rev_block = "\n" + get_prompt("block_revelation_ready", weight=str(rev.dramatic_weight), content=rev.content)
 
     ending_hint = ""
     if bp.story_complete and game.campaign.epilogue_dismissed:
@@ -152,7 +146,6 @@ def story_context_block(game: GameState, *, miss: bool = False) -> str:
     thematic_attr = get_prompt("block_story_arc_thematic_attr", thematic=_xa(thematic)) if thematic else ""
     arc = get_prompt(
         "block_story_arc",
-        structure=_xa(bp.structure_type),
         act_number=str(act.act_number),
         total_acts=str(act.total_acts),
         phase=_xa(act.phase),
@@ -163,7 +156,7 @@ def story_context_block(game: GameState, *, miss: bool = False) -> str:
         act_goal=_xa(act.goal),
         thematic_attr=thematic_attr,
     )
-    return f"{arc}{rev_block}{ending_hint}\n"
+    return f"{arc}{ending_hint}\n"
 
 
 def recent_events_block(game: GameState) -> str:

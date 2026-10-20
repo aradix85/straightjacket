@@ -24,10 +24,8 @@
 "block_narrative_direction_wrapper": |-
   <narrative_direction>{tokens}</narrative_direction>
 "block_story_arc": |-
-  <story_arc structure="{structure}" act="{act_number}/{total_acts}" phase="{phase}" progress="{progress}" mood="{mood}" conflict="{conflict}" antagonist="{antagonist}" act_goal="{act_goal}"{thematic_attr}/>
+  <story_arc act="{act_number}/{total_acts}" phase="{phase}" progress="{progress}" mood="{mood}" conflict="{conflict}" antagonist="{antagonist}" act_goal="{act_goal}"{thematic_attr}/>
 "block_story_arc_thematic_attr": ' thematic_thread="{thematic}"'
-"block_revelation_ready": |-
-  <revelation_ready weight="{weight}">{content}</revelation_ready>
 "block_recent_events_wrapper": |-
   <recent_events>
   {lines}
@@ -155,6 +153,7 @@
 "block_player_words": '<player_words>{words}</player_words>'
 "block_world_add": '<world_add>{addition}</world_add>'
 "block_consequence": '<consequence>{consequence}</consequence>'
+"block_revelation": '<revelation weight="{weight}">{content}</revelation>'
 "block_oracle_answer": '<oracle_answer>{answer}</oracle_answer>'
 "block_result": '<result type="{result}"{match}{consequences}>{body}{hint}</result>'
 "block_result_match_attr": ' match="true"'
@@ -164,7 +163,7 @@
   <scene type="action" n="{n}">
   {header}
   <intent>{intent} ({approach})</intent>{player_words}
-  {result}{consequences}{threats}{clocks}{facts}
+  {result}{consequences}{revelation}{threats}{clocks}{facts}
   {position}
   <location>{location}</location>{generated}{previous_locations}{time}{thread}
   {npc}{npcs}{world_add}{flags}{agency}
@@ -176,7 +175,7 @@
 "block_scene_dialog": |-
   <scene type="{scene_type}" n="{n}">
   {header}
-  <intent>{intent}</intent>{player_words}{oracle}{consequences}{facts}{threats}{clocks}
+  <intent>{intent}</intent>{player_words}{oracle}{consequences}{revelation}{facts}{threats}{clocks}
   <location>{location}</location>{generated}{previous_locations}{time}{thread}
   {npc}{npcs}{world_add}{flags}{agency}
   {pacing}

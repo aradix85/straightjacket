@@ -39,14 +39,9 @@ class MetaHandlerConfig:
 
 @dataclass
 class BlueprintConfig:
-    turning_points_pre_rolled: int
-    acts_three_act: int
-    acts_kishotenketsu: int
-    revelations_per_blueprint: int
     possible_endings_per_blueprint: int
     voicing_count_retries: int
-    three_act_phases: list[str]
-    kishotenketsu_phases: list[str]
+    act_phases: list[str]
 
 
 @dataclass
@@ -90,14 +85,9 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
     ac_meta_handlers = build_strict(MetaHandlerConfig, dict(ac_raw["meta_handlers"]))
     ac_blueprint_raw = reject_unknown(BlueprintConfig, dict(ac_raw["blueprint"]))
     ac_blueprint = BlueprintConfig(
-        turning_points_pre_rolled=ac_blueprint_raw["turning_points_pre_rolled"],
-        acts_three_act=ac_blueprint_raw["acts_three_act"],
-        acts_kishotenketsu=ac_blueprint_raw["acts_kishotenketsu"],
-        revelations_per_blueprint=ac_blueprint_raw["revelations_per_blueprint"],
         possible_endings_per_blueprint=ac_blueprint_raw["possible_endings_per_blueprint"],
         voicing_count_retries=ac_blueprint_raw["voicing_count_retries"],
-        three_act_phases=list(ac_blueprint_raw["three_act_phases"]),
-        kishotenketsu_phases=list(ac_blueprint_raw["kishotenketsu_phases"]),
+        act_phases=list(ac_blueprint_raw["act_phases"]),
     )
     ac_keyed_mapping = {
         name: KeyedSceneMappingEntry(
