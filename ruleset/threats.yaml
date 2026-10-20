@@ -5,6 +5,20 @@ threats:
   autonomous_tick_marks: 1
   menace_high_threshold: 0.75
   category_oracle_collection: threat
+  goal_achieved: The threat achieves its goal, or the final dire outcome occurs.
+  advance_a_threat:
+    classic:
+      file: delve
+      move: threat/advance_a_threat
+      table: advance_a_threat
+      marks_by_row:
+      - prefix: The threat readies its next step
+        marks: 1
+      - prefix: The threat works subtly
+        marks: 1
+      - prefix: The threat makes a dramatic
+        marks: 2
+      match: This development also exposes a surprising aspect of the threat's plan or nature.
   max_open_emergent: 3
   by_origin:
     pc_negative:

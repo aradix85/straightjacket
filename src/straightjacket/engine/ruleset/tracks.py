@@ -20,6 +20,7 @@ from ..models import (
 )
 from .bond import connection_track, connection_track_id
 from .config import rules
+from .datasworn import load_ruleset
 from .impacts import clear_impact
 from .legacy import apply_threat_overcome_bonus, mark_legacy, mark_legacy_ticks, shifted_rank
 from .moves import get_moves
@@ -106,9 +107,10 @@ def start_bound_vow(game: GameState, name: str, rank: str, impact: str) -> Progr
 
 def forsake_vow(game: GameState, vow: ProgressTrack, result: OutcomeResult) -> None:
     cfg = rules().suffer.forsake_vow
+    by_rank = cfg.cost_by_rank.get(load_ruleset(game.setting_id).id)
     complete_track(game, vow.id, "failed")
     result.consequences.append(consequence("forsake_vow", vow=vow.name))
-    suffer(game, cfg.meter, cfg.cost, result)
+    suffer(game, cfg.meter, by_rank[vow.rank] if by_rank is not None else cfg.cost, result)
 
 
 def _keep_one_box(track: ProgressTrack) -> int:

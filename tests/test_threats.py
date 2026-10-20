@@ -192,7 +192,7 @@ class TestAdvancesReachTheNarrator:
         game = _game_with_threat()
         game.setting_id = "delve"
         [event] = advance_menace_on_miss(game)
-        assert event.development in rows
+        assert any(event.development.endswith(f". {row}") for row in rows)
         assert f">{event.development}</threat_advance>" in dialog_prompt(game, threat_events=[event])
         game.setting_id = "starforged"
         game.threats[0].menace_ticks = 0
@@ -253,10 +253,12 @@ class TestResolveForsakeVow:
 
         game = _game_with_threat()
         game.setting_id = "classic"
+        game.progress_tracks[0].rank = "formidable"
         game.threats[0].menace_ticks = 40
         result = make_outcome()
         resolve_full_menace(game, result)
         assert result.follow_up_moves == ["suffer/endure_stress"]
+        assert labels_of(result.consequences) == ['forsake the vow "Hunt the beast"', "spirit -3"]
 
     def test_menace_full_deactivates_thread(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.threats import resolve_full_menace
@@ -301,8 +303,14 @@ class TestResolveForsakeVow:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
         game.progress_tracks[0].status = "completed"
-        resolve_full_menace(game, make_outcome())
+        [event] = resolve_full_menace(game, make_outcome())
         assert game.threats[0].status == "resolved"
+        assert (event.source, event.menace_full, event.development) == (
+            "goal_achieved",
+            True,
+            rules().threats.goal_achieved,
+        )
+        assert rules().threats.goal_achieved in dialog_prompt(game, threat_events=[event])
 
         assert game.resources.meters["spirit"] == 5
 
@@ -381,3 +389,45 @@ class TestAVowSwornAgainstAThreat:
         assert "The Hollow Choir (id:threat_ac_1) menace 0/10" in message
         assert call.json_schema["properties"]["target_threat"]["anyOf"][0]["enum"] == ["threat_ac_1"]
         assert result.target_threat == "threat_ac_1"
+
+
+class TestAdvanceAThreatInClassic:
+    @pytest.mark.parametrize(
+        ("tens", "units", "marks", "told"),
+        [
+            (1, 2, 1, "The threat readies its next step, or a new danger looms."),
+            (4, 5, 1, "The threat works subtly to advance toward its goal, or the danger escalates."),
+            (8, 3, 2, "The threat makes a dramatic and immediate move, or a major event reveals new complications."),
+        ],
+    )
+    def test_every_advance_rolls_delves_table(
+        self, load_engine: None, monkeypatch: pytest.MonkeyPatch, tens: int, units: int, marks: int, told: str
+    ) -> None:
+        from straightjacket.engine.ruleset.threats import advance_menace_on_miss
+        from tests._helpers import fix_dice
+
+        game = _game_with_threat()
+        game.setting_id = "classic"
+        fix_dice(monkeypatch, tens, units)
+        [event] = advance_menace_on_miss(game)
+        assert game.threats[0].menace_ticks == marks * menace_per_mark(game.threats[0])
+        assert event.development == told
+
+    def test_a_match_exposes_a_surprising_aspect(self, load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+        from straightjacket.engine.ruleset.threats import advance_threat_by_id, take_pending_threat_events
+        from tests._helpers import fix_dice
+
+        game = _game_with_threat()
+        game.setting_id = "classic"
+        fix_dice(monkeypatch, 5, 5)
+        advance_threat_by_id(game, "threat_beast")
+        [event] = take_pending_threat_events(game)
+        assert event.development.endswith(rules().threats.advance_a_threat["classic"].match)
+
+    def test_starforged_keeps_its_one_mark_until_its_own_clocks(self, load_engine: None) -> None:
+        from straightjacket.engine.ruleset.threats import advance_menace_on_miss
+
+        game = _game_with_threat()
+        [event] = advance_menace_on_miss(game)
+        assert game.threats[0].menace_ticks == rules().threats.menace_on_miss * menace_per_mark(game.threats[0])
+        assert event.development == ""

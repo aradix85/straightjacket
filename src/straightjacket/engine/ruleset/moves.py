@@ -8,7 +8,7 @@ from ..logging_util import log
 from ..setting.loader import OracleTable, parse_oracle_table
 from ..setting.oracle_rolls import is_table_link, link_path, plain_text
 from ..setting.packages import load_package
-from .datasworn import RulesFile, load_ruleset
+from .datasworn import RulesFile, load_ruleset, rules_file
 
 
 def _highest(values: dict[str, int]) -> str:
@@ -169,8 +169,17 @@ def get_moves(setting_id: str) -> dict[str, Move]:
         return _cache[setting_id]
 
     moves: dict[str, Move] = {}
-    for rules_file in load_ruleset(setting_id).files:
-        moves.update(_load_moves(rules_file))
+    for file in load_ruleset(setting_id).files:
+        moves.update(_load_moves(file))
     log(f"[Moves] Loaded {setting_id}: {len(moves)} moves")
     _cache[setting_id] = moves
     return moves
+
+
+_file_cache: dict[str, dict[str, Move]] = {}
+
+
+def move_of_file(datasworn_id: str, move_key: str) -> Move:
+    if datasworn_id not in _file_cache:
+        _file_cache[datasworn_id] = _load_moves(rules_file(datasworn_id))
+    return _file_cache[datasworn_id][move_key]

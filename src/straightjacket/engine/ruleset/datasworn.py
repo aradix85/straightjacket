@@ -32,7 +32,7 @@ class Ruleset:
     setting_file: RulesFile
 
 
-def _rules_file(datasworn_id: str) -> RulesFile:
+def rules_file(datasworn_id: str) -> RulesFile:
     raw = read_datasworn(datasworn_id)
     return RulesFile(datasworn_id=datasworn_id, rules=raw["rules"], moves=raw["moves"], assets=raw["assets"])
 
@@ -45,7 +45,7 @@ def load_ruleset(setting_id: str) -> Ruleset:
         return _cache[setting_id]
     pkg = load_package(setting_id)
     expansions = [p.datasworn_id for p in reversed(list(pkg.chain())) if p.datasworn_id != pkg.ruleset_id]
-    files = [_rules_file(datasworn_id) for datasworn_id in [pkg.ruleset_id, *expansions]]
+    files = [rules_file(datasworn_id) for datasworn_id in [pkg.ruleset_id, *expansions]]
     ruleset = Ruleset(
         id=pkg.ruleset_id,
         files=files,

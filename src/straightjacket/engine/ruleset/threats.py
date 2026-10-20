@@ -11,6 +11,9 @@ from ..setting.cascade import roll_oracle_cascade
 from ..setting.oracle_rolls import plain_text, roll_table
 from ..setting.packages import load_package
 from .config import rules
+from .config_types import AdvanceAThreatConfig
+from .datasworn import load_ruleset
+from .moves import move_of_file
 from .outcome_result import OutcomeResult
 from .progress import advance_menace, menace_boxes, menace_total_boxes
 from .tracks import forsake_vow
@@ -88,7 +91,26 @@ def _development(game: GameState, threat: ThreatData) -> str:
     return plain_text(roll_table(pkg, pkg.oracle_table(path)).text)
 
 
+def _roll_advance_a_threat(rule: AdvanceAThreatConfig, threat: ThreatData) -> tuple[int, str]:
+    table = move_of_file(rule.file, rule.move).tables[rule.table]
+    tens, units = random.randint(0, 9), random.randint(0, 9)
+    roll = tens * 10 + units or 100
+    text = plain_text(next(row for row in table.rows if row.min <= roll <= row.max).text)
+    marks = next(m.marks for m in rule.marks_by_row if text.startswith(m.prefix))
+    told = text.split(". ")[0].rstrip(".") + "."
+    if tens == units:
+        told = f"{told} {rule.match}"
+    log(
+        f"[Threat] {table.title} for '{threat.name}': {roll} → mark menace {marks} times{' (match)' if tens == units else ''}"
+    )
+    return marks, told
+
+
 def _advance(game: GameState, threat: ThreatData, marks: int, source: str) -> ThreatEvent | None:
+    rule = rules().threats.advance_a_threat.get(load_ruleset(game.setting_id).id)
+    told = ""
+    if rule is not None:
+        marks, told = _roll_advance_a_threat(rule, threat)
     ticks = advance_menace(threat, marks)
     if ticks <= 0:
         return None
@@ -99,7 +121,7 @@ def _advance(game: GameState, threat: ThreatData, marks: int, source: str) -> Th
         threat_name=threat.name,
         menace_full=threat.menace_full,
         source=source,
-        development=_development(game, threat),
+        development=" ".join(part for part in (told, _development(game, threat)) if part),
     )
 
 
@@ -153,7 +175,16 @@ def resolve_full_menace(game: GameState, result: OutcomeResult) -> list[ThreatEv
         vow = vow_against(game, threat)
         if vow is None:
             threat.status = "resolved"
-            log(f"[Threat] '{threat.name}' menace full, no vow sworn against it — resolved")
+            events.append(
+                ThreatEvent(
+                    threat_id=threat.id,
+                    threat_name=threat.name,
+                    menace_full=True,
+                    source="goal_achieved",
+                    development=rules().threats.goal_achieved,
+                )
+            )
+            log(f"[Threat] '{threat.name}' menace full, no vow sworn against it — its goal is achieved")
             continue
 
         threat.status = "resolved"

@@ -27,3 +27,10 @@ suffer:
   forsake_vow:
     meter: spirit
     cost: 2
+    cost_by_rank:
+      classic:
+        troublesome: 1
+        dangerous: 2
+        formidable: 3
+        extreme: 4
+        epic: 5

@@ -9,6 +9,8 @@ from ..logging_util import log
 from ..yaml_merge import load_yaml_dir
 from .config_types import (
     ActiveTrackCondition,
+    AdvanceAThreatConfig,
+    AdvanceMarks,
     BoastOption,
     BoastsConfig,
     BondedTrackCondition,
@@ -118,7 +120,14 @@ def _build_threats(t_raw: dict[str, Any]) -> ThreatConfig:
     by_origin = {
         origin: build_strict(ThreatCreationMappingEntry, dict(entry)) for origin, entry in t_raw["by_origin"].items()
     }
-    return ThreatConfig(**{**t_raw, "by_origin": by_origin})
+    advance = {
+        ruleset: build_strict(
+            AdvanceAThreatConfig,
+            {**dict(rule), "marks_by_row": [build_strict(AdvanceMarks, dict(row)) for row in rule["marks_by_row"]]},
+        )
+        for ruleset, rule in t_raw["advance_a_threat"].items()
+    }
+    return ThreatConfig(**{**t_raw, "by_origin": by_origin, "advance_a_threat": advance})
 
 
 def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:

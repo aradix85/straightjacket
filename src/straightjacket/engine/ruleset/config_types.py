@@ -48,6 +48,21 @@ class StrainConfig:
 
 
 @dataclass
+class AdvanceMarks:
+    prefix: str
+    marks: int
+
+
+@dataclass
+class AdvanceAThreatConfig:
+    file: str
+    move: str
+    table: str
+    marks_by_row: list[AdvanceMarks]
+    match: str
+
+
+@dataclass
 class ThreatConfig:
     menace_on_miss: int
     menace_on_random_event: int
@@ -57,6 +72,8 @@ class ThreatConfig:
     category_oracle_collection: str
     max_open_emergent: int
     by_origin: dict[str, ThreatCreationMappingEntry]
+    advance_a_threat: dict[str, AdvanceAThreatConfig]
+    goal_achieved: str
 
 
 @dataclass
@@ -204,6 +221,7 @@ class DyingClockConfig:
 class ForsakeVowConfig:
     meter: str
     cost: int
+    cost_by_rank: dict[str, dict[str, int]]
 
 
 @dataclass
