@@ -108,7 +108,8 @@ move_availability:
   relationship/sojourn:
     available: []
   relationship/test_your_bond:
-    available: []
+    available:
+    - bonded_track: connection
   scene_challenge/face_danger:
     available:
     - active_track: scene_challenge

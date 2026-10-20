@@ -7,6 +7,7 @@ from ..models import GameState, consequence
 from .config import rules
 from .meters import momentum
 from .move_effects import (
+    CONNECTION_EFFECTS,
     NPC_EFFECTS,
     MoveEffect,
     apply_effects,
@@ -50,9 +51,17 @@ def resolve_move_outcome(
     return result
 
 
-def acts_on_an_npc(game: GameState, move_key: str) -> bool:
+def _effect_types(game: GameState, move_key: str) -> set[str]:
     lists = [effects for effects in move_outcome_config(game, move_key).values() if isinstance(effects, list)]
-    return any(effect.type in NPC_EFFECTS for effects in lists for effect in parse_effects(effects))
+    return {effect.type for effects in lists for effect in parse_effects(effects)}
+
+
+def acts_on_an_npc(game: GameState, move_key: str) -> bool:
+    return bool(_effect_types(game, move_key) & NPC_EFFECTS)
+
+
+def needs_a_connection(game: GameState, move_key: str) -> bool:
+    return bool(_effect_types(game, move_key) & CONNECTION_EFFECTS)
 
 
 def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:

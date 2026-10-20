@@ -32,6 +32,18 @@ class MoveEffect:
     target: str
 
 
+_PLAIN_EFFECTS = frozenset(
+    {
+        "pay_the_price",
+        "disposition_shift",
+        "raise_connection_rank",
+        "bond_request",
+        "seal_bond",
+        "clear_bond",
+        "obstacle",
+        "loyalty_test",
+    }
+)
 _EFFECT_RE = re.compile(r"^(\w+)\s+([+-]?\d+)$")
 _POSITION_RE = re.compile(r"^position\s+(\w+)$")
 _LEGACY_RE = re.compile(r"^legacy_reward\s+(\w+)$")
@@ -82,7 +94,7 @@ def parse_effect(effect_str: str) -> MoveEffect:
     if m:
         return MoveEffect(type="table", value=0, target=m.group(1))
 
-    if effect_str in ("pay_the_price", "disposition_shift", "raise_connection_rank", "bond_request", "seal_bond"):
+    if effect_str in _PLAIN_EFFECTS:
         return MoveEffect(type=effect_str, value=0, target="")
 
     raise ValueError(f"Unknown move effect {effect_str!r}")
@@ -172,10 +184,17 @@ def _apply_seal_bond_effect(game: GameState, effect: MoveEffect, result: Outcome
     log(f"[Bond] {npc.name}: bond sealed ({filled_boxes(track)} boxes)")
 
 
-def _apply_bond_request_effect(
+def _apply_clear_bond_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    result.consequences.append(consequence("bond_request"))
+    npc, track = _target_connection(game, effect, target)
+    game.progress_tracks.remove(track)
+    result.consequences.append(consequence("bond_cleared", name=npc.name))
+    log(f"[Bond] {npc.name}: bond cleared")
+
+
+def _apply_told_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    result.consequences.append(consequence(effect.type))
 
 
 def _apply_clear_condition_effect(
@@ -229,7 +248,8 @@ def _apply_suffer_move_effect(
     _apply_generic_suffer(game, abs(effect.value), result)
 
 
-NPC_EFFECTS = frozenset({"bond", "raise_connection_rank", "disposition_shift", "seal_bond"})
+NPC_EFFECTS = frozenset({"bond", "raise_connection_rank", "disposition_shift", "seal_bond", "clear_bond"})
+CONNECTION_EFFECTS = frozenset({"bond", "raise_connection_rank", "clear_bond"})
 
 
 def _required_target(effect: MoveEffect, target: NpcData | None) -> NpcData:
@@ -364,8 +384,11 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "bond": _apply_bond_effect,
     "disposition_shift": _apply_disposition_shift_effect,
     "clear_condition": _apply_clear_condition_effect,
-    "bond_request": _apply_bond_request_effect,
+    "bond_request": _apply_told_effect,
+    "obstacle": _apply_told_effect,
+    "loyalty_test": _apply_told_effect,
     "seal_bond": _apply_seal_bond_effect,
+    "clear_bond": _apply_clear_bond_effect,
 }
 
 

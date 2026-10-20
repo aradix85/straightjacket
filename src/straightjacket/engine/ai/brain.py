@@ -18,7 +18,7 @@ from ..ruleset.bonuses import bonus_block, roll_bonuses
 from ..ruleset.config import rules
 from ..ruleset.config_types import EngineMove
 from ..ruleset.move_availability import available_moves
-from ..ruleset.move_outcome import acts_on_an_npc
+from ..ruleset.move_outcome import acts_on_an_npc, needs_a_connection
 from ..ruleset.moves import PICK_METHODS, Move, get_moves
 from ..ruleset.progress import filled_boxes, menace_boxes, menace_total_boxes
 from ..ruleset.roll_sources import roll_source_without_stat
@@ -175,10 +175,14 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
 
 
 def _check_target_npc(game: GameState, result: BrainResult) -> None:
-    if result.target_npc is not None or result.dialog_only or result.move not in get_moves(game.setting_id):
+    if result.dialog_only or result.move not in get_moves(game.setting_id):
         return
-    if acts_on_an_npc(game, result.move):
-        _refuse(f"move {result.move!r} acts on an NPC, but names no target_npc")
+    if result.target_npc is None:
+        if acts_on_an_npc(game, result.move):
+            _refuse(f"move {result.move!r} acts on an NPC, but names no target_npc")
+        return
+    if needs_a_connection(game, result.move) and connection_track(game, result.target_npc) is None:
+        _refuse(f"move {result.move!r} needs a connection, but target_npc {result.target_npc!r} has none")
 
 
 def _check_target_track(game: GameState, result: BrainResult) -> None:

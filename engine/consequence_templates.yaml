@@ -60,6 +60,15 @@ consequence_templates:
   bond_sealed:
   - '{player} and {npc} now share a bond.'
   - 'A bond holds now between {player} and {npc}.'
+  bond_cleared:
+  - The bond between {player} and {npc} breaks.
+  - What held {player} and {npc} together is gone now.
+  obstacle:
+  - A significant obstacle stands in the way before {player} can begin the quest, and {player} must overcome it first.
+  - The quest cannot begin yet; something stands in {player}'s way that must be overcome first.
+  loyalty_test:
+  - The bond is fragile, and they ask {player} to prove loyalty, something {player} has yet to do for them.
+  - The bond holds for now, but they want proof of {player}'s loyalty first.
   bond_request:
   - The bond is sealed, but they ask something more of {player} first, a request still to be met.
   - They accept the bond on one condition, something {player} has yet to do for them.

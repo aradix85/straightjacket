@@ -43,6 +43,9 @@ ai_text:
     out_of_time: '{clock}: out of time'
     bond_request: bond_request
     bond_sealed: '{name}: bond sealed'
+    bond_cleared: '{name}: bond cleared'
+    obstacle: obstacle
+    loyalty_test: loyalty_test
     recommit: recommit {track}
     oracle_result: '{table}: {result}'
     oracle_worse: 'made worse: {result}'

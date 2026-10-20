@@ -152,7 +152,7 @@ def test_a_stat_the_move_does_not_offer_is_asked_again(load_engine: None) -> Non
     assert "stat is wits" in provider.calls[1].messages[-1]["content"]
 
 
-def test_a_move_with_nothing_to_roll_with_for_its_target_is_refused(load_engine: None) -> None:
+def test_a_move_on_a_connection_is_refused_for_someone_without_one(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
     from tests._helpers import make_npc
 
@@ -162,7 +162,7 @@ def test_a_move_with_nothing_to_roll_with_for_its_target_is_refused(load_engine:
     bonded.status = "bonded"
     game.progress_tracks.append(bonded)
     provider = TurnProvider(brain_answer(move="connection/develop_your_relationship", stat="none", target_npc="npc_2"))
-    with pytest.raises(AIUnavailableError, match="nothing to roll with"):
+    with pytest.raises(AIUnavailableError, match="needs a connection"):
         call_brain(provider, game, "I share a drink with Orla.")
 
 

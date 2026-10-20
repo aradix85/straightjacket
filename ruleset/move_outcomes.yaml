@@ -108,7 +108,8 @@ move_outcomes:
     - momentum +2
     weak_hit:
     - momentum +1
-    miss: []
+    miss:
+    - obstacle
   quest/fulfill_your_vow:
     recommit_on_miss: clear_lowest_die
     strong_hit:
@@ -414,8 +415,10 @@ move_outcomes:
   relationship/test_your_bond:
     strong_hit:
     - spirit +1
-    weak_hit: []
+    weak_hit:
+    - loyalty_test
     miss:
+    - clear_bond
     - pay_the_price
   suffer/companion_endure_harm:
     handler: suffer
@@ -480,6 +483,24 @@ move_outcomes:
 
 move_outcome_overrides:
   classic:
+    quest/swear_an_iron_vow:
+      strong_hit:
+      - momentum +2
+      weak_hit:
+      - momentum +1
+      miss:
+      - momentum -2
+      - obstacle
+    combat/strike:
+      strong_hit:
+      - mark_progress 2
+      - position in_control
+      weak_hit:
+      - mark_progress 1
+      - position bad_spot
+      miss:
+      - pay_the_price
+      - position bad_spot
     quest/fulfill_your_vow:
       recommit_on_miss: keep_one_box
       strong_hit:
