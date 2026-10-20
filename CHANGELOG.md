@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.21.12] — 2026-10-21
+
+What a check of the md files against the releases since 2026.10.21.3 found. docs/settings.md names the one file a ruleset reads outside the setting's chain: every classic setting rolls Delve's Advance a Threat. docs/divergences.md and docs/mechanics.md say that only Starforged's Forge a Bond recommits on a miss and bolsters a connection to +2, since classic's pays the price and aids +1; docs/mechanics.md names classic Sojourn's handler, the sealed and cleared bonds told about their NPC, and that only Starforged's Sojourn has a gain a condition drops; docs/ai.md names the Brain's refusal of a connection move for an NPC without one; and the roadmap's decision "Each ruleset by its own books" gives examples its yaml holds. Found, and left to the user: a classic successor keeps a bond as an unsealed connection with a share of its boxes, so closeness can be 5 (register "Succession in classic Ironsworn", roadmap 9j.11).
+
+Quality gate: documentation only, 1807 tests. Save format unchanged.
+
 ## [2026.10.21.11] — 2026-10-21
 
 The start of a session, with the user. roadmap.md's Sessions with the user now says where the work happens (the user's Windows 11 laptop through the radix-mcp tools, the project's folder and GitHub repository, and how a cloud session clones, pushes, and brings the laptop up to date), and which md files a session reads itself: roadmap.md, CONTRIBUTING.md, ARCHITECTURE.md, the CHANGELOG entries since the last finished step, and the md files of the area its step touches, each named with its area; README.md and ORIGINS.md are background, and sub-agents read the rest.
