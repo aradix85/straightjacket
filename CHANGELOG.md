@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.21.11] — 2026-10-21
+
+The start of a session, with the user. roadmap.md's Sessions with the user now says where the work happens (the user's Windows 11 laptop through the radix-mcp tools, the project's folder and GitHub repository, and how a cloud session clones, pushes, and brings the laptop up to date), and which md files a session reads itself: roadmap.md, CONTRIBUTING.md, ARCHITECTURE.md, the CHANGELOG entries since the last finished step, and the md files of the area its step touches, each named with its area; README.md and ORIGINS.md are background, and sub-agents read the rest.
+
+Quality gate: documentation only, 1807 tests. Save format unchanged.
+
 ## [2026.10.21.10] — 2026-10-21
 
 How sessions work, the user's choice after a long session whose beginning the app had to summarize twice. A session starts in a fresh conversation and does one or two releases, and sub-agents do every part of the work that can be handed off (reading the md files and the CHANGELOG for what bears on the step, searching, checking documents against the code, an audit's hit-lists, reading a rule in a book, reading an Elvira report, checking a finished release), so that only their findings fill the session's context; the session keeps the decisions, its edits, the quality gate, and the commit (roadmap.md, Sessions with the user). CONTRIBUTING.md, AUDIT.md (Working method, Fan out to sub-agents), and docs/elvira.md point to it, and a step may now take several sessions.
