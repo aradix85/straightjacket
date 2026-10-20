@@ -115,6 +115,23 @@ def _audit_lines(slog: SessionLog) -> list[str]:
     return lines
 
 
+def _revelation_lines(slog: SessionLog) -> list[str]:
+    offered = [t for t in slog.turns if t.revelation]
+    if not offered:
+        return ["No revelation was put before the narrator."]
+    judged = [t for t in offered if "revelation_conveyed" in t.judge]
+    conveyed = [t for t in judged if t.judge["revelation_conveyed"]]
+    lines = [
+        f"Put before the narrator on {len(offered)} turns; conveyed on {len(conveyed)} of the {len(judged)} judged."
+    ]
+    for content in dict.fromkeys(t.revelation for t in offered):
+        scenes = [t.scene for t in offered if t.revelation == content]
+        first = next((t.scene for t in conveyed if t.revelation == content), None)
+        told = f"first conveyed in scene {first}" if first is not None else "never conveyed"
+        lines.append(f"- From scene {scenes[0]}, on {len(scenes)} turns, {told}: {content}")
+    return lines
+
+
 def _stream_lines(slog: SessionLog) -> list[str]:
     streamed = [t for t in slog.turns if t.stream_first_sentence_secs is not None]
     if not streamed:
@@ -184,6 +201,7 @@ def write_report(slog: SessionLog, coverage: Coverage, path: Path, prices: dict[
     for title, lines in (
         ("Coverage", _coverage_lines(coverage)),
         ("Narration audit", _audit_lines(slog)),
+        ("Revelations", _revelation_lines(slog)),
         ("Streaming", _stream_lines(slog)),
         ("Engine events", _event_lines(slog)),
         ("Speed", _speed_lines(slog)),

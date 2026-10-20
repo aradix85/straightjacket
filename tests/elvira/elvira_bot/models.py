@@ -121,6 +121,7 @@ class TurnRecord:
     stream_complete: bool | None = None
     stream_matches: bool | None = None
     judge: dict = field(default_factory=dict)
+    revelation: str = ""
     engine_events: list[str] = field(default_factory=list)
     engine_warnings: list[str] = field(default_factory=list)
 
@@ -179,6 +180,8 @@ class TurnRecord:
             d["npcs"] = [f"{n.name} ({n.status}, {n.disposition})" for n in self.npcs]
         if self.judge:
             d["judge"] = self.judge
+        if self.revelation:
+            d["revelation"] = self.revelation
         if self.stream_complete is not None:
             d["stream"] = {
                 "first_sentence_secs": self.stream_first_sentence_secs,

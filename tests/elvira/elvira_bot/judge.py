@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from straightjacket.engine.ai.provider_base import AICallSpec
@@ -15,13 +16,21 @@ JUDGE_SCHEMA: dict[str, Any] = {
     "title": "narration_audit",
     "type": "object",
     "additionalProperties": False,
-    "required": [*CRITERIA, "overall", "weakness"],
+    "required": [*CRITERIA, "overall", "weakness", "revelation_conveyed"],
     "properties": {
         **{c: {"type": "integer"} for c in CRITERIA},
         "overall": {"type": "integer"},
         "weakness": {"type": "string"},
+        "revelation_conveyed": {"type": "boolean"},
     },
 }
+
+_REVELATION = re.compile(r"<revelation(?:_ready)?\b[^>]*>(.*?)</revelation(?:_ready)?>", re.S)
+
+
+def revelation_in(narrator_prompt: str) -> str:
+    found = _REVELATION.search(narrator_prompt)
+    return found.group(1).strip() if found else ""
 
 
 def _move_outcome(game: GameState, move_id: str, result: str | None) -> tuple[str, str]:
@@ -43,6 +52,7 @@ def judge_turn(
     match: bool,
     previous: str,
     move_id: str,
+    revelation: str,
 ) -> dict[str, Any]:
     scene = game.narrative.scene_count
     npcs = "\n".join(
@@ -62,6 +72,7 @@ def judge_turn(
         backstory=game.backstory.strip() or _p("judge_none_backstory"),
         move=move_name,
         move_outcome=move_text,
+        revelation=revelation or _p("judge_none_revelation"),
     )
     spec = AICallSpec(
         model=bot_model(),
@@ -76,6 +87,9 @@ def judge_turn(
         verdict: dict[str, Any] = json.loads(bot_provider().create_message(spec).content)
     except Exception as e:
         return {"error": f"{type(e).__name__}: {e}"[:200]}
-    if not all(isinstance(verdict.get(key), int) for key in (*CRITERIA, "overall")):
+    scored = all(isinstance(verdict.get(key), int) for key in (*CRITERIA, "overall"))
+    if not scored or not isinstance(verdict.get("revelation_conveyed"), bool):
         return {"error": f"incomplete verdict: {sorted(verdict)}"}
+    if not revelation:
+        del verdict["revelation_conveyed"]
     return verdict

@@ -53,7 +53,7 @@ from .display import print_narration, print_state, print_summary
 from .faults import NarratorOutage
 from .fixed_results import fixed_result
 from .invariants import assert_game_state, check_turn_replacement
-from .judge import judge_turn
+from .judge import judge_turn, revelation_in
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
     check_chapter_continuity,
@@ -409,6 +409,7 @@ def _play_turn(
 
     stream = SentenceStream(on_sentence)
     snapshot, last_snapshot, before_state = game.snapshot(), game.last_turn_snapshot, game.to_dict()
+    provider.narrator_prompt = ""
     turn_provider = NarratorOutage(provider) if inject_failure else provider
     try:
         with fixed_result(fixed) if fixed else nullcontext():
@@ -466,9 +467,18 @@ def _play_turn(
     rec.engine_warnings = events.warnings[warnings_before:]
     coverage.observe_events(rec.engine_events)
 
+    rec.revelation = revelation_in(provider.narrator_prompt)
     if judge_cfg:
         rec.judge = judge_turn(
-            judge_cfg, game, action, narration, result, match, previous_narration, roll.move if roll else ""
+            judge_cfg,
+            game,
+            action,
+            narration,
+            result,
+            match,
+            previous_narration,
+            roll.move if roll else "",
+            rec.revelation,
         )
         _print_audit(rec.judge)
 

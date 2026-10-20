@@ -131,6 +131,7 @@ judge_system: |
   - restraint: no meta text, labels, or game terms, and nothing about an NPC that contradicts what is established. New sensory detail, minor objects, minor characters, and colour about NPCs that fits what is established are normal narration, not faults.
   - prose: vivid, concrete, varied, free of cliche and repetition.
   Then give overall from 1 to 10: 9 or 10 only when every criterion scores 4 or 5; a result_integrity of 1 or 2 caps overall at 4. Name the biggest weakness in one short sentence, or write "none" if there is none.
+  Last, revelation_conveyed: true when the new narration conveys the revelation the engine put before the narrator, so that a reader would learn it; false when it does not, or when there is none.
 
 judge_turn: |
   Player character backstory: {backstory}
@@ -144,6 +145,8 @@ judge_turn: |
   The move's text for this result: {move_outcome}
   NPCs the engine counts as in this scene:
   {npcs}
+
+  Revelation the engine put before the narrator: {revelation}
 
   New narration:
   {narration}
@@ -159,4 +162,6 @@ judge_none_previous: "none (first turn)"
 judge_none_backstory: "none established"
 
 judge_none_description: "no description yet"
+
+judge_none_revelation: "none"
 

@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-VERDICT = '{"result_integrity": 5, "prompt_elements": 5, "npc_voice": 5, "player_agency": 5, "restraint": 5, "prose": 5, "overall": 9, "weakness": "none"}'
+VERDICT = '{"result_integrity": 5, "prompt_elements": 5, "npc_voice": 5, "player_agency": 5, "restraint": 5, "prose": 5, "overall": 9, "weakness": "none", "revelation_conveyed": true}'
 
 
 def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[Any, list[Any]]:
@@ -60,8 +60,10 @@ def test_the_judge_sees_the_move_text_the_previous_narration_and_what_is_establi
         False,
         "Rain drums on the chapel roof.",
         "adventure/gather_information",
+        "",
     )
     assert verdict["overall"] == 9
+    assert "revelation_conveyed" not in verdict
     user = seen[0].messages[0]["content"]
     assert "unwelcome truth that undermines your quest" in user
     assert "(id:" not in user
@@ -77,8 +79,32 @@ def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monk
 
     judge, seen = _judge_with_capture(monkeypatch)
     judge.judge_turn(
-        {"max_tokens": 200, "extra_body": {}}, _game(), "I ask Mira about the fire.", "She shrugs.", None, False, "", ""
+        {"max_tokens": 200, "extra_body": {}},
+        _game(),
+        "I ask Mira about the fire.",
+        "She shrugs.",
+        None,
+        False,
+        "",
+        "",
+        "",
     )
     user = seen[0].messages[0]["content"]
     assert _p("judge_none_move") in user
     assert _p("judge_none_previous") in user
+
+
+def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_it_came_across(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    judge, seen = _judge_with_capture(monkeypatch)
+    prompt = '<scene>\n<revelation_ready weight="high">The harbourmaster sold the maps.</revelation_ready>\n</scene>'
+    revelation = judge.revelation_in(prompt)
+    assert revelation == "The harbourmaster sold the maps."
+    assert judge.revelation_in("<scene>\n</scene>") == ""
+
+    verdict = judge.judge_turn(
+        {"max_tokens": 200, "extra_body": {}}, _game(), "I ask Mira.", "She hesitates.", None, False, "", "", revelation
+    )
+    assert verdict["revelation_conveyed"] is True
+    assert "The harbourmaster sold the maps." in seen[0].messages[0]["content"]

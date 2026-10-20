@@ -82,6 +82,7 @@ def test_elvira_plays_a_short_session_end_to_end(
     assert list((tmp_path / "runs").glob("*.json"))
     report = next((tmp_path / "runs").glob("*.md")).read_text(encoding="utf-8")
     assert "## Coverage" in report
+    assert "## Revelations" in report
     assert report.startswith("# Elvira report: starforged, explorer")
     assert session.coverage["counts"]["save_roundtrip"] >= 1
     assert session.save_roundtrip_issues == []
