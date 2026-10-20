@@ -411,7 +411,8 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
         told = labels_of(result.consequences)[0]
         assert told.startswith("Pay the Price: ")
         assert "Roll twice" not in told
-        assert all(any(part.startswith(row) for row in rows) for part in told.split(": ", 1)[1].split("; "))
+        rolled = told.split(": ", 1)[1].removeprefix("made worse: ")
+        assert all(any(part.startswith(row) for row in rows) for part in rolled.split("; "))
 
 
 def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:

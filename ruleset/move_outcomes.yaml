@@ -119,7 +119,8 @@ move_outcomes:
   connection/make_a_connection:
     strong_hit:
     - disposition_shift
-    weak_hit: []
+    weak_hit:
+    - complication make_a_connection
     miss:
     - pay_the_price
   connection/develop_your_relationship:
@@ -378,6 +379,7 @@ move_outcomes:
     - momentum +1
     weak_hit:
     - momentum +1
+    - complication compel
     miss:
     - pay_the_price
   relationship/draw_the_circle:

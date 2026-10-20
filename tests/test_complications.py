@@ -4,15 +4,21 @@ import pytest
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import GameState, Resources, RollResult, labels_of
-from tests._helpers import make_clock, make_game_state
+from tests._helpers import make_clock, make_game_state, make_npc
 
-WEAK_HIT_MOVES = ["adventure/gather_information", "adventure/compel"]
+WEAK_HIT_MOVES = [
+    ("starforged", "adventure/gather_information"),
+    ("starforged", "adventure/compel"),
+    ("starforged", "connection/make_a_connection"),
+    ("classic", "relationship/compel"),
+]
 
 
 def _game(setting: str = "starforged") -> GameState:
     game = make_game_state()
     game.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     game.setting_id = setting
+    game.npcs = [make_npc(id="npc_1", name="Kira", disposition="neutral")]
     return game
 
 
@@ -24,13 +30,15 @@ def _complication(name: str = "A beacon calls the raiders", filled: int = 0) -> 
     return make_clock(name=name, segments=4, filled=filled, creation_source="complication:gather_information:3")
 
 
-@pytest.mark.parametrize("move", WEAK_HIT_MOVES)
-def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(load_engine: None, move: str) -> None:
+@pytest.mark.parametrize(("setting", "move"), WEAK_HIT_MOVES)
+def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(
+    load_engine: None, setting: str, move: str
+) -> None:
     from straightjacket.engine.gamemaster.clocks import open_complications
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
-    game = _game()
-    outcome = resolve_move_outcome(game, move, "WEAK_HIT", target_npc_id=None, match=False)
+    game = _game(setting)
+    outcome = resolve_move_outcome(game, move, "WEAK_HIT", target_npc_id="npc_1", match=False)
     [clock] = open_complications(game)
     assert (clock.clock_type, clock.owner_kind, clock.segments, clock.filled) == ("threat", "world", 4, 0)
     assert clock.name
@@ -39,12 +47,12 @@ def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(load_engine
     assert f"complication_clock {clock.name}" in labels_of(outcome.consequences)
 
 
-@pytest.mark.parametrize("move", WEAK_HIT_MOVES)
-def test_a_strong_hit_starts_no_complication(load_engine: None, move: str) -> None:
+@pytest.mark.parametrize(("setting", "move"), WEAK_HIT_MOVES)
+def test_a_strong_hit_starts_no_complication(load_engine: None, setting: str, move: str) -> None:
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
-    game = _game()
-    resolve_move_outcome(game, move, "STRONG_HIT", target_npc_id=None, match=False)
+    game = _game(setting)
+    resolve_move_outcome(game, move, "STRONG_HIT", target_npc_id="npc_1", match=False)
     assert game.world.clocks == []
 
 

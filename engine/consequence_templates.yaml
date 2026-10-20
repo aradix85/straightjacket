@@ -54,6 +54,9 @@ consequence_templates:
   complication_compel:
   - The agreement comes with a demand, something {player} must give or do in return.
   - They agree, but on a condition {player} will have to meet.
+  complication_make_a_connection:
+  - The connection is made, but it comes with a complication or cost, something they reveal or demand of {player}.
+  - '{player} gains the connection, and with it a cost: something they reveal, or something they ask in return.'
   bond_request:
   - The bond is sealed, but they ask something more of {player} first, a request still to be met.
   - They accept the bond on one condition, something {player} has yet to do for them.

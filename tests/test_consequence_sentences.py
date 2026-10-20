@@ -77,7 +77,7 @@ def test_resolve_consequence_produces_sentence(cons: Consequence, npc: str, must
         assert must_contain in sentence
 
 
-@pytest.mark.parametrize("kind", ["gather_information", "compel"])
+@pytest.mark.parametrize("kind", ["gather_information", "compel", "make_a_connection"])
 def test_a_complication_is_told_as_a_sentence_naming_the_player(kind: str) -> None:
     sentence = resolve_consequence_sentence(consequence("complication", kind=kind), "Ash", "", "")
     assert "Ash" in sentence
