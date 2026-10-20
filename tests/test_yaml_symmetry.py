@@ -82,32 +82,7 @@ class TestMoveCategoriesSymmetry:
 
 
 class TestEveryMoveResolvesEndToEnd:
-    def test_every_move_passes_through_full_stance_pipeline(self) -> None:
-        from straightjacket.engine.prompt_shared import _resolve_stance_category
-        from straightjacket.engine.ruleset.moves import get_moves
-        from straightjacket.engine.setting.packages import list_packages
-
-        all_moves: set[str] = set()
-        for sid in list_packages():
-            all_moves.update(get_moves(sid).keys())
-        all_moves.update(rules().engine_moves.keys())
-        all_moves.update(gm().moves.keys())
-
-        failures = []
-        for move in sorted(all_moves):
-            try:
-                bucket = _resolve_stance_category(move)
-                if bucket not in _stance_bucket_values():
-                    failures.append(f"{move} → {bucket} (not a valid bucket)")
-            except KeyError as e:
-                failures.append(f"{move} → KeyError({e})")
-
-        assert failures == [], (
-            f"Moves that fail to resolve through the stance pipeline: {failures}. "
-            "Every move must produce a valid stance bucket without crashing."
-        )
-
-    def test_every_move_resolves_position_baseline(self) -> None:
+    def test_every_move_has_a_kind_with_a_stance_bucket_and_a_position_baseline(self) -> None:
         from straightjacket.engine.ruleset.answers import action_kind
         from straightjacket.engine.ruleset.moves import get_moves
         from straightjacket.engine.setting.packages import list_packages
@@ -118,9 +93,10 @@ class TestEveryMoveResolvesEndToEnd:
         all_moves.update(rules().engine_moves.keys())
         all_moves.update(gm().moves.keys())
 
+        kinds = {move: action_kind(move) for move in sorted(all_moves)}
+        buckets = gm().stance_move_buckets.mapping
         baselines = gm().position_resolver.move_baselines
-        unmapped = [m for m in sorted(all_moves) if action_kind(m) not in baselines]
-        assert unmapped == [], f"Moves whose category has no baseline in position_resolver.move_baselines: {unmapped}."
+        assert [m for m, kind in kinds.items() if kind not in buckets or kind not in baselines] == []
 
 
 class TestMoveOutcomesCoverage:

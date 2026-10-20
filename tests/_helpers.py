@@ -2,9 +2,32 @@ from __future__ import annotations
 
 import dataclasses
 import random
+import shutil
+from collections.abc import Callable
+from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 import pytest
+import yaml
+
+
+def change_config(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    layer: ModuleType,
+    cache: str,
+    section: str,
+    change: Callable[[dict[str, Any]], None],
+) -> None:
+    folder = tmp_path / layer._CONFIG_DIR.name
+    shutil.copytree(layer._CONFIG_DIR, folder)
+    path = folder / f"{section}.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    change(data[section])
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    monkeypatch.setattr(layer, "_CONFIG_DIR", folder)
+    monkeypatch.setattr(layer, cache, None)
 
 
 def fix_dice(monkeypatch: pytest.MonkeyPatch, *rolls: int) -> None:

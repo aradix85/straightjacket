@@ -5,7 +5,7 @@ import pytest
 
 from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.meters import starting_resources
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc
+from tests._helpers import make_blueprint, make_clock, make_game_state, make_memory, make_npc
 
 
 def _game() -> GameState:
@@ -27,29 +27,30 @@ def _game() -> GameState:
 
 
 @pytest.fixture
-def save_dir(tmp_path: Any, monkeypatch: Any, stub_all: None) -> object:
-    from straightjacket.engine import persistence
-
-    monkeypatch.setattr(persistence, "get_save_dir", lambda username: tmp_path / username / "saves")
-    (tmp_path / "tester" / "saves").mkdir(parents=True, exist_ok=True)
+def save_dir(tmp_path: Any, monkeypatch: pytest.MonkeyPatch, load_engine: None) -> Any:
+    for target in (
+        "straightjacket.engine.config_loader.USERS_DIR",
+        "straightjacket.engine.user_management.USERS_DIR",
+    ):
+        monkeypatch.setattr(target, tmp_path)
     return tmp_path
 
 
-def test_save_and_load_roundtrip(save_dir: Any) -> None:
+def test_a_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
     from straightjacket.engine.persistence import load_game, save_game
 
     game = _game()
+    game.npcs[0].arc = "Beginning to trust the player"
+    game.npcs[0].aliases = [game.npcs[0].name]
+    game.world.combat_position = "bad_spot"
+    game.narrative.story_blueprint = make_blueprint(triggered_director_phases=["climax"])
     msgs = [{"role": "assistant", "content": "Hello world."}]
     save_game(game, "tester", msgs, "test_save")
 
     loaded, loaded_msgs = load_game("tester", "test_save")
     assert loaded is not None
-    assert loaded.player_name == "TestHero"
-    assert loaded.resources.meters["health"] == 4
-    assert loaded.narrative.scene_count == 3
-    assert len(loaded.npcs) == 1
-    assert loaded.npcs[0].name == "Ally"
-    assert len(loaded_msgs) == 1
+    assert loaded.to_dict() == game.to_dict()
+    assert loaded_msgs == msgs
 
 
 def test_load_nonexistent_returns_none(save_dir: Any) -> None:
@@ -117,18 +118,6 @@ def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
     result = list_saves_with_info("mixed")
     names = {s["name"] for s in result}
     assert names == {"good_save"}
-
-
-def test_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import load_game, save_game
-
-    game = _game()
-    game.npcs[0].disposition = "wary"
-    game.npcs[0].aliases = [game.npcs[0].name]
-    save_game(game, "tester", [], "exact_test")
-    loaded, _ = load_game("tester", "exact_test")
-    assert loaded is not None
-    assert loaded.to_dict() == game.to_dict()
 
 
 def test_a_save_missing_a_field_does_not_load(load_engine: None) -> None:

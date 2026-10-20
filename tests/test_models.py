@@ -1,21 +1,24 @@
-from straightjacket.engine.models import (
-    NpcData,
-    StoryAct,
-    StoryBlueprint,
-)
+import pytest
+
+from straightjacket.engine.models import StoryAct, StoryBlueprint
 from straightjacket.engine.ruleset.progress import mark_progress
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_npc_detail, make_progress_track
+from tests._helpers import (
+    fix_dice,
+    make_clock,
+    make_game_state,
+    make_memory,
+    make_npc,
+    make_npc_detail,
+    make_progress_track,
+)
 
 
-def test_roll_action_cap() -> None:
-    import random
-
+def test_the_action_score_stops_at_its_cap(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.ruleset.config import rules
     from straightjacket.engine.ruleset.rolls import roll_action
 
-    random.seed(42)
-    for _ in range(50):
-        r = roll_action("edge", 3, "adventure/face_danger", 0, 0)
-        assert r.action_score <= 10
+    fix_dice(monkeypatch, 6, 1, 1)
+    assert roll_action("edge", 3, "adventure/face_danger", 0, 3).action_score == rules().dice.action_score_max
 
 
 def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: None) -> None:
@@ -117,33 +120,6 @@ def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
     assert clock.filled == 2
 
 
-def test_npc_arc_field() -> None:
-    npc = make_npc(id="npc_1", name="Test", arc="Beginning to trust the player")
-    assert npc.arc == "Beginning to trust the player"
-    d = npc.to_dict()
-    assert d["arc"] == "Beginning to trust the player"
-    restored = NpcData.from_dict(d)
-    assert restored.arc == "Beginning to trust the player"
-
-
-def test_story_blueprint_triggered_director_phases() -> None:
-    bp = StoryBlueprint(
-        central_conflict="test",
-        antagonist_force="villain",
-        thematic_thread="theme",
-        structure_type="3act",
-        revealed=[],
-        triggered_transitions=[],
-        story_complete=False,
-    )
-    assert bp.triggered_director_phases == []
-    bp.triggered_director_phases.append("climax")
-    d = bp.to_dict()
-    assert d["triggered_director_phases"] == ["climax"]
-    restored = StoryBlueprint.from_dict(d)
-    assert restored.triggered_director_phases == ["climax"]
-
-
 def test_story_blueprint_triggered_director_phases_snapshot() -> None:
     game = make_game_state()
     bp = StoryBlueprint(
@@ -221,26 +197,17 @@ def test_memory_guard_allows_no_memories() -> None:
     assert npc.name == "Heinrich Blum"
 
 
-def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-
-    game = make_game_state(setting_id="starforged")
-    npc = make_npc(id="npc_1", name="Test", disposition="neutral")
-    game.npcs.append(npc)
-
-    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="nonexistent", match=False)
-    assert npc.disposition == "neutral"
-
-
-def test_progress_tracks_snapshot_restore() -> None:
+def test_a_restore_brings_back_the_tracks_and_the_combat_position() -> None:
     game = make_game_state()
     game.progress_tracks.append(make_progress_track(id="v1", name="Vow", track_type="vow", rank="dangerous", ticks=8))
     game.progress_tracks.append(
         make_progress_track(id="c1", name="Fight", track_type="combat", rank="formidable", ticks=0)
     )
 
+    game.world.combat_position = "in_control"
     snap = game.snapshot()
 
+    game.world.combat_position = "bad_spot"
     mark_progress(game.progress_tracks[0])
     game.progress_tracks[1].status = "completed"
     game.progress_tracks.append(make_progress_track(id="v2", name="New Vow", track_type="vow"))
@@ -255,29 +222,4 @@ def test_progress_tracks_snapshot_restore() -> None:
     assert game.progress_tracks[0].name == "Vow"
     assert game.progress_tracks[1].status == "active"
     assert game.progress_tracks[1].ticks == 0
-
-
-def test_combat_position_default_empty() -> None:
-    assert make_game_state().world.combat_position == ""
-
-
-def test_combat_position_serializes() -> None:
-    g = make_game_state()
-    g.world.combat_position = "in_control"
-    assert g.world.to_dict()["combat_position"] == "in_control"
-
-
-def test_combat_position_deserializes() -> None:
-    from straightjacket.engine.models_base import WorldState
-
-    g = make_game_state()
-    g.world.combat_position = "bad_spot"
-    assert WorldState.from_dict(g.world.to_dict()).combat_position == "bad_spot"
-
-
-def test_combat_position_snapshot_restore() -> None:
-    g = make_game_state()
-    g.world.combat_position = "in_control"
-    snap = g.snapshot()
-    g.world.combat_position = "bad_spot"
-    assert snap.world["combat_position"] == "in_control"
+    assert game.world.combat_position == "in_control"

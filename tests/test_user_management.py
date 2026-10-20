@@ -1,43 +1,38 @@
+from pathlib import Path
+
 import pytest
 
-from straightjacket.engine.user_management import InvalidNameError, _safe_name
+from straightjacket.engine import user_management
+from straightjacket.engine.user_management import InvalidNameError, create_user, list_users
+
+
+@pytest.fixture(autouse=True)
+def users(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    monkeypatch.setattr(user_management, "USERS_DIR", tmp_path)
+    return tmp_path
 
 
 @pytest.mark.parametrize(
-    "name", ["Elvira", "ws_succ", "Anouk van Dijk", "Kira-2", "Console", "Nullah", "con man", "Dr. Vos", "a..b"]
+    ("name", "folder"),
+    [
+        *((name, name) for name in ("Elvira", "ws_succ", "Kira-2", "Console", "Nullah", "con man", "Dr. Vos", "a..b")),
+        ("  Anouk   van Dijk ", "Anouk van Dijk"),
+    ],
 )
-def test_ordinary_names_pass(name: str) -> None:
-    assert _safe_name(name) == name
-
-
-def test_surrounding_and_repeated_spaces_are_normalised() -> None:
-    assert _safe_name("  Anouk   van Dijk ") == "Anouk van Dijk"
+def test_a_player_gets_a_folder_of_their_name_with_its_spaces_tidied(name: str, folder: str) -> None:
+    create_user(name)
+    assert list_users() == [{"name": folder}]
 
 
 @pytest.mark.parametrize(
-    "name", ["D:", "D:elders", "Elvira:stream", "a?b", 'x"y', "a<b", "a|b", "a*b", "a\x01b", "a\x1fb", "a\tb", "a\x00b"]
+    "name",
+    [
+        *("D:", "D:elders", "Elvira:stream", "a?b", 'x"y', "a<b", "a|b", "a*b", "a\x01b", "a\x1fb", "a\tb", "a\x00b"),
+        *("NUL", "CON", "con", "Prn", "AUX", "COM1", "lpt9", "NUL.json", "com¹"),
+        *("naam.", "../evil/name", "a/b", "a\\b", ".", "..", ".hidden", "   "),
+    ],
 )
-def test_names_with_characters_windows_refuses_raise(name: str) -> None:
+def test_a_name_the_file_system_would_refuse_or_alter_is_refused(name: str) -> None:
     with pytest.raises(InvalidNameError):
-        _safe_name(name)
-
-
-@pytest.mark.parametrize("name", ["NUL", "CON", "con", "Prn", "AUX", "COM1", "lpt9", "NUL.json", "com¹"])
-def test_reserved_device_names_raise(name: str) -> None:
-    with pytest.raises(InvalidNameError):
-        _safe_name(name)
-
-
-def test_a_trailing_dot_raises_instead_of_colliding_with_the_name_without_it() -> None:
-    with pytest.raises(InvalidNameError):
-        _safe_name("naam.")
-
-
-@pytest.mark.parametrize("name", ["../evil/name", "a/b", "a\\b", ".", "..", ".hidden", "   "])
-def test_names_that_would_be_altered_into_another_name_raise(name: str) -> None:
-    with pytest.raises(InvalidNameError):
-        _safe_name(name)
-
-
-def test_invalid_name_error_is_a_value_error() -> None:
-    assert issubclass(InvalidNameError, ValueError)
+        create_user(name)
+    assert list_users() == []

@@ -1,5 +1,7 @@
 import json
 import random
+from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -474,20 +476,22 @@ def test_facts_survive_a_save_round_trip(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize(
-    ("section", "value", "message"),
-    [("types", "room", "subject"), ("information_miss_settles", {"alert": "yes"}, "not a place fact type")],
+    ("change", "message"),
+    [
+        (lambda section: section["types"]["locked"].update(subject="room"), "subject"),
+        (lambda section: section.update(information_miss_settles={"alert": "yes"}), "not a place fact type"),
+    ],
+    ids=["subject", "miss_settles"],
 )
-def test_fact_resolution_yaml_with_a_wrong_value_refuses_to_load(section: str, value: Any, message: str) -> None:
-    from straightjacket.engine.gamemaster.config import _CONFIG_DIR, parse_gamemaster_yaml
-    from straightjacket.engine.yaml_merge import load_yaml_dir
+def test_fact_resolution_yaml_with_a_wrong_value_refuses_to_load(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, change: Callable[[dict[str, Any]], None], message: str
+) -> None:
+    from straightjacket.engine.gamemaster import config as gamemaster_config
+    from tests._helpers import change_config
 
-    data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="")
-    if section == "types":
-        data["fact_resolution"]["types"]["locked"]["subject"] = value
-    else:
-        data["fact_resolution"][section] = value
+    change_config(monkeypatch, tmp_path, gamemaster_config, "_gm", "fact_resolution", change)
     with pytest.raises(ValueError, match=message):
-        parse_gamemaster_yaml(data)
+        gamemaster_config.gm()
 
 
 @pytest.mark.parametrize(("answer", "target"), [("no", None), ("yes", "npc_1")])

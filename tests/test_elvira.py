@@ -42,68 +42,26 @@ def game(load_engine: None) -> GameState:
     return g
 
 
-class TestFinalStateDict:
-    def test_returns_dict(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.display import final_state_dict
+def test_the_final_state_holds_the_character_the_bond_of_each_npc_and_the_clocks(game: GameState) -> None:
+    from tests.elvira.elvira_bot.display import final_state_dict
 
-        result = final_state_dict(game)
-        assert isinstance(result, dict)
-        assert result["character"] == "Elvira"
-        assert result["meters"]["health"] == 4
-        assert result["scene"] == 5
-
-    def test_npcs_have_bond(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.display import final_state_dict
-
-        result = final_state_dict(game)
-        npcs = result["npcs"]
-        kira = next(n for n in npcs if n["name"] == "Kira")
-        assert "bond" in kira
-        assert kira["bond"] == 2
-
-    def test_clocks_present(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.display import final_state_dict
-
-        result = final_state_dict(game)
-        assert len(result["active_clocks"]) == 1
-        assert result["active_clocks"][0]["name"] == "Doom"
+    result = final_state_dict(game)
+    assert (result["character"], result["meters"]["health"], result["scene"]) == ("Elvira", 4, 5)
+    kira = next(n for n in result["npcs"] if n["name"] == "Kira")
+    assert kira["bond"] == 2
+    assert [c["name"] for c in result["active_clocks"]] == ["Doom"]
 
 
-class TestSnapshotState:
-    def test_returns_snapshot(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.recorder import _snapshot_state
+def test_a_turn_record_keeps_the_state_and_the_npcs_in_play(game: GameState) -> None:
+    from tests.elvira.elvira_bot.recorder import record_turn
 
-        snap = _snapshot_state(game)
-        assert snap.meters["health"] == 4
-        assert snap.chaos == 6
-        assert snap.scene == 5
-        assert snap.active_progress_tracks == 2
-
-    def test_combat_position(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.recorder import _snapshot_state
-
-        game.world.combat_position = "in_control"
-        snap = _snapshot_state(game)
-        assert snap.combat_position == "in_control"
-
-
-class TestSnapshotNpcs:
-    def test_filters_active_and_background(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.recorder import _snapshot_npcs
-
-        snaps = _snapshot_npcs(game)
-        names = [s.name for s in snaps]
-        assert "Kira" in names
-        assert "Ghost" not in names
-
-    def test_npc_fields(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.recorder import _snapshot_npcs
-
-        snaps = _snapshot_npcs(game)
-        kira = next(s for s in snaps if s.name == "Kira")
-        assert kira.disposition == "friendly"
-        assert kira.memory_count == 1
-        assert kira.agenda == "Trade"
+    game.world.combat_position = "in_control"
+    record = record_turn(game, 1, "I look around.", "The docks are quiet.", None)
+    state = record.state_after
+    assert (state.meters["health"], state.chaos, state.scene) == (4, 6, 5)
+    assert (state.active_progress_tracks, state.combat_position) == (2, "in_control")
+    [kira] = record.npcs
+    assert (kira.name, kira.disposition, kira.memory_count, kira.agenda) == ("Kira", "friendly", 1, "Trade")
 
 
 class TestInvariants:

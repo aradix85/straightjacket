@@ -16,9 +16,7 @@ class _FakeWS:
         self.sent.append(msg)
 
 
-def test_a_failed_chapter_opening_leaves_the_game_as_it_was(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_failed_chapter_opening_leaves_the_game_as_it_was(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.ai.provider_base import AIUnavailableError
     from straightjacket.engine.game import chapters
     from straightjacket.web import handlers

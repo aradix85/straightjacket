@@ -1,4 +1,6 @@
 import asyncio
+from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -28,48 +30,47 @@ def session(load_engine: None) -> Session:
     return new_session()
 
 
-def test_require_str_returns_trimmed_value(load_engine: None, fake_ws: _FakeWS) -> None:
-    from straightjacket.web.handlers import _require_str
-
-    result = _run(_require_str(fake_ws, {"name": "  Alice  "}, "name", "error.empty_player_name"))
-    assert result == "Alice"
-    assert fake_ws.sent == []
-
-
-def test_require_str_rejects_missing_key(load_engine: None, fake_ws: _FakeWS) -> None:
-    from straightjacket.web.handlers import _require_str
-
-    result = _run(_require_str(fake_ws, {}, "name", "error.empty_player_name"))
-    assert result is None
-    assert len(fake_ws.sent) == 1
-    assert fake_ws.sent[0]["type"] == "error"
+@pytest.fixture
+def users(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    for target in (
+        "straightjacket.engine.config_loader.USERS_DIR",
+        "straightjacket.engine.user_management.USERS_DIR",
+    ):
+        monkeypatch.setattr(target, tmp_path)
+    return tmp_path
 
 
-def test_require_str_rejects_non_string(load_engine: None, fake_ws: _FakeWS) -> None:
-    from straightjacket.web.handlers import _require_str
+def test_a_new_players_name_is_trimmed(session: Session, fake_ws: _FakeWS, users: Path) -> None:
+    from straightjacket.web.handlers import handle_create_player
 
-    result = _run(_require_str(fake_ws, {"name": 42}, "name", "error.empty_player_name"))
-    assert result is None
-    assert fake_ws.sent[0]["type"] == "error"
-
-
-def test_require_str_rejects_blank(load_engine: None, fake_ws: _FakeWS) -> None:
-    from straightjacket.web.handlers import _require_str
-
-    result = _run(_require_str(fake_ws, {"name": "   "}, "name", "error.empty_player_name"))
-    assert result is None
+    _run(handle_create_player(session, fake_ws, {"name": "  Alice  "}))
+    selected = next(m for m in fake_ws.sent if m["type"] == "player_selected")
+    assert selected["name"] == "Alice"
+    assert [p.name for p in users.iterdir()] == ["Alice"]
 
 
-def test_send_swallows_disconnect(load_engine: None) -> None:
+@pytest.mark.parametrize("msg", [{}, {"name": 42}, {"name": "   "}, {"name": ""}])
+def test_a_new_player_without_a_name_is_refused(
+    session: Session, fake_ws: _FakeWS, users: Path, msg: dict[str, Any]
+) -> None:
+    from straightjacket.i18n import t
+    from straightjacket.web.handlers import handle_create_player
+
+    _run(handle_create_player(session, fake_ws, msg))
+    assert fake_ws.sent == [{"type": "error", "text": t("error.empty_player_name")}]
+    assert list(users.iterdir()) == []
+
+
+def test_a_closed_connection_ends_a_handler_quietly(session: Session, users: Path) -> None:
     from starlette.websockets import WebSocketDisconnect
 
-    from straightjacket.web.handlers import _send
+    from straightjacket.web.handlers import handle_list_players
 
     class _DeadWS:
-        async def send_json(self, msg: dict) -> None:
+        async def send_json(self, msg: dict[str, Any]) -> None:
             raise WebSocketDisconnect()
 
-    _run(_send(_DeadWS(), {"type": "x"}))
+    _run(handle_list_players(session, _DeadWS(), {}))
 
 
 def test_handle_list_players_returns_list(
@@ -82,13 +83,6 @@ def test_handle_list_players_returns_list(
     assert len(fake_ws.sent) == 1
     assert fake_ws.sent[0]["type"] == "players_list"
     assert isinstance(fake_ws.sent[0]["players"], list)
-
-
-def test_handle_create_player_empty_name_errors(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:
-    from straightjacket.web.handlers import handle_create_player
-
-    _run(handle_create_player(session, fake_ws, {"name": ""}))
-    assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
 def test_handle_select_player_missing_name_errors(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:
@@ -184,6 +178,7 @@ def test_handle_correction_no_game_silent(load_engine: None, session: Session, f
 
     session.game = None
     _run(handle_correction(session, fake_ws, {"text": "fix something"}))
+    assert fake_ws.sent == []
 
 
 def test_handle_correction_processing_errors(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:
@@ -207,7 +202,7 @@ def test_handle_save_no_game_silent(load_engine: None, session: Session, fake_ws
     from straightjacket.web.handlers import handle_save
 
     session.game = None
-    _run(handle_save(session, fake_ws, {"save_name": "test"}))
+    _run(handle_save(session, fake_ws, {"name": "test"}))
     assert fake_ws.sent == []
 
 
@@ -216,7 +211,7 @@ def test_handle_save_no_player_silent(load_engine: None, session: Session, fake_
 
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.player = ""
-    _run(handle_save(session, fake_ws, {"save_name": "test"}))
+    _run(handle_save(session, fake_ws, {"name": "test"}))
     assert fake_ws.sent == []
 
 
@@ -253,7 +248,7 @@ def test_handle_load_no_player_silent(load_engine: None, session: Session, fake_
     from straightjacket.web.handlers import handle_load
 
     session.player = ""
-    _run(handle_load(session, fake_ws, {"save_name": "test"}))
+    _run(handle_load(session, fake_ws, {"name": "test"}))
     assert fake_ws.sent == []
 
 
@@ -273,7 +268,7 @@ def test_handle_delete_save_no_player_silent(load_engine: None, session: Session
     from straightjacket.web.handlers import handle_delete_save
 
     session.player = ""
-    _run(handle_delete_save(session, fake_ws, {"save_name": "x"}))
+    _run(handle_delete_save(session, fake_ws, {"name": "x"}))
     assert fake_ws.sent == []
 
 
@@ -352,6 +347,7 @@ def test_handle_dismiss_epilogue_no_game_silent(load_engine: None, session: Sess
 
     session.game = None
     _run(handle_dismiss_epilogue(session, fake_ws, {}))
+    assert fake_ws.sent == []
 
 
 def test_handle_new_chapter_no_game_silent(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:

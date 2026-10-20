@@ -1,9 +1,8 @@
 from pathlib import Path
-from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any
 
 import pytest
-from starlette.websockets import WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocketDisconnect
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game import BurnOffer
@@ -19,7 +18,6 @@ from straightjacket.web.serializers import (
 )
 from straightjacket.web.session import new_session
 from tests._helpers import (
-    install_config,
     make_act,
     make_blueprint,
     make_brain_result,
@@ -28,11 +26,6 @@ from tests._helpers import (
     make_npc,
     make_scene_setup,
 )
-
-
-@pytest.fixture
-def load_engine(_real_engine) -> None:
-    install_config(_real_engine)
 
 
 class TestSession:
@@ -57,50 +50,31 @@ class TestSession:
         s.append_chat("assistant", "epilogue text", epilogue=True)
         assert s.chat_messages[0]["epilogue"] is True
 
-    def test_orphan_input_none_when_assistant_last(self) -> None:
+    def test_an_input_without_its_narration_is_the_orphan(self) -> None:
         s = new_session()
+        assert s.orphan_input() is None
         s.append_chat("user", "action")
         s.append_chat("assistant", "narration")
         assert s.orphan_input() is None
-
-    def test_orphan_input_returns_text_when_user_last(self) -> None:
-        s = new_session()
         s.append_chat("user", "orphaned action")
         assert s.orphan_input() == "orphaned action"
 
-    def test_orphan_input_none_when_empty(self) -> None:
-        s = new_session()
-        assert s.orphan_input() is None
-
-    def test_pop_last_user_message(self) -> None:
+    def test_only_a_last_user_message_is_popped(self) -> None:
         s = new_session()
         s.append_chat("user", "first")
         s.append_chat("assistant", "response")
+        s.pop_last_user_message()
+        assert [m["content"] for m in s.chat_messages] == ["first", "response"]
         s.append_chat("user", "second")
         s.pop_last_user_message()
-        assert len(s.chat_messages) == 2
-        assert s.chat_messages[-1]["role"] == "assistant"
+        assert [m["content"] for m in s.chat_messages] == ["first", "response"]
 
-    def test_pop_last_user_message_noop_when_assistant_last(self) -> None:
-        s = new_session()
-        s.append_chat("user", "x")
-        s.append_chat("assistant", "y")
-        s.pop_last_user_message()
-        assert len(s.chat_messages) == 2
-
-    def test_replace_last_assistant(self) -> None:
-        s = new_session()
-        s.append_chat("user", "input")
-        s.append_chat("assistant", "original")
-        s.replace_last_assistant("replaced")
-        assert s.chat_messages[-1]["content"] == "replaced"
-
-    def test_replace_last_assistant_skips_user(self) -> None:
+    def test_the_last_narration_is_replaced_past_a_later_input(self) -> None:
         s = new_session()
         s.append_chat("assistant", "first")
         s.append_chat("user", "second")
         s.replace_last_assistant("replaced")
-        assert s.chat_messages[0]["content"] == "replaced"
+        assert [m["content"] for m in s.chat_messages] == ["replaced", "second"]
 
     def test_clear_game(self) -> None:
         s = new_session()
@@ -127,16 +101,6 @@ class TestSession:
 
 
 class TestHighlightDialog:
-    def test_curly_quotes(self) -> None:
-        text = "\u201cHello,\u201d she said."
-        result = highlight_dialog(text)
-        assert '<span class="dialog">' in result
-        assert "Hello," in result
-
-    def test_straight_quotes(self) -> None:
-        result = highlight_dialog('"Hello," she said.')
-        assert '<span class="dialog">' in result
-
     def test_no_quotes_unchanged(self) -> None:
         text = "The wind howled through the broken windows."
         assert highlight_dialog(text) == text
@@ -168,36 +132,13 @@ class TestBuildNarrativeStatus:
         ]
         return game
 
-    def test_returns_string(self, load_engine: None) -> None:
+    def test_the_status_tells_the_character_place_people_and_dangers_in_words(self, load_engine: None) -> None:
         text = build_narrative_status(self._game())
-        assert isinstance(text, str)
-        assert "Kael" in text
-
-    def test_contains_resources(self, load_engine: None) -> None:
-        text = build_narrative_status(self._game())
-        assert "bruised" in text
-        assert "shaken" in text
-        assert "well-equipped" in text
-
-    def test_contains_location(self, load_engine: None) -> None:
-        text = build_narrative_status(self._game())
-        assert "Library" in text
-
-    def test_npcs_filtered(self, load_engine: None) -> None:
-        text = build_narrative_status(self._game())
-        assert "Mira" in text
-        assert "Ghost" in text
+        for told in ("Kael", "bruised", "shaken", "well-equipped", "Library", "Mira", "Ghost", "Doom"):
+            assert told in text
         assert "Lore Figure" not in text
 
-    def test_clocks_present(self, load_engine: None) -> None:
-        text = build_narrative_status(self._game())
-        assert "Doom" in text
-
-    def test_story_arc_absent_without_blueprint(self, load_engine: None) -> None:
-        text = build_narrative_status(self._game())
-        assert "act" not in text.lower() or "Story:" not in text
-
-    def test_story_arc_present_with_blueprint(self, load_engine: None) -> None:
+    def test_the_status_names_the_act_of_the_story(self, load_engine: None) -> None:
         game = self._game()
         game.narrative.story_blueprint = make_blueprint(
             central_conflict="test",
@@ -205,35 +146,17 @@ class TestBuildNarrativeStatus:
             thematic_thread="theme",
             acts=[make_act(title="Begin", scene_range=[1, 10], mood="dark")],
         )
-        text = build_narrative_status(game)
-        assert "Begin" in text
+        assert "Begin" in build_narrative_status(game)
 
 
 class TestBuildCreationOptions:
-    def test_returns_settings(self, load_engine: None) -> None:
-        opts = build_creation_options()
-        assert "settings" in opts
-        assert len(opts["settings"]) >= 1
-
-    def test_settings_have_paths(self, load_engine: None) -> None:
-        opts = build_creation_options()
-        for s in opts["settings"]:
-            assert "id" in s
-            assert "title" in s
-            assert "paths" in s
-            assert len(s["paths"]) > 0
-
-    def test_delve_excluded(self, load_engine: None) -> None:
-        opts = build_creation_options()
-        ids = [s["id"] for s in opts["settings"]]
-        assert "delve" not in ids
-
-    def test_paths_have_id_and_title(self, load_engine: None) -> None:
-        opts = build_creation_options()
-        for s in opts["settings"]:
-            for p in s["paths"]:
-                assert "id" in p
-                assert "title" in p
+    def test_every_playable_setting_offers_its_paths_by_id_and_title(self, load_engine: None) -> None:
+        settings = build_creation_options()["settings"]
+        assert settings
+        assert "delve" not in [s["id"] for s in settings]
+        for s in settings:
+            assert all(s[key] for key in ("id", "title", "paths"))
+            assert all(p["id"] and p["title"] for p in s["paths"])
 
 
 class TestWebSocket:
@@ -334,41 +257,23 @@ class TestWebSocket:
             ws.send_json({"type": "delete_player", "name": "ws_broken"})
             assert ws.receive_json()["type"] == "players_list"
 
-    def test_a_foreign_origin_is_refused(self, client: Any) -> None:
-        with (
-            pytest.raises(WebSocketDisconnect),
-            client.websocket_connect("/ws", headers={"origin": "https://evil.example"}) as ws,
-        ):
-            ws.receive_json()
-
-
-def _origin_ws(headers: dict[str, str]) -> WebSocket:
-    return cast(WebSocket, SimpleNamespace(headers=headers))
-
-
-class TestOriginCheck:
-    @pytest.mark.parametrize(
-        "origin",
-        ["http://localhost:8081", "http://127.0.0.1:8081", "http://[::1]:8081"],
-    )
-    def test_loopback_origins_pass(self, origin: str) -> None:
-        from straightjacket.web.server import _check_origin
-
-        assert _check_origin(_origin_ws({"origin": origin, "host": "localhost:8081"}))
-
-    def test_no_origin_passes(self) -> None:
-        from straightjacket.web.server import _check_origin
-
-        assert _check_origin(_origin_ws({"host": "localhost:8081"}))
-
     @pytest.mark.parametrize(
         ("origin", "host"),
-        [("http://192.168.1.10:8081", "192.168.1.10:8081"), ("http://[fe80::1]:8081", "[fe80::1]:8081")],
+        [
+            (None, "localhost:8081"),
+            ("http://localhost:8081", "localhost:8081"),
+            ("http://127.0.0.1:8081", "localhost:8081"),
+            ("http://[::1]:8081", "localhost:8081"),
+            ("http://192.168.1.10:8081", "192.168.1.10:8081"),
+            ("http://[fe80::1]:8081", "[fe80::1]:8081"),
+        ],
     )
-    def test_a_lan_address_passes_when_the_page_came_from_the_same_address(self, origin: str, host: str) -> None:
-        from straightjacket.web.server import _check_origin
-
-        assert _check_origin(_origin_ws({"origin": origin, "host": host}))
+    def test_a_page_from_this_machine_or_from_the_address_it_reaches_connects(
+        self, client: Any, origin: str | None, host: str
+    ) -> None:
+        headers = {"host": host, **({"origin": origin} if origin else {})}
+        with client.websocket_connect("/ws", headers=headers) as ws:
+            assert ws.receive_json()["type"] == "ui_strings"
 
     @pytest.mark.parametrize(
         ("origin", "host"),
@@ -380,10 +285,12 @@ class TestOriginCheck:
             ("http://[::1", "localhost:8081"),
         ],
     )
-    def test_other_origins_are_refused(self, origin: str, host: str) -> None:
-        from straightjacket.web.server import _check_origin
-
-        assert not _check_origin(_origin_ws({"origin": origin, "host": host}))
+    def test_a_page_from_anywhere_else_is_refused(self, client: Any, origin: str, host: str) -> None:
+        with (
+            pytest.raises(WebSocketDisconnect),
+            client.websocket_connect("/ws", headers={"host": host, "origin": origin}) as ws,
+        ):
+            ws.receive_json()
 
 
 class TestSuccessionWebSocket:

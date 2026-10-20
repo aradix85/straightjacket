@@ -155,19 +155,18 @@ def test_event_capture_keeps_only_the_configured_prefixes() -> None:
 def test_a_failed_load_back_is_reported_not_raised(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from tests._helpers import make_game_state
-    from tests.elvira.elvira_bot import runner
-    from tests.elvira.elvira_bot.coverage import Coverage
-    from tests.elvira.elvira_bot.models import SessionLog
+    runner = _mock_direct_runner(monkeypatch, tmp_path)
 
     def broken_load(username: str, name: str) -> tuple[object, list]:
         raise RuntimeError("UNIQUE constraint failed: threads.id")
 
-    monkeypatch.setattr(runner, "_try_save", lambda *args: None)
     monkeypatch.setattr(runner, "load_game", broken_load)
-    slog = SessionLog(config={"game": {"setting_id": "starforged"}})
-    runner._save_and_verify(make_game_state(), "elvira", [], "slot", slog, Coverage())
-    assert "UNIQUE constraint failed" in slog.save_roundtrip_issues[0]
+    bot_cfg = runner.load_config(ELVIRA_CONFIG)
+    bot_cfg["session"] |= {"max_turns": 1, "inject_ai_failure_turn": 0}
+    bot_cfg["logging"]["print_full_narration"] = False
+    session = runner.run_session(bot_cfg, auto_override=True)
+    assert session.save_roundtrip_issues
+    assert all("UNIQUE constraint failed" in issue for issue in session.save_roundtrip_issues)
 
 
 def test_event_capture_keeps_every_warning_and_error() -> None:
