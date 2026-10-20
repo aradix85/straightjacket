@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.25] — 2026-10-20
+
+Elvira runs only when a run makes a real difference to the work, and no more runs or turns than that needs (Sessions with the user). The twelve-turn run of the engine before 9i that 2026.10.20.24 announced is dropped: the decision does not hang on it, and the engine's behaviour before 9i is known from the code. It was stopped during its opening. Roadmap 9i.0 and the definition of done keep only the run after 9i.
+
+Quality gate: 1758 tests, no code changed. Save format unchanged.
+
 ## [2026.10.20.24] — 2026-10-20
 
 Step 9i begins with the user's decision and 9i.0. Decided: a revelation lands in the act of the turning point it was seeded from, when a trigger of its own fires there and at the latest at the act's end, and only on a hit, a miss holding it to the next hit (roadmap 9i.1). Elvira now measures whether the narration conveys a revelation: her token meter keeps the narrator's prompt of each turn, a revelation found in it reaches her judge, whose verdict gains `revelation_conveyed`, and her report gains a section with how many turns had one, how often it came across, and in which scene each first did (`docs/elvira.md`). Elvira runs on the real models again, only those a change truly needs (Sessions with the user); the runs earlier releases left open are not caught up. Play does not change.
