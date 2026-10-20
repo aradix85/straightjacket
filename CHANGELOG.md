@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.30] — 2026-10-20
+
+The user's rule, in their words: a system from EdgeTales does something in play, so it never just goes. In the same step it is replaced, or its work is routed to a system the engine already has (Mythic's tables, lists, fate, and scene test, the Adventure Crafter, the ruleset and its Datasworn data, the engine's facts and time), and it leaves only once that does the work; only what never worked goes without one. The roadmap's decision "From EdgeTales to the sources" and AUDIT.md's principle 6 say so. In 9r nothing that worked was removed: the old way of telling an overcome threat moved to the vow that overcomes it, and the off-screen death vote never fired.
+
+Quality gate: 1767 tests, no code changed. Save format unchanged.
+
 ## [2026.10.20.29] — 2026-10-20
 
 The off-screen death vote is gone, with the user's consent to remove its files. It marked an active NPC dead when this scene's memories of other NPCs about it, and its own, carried `betrayed` or `devastated` at importance 9 (`ai/metadata.py` → `_check_death_corroboration`, from EdgeTales of 3 April), and since 0.37.0 only the engine writes a memory about another NPC, with labels that are never these words, so it could not fire. Gone with it: `engine/metadata_voting.yaml`, `gamemaster/death_emotions.yaml`, `npc.death_corroboration_min_importance`, `MetadataVotingConfig`, and the three tests that built memories play cannot make. Nothing replaces it as a guess: roadmap step 11b.3 lets an NPC die off screen only from an engine source, such as a random event aimed at it, a threat that achieves its goal, a plot point, or its own goal clock. The roadmap's 9u.9 leaves. The user's rule joins the decision "From EdgeTales to the sources" and AUDIT.md's principle 6: a system from EdgeTales leaves only together with what takes its place, and only what never worked goes without one; the substeps of 9u and 10b now name what replaces each rule.
