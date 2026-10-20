@@ -184,9 +184,9 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(lo
     from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
     from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
     from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
-    from tests.test_integration import _make_game
+    from tests._creation import library_game
 
-    game = _make_game()
+    game = library_game()
     seed = assemble_blueprint_seed_from_ac(random.Random(1), game)
     blueprint = crafter().adventure_crafter.blueprint
 

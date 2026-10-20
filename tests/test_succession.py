@@ -21,7 +21,7 @@ from straightjacket.engine.ruleset.succession import (
     seed_successor_legacy,
     threads_for_successor,
 )
-from tests._creation import OPENING_TEXT, OpeningProvider, create_game, creation_data
+from tests._creation import OPENING_TEXT, OpeningProvider, TurnProvider, create_game, creation_data
 from tests._helpers import (
     make_character_entry,
     make_game_state,
@@ -363,24 +363,20 @@ def test_a_successor_with_an_empty_name_or_vow_raises(aria: GameState, empty_fie
 
 
 def test_start_succession_without_pending_raises(aria: GameState) -> None:
-    class _FailingProvider:
-        def create_message(self, **_: Any) -> Any:
-            raise AssertionError("AI must not be invoked when pending_succession is False")
-
+    provider = TurnProvider()
     with pytest.raises(ValueError, match="pending_succession"):
-        start_succession_with_character(_FailingProvider(), aria, {})
+        start_succession_with_character(provider, aria, {})
+    assert provider.calls == []
 
 
 def test_start_succession_pending_without_predecessor_raises(aria: GameState) -> None:
     aria.campaign.pending_succession = True
     aria.campaign.predecessors = []
 
-    class _FailingProvider:
-        def create_message(self, **_: Any) -> Any:
-            raise AssertionError("AI must not be invoked when archive is empty")
-
+    provider = TurnProvider()
     with pytest.raises(ValueError, match="predecessors"):
-        start_succession_with_character(_FailingProvider(), aria, {})
+        start_succession_with_character(provider, aria, {})
+    assert provider.calls == []
 
 
 def test_succession_summary_renders_narrative_text(aria: GameState) -> None:

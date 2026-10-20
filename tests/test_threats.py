@@ -369,14 +369,15 @@ class TestAVowSwornAgainstAThreat:
 
     def test_the_brain_sees_threats_and_may_name_one_without_a_vow(self, load_engine: None) -> None:
         from straightjacket.engine.ai.brain import call_brain
-        from tests._creation import BrainAnswers
+        from tests._creation import TurnProvider, brain_answer
 
         game = _game_with_threat()
         game.threats.append(make_threat(id="threat_ac_1", name="The Hollow Choir"))
-        provider = BrainAnswers("adventure/face_danger", target_threat="threat_ac_1")
+        provider = TurnProvider(brain_answer(target_threat="threat_ac_1"))
         result = call_brain(provider, game, "I swear to silence the choir.")
-        message = provider.user_messages[0]
+        [call] = provider.calls
+        message = call.messages[-1]["content"]
         assert "The Beast Awakens (id:threat_beast) menace 0/10, the vow Hunt the beast is sworn against it" in message
         assert "The Hollow Choir (id:threat_ac_1) menace 0/10" in message
-        assert provider.schemas[0]["properties"]["target_threat"]["anyOf"][0]["enum"] == ["threat_ac_1"]
+        assert call.json_schema["properties"]["target_threat"]["anyOf"][0]["enum"] == ["threat_ac_1"]
         assert result.target_threat == "threat_ac_1"

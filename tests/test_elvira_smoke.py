@@ -5,10 +5,14 @@ from types import ModuleType
 
 import pytest
 
+from tests._creation import TurnProvider, brain_answer
 from tests.elvira.elvira_bot.models import SessionLog
-from tests.test_integration import MockProvider
 
 ELVIRA_CONFIG = Path(__file__).resolve().parent / "elvira" / "elvira_config.yaml"
+
+
+def _provider() -> TurnProvider:
+    return TurnProvider(brain_answer(player_intent="I search the room for clues", location_change=None))
 
 
 def _mock_direct_runner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> ModuleType:
@@ -23,8 +27,8 @@ def _mock_direct_runner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Modu
         monkeypatch.setattr(target, users)
     monkeypatch.setattr(runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(runner, "check_configured_models", lambda: None)
-    monkeypatch.setattr(runner, "get_provider", MockProvider)
-    monkeypatch.setattr(ai_helpers, "provider_named", lambda name: MockProvider())
+    monkeypatch.setattr(runner, "get_provider", _provider)
+    monkeypatch.setattr(ai_helpers, "provider_named", lambda name: _provider())
     monkeypatch.setattr(runner, "selectable_settings", lambda: ["starforged"])
     monkeypatch.setattr(runner, "available_styles", lambda: ["explorer"])
     return runner
@@ -108,9 +112,9 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
         monkeypatch.setattr(target, users)
     monkeypatch.setattr(ws_runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(api_client, "check_configured_models", lambda: None)
-    monkeypatch.setattr(api_client, "get_provider", MockProvider)
-    monkeypatch.setattr(ai_helpers, "provider_named", lambda name: MockProvider())
-    monkeypatch.setattr(handlers, "get_provider", MockProvider)
+    monkeypatch.setattr(api_client, "get_provider", _provider)
+    monkeypatch.setattr(ai_helpers, "provider_named", lambda name: _provider())
+    monkeypatch.setattr(handlers, "get_provider", _provider)
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]

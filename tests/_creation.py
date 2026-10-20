@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 import pytest
@@ -66,41 +66,6 @@ def _voicing(props: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-BRAIN_FIELDS: dict[str, Any] = {
-    "approach": "",
-    "target_npc": None,
-    "dialog_only": False,
-    "player_intent": "",
-    "world_addition": None,
-    "location_change": None,
-    "track_name": None,
-    "track_rank": None,
-    "target_track": None,
-    "target_clock": None,
-    "target_threat": None,
-    "bonus_id": None,
-    "undetermined_facts": [],
-    "boasts": [],
-}
-
-
-class BrainAnswers:
-    def __init__(self, move: str, **fields: Any) -> None:
-        self.move = move
-        self.fields = fields
-        self.schemas: list[dict[str, Any]] = []
-        self.systems: list[str] = []
-        self.user_messages: list[str] = []
-
-    def create_message(self, spec: AICallSpec) -> AIResponse:
-        assert spec.json_schema is not None
-        self.schemas.append(spec.json_schema)
-        self.systems.append(spec.system)
-        self.user_messages.append(spec.messages[-1]["content"])
-        answer = {**BRAIN_FIELDS, "move": self.move, "stat": "iron", "player_intent": "strike", **self.fields}
-        return AIResponse(content=json.dumps(answer), usage={"input_tokens": 0, "output_tokens": 0})
-
-
 def brain_answer(**overrides: Any) -> dict[str, Any]:
     brain: dict[str, Any] = {
         "move": "adventure/face_danger",
@@ -124,9 +89,23 @@ def brain_answer(**overrides: Any) -> dict[str, Any]:
     return brain
 
 
+def correction_answer(**overrides: Any) -> dict[str, Any]:
+    correction: dict[str, Any] = {
+        "correction_source": "input_misread",
+        "corrected_input": "I shoulder the vault door",
+        "narrator_guidance": "The player used force, not finesse.",
+        "director_useful": False,
+        "state_ops": [],
+    }
+    correction.update(overrides)
+    return correction
+
+
 class TurnProvider:
     def __init__(self, *brains: dict[str, Any]) -> None:
         self.brains = list(brains)
+        self.correction = correction_answer()
+        self.calls: list[AICallSpec] = []
         self.narrations: list[str] = []
         self.prompts: list[str] = []
 
@@ -135,35 +114,41 @@ class TurnProvider:
         return AIResponse(content=json.dumps(payload), usage={"input_tokens": 10, "output_tokens": 10})
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
-        props = spec.json_schema.get("properties", {}) if spec.json_schema else {}
-        if "correction_source" in props:
-            return self._json(
-                {
-                    "correction_source": "input_misread",
-                    "corrected_input": "I shoulder the vault door",
-                    "narrator_guidance": "The player used force, not finesse.",
-                    "director_useful": False,
-                    "state_ops": [],
-                }
-            )
+        self.calls.append(spec)
+        props = spec.json_schema["properties"] if spec.json_schema else {}
         if "move" in props:
             return self._json(self.brains.pop(0) if len(self.brains) > 1 else self.brains[0])
+        if "correction_source" in props:
+            return self._json(self.correction)
         if "new_npcs" in props:
             return self._json(
                 {"new_npcs": [], "npc_renames": [], "npc_details": [], "deceased_npcs": [], "lore_npcs": []}
             )
         if "revelation_confirmed" in props:
             return self._json({"revelation_confirmed": False, "reasoning": "Absent."})
+        if "scene_summary" in props:
+            return self._json(
+                {
+                    "scene_summary": "",
+                    "narrator_guidance": "",
+                    "npc_guidance": [],
+                    "npc_reflections": {},
+                    "arc_notes": "",
+                }
+            )
         text = f"Scene text number {len(self.narrations) + 1}. Dust drifts through the lamplight."
-        self.narrations.append(text)
-        self.prompts.append(str(spec.messages[-1]["content"]))
+        if spec.log_role == "narrator":
+            self.narrations.append(text)
+            self.prompts.append(str(spec.messages[-1]["content"]))
         return AIResponse(content=text, usage={"input_tokens": 10, "output_tokens": 10})
 
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+        response = self.create_message(spec)
+        on_text(response.content)
+        return response
 
-def force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.ruleset import make_move
 
+def fixed_roll(result: str) -> Callable[[str, int, str, int, int], RollResult]:
     def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
         return RollResult(
             d1=1,
@@ -177,7 +162,14 @@ def force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
             match=False,
         )
 
-    monkeypatch.setattr(make_move, "roll_action", _roll)
+    return _roll
+
+
+def force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
+    from straightjacket.engine.game import turn
+    from straightjacket.engine.ruleset import make_move
+
+    monkeypatch.setattr(make_move, "roll_action", fixed_roll(result))
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
 
 
@@ -224,7 +216,7 @@ def library_game() -> GameState:
     game = create_game(
         "classic",
         location="Abandoned Library",
-        npcs=[("Mira", "An archivist.", "friendly")],
+        npcs=[("Mira", "Young archivist with ink-stained hands", "friendly")],
         stats=(2, 2, 1, 1, 3),
         player_name="Kael",
         background_vow="Keep the archive whole",

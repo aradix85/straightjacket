@@ -1,13 +1,9 @@
-import json
-import sys
-from collections.abc import Callable
-
 import pytest
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import labels_of
 from straightjacket.engine.ruleset.progress import menace_per_mark, ticks_per_mark
+from tests._creation import TurnProvider, brain_answer, fixed_roll, force_result, library_game
 from tests._helpers import (
     action_prompt_kwargs,
     dialog_prompt_kwargs,
@@ -19,161 +15,22 @@ from tests._helpers import (
     make_scene_setup,
 )
 
-
-class MockProvider:
-    def __init__(self) -> None:
-        self.calls: list = []
-
-    def create_message(self, spec: AICallSpec) -> AIResponse:
-        json_schema = spec.json_schema
-        self.calls.append(
-            {
-                "model": spec.model,
-                "system_len": len(spec.system),
-                "messages": spec.messages,
-                "json_schema": json_schema,
-            }
-        )
-
-        if json_schema and "move" in json_schema.get("properties", {}):
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "move": "adventure/face_danger",
-                        "stat": "wits",
-                        "approach": "carefully examining the area",
-                        "target_npc": None,
-                        "dialog_only": False,
-                        "player_intent": "I search the room for clues",
-                        "world_addition": None,
-                        "location_change": None,
-                        "track_name": None,
-                        "track_rank": None,
-                        "target_track": None,
-                        "target_clock": None,
-                        "target_threat": None,
-                        "bonus_id": None,
-                        "undetermined_facts": [],
-                        "boasts": [],
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-
-        if json_schema and "new_npcs" in json_schema.get("properties", {}):
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "new_npcs": [],
-                        "npc_renames": [],
-                        "npc_details": [],
-                        "deceased_npcs": [],
-                        "lore_npcs": [],
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-
-        if json_schema and "pass" in json_schema.get("properties", {}):
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "pass": True,
-                        "violations": [],
-                        "correction": "",
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-
-        if json_schema and "revelation_confirmed" in json_schema.get("properties", {}):
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "revelation_confirmed": False,
-                        "reasoning": "Not present in narration.",
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-
-        if json_schema and "scene_summary" in json_schema.get("properties", {}):
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "scene_summary": "The player searched the room.",
-                        "narrator_guidance": "Build tension slowly.",
-                        "npc_guidance": [],
-                        "npc_reflections": {},
-                        "arc_notes": "Story is progressing.",
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-
-        if json_schema and "correction_source" in json_schema.get("properties", {}):
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "correction_source": "input_misread",
-                        "corrected_input": "I talk to the guard instead",
-                        "narrator_guidance": "Rewrite as dialog with the guard.",
-                        "director_useful": False,
-                        "state_ops": [],
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-
-        return AIResponse(
-            content="\u201cThe dust hung thick in the air. Your fingers traced the "
-            "edge of the desk, finding nothing but splinters and silence. "
-            "From the hallway, a floorboard groaned under weight that "
-            "wasn\u2019t yours.\u201d",
-            usage={"input_tokens": 100, "output_tokens": 50},
-        )
-
-    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
-        response = self.create_message(spec)
-        on_text(response.content)
-        return response
-
-
-def _make_game():
-    from tests._creation import create_game
-
-    game = create_game(
-        "classic",
-        location="Abandoned Library",
-        npcs=[("Mira", "Young archivist with ink-stained hands", "friendly")],
-        stats=(2, 2, 1, 1, 3),
-        player_name="Kael",
-        background_vow="Keep the archive whole",
-    )
-    mira = game.npcs[0]
-    mira.agenda = "protect the archives"
-    mira.instinct = "trust cautiously"
-    mira.memory.append(
-        make_memory(event="Met the player at the entrance", emotional_weight="curious", type="observation", scene=1)
-    )
-    game.world.clocks.append(
-        make_clock(
-            name="Shadow Rising",
-            clock_type="threat",
-            segments=6,
-            filled=2,
-            owner_kind="world",
-            trigger_description="Darkness engulfs the library",
-        )
-    )
-    return game
+_SEARCH = brain_answer(player_intent="I search the room for clues", location_change=None)
+_TALK = brain_answer(
+    move="dialog",
+    stat="none",
+    dialog_only=True,
+    target_npc="npc_1",
+    player_intent="I talk to Mira",
+    location_change=None,
+)
 
 
 def test_turn_action_produces_narration(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
 
-    provider = MockProvider()
-    game = _make_game()
+    provider = TurnProvider(_SEARCH)
+    game = library_game()
     initial_scene = game.narrative.scene_count
 
     narration, roll, _burn_info, _director_ctx = process_turn(
@@ -185,8 +42,7 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
 
     assert game.narrative.scene_count == initial_scene + 1
 
-    assert len(narration) > 20
-    assert "dust" in narration.lower()
+    assert narration == provider.narrations[-1]
 
     assert roll is not None
     assert roll.move == "adventure/face_danger"
@@ -199,17 +55,17 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
     assert [entry.result for entry in game.narrative.session_log] == ["opening", roll.result]
     assert game.narrative.session_log[-1].move == "adventure/face_danger"
 
-    assert len(provider.calls) >= 3
+    assert {"brain", "narrator", "narrator_metadata"} <= {call.log_role for call in provider.calls}
 
 
 def test_an_npc_the_narration_leaves_out_was_not_in_the_scene(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
 
-    game = _make_game()
+    game = library_game()
     mira = game.npcs[0]
     game.world.current_scene_context = "conversation at Abandoned Library with Mira"
     for _ in range(2):
-        process_turn(MockProvider(), game, "I search the room for clues", stream=None)
+        process_turn(TurnProvider(_SEARCH), game, "I search the room for clues", stream=None)
 
     assert [m.scene for m in mira.memory if m.scene > 1] == []
     assert "Mira" not in game.world.current_scene_context
@@ -221,7 +77,7 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
     from straightjacket.engine.story_state import get_current_act
     from tests._helpers import make_blueprint
 
-    game = _make_game()
+    game = library_game()
     game.narrative.story_blueprint = make_blueprint(
         central_conflict="x",
         acts=[
@@ -238,7 +94,7 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
     )
 
     _narration, _roll, _burn_info, _director_ctx = process_turn(
-        MockProvider(), game, "I search the room for clues", stream=None
+        TurnProvider(_SEARCH), game, "I search the room for clues", stream=None
     )
 
     assert game.narrative.scene_count == 2
@@ -247,29 +103,15 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
     assert get_current_act(game).act_number == 2
 
 
-class _ScriptedBrain(MockProvider):
-    def __init__(self, *answers: dict) -> None:
-        super().__init__()
-        self.answers = list(answers)
-
-    def create_message(self, spec: AICallSpec) -> AIResponse:
-        from tests._creation import BRAIN_FIELDS
-
-        if spec.json_schema and "move" in spec.json_schema["properties"]:
-            answer = {**BRAIN_FIELDS, **self.answers.pop(0)}
-            return AIResponse(content=json.dumps(answer), usage={"input_tokens": 100, "output_tokens": 50})
-        return super().create_message(spec)
-
-
 def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
 
-    journey = {"move": "adventure/undertake_a_journey", "stat": "wits", "track_rank": "dangerous"}
-    provider = _ScriptedBrain(
+    journey = brain_answer(move="adventure/undertake_a_journey", location_change=None)
+    provider = TurnProvider(
         {**journey, "track_name": "To the ridge"},
         {**journey, "track_name": "Across the moor", "target_track": "journey_to_the_ridge"},
     )
-    game = _make_game()
+    game = library_game()
     hits = 0
     for _ in range(2):
         _narration, roll, _burn_info, _director_ctx = process_turn(provider, game, "I travel on", stream=None)
@@ -278,34 +120,6 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: Non
     [track] = [t for t in game.progress_tracks if t.track_type == "journey"]
     assert (track.id, track.status) == ("journey_to_the_ridge", "active")
     assert track.ticks == hits * ticks_per_mark(track)
-
-
-def _rolling(result: str) -> Callable[[str, int, str, int, int], object]:
-    from straightjacket.engine.models import RollResult
-
-    def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
-        hit = result != "MISS"
-        return RollResult(
-            d1=6 if hit else 1,
-            c1=1 if hit else 9,
-            c2=2 if hit else 10,
-            stat_name=stat_name,
-            stat_value=stat_value,
-            action_score=min(6 + stat_value, 10) if hit else 1 + stat_value,
-            result=result,
-            move=move,
-            match=False,
-        )
-
-    return _roll
-
-
-def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.ruleset import make_move
-
-    monkeypatch.setattr(make_move, "roll_action", _rolling(result))
-    monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
 
 
 @pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
@@ -324,17 +138,13 @@ def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_devel
         background_vow="Keep the station running",
     )
     kira = game.npcs[0].id
-    _force_result(monkeypatch, result)
-    provider = _ScriptedBrain(
-        {
-            "move": "connection/make_a_connection",
-            "stat": "heart",
-            "target_npc": kira,
-            "track_name": "Kira",
-            "track_rank": "dangerous",
-        },
-        {"move": "connection/test_your_relationship", "stat": "heart", "target_npc": kira},
-        {"move": "connection/develop_your_relationship", "stat": "none", "target_npc": kira},
+    force_result(monkeypatch, result)
+    provider = TurnProvider(
+        brain_answer(
+            move="connection/make_a_connection", stat="heart", target_npc=kira, track_name="Kira", location_change=None
+        ),
+        brain_answer(move="connection/test_your_relationship", stat="heart", target_npc=kira, location_change=None),
+        brain_answer(move="connection/develop_your_relationship", stat="none", target_npc=kira, location_change=None),
     )
     _narration, _roll, _burn, _director = process_turn(provider, game, "I share a drink with Kira", stream=None)
     connections = [t for t in game.progress_tracks if t.track_type == "connection"]
@@ -355,56 +165,14 @@ def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_devel
 def test_turn_dialog_skips_roll(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
 
-    provider = MockProvider()
-
-    original_create = provider.create_message
-    call_count = [0]
-
-    def dialog_brain(spec):
-        call_count[0] += 1
-        schema = spec.json_schema
-        is_brain = bool(schema and "move" in schema.get("properties", {}))
-        if is_brain:
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "move": "dialog",
-                        "stat": "none",
-                        "approach": "",
-                        "target_npc": "npc_1",
-                        "dialog_only": True,
-                        "player_intent": "I talk to Mira",
-                        "world_addition": None,
-                        "location_change": None,
-                        "track_name": None,
-                        "track_rank": None,
-                        "target_track": None,
-                        "target_clock": None,
-                        "target_threat": None,
-                        "bonus_id": None,
-                        "undetermined_facts": [],
-                        "boasts": [],
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-        return original_create(spec)
-
-    provider.create_message = dialog_brain
-
-    game = _make_game()
-    narration, roll, _burn_info, _director_ctx = process_turn(
-        provider,
-        game,
-        "I talk to Mira",
-        stream=None,
-    )
+    provider = TurnProvider(_TALK)
+    game = library_game()
+    narration, roll, _burn_info, _director_ctx = process_turn(provider, game, "I talk to Mira", stream=None)
 
     assert roll is None
-
-    assert len(narration) > 10
-
+    assert narration == provider.narrations[-1]
     assert game.narrative.scene_count == 2
+    assert game.narrative.session_log[-1].result == "dialog"
 
 
 def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_is_told(
@@ -417,26 +185,19 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
     from straightjacket.engine.ruleset import threats as threats_module
 
     monkeypatch.setattr(threats_module.random, "random", lambda: 0.0)
-    game = _make_game()
+    game = library_game()
     [vow] = [t for t in game.progress_tracks if t.track_type == "vow"]
     threat = make_threat(id="t_king", name="The Hollow King", linked_vow_id=vow.id, rank="dangerous")
     threat.menace_ticks = threat.max_menace_ticks - menace_per_mark(threat)
     game.threats.append(threat)
-    talk = {"move": "dialog", "stat": "none", "dialog_only": True, "target_npc": game.npcs[0].id}
-    provider = _ScriptedBrain(talk, talk)
+    provider = TurnProvider(_TALK)
 
     turn.process_turn(provider, game, "I talk to Mira", stream=None)
     assert (threat.menace_full, threat.status, vow.status) == (True, "active", "active")
 
     turn.process_turn(provider, game, "I talk to Mira again", stream=None)
-    narrator_prompt = [c for c in provider.calls if not c["json_schema"]][-1]["messages"][-1]["content"]
-    assert '<vow_forsaken threat="The Hollow King"/>' in narrator_prompt
+    assert '<vow_forsaken threat="The Hollow King"/>' in provider.prompts[-1]
     assert (threat.status, vow.status) == ("resolved", "failed")
-
-
-def _last_narrator_prompt(provider: MockProvider) -> str:
-    prompt: str = [c for c in provider.calls if not c["json_schema"]][-1]["messages"][-1]["content"]
-    return prompt
 
 
 def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
@@ -445,16 +206,16 @@ def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
     from straightjacket.engine.game import turn
     from straightjacket.engine.ruleset import move_outcome
 
-    _force_result(monkeypatch, "WEAK_HIT")
-    monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
-    game = _make_game()
+    force_result(monkeypatch, "WEAK_HIT")
+    monkeypatch.setattr(move_outcome, "roll_action", fixed_roll("MISS"))
+    game = library_game()
     game.resources.meters["health"], game.resources.meters["spirit"], game.resources.meters["supply"] = 0, 0, 0
-    provider = _ScriptedBrain({"move": "adventure/face_danger", "stat": "wits"})
+    provider = TurnProvider(_SEARCH)
 
     turn.process_turn(provider, game, "I climb the crumbling shelves", stream=None)
 
     assert (game.game_over, game.crisis_mode, game.impacts) == (False, True, ["wounded"])
-    assert "follow-up move Endure Harm: MISS" in _last_narrator_prompt(provider)
+    assert "follow-up move Endure Harm: MISS" in provider.prompts[-1]
     assert "follow-up move Endure Harm: MISS" in labels_of(game.narrative.session_log[-1].consequences)
 
 
@@ -466,16 +227,16 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
     from straightjacket.engine.ruleset.suffer import start_dying_clock
 
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
-    monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
-    game = _make_game()
+    monkeypatch.setattr(move_outcome, "roll_action", fixed_roll("MISS"))
+    game = library_game()
     game.resources.meters["health"] = 0
     start_dying_clock(game)
     game.world.clocks[-1].filled = 1
-    provider = _ScriptedBrain({"move": "dialog", "stat": "none", "dialog_only": True, "target_npc": game.npcs[0].id})
+    provider = TurnProvider(_TALK)
 
     turn.process_turn(provider, game, "I whisper to Mira", stream=None)
 
-    prompt = _last_narrator_prompt(provider)
+    prompt = provider.prompts[-1]
     assert game.game_over
     for told in ("Dying: out of time", "follow-up move Face Death: MISS", "you are dead"):
         assert f"<consequence>{told}</consequence>" in prompt
@@ -487,7 +248,7 @@ def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytes
     from tests._helpers import record_price_tables
 
     rolled = record_price_tables(monkeypatch)
-    game = _make_game()
+    game = library_game()
 
     result = resolve_move_outcome(game, "adventure/face_danger", "MISS", target_npc_id=None, match=False)
 
@@ -498,7 +259,7 @@ def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytes
 def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.gamemaster.scene import check_scene
 
-    game = _make_game()
+    game = library_game()
     game.world.chaos_factor = 9
 
     def scene_type(roll: int) -> str:
@@ -512,7 +273,7 @@ def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.
 def test_dialog_prompt_contains_world_and_character(load_engine: None) -> None:
     from straightjacket.engine.prompt_dialog import build_dialog_prompt
 
-    game = _make_game()
+    game = library_game()
     brain = make_brain_result(
         move="dialog",
         target_npc="npc_1",
@@ -530,7 +291,7 @@ def test_action_prompt_contains_result_and_position(load_engine: None) -> None:
     from straightjacket.engine.models import RollResult
     from straightjacket.engine.prompt_action import build_action_prompt
 
-    game = _make_game()
+    game = library_game()
     brain = make_brain_result(
         move="adventure/face_danger",
         stat="wits",
@@ -569,7 +330,7 @@ def test_action_prompt_contains_result_and_position(load_engine: None) -> None:
 def test_narrator_system_prompt_includes_constraints(load_engine: None) -> None:
     from straightjacket.engine.prompt_blocks import get_narrator_system
 
-    game = _make_game()
+    game = library_game()
     game.preferences.content_lines = "no spiders"
 
     system, cached_prefix = get_narrator_system(game)
@@ -585,8 +346,8 @@ def test_narrator_system_prompt_includes_constraints(load_engine: None) -> None:
 def test_correction_brain_parses_response(load_engine: None) -> None:
     from straightjacket.engine.correction.analysis import call_correction_brain
 
-    provider = MockProvider()
-    game = _make_game()
+    provider = TurnProvider()
+    game = library_game()
 
     snap = game.snapshot()
     snap.player_input = "I attack the guard"
@@ -604,7 +365,7 @@ def test_momentum_burn_upgrades_result() -> None:
     from straightjacket.engine.models import RollResult
     from straightjacket.engine.ruleset.rolls import can_burn_momentum
 
-    game = _make_game()
+    game = library_game()
     game.resources.meters["momentum"] = 7
 
     roll = RollResult(
@@ -642,7 +403,7 @@ def test_story_completion_triggers() -> None:
     from straightjacket.engine.models import StoryBlueprint
     from straightjacket.engine.story_state import get_current_act
 
-    game = _make_game()
+    game = library_game()
     game.narrative.story_blueprint = StoryBlueprint.from_dict(
         {
             "structure_type": "3act",
@@ -693,7 +454,7 @@ def test_story_completion_triggers() -> None:
 def test_correction_state_ops_npc_edit(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
-    game = _make_game()
+    game = library_game()
     original_name = game.npcs[0].name
 
     apply_correction_ops(
@@ -718,7 +479,7 @@ def test_correction_state_ops_npc_edit(load_engine: None) -> None:
 def test_correction_state_ops_npc_rename(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
-    game = _make_game()
+    game = library_game()
 
     apply_correction_ops(
         game,
@@ -741,7 +502,7 @@ def test_correction_state_ops_npc_rename(load_engine: None) -> None:
 def test_correction_state_ops_location_edit(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
-    game = _make_game()
+    game = library_game()
 
     apply_correction_ops(
         game,
@@ -763,7 +524,7 @@ def test_correction_state_ops_location_edit(load_engine: None) -> None:
 def test_correction_state_ops_npc_split(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
-    game = _make_game()
+    game = library_game()
     count_before = len(game.npcs)
 
     apply_correction_ops(
@@ -805,7 +566,7 @@ def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
 
     warnings: list[str] = []
     monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
-    game = _make_game()
+    game = library_game()
     ops.apply_correction_ops(game, [_op("npc_edit", npc_id="npc_1", fields={"name": " ", "agenda": "hide"})])
     assert (game.npcs[0].name, game.npcs[0].agenda) == ("Mira", "hide")
     assert warnings == ["[Correction] npc_edit: Mira keeps its name, the analysis gave an empty one"]
@@ -814,7 +575,7 @@ def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
 def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
-    game = _make_game()
+    game = library_game()
     game.npcs[0].description = "A tall woman who guards the totem of the dead king"
     apply_correction_ops(game, [_op("npc_edit", npc_id="npc_1", fields={"status": "deceased"})])
     assert game.npcs[0].status == "deceased"
@@ -827,7 +588,7 @@ def test_a_split_without_a_name_rolls_one_and_numbers_the_npc(
     from straightjacket.engine.correction import ops
 
     monkeypatch.setattr(ops, "roll_oracle_name", lambda game: "Bren Hollow")
-    game = _make_game()
+    game = library_game()
     game.npcs[0].last_location = "Abandoned Library"
     ops.apply_correction_ops(game, [_op("npc_split", npc_id="npc_1")])
     twin = game.npcs[-1]
@@ -854,7 +615,7 @@ def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
 
     warnings: list[str] = []
     monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
-    game = _make_game()
+    game = library_game()
     before = game.to_dict()
     ops.apply_correction_ops(game, [op])
     assert game.to_dict() == before
@@ -871,7 +632,7 @@ def test_every_correction_op_the_analysis_is_offered_is_applied_above(load_engin
 def test_description_match_catches_identity_reveal(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
 
-    game = _make_game()
+    game = library_game()
 
     match = description_match_existing_npc(
         game,
@@ -885,7 +646,7 @@ def test_description_match_catches_identity_reveal(load_engine: None) -> None:
 def test_description_match_rejects_short_descriptions(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
 
-    game = _make_game()
+    game = library_game()
     match = description_match_existing_npc(game, "Short", "stranger")
     assert match is None
 
@@ -893,7 +654,7 @@ def test_description_match_rejects_short_descriptions(load_engine: None) -> None
 def test_merge_npc_identity_updates_clock_owner(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
 
-    game = _make_game()
+    game = library_game()
     game.world.clocks = [
         make_clock(name="Mira's scheme", clock_type="scheme", owner_kind="npc", owner_id="Mira"),
     ]
@@ -905,7 +666,7 @@ def test_merge_npc_identity_updates_clock_owner(load_engine: None) -> None:
 def test_correction_state_ops_npc_merge(load_engine: None) -> None:
     from straightjacket.engine.correction.ops import apply_correction_ops
 
-    game = _make_game()
+    game = library_game()
     source = make_npc(
         id="npc_3",
         name="Stranger",
@@ -921,104 +682,14 @@ def test_correction_state_ops_npc_merge(load_engine: None) -> None:
     assert "Stranger" in target.aliases, "source name should become alias"
 
 
-def test_chapter_about_npc_id_remap(load_engine: None) -> None:
-    npc_a = make_npc(id="npc_1", name="Kira", memory=[make_memory(scene=3, event="trusts Borin", about_npc="npc_2")])
-    npc_b = make_npc(id="npc_2", name="Borin", memory=[make_memory(scene=3, event="suspects Kira", about_npc="npc_1")])
-
-    from straightjacket.engine.gamemaster.npc.matching import next_npc_id
-
-    game = _make_game()
-    game.npcs = []
-    returning = [npc_a, npc_b]
-
-    id_remap = {}
-    new_names = set()
-    for old_npc in returning:
-        old_id = old_npc.id
-        fresh_id = next_npc_id(game)
-        id_remap[old_id] = fresh_id
-        old_npc.id = fresh_id
-        game.npcs.append(old_npc)
-        new_names.add(old_npc.name.lower())
-
-    if id_remap:
-        for npc in game.npcs:
-            for mem in npc.memory:
-                if mem.about_npc and mem.about_npc in id_remap:
-                    mem.about_npc = id_remap[mem.about_npc]
-
-    kira = next(n for n in game.npcs if n.name == "Kira")
-    borin = next(n for n in game.npcs if n.name == "Borin")
-
-    assert kira.memory[0].about_npc == borin.id
-
-    assert borin.memory[0].about_npc == kira.id
-
-
-if __name__ == "__main__":
-    tests = [(name, obj) for name, obj in globals().items() if name.startswith("test_") and callable(obj)]
-    passed = failed = 0
-    for name, fn in tests:
-        try:
-            fn()
-            print(f"  PASS: {name}")
-            passed += 1
-        except Exception as e:
-            print(f"  FAIL: {name}: {e}")
-            import traceback
-
-            traceback.print_exc()
-            failed += 1
-    print(f"\n{passed} passed, {failed} failed out of {passed + failed}")
-    sys.exit(1 if failed else 0)
-
-
 def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
 
-    provider = MockProvider()
-    original_create = provider.create_message
-
-    def dialog_brain(spec: AICallSpec) -> AIResponse:
-        schema = spec.json_schema
-        if schema and "move" in schema["properties"]:
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "move": "dialog",
-                        "stat": "none",
-                        "approach": "",
-                        "target_npc": "npc_1",
-                        "dialog_only": True,
-                        "player_intent": "I talk to Mira",
-                        "world_addition": None,
-                        "location_change": None,
-                        "track_name": None,
-                        "track_rank": None,
-                        "target_track": None,
-                        "target_clock": None,
-                        "target_threat": None,
-                        "bonus_id": None,
-                        "undetermined_facts": [],
-                        "boasts": [],
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-        return original_create(spec)
-
-    provider.create_message = dialog_brain
-    game = _make_game()
+    provider = TurnProvider(_TALK)
+    game = library_game()
     for npc in game.npcs:
         npc.status = "active"
         npc.agenda = "Keep the archive sealed"
     game.narrative.scene_count = gm().pacing.npc_agency_interval - 1
     process_turn(provider, game, "I talk to Mira", stream=None)
-    prompts = [
-        message["content"]
-        for call in provider.calls
-        if not call["json_schema"]
-        for message in call["messages"]
-        if isinstance(message["content"], str)
-    ]
-    assert any("<npc_agency>" in prompt for prompt in prompts)
+    assert "<npc_agency>" in provider.prompts[-1]

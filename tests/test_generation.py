@@ -33,10 +33,9 @@ def test_a_role_rolls_the_table_an_earlier_role_points_to(load_engine: None, mon
     linked = roll_generator_tables(starforged, starforged.generator_tables("location"))
     feature = starforged.oracle_table("location_theme/chaotic/feature").rows[0].text
     assert linked == {"theme": "Chaotic", "feature": plain_text(feature)}
-    fix_dice(monkeypatch, 1)
+    fix_dice(monkeypatch, 1, 1, 1, 1)
     named = roll_generator_tables(isles, isles.generator_tables("settlement"))
-    assert named["location"] == "Shore"
-    assert named["focus"] in {plain_text(row.text) for row in isles.oracle_table("settlement/focus/shore").rows}
+    assert (named["location"], named["focus"]) == ("Shore", "Piracy")
 
 
 def test_the_place_categories_are_registered(load_engine: None) -> None:
