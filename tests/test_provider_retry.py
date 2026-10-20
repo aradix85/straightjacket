@@ -1,100 +1,147 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from types import SimpleNamespace
+from typing import Any
+
 import pytest
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.ai import provider_base
+from straightjacket.engine.ai.provider_base import (
+    AICallSpec,
+    AIResponse,
+    AIUnavailableError,
+    create_with_retry,
+    post_process_response,
+    stream_with_retry,
+)
+from straightjacket.engine.ai.sentence_stream import SentenceStream
 
 
-def _spec(max_retries: int = 0) -> AICallSpec:
+def _spec(max_retries: int = 2) -> AICallSpec:
     return AICallSpec(
         model="m",
         system="s",
         messages=[{"role": "user", "content": "hi"}],
-        max_tokens=100,
+        max_tokens=8,
+        log_role="narrator",
         max_retries=max_retries,
     )
 
 
-def test_create_with_retry_retries_on_connection_error() -> None:
-    from straightjacket.engine.ai.provider_base import create_with_retry
+class _Scripted:
+    def __init__(self, *outcomes: Any) -> None:
+        self.outcomes = list(outcomes)
+        self.calls = 0
 
-    call_count = [0]
-
-    class FlakeyProvider:
-        def create_message(self, spec: AICallSpec) -> AIResponse:
-            call_count[0] += 1
-            if call_count[0] <= 1:
-                raise ConnectionError("reset")
-            return AIResponse(content="OK", usage={"input_tokens": 10, "output_tokens": 10})
-
-    resp = create_with_retry(FlakeyProvider(), _spec(max_retries=2))
-    assert resp.content == "OK"
-    assert call_count[0] == 2
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        self.calls += 1
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
 
 
-def test_create_with_retry_retries_a_timeout_whose_message_never_says_connection(load_engine: None) -> None:
-    from straightjacket.engine.ai.provider_base import create_with_retry
-
-    class APIConnectionError(Exception):
-        pass
-
-    class APITimeoutError(APIConnectionError):
-        pass
-
-    outcomes: list[Exception | AIResponse] = [APITimeoutError("Request timed out."), AIResponse(content="OK")]
-
-    class SlowOnce:
-        def create_message(self, spec: AICallSpec) -> AIResponse:
-            outcome = outcomes.pop(0)
-            if isinstance(outcome, Exception):
-                raise outcome
-            return outcome
-
-    assert create_with_retry(SlowOnce(), _spec(max_retries=1)).content == "OK"
+class _RateLimited(Exception):
+    def __init__(self, retry_after: str) -> None:
+        super().__init__("rate limited")
+        self.status_code = 429
+        self.response = type("R", (), {"headers": {"retry-after": retry_after}})()
 
 
-def test_create_with_retry_raises_on_exhaustion() -> None:
-    from straightjacket.engine.ai.provider_base import AIUnavailableError, create_with_retry
+class APIConnectionError(Exception):
+    pass
 
-    class AlwaysFail:
-        def create_message(self, spec: AICallSpec) -> AIResponse:
-            raise ConnectionError("permanent")
 
+class APITimeoutError(APIConnectionError):
+    pass
+
+
+@pytest.fixture
+def waits(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    recorded: list[float] = []
+    monkeypatch.setattr(provider_base, "_time", SimpleNamespace(sleep=recorded.append))
+    return recorded
+
+
+@pytest.mark.parametrize(
+    "failure", [ConnectionError("reset"), APITimeoutError("Request timed out.")], ids=["connection", "timeout"]
+)
+def test_a_connection_error_is_retried_whatever_its_message_says(load_engine: None, failure: Exception) -> None:
+    provider = _Scripted(failure, AIResponse(content="OK", stop_reason="complete"))
+    assert create_with_retry(provider, _spec()).content == "OK"
+    assert provider.calls == 2
+
+
+def test_a_connection_error_on_every_attempt_makes_the_ai_unavailable(load_engine: None) -> None:
+    provider = _Scripted(ConnectionError("permanent"), ConnectionError("permanent"))
     with pytest.raises(AIUnavailableError) as raised:
-        create_with_retry(AlwaysFail(), _spec(max_retries=1))
+        create_with_retry(provider, _spec(max_retries=1))
     assert isinstance(raised.value.__cause__, ConnectionError)
 
 
-def test_post_process_decodes_literal_unicode_escapes() -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
-
-    raw = AIResponse(content="She said \\u201chello\\u201d.", stop_reason="complete", tool_calls=[], usage={})
-    result = post_process_response(raw)
-    assert result.content == "She said \u201chello\u201d."
-
-
-def test_post_process_leaves_real_unicode_alone() -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
-
-    raw = AIResponse(content="She said \u201chello\u201d.", stop_reason="complete", tool_calls=[], usage={})
-    result = post_process_response(raw)
-    assert result.content == "She said \u201chello\u201d."
-
-
-def test_post_process_handles_mixed_real_and_literal_escapes() -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
-
-    raw = AIResponse(
-        content="real \u201cquote\u201d and literal \\u201cquote\\u201d",
-        stop_reason="complete",
-        tool_calls=[],
-        usage={},
+def test_a_refusal_is_retried(load_engine: None) -> None:
+    provider = _Scripted(
+        AIResponse(content="", stop_reason="refusal"), AIResponse(content="The door holds.", stop_reason="complete")
     )
-    result = post_process_response(raw)
-    assert result.content == "real \u201cquote\u201d and literal \u201cquote\u201d"
+    result = create_with_retry(provider, _spec())
+    assert (result.content, provider.calls) == ("The door holds.", 2)
 
 
-def test_post_process_keeps_the_reasoning_when_it_changes_the_content() -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
+def test_a_persistent_refusal_raises_after_the_last_attempt(load_engine: None) -> None:
+    provider = _Scripted(*(AIResponse(content="", stop_reason="refusal") for _ in range(3)))
+    with pytest.raises(AIUnavailableError, match="model refused on every attempt"):
+        create_with_retry(provider, _spec(max_retries=2))
+    assert provider.calls == 3
 
+
+def test_retry_after_is_honoured_and_capped(load_engine: None, waits: list[float]) -> None:
+    provider = _Scripted(_RateLimited("7"), _RateLimited("600"), AIResponse(content="ok", stop_reason="complete"))
+    assert create_with_retry(provider, _spec()).content == "ok"
+    assert waits == [7.0, 60.0]
+
+
+class _StreamFails:
+    def __init__(self, refuses: bool) -> None:
+        self.refuses = refuses
+
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        return AIResponse(content="Recovered without streaming.", stop_reason="complete")
+
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+        on_text("Half a sent")
+        if self.refuses:
+            return AIResponse(content="Half a sent", stop_reason="refusal")
+        raise ConnectionError("stream dropped")
+
+
+@pytest.mark.parametrize("refuses", [False, True], ids=["dropped", "refused"])
+def test_a_failed_stream_falls_back_to_a_normal_call_and_is_not_complete(load_engine: None, refuses: bool) -> None:
+    stream = SentenceStream(lambda text: None)
+    response = stream_with_retry(_StreamFails(refuses), _spec(), stream)
+    assert response.content == "Recovered without streaming."
+    assert stream.failed
+    assert not stream.complete
+
+
+@pytest.mark.parametrize(
+    ("raw", "decoded"),
+    [
+        ("She said \\u201chello\\u201d.", "She said \u201chello\u201d."),
+        ("She said \u201chello\u201d.", "She said \u201chello\u201d."),
+        (
+            "real \u201cquote\u201d and literal \\u201cquote\\u201d",
+            "real \u201cquote\u201d and literal \u201cquote\u201d",
+        ),
+    ],
+    ids=["literal", "real", "mixed"],
+)
+def test_post_processing_decodes_literal_unicode_escapes_only(raw: str, decoded: str) -> None:
+    response = AIResponse(content=raw, stop_reason="complete", tool_calls=[], usage={})
+    assert post_process_response(response).content == decoded
+
+
+def test_post_processing_keeps_the_reasoning_when_it_changes_the_content() -> None:
     raw = AIResponse(
         content="<think>plan</think>The door holds.",
         stop_reason="complete",
@@ -106,9 +153,6 @@ def test_post_process_keeps_the_reasoning_when_it_changes_the_content() -> None:
     assert (result.content, result.reasoning) == ("The door holds.", "First, the door.")
 
 
-def test_post_process_does_not_alter_response_without_escapes() -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
-
+def test_post_processing_returns_a_plain_response_as_it_is() -> None:
     raw = AIResponse(content="Plain ASCII content.", stop_reason="complete", tool_calls=[], usage={})
-    result = post_process_response(raw)
-    assert result is raw
+    assert post_process_response(raw) is raw

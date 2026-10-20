@@ -18,12 +18,14 @@ class OpeningProvider:
     def __init__(self, npcs: Sequence[tuple[str, str, str]], location: str) -> None:
         self.npcs = list(npcs)
         self.location = location
+        self.calls: list[AICallSpec] = []
 
     @staticmethod
     def _json(payload: dict[str, Any]) -> AIResponse:
         return AIResponse(content=json.dumps(payload), usage={"input_tokens": 10, "output_tokens": 10})
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
+        self.calls.append(spec)
         props = spec.json_schema["properties"] if spec.json_schema else {}
         if "central_conflict" in props:
             return self._json(_voicing(props))

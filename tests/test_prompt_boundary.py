@@ -33,28 +33,16 @@ def test_build_new_game_prompt_renders_with_full_state(load_engine: None) -> Non
     assert "Driftworks Station" in out
 
 
-def test_build_new_game_prompt_omits_optional_tags(load_engine: None) -> None:
-    from straightjacket.engine.prompt_boundary import build_new_game_prompt
-
-    g = make_game_state(player_name="Solo", setting_id="starforged")
-    g.world.current_location = "Tavern"
-    g.world.current_scene_context = "Quiet."
-    out = build_new_game_prompt(g)
-    assert "<pronouns>" not in out
-    assert "<paths>" not in out
-    assert "<vow>" not in out
-
-
-def test_build_new_game_prompt_includes_crisis_block_when_active(load_engine: None) -> None:
+def test_build_new_game_prompt_leaves_out_pronouns_and_paths_the_character_lacks(load_engine: None) -> None:
     from straightjacket.engine.prompt_boundary import build_new_game_prompt
 
     g = _opening_game()
-    g.crisis_mode = True
+    g.pronouns = ""
+    g.paths = []
     out = build_new_game_prompt(g)
-    g2 = _opening_game()
-    g2.crisis_mode = False
-    out2 = build_new_game_prompt(g2)
-    assert len(out) > len(out2)
+    assert "<pronouns>" not in out
+    assert "<paths>" not in out
+    assert "<vow>find the lost archive</vow>" in out
 
 
 def test_build_new_game_prompt_escapes_xml_in_player_name(load_engine: None) -> None:

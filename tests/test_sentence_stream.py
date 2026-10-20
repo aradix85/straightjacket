@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, stream_with_retry
 from straightjacket.engine.ai.sentence_stream import SentenceStream
 
 
@@ -60,30 +57,7 @@ def test_a_failed_stream_is_not_complete_and_stops_emitting(load_engine: None) -
     assert not stream.complete
 
 
-class _Broken:
-    def create_message(self, spec: AICallSpec) -> AIResponse:
-        return AIResponse(content="Recovered without streaming.")
-
-    def stream_message(self, spec: AICallSpec, on_text: Any) -> AIResponse:
-        on_text("Half a sent")
-        raise ConnectionError("stream dropped")
-
-
-def _spec() -> AICallSpec:
-    return AICallSpec(model="m", system="s", messages=[], max_tokens=8, log_role="narrator")
-
-
-def test_stream_with_retry_falls_back_and_marks_the_stream_incomplete(load_engine: None) -> None:
-    stream = SentenceStream(lambda text: None)
-    response = stream_with_retry(_Broken(), _spec(), stream)
-    assert response.content == "Recovered without streaming."
-    assert stream.failed
-    assert not stream.complete
-
-
 def test_a_literal_unicode_escape_split_across_chunks_streams_as_the_character(load_engine: None) -> None:
-    from straightjacket.engine.ai.sentence_stream import SentenceStream
-
     sentences: list[str] = []
     stream = SentenceStream(sentences.append)
     for delta in ("The raider laughs. \\u20", "1cRun.\\u201d", " Then she is gone.", "\n"):

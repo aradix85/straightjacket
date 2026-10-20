@@ -12,7 +12,7 @@ def _game() -> GameState:
     return game
 
 
-def test_strips_narrator_prefix(load_engine: None, stub_emotions: None) -> None:
+def test_strips_narrator_prefix(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -22,30 +22,19 @@ def test_strips_narrator_prefix(load_engine: None, stub_emotions: None) -> None:
     assert "wind howled" in result
 
 
-def test_strips_prompt_echo_tags(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = '<task>Write a scene</task>The tavern was quiet.\n<world genre="fantasy">Medieval</world>'
-    result = parse_narrator_response(game, raw)
-    assert "<task>" not in result
-    assert "<world" not in result
-    assert "tavern was quiet" in result
-
-
-def test_the_leaked_prompt_tags_come_from_the_parser_config(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_every_leaked_prompt_tag_of_the_parser_config_is_stripped_and_no_other_tag(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.parser import parse_narrator_response
 
-    monkeypatch.setattr(eng().parser, "leaked_prompt_tags", ["ledger"])
-    result = parse_narrator_response(_game(), "<ledger>The tavern was quiet.</ledger> <task>x</task>")
-    assert "<ledger>" not in result
-    assert "<task>" in result
+    tags = eng().parser.leaked_prompt_tags
+    assert "ledger" not in tags
+    opened = "".join(f'<{tag} genre="fantasy">' for tag in tags)
+    closed = "".join(f"</{tag}>" for tag in tags)
+    result = parse_narrator_response(_game(), f"{opened}The tavern was quiet. <ledger>A debt.</ledger>{closed}")
+    assert result == "The tavern was quiet. <ledger>A debt.</ledger>"
 
 
-def test_strips_code_fences(load_engine: None, stub_emotions: None) -> None:
+def test_strips_code_fences(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -56,7 +45,7 @@ def test_strips_code_fences(load_engine: None, stub_emotions: None) -> None:
     assert "night was dark" in result
 
 
-def test_strips_bold_bracket_annotations(load_engine: None, stub_emotions: None) -> None:
+def test_strips_bold_bracket_annotations(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -66,7 +55,7 @@ def test_strips_bold_bracket_annotations(load_engine: None, stub_emotions: None)
     assert "blade struck" in result
 
 
-def test_strips_uppercase_bracket_annotations(load_engine: None, stub_emotions: None) -> None:
+def test_strips_uppercase_bracket_annotations(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -76,7 +65,7 @@ def test_strips_uppercase_bracket_annotations(load_engine: None, stub_emotions: 
     assert "[SCENE CONTEXT" not in result
 
 
-def test_strips_markdown_bold_italic(load_engine: None, stub_emotions: None) -> None:
+def test_strips_markdown_bold_italic(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -88,7 +77,7 @@ def test_strips_markdown_bold_italic(load_engine: None, stub_emotions: None) -> 
     assert "smiled" in result
 
 
-def test_strips_horizontal_rules(load_engine: None, stub_emotions: None) -> None:
+def test_strips_horizontal_rules(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -97,7 +86,7 @@ def test_strips_horizontal_rules(load_engine: None, stub_emotions: None) -> None
     assert "---" not in result
 
 
-def test_marks_npc_introduced_when_name_in_narration(load_engine: None, stub_emotions: None) -> None:
+def test_marks_npc_introduced_when_name_in_narration(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -107,7 +96,7 @@ def test_marks_npc_introduced_when_name_in_narration(load_engine: None, stub_emo
     assert game.npcs[0].introduced is True
 
 
-def test_marks_npc_introduced_by_partial_name(load_engine: None, stub_emotions: None) -> None:
+def test_marks_npc_introduced_by_partial_name(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -117,7 +106,7 @@ def test_marks_npc_introduced_by_partial_name(load_engine: None, stub_emotions: 
     assert game.npcs[0].introduced is True
 
 
-def test_does_not_mark_introduced_by_title_alone(load_engine: None, stub_emotions: None) -> None:
+def test_does_not_mark_introduced_by_title_alone(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -128,7 +117,7 @@ def test_does_not_mark_introduced_by_title_alone(load_engine: None, stub_emotion
     assert game.npcs[0].introduced is False
 
 
-def test_narration_without_prose_fails_like_an_empty_narration(load_engine: None, stub_emotions: None) -> None:
+def test_narration_without_prose_fails_like_an_empty_narration(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -137,7 +126,7 @@ def test_narration_without_prose_fails_like_an_empty_narration(load_engine: None
         parse_narrator_response(game, raw)
 
 
-def test_combined_cleanup(load_engine: None, stub_emotions: None) -> None:
+def test_combined_cleanup(load_engine: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()

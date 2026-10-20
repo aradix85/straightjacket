@@ -96,8 +96,6 @@
 "result_match_hint_failure": " A MATCH — the situation escalates dramatically, a fateful twist makes everything worse."
 "result_match_hint_partial": " A MATCH — despite the cost, something unexpected and significant happens, a twist of fate."
 "result_match_hint_success": " A MATCH — an unexpected boon, a fateful revelation, or a dramatic advantage beyond the clean success."
-"block_crisis": |-
-  <crisis>Character at breaking point.</crisis>
 "block_facts_wrapper": |-
   <facts>
   The engine has settled these facts for this scene. The narration keeps to them and never contradicts them; an exceptional answer holds more strongly than expected.
@@ -201,7 +199,7 @@
   <scene type="opening">
   {header}{pronouns}{paths}{vow}
   <location>{location}</location>{previous_locations}{time}
-  <situation>{situation}</situation>{crisis}
+  <situation>{situation}</situation>
   {story}</scene>
   <task>
   {task}

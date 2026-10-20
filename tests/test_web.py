@@ -314,6 +314,26 @@ class TestWebSocket:
             ws2.send_json({"type": "delete_player", "name": "ws_recon"})
             ws2.receive_json()
 
+    def test_an_unexpected_handler_error_is_reported_and_the_connection_stays(
+        self, client: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from straightjacket.i18n import t
+        from straightjacket.web import handlers
+
+        def broken(_player: str) -> list[dict[str, Any]]:
+            raise KeyError("boom")
+
+        monkeypatch.setattr(handlers, "list_saves_with_info", broken)
+        with client.websocket_connect("/ws") as ws:
+            ws.receive_json()
+            ws.receive_json()
+            ws.send_json({"type": "create_player", "name": "ws_broken"})
+            ws.receive_json()
+            ws.send_json({"type": "list_saves"})
+            assert ws.receive_json() == {"type": "error", "text": t("error.unexpected")}
+            ws.send_json({"type": "delete_player", "name": "ws_broken"})
+            assert ws.receive_json()["type"] == "players_list"
+
     def test_a_foreign_origin_is_refused(self, client: Any) -> None:
         with (
             pytest.raises(WebSocketDisconnect),

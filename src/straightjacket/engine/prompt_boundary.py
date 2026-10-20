@@ -11,14 +11,13 @@ from .xml_utils import xe as _xe
 
 
 def build_new_game_prompt(game: GameState) -> str:
-    crisis = "\n" + get_prompt("block_crisis") if game.crisis_mode else ""
     story = story_context_block(game)
     seed = creativity_seed()
     log(f"[Narrator] Opening creativity_seed={seed!r}")
 
     pronouns_tag = "\n" + get_prompt("block_pronouns", pronouns=_xe(game.pronouns)) if game.pronouns else ""
     paths_tag = "\n" + get_prompt("block_paths", paths=_xe(", ".join(game.paths))) if game.paths else ""
-    vow_tag = "\n" + get_prompt("block_vow", vow=_xe(game.background_vow)) if game.background_vow else ""
+    vow_tag = "\n" + get_prompt("block_vow", vow=_xe(game.background_vow))
 
     pronouns_hint = get_prompt("opening_pronouns_hint", pronouns=game.pronouns) if game.pronouns else ""
     task = get_prompt(
@@ -38,7 +37,6 @@ def build_new_game_prompt(game: GameState) -> str:
         previous_locations=_loc_hist(game),
         time=_time_ctx(game),
         situation=_xe(game.world.current_scene_context),
-        crisis=crisis,
         story=story,
         task=task,
     )

@@ -46,9 +46,7 @@ class _NarratorDown(TurnProvider):
         return super().create_message(spec)
 
 
-def test_a_failed_turn_is_rolled_back_and_reported(
-    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_failed_turn_is_rolled_back_and_reported(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.i18n import t
     from straightjacket.web import handlers
     from straightjacket.web.session import new_session
@@ -61,7 +59,6 @@ def test_a_failed_turn_is_rolled_back_and_reported(
 
     force_result(monkeypatch, "MISS")
     monkeypatch.setattr(handlers, "get_provider", lambda: _NarratorDown(brain_answer()))
-    monkeypatch.setattr(handlers, "_narration_stream", lambda _ws, _game: (None, []))
 
     asyncio.run(handlers.handle_player_input(session, ws, {"text": "I leap the gorge"}))
 
@@ -69,18 +66,3 @@ def test_a_failed_turn_is_rolled_back_and_reported(
     assert {"type": "error", "text": f"{t('error.ai_unavailable')} {t('error.nothing_changed')}"} in ws.sent
     assert session.chat_messages == []
     assert session.processing is False
-
-
-def test_an_unexpected_handler_error_is_reported_and_the_connection_stays(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from straightjacket.i18n import t
-    from straightjacket.web import server
-
-    async def broken(_session: Any, _ws: Any, _msg: dict[str, Any]) -> None:
-        raise KeyError("boom")
-
-    monkeypatch.setitem(server._HANDLERS, "broken", broken)
-    ws = _FakeWS()
-    asyncio.run(server._dispatch_one_message(ws, {"type": "broken"}))
-    assert ws.sent == [{"type": "error", "text": t("error.unexpected")}]
