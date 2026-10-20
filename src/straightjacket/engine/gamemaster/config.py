@@ -214,7 +214,7 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
     return ClocksConfig(
         default_owner_kind=c_raw["default_owner_kind"],
         default_segments=c_raw["default_segments"],
-        max_clocks_per_chapter=c_raw["max_clocks_per_chapter"],
+        max_open_emergent=c_raw["max_open_emergent"],
         miss_ticks_by_position={str(k): int(v) for k, v in dict(c_raw["miss_ticks_by_position"]).items()},
         fill_consequences=fill,
         complication=build_strict(ComplicationClockConfig, dict(c_raw["complication"])),

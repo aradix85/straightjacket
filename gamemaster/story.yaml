@@ -13,6 +13,6 @@ story:
 story_state:
   act_early_share: 0.3
   act_mid_share: 0.7
-  crisis_scene_offset: 5
+  completion_overrun_scenes: 5
   approaching_end_progress: [mid, late]
   revelation_outcomes: [success, partial, dialog, oracle]

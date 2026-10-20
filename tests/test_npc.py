@@ -309,6 +309,15 @@ def test_reactivate_background_npc(load_engine: None) -> None:
     assert npc.status == "active"
 
 
+def test_a_lore_figure_who_appears_in_person_becomes_active(load_engine: None) -> None:
+    from straightjacket.engine.gamemaster.npc.processing import process_new_npcs
+
+    game = _make_game()
+    game.npcs.append(make_npc(id="npc_9", name="Edda Varn", status="lore"))
+    process_new_npcs(game, [{"name": "Edda Varn", "description": "The founder, alive", "disposition": "neutral"}])
+    assert [n.status for n in game.npcs if n.id == "npc_9"] == ["active"]
+
+
 def test_reactivate_deceased_refused(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.lifecycle import reactivate_npc
 

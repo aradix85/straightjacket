@@ -73,9 +73,9 @@ def reactivate_npc(npc: NpcData, reason: str, force: bool = False) -> None:
         else:
             log(f"[NPC] Refused reactivation of deceased NPC: {npc.name}")
         return
-    if npc.status == "background":
+    if npc.status in gm().npc_status_groups.reactivatable:
+        log(f"[NPC] Reactivated {npc.status} NPC: {npc.name} (reason: {reason})")
         npc.status = "active"
-        log(f"[NPC] Reactivated: {npc.name} (reason: {reason})")
 
 
 def rename_npc(npc: NpcData, new_name: str, extra_aliases: list[str]) -> None:

@@ -1,6 +1,6 @@
 # AUDIT
 
-How to audit this codebase against the five principles below. This document is enough to run an audit on its own, without following the roadmap's order of work: it says what to read first, how to work, what a session delivers, and, in Status at the bottom, what has been audited. Open items, the questions that wait for the user and the findings that belong to another principle or submodule, live in the roadmap's audit step (step 9h while it is open); when the roadmap has no audit step, they go to a section Open at the end of this document.
+How to audit this codebase against the six principles below. This document is enough to run an audit on its own, without following the roadmap's order of work: it says what to read first, how to work, what a session delivers, and, in Status at the bottom, what has been audited. Open items, the questions that wait for the user and the findings that belong to another principle or submodule, live in the roadmap's audit step (step 9h while it is open); when the roadmap has no audit step, they go to a section Open at the end of this document.
 
 Earlier audits produced false reassurance: asked "is the codebase config-driven?", Claude answered "yes" while significant parts were still hardcoded. So an audit never gives a verdict. It works from an exhaustive hit-list, and zero hits and eighty hits are both valid answers; a selective look is not.
 
@@ -11,7 +11,7 @@ Earlier audits produced false reassurance: asked "is the codebase config-driven?
 3. Read the section Sessions with the user in `roadmap.md`: how the maintainer is answered, what a measuring run costs and that its cost is named before it starts, and where the API keys live.
 4. Read this document in full, then the open items, among them the findings earlier audits recorded for the principle or submodule at hand. Take the next open item from Status.
 
-One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule. The mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status, and anything to pick up next time as an open item.
+One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule; principle 6 reads origins across the layers, so one session covers it whole. The mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status, and anything to pick up next time as an open item.
 
 A session fixes every clear violation it finds, in the same session and by CONTRIBUTING.md's rules for a change: callers and tests in the same commit, the quality gate green, a short Elvira run when the turn pipeline, prompts, or configuration changed, one CHANGELOG entry, and the release committed to main and pushed. Only what needs the user's decision, or belongs to another principle or submodule, becomes an open item. Deleting a file the user did not name waits for the user's consent.
 
@@ -46,7 +46,7 @@ A session also fixes what it meets that is ugly, illogical, or broken, even wher
 
 No report file is written; git, the CHANGELOG, and the open items carry the audit.
 
-## The five principles
+## The six principles
 
 ### Principle 1 — High modularity
 
@@ -118,6 +118,18 @@ No dead Python symbols, no dead YAML keys; every YAML key has a Python consumer 
 
 Carve-outs: the orphan-symbol carve-outs in `tests/test_project_rules.py` (for example `CharacterTraits`). A symbol whose consumer is planned in a near-term roadmap step may be marked `needs human judgment`.
 
+### Principle 6 — Every rule has a source
+
+Every rule and structure that decides facts, pacing, or behaviour in the fiction has an origin the engine can name: a source (Datasworn, Mythic 2e, the Adventure Crafter, the Location Crafter, Blades in the Dark, AIMS), or an engine rule whose entry in `docs/divergences.md` gives its reason. The design document is the theory the engine puts into practice and may depart from (ORIGINS.md): an idea from it gives a rule its aim, not its form or its values, so such a rule is an engine rule, and a rulebook that can give its form comes first. A rule with neither, such as one carried over from EdgeTales (ORIGINS.md), is a violation: the session names the roadmap step whose source replaces it or adds one, and where no source can, the rule stays as an engine rule with a register entry that gives its reason, or goes. Technique that decides nothing in the fiction (search, matching, saving, streaming, parsing, prompt plumbing) is outside the principle whatever its origin. The aim is the user's (roadmap, Decisions, From EdgeTales to the sources).
+
+**Pass 6a — Rules in yaml.** Every top-level section of `gamemaster/`, `crafters/`, `ruleset/`, `engine/`, and `emotions/`, and every key in it that holds a rule of its own: what it decides, read from its consumer; whether the repository's first commit (a3b263f, the code of the fork) held it, and whether EdgeTales did; which source defines it, with its data path, and whether the values follow it; and its register entry.
+
+**Pass 6b — Rules in Python.** Per package, the rules a function holds without a yaml key, such as a threshold folded into a condition or a fixed order of steps: the same four questions.
+
+**Pass 6c — What the AI decides.** Every rule of `prompts/*.yaml` that tells the AI what to decide or invent in the fiction, and every answer of an AI call the engine acts on: the same questions, and whether a source could let the engine decide it instead, by ARCHITECTURE.md's order of preference. Rules of prose craft decide no facts and stay outside.
+
+Carve-outs: technique, and a departure the register records.
+
 ## Status
 
 Submodules for principles 1, 3, and 5: `setting/`, `gamemaster/` with `gamemaster/npc/`, `crafters/`, `ruleset/`, `game/`, `ai/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level of `src/straightjacket/` (`i18n.py`). A finished submodule is listed under its principle with its date; a principle is done when every submodule is listed. The audits below name the submodules as they were when they ran; their code has since moved into the four layers' packages: that of `mechanics/` into `gamemaster/`, `crafters/`, and `ruleset/`, that of `npc/` into `gamemaster/npc/`, and that of `datasworn/` into `setting/` and `ruleset/datasworn.py`.
@@ -127,3 +139,4 @@ Submodules for principles 1, 3, and 5: `setting/`, `gamemaster/` with `gamemaste
 - Principle 3: `mechanics/`, `npc/`, and `game/` audited 2026-10-17 and `ai/`, `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level 2026-10-18, every pass each, parameters included; principle 3 is done. The submodule `db/` was not audited but removed on 2026-10-18, since only the Director's tool read it. The code the split into layers wrote or rewrote had every pass again on 2026-10-19, in the same packages as principle 2. The open items it found are in the roadmap's 9j.7, 9j.8, 11.0, and steps 11c and 12.
 - Principle 4: audited 2026-10-17, all three passes, and on 2026-10-19 every `.get()`, `.setdefault()`, and `.pop()` whose default is computed rather than a constant; every violation is fixed, the dataclass defaults of pass 4a since 2026-10-20 (roadmap 9o.1).
 - Principle 5: `mechanics/`, `npc/`, `game/`, and `ai/` audited 2026-10-18 and `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level 2026-10-19, every pass, with the return values and the re-exports of each `__init__.py` read as symbols; the passes 5b to 5d covered the config sections each reads, the emotions yaml for `npc/`, the prompts and every field of the AI's answers for `ai/`, the Datasworn fields the loader keeps and the setting yaml for `datasworn/`, every availability rule against the four settings' moves and every field of the Director's tool answer for `tools/`, every field of the correction analysis's answer for `correction/`, every field of the models and of the config binding, read by attribute name, for the files directly under `engine/`, every field of the messages the server sends against what the page reads and every key of `strings/`, the ones built from a prefix checked against their domain values, for `web/` and the top level, and every config field that no code reads at all; principle 5 is done. Configuration and data whose consumer a roadmap step names stay and are listed there: the scene challenge (9k), the Meta handlers (9j.7), the companion and vehicle moves (19), Delve's moves (26), and Sundered Isles' ship creation (28).
+- Principle 6: audited 2026-10-20 in roadmap step 9r, all three passes over every layer at once: the rule yaml of `gamemaster/`, `crafters/`, `ruleset/`, `engine/`, and `emotions/`, the rules in Python of those packages, of `game/`, and of the Director, and the prompts with the AI calls, each read against the first commit, EdgeTales of 31 March, the design document, and the books. Every finding has its place in a roadmap step or in the register; principle 6 is done until a later change adds a rule.

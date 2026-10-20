@@ -64,7 +64,9 @@ def _score_threat_clocks(game: GameState) -> int:
     chaos_cfg = gm().chaos_resolver
     penalty = 0
     for clock in game.world.clocks:
-        if not clock.fired and clock.filled / clock.segments >= chaos_cfg.clock_pressure_threshold:
+        if clock.clock_type != "threat" or clock.fired:
+            continue
+        if clock.filled / clock.segments >= chaos_cfg.clock_pressure_threshold:
             penalty += w.threat_clock_critical
     return max(penalty, w.threat_clock_critical * chaos_cfg.clock_pressure_cap_multiplier)
 

@@ -150,7 +150,7 @@ def check_story_completion(game: GameState) -> None:
             )
             return
 
-    offset = gm().story_state.crisis_scene_offset
+    offset = gm().story_state.completion_overrun_scenes
     if sc >= final_end + offset:
         bp.story_complete = True
         log(f"[Story] Complete (fallback): scene {sc} >= final_end+{offset} ({final_end + offset})")

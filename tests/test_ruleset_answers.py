@@ -56,20 +56,36 @@ def test_the_narrator_is_told_the_rulesets_own_result_names(load_engine: None, m
         assert not any(name in told for name in names.values())
 
 
-def test_the_ruleset_says_which_threats_are_active_and_which_overcome_ones_press_on(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.threats import active_threats, overcome_threats, overcome_under_pressure
+def test_the_ruleset_says_which_threats_are_active_and_which_overcome(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.threats import active_threats, overcome_threats
 
     game = make_game_state(player_name="Test")
     active = make_threat(id="t_active", name="Raiders")
-    pressing = make_threat(id="t_pressing", name="Storm", status="overcome")
-    pressing.menace_ticks = pressing.max_menace_ticks
-    quiet = make_threat(id="t_quiet", name="Wolves", status="overcome")
-    game.threats = [active, pressing, quiet]
+    storm = make_threat(id="t_storm", name="Storm", status="overcome")
+    wolves = make_threat(id="t_wolves", name="Wolves", status="overcome")
+    game.threats = [active, storm, wolves]
     assert [t.id for t in active_threats(game)] == ["t_active"]
-    assert [t.id for t in overcome_threats(game)] == ["t_pressing", "t_quiet"]
-    assert [(e.threat_id, e.source) for e in overcome_under_pressure(game)] == [
-        ("t_pressing", "overcome_under_pressure")
+    assert [t.id for t in overcome_threats(game)] == ["t_storm", "t_wolves"]
+
+
+def test_a_vow_fulfilled_against_a_pressing_threat_tells_it_overcome_once(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.threats import take_pending_threat_events
+    from straightjacket.engine.ruleset.tracks import complete_track
+
+    game = make_game_state(player_name="Test")
+    game.progress_tracks = [
+        make_progress_track(id="vow_storm", name="Calm the storm"),
+        make_progress_track(id="vow_wolves", name="Drive off the wolves"),
     ]
+    storm = make_threat(id="t_storm", name="Storm", linked_vow_id="vow_storm", menace_ticks=32)
+    wolves = make_threat(id="t_wolves", name="Wolves", linked_vow_id="vow_wolves", menace_ticks=8)
+    game.threats = [storm, wolves]
+    complete_track(game, "vow_storm", "completed")
+    complete_track(game, "vow_wolves", "completed")
+    assert [(e.threat_id, e.source) for e in take_pending_threat_events(game)] == [
+        ("t_storm", "overcome_under_pressure")
+    ]
+    assert take_pending_threat_events(game) == []
 
 
 @pytest.mark.parametrize(

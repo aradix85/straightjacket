@@ -111,7 +111,7 @@ def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none(load_engine: None) 
 
 def test_at_a_chapter_boundary_an_npc_without_a_part_in_the_story_steps_back(load_engine: None) -> None:
     game = _game()
-    cap = gm().chapter.open_threads_max
+    cap = gm().chapter.npc_memories_kept
     major = make_npc(id="npc_7", name="Major", status="active", agenda="serious goal")
     major.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=5) for i in range(cap + 5)]
     game.npcs += [

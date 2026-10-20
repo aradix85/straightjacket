@@ -21,7 +21,6 @@ from ..ruleset.outcome_result import OutcomeResult
 from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import (
     advance_menace_on_miss,
-    overcome_under_pressure,
     resolve_full_menace,
     take_pending_threat_events,
 )
@@ -58,7 +57,6 @@ def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeRe
     if answers().outcome(roll.result) == "failure":
         events.extend(advance_menace_on_miss(game))
     events.extend(resolve_full_menace(game, outcome))
-    events.extend(overcome_under_pressure(game))
     return events
 
 

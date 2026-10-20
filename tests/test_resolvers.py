@@ -20,6 +20,27 @@ def test_position_default_risky(load_engine: None) -> None:
     assert resolve_position(game, brain) == "risky"
 
 
+def test_only_a_nearly_full_threat_clock_presses_the_position(load_engine: None) -> None:
+    from straightjacket.engine.gamemaster.resolvers import resolve_position
+
+    game = make_game_state(player_name="Test")
+    game.world.chaos_factor = 3
+    game.narrative.session_log.append(
+        make_scene_log_entry(scene=1, move="adventure/secure_an_advantage", result="STRONG_HIT")
+    )
+    brain = make_brain_result(move="adventure/gather_information", stat="wits")
+    calm = resolve_position(game, brain)
+    assert calm == "controlled"
+    game.world.clocks = [
+        make_clock(name="The bridge", clock_type="progress", segments=6, filled=5),
+        make_clock(name="The plan", clock_type="scheme", segments=6, filled=5),
+    ]
+    assert resolve_position(game, brain) == calm
+    game.world.clocks.append(make_clock(name="The flood", clock_type="threat", segments=6, filled=5))
+    game.world.clocks.append(make_clock(name="The raid", clock_type="threat", segments=6, filled=5))
+    assert resolve_position(game, brain) != calm
+
+
 def test_position_desperate_on_low_resources(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 

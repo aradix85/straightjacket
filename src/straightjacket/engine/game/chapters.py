@@ -164,9 +164,9 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 
     _chap_cfg = gm().chapter
     for npc in game.npcs:
-        if len(npc.memory) > _chap_cfg.open_threads_max:
+        if len(npc.memory) > _chap_cfg.npc_memories_kept:
             scored = sorted(npc.memory, key=lambda m: (m.importance, m.scene), reverse=True)
-            npc.memory = sorted(scored[: _chap_cfg.open_threads_max], key=lambda m: m.scene)
+            npc.memory = sorted(scored[: _chap_cfg.npc_memories_kept], key=lambda m: m.scene)
         consolidate_memory(npc)
 
 

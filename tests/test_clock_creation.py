@@ -118,6 +118,10 @@ def test_emergent_clock_cap_shared_across_sources(load_engine: None) -> None:
     spawn_clock_from_random_event(g, _re("pc_negative", target_id="overflow"))
     assert len(g.world.clocks) == 4
 
+    g.world.clocks[0].fired = True
+    spawn_clock_from_random_event(g, _re("pc_negative", target_id="after_one_fired"))
+    assert len(g.world.clocks) == 5
+
 
 def test_spawned_clock_attaches_keyed_scenes(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")

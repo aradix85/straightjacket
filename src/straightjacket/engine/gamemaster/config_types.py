@@ -372,7 +372,7 @@ class DescriptionDedupConfig:
 class StoryStateConfig:
     act_early_share: float
     act_mid_share: float
-    crisis_scene_offset: int
+    completion_overrun_scenes: int
     approaching_end_progress: list[str]
     revelation_outcomes: list[str]
 
@@ -381,7 +381,7 @@ class StoryStateConfig:
 class ChapterConfig:
     filler_max: int
     filler_bond_max: int
-    open_threads_max: int
+    npc_memories_kept: int
     scene_context_threads_max: int
 
 
@@ -465,7 +465,7 @@ class ComplicationClockConfig:
 class ClocksConfig:
     default_owner_kind: str
     default_segments: int
-    max_clocks_per_chapter: int
+    max_open_emergent: int
     miss_ticks_by_position: dict[str, int]
     fill_consequences: dict[str, ClockFillConsequenceEntry]
     complication: ComplicationClockConfig

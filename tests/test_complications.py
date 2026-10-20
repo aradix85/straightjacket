@@ -65,7 +65,7 @@ def test_the_emergent_clock_cap_leaves_the_complication_without_a_clock(load_eng
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = _game()
-    cap = gm().clocks.max_clocks_per_chapter
+    cap = gm().clocks.max_open_emergent
     game.world.clocks = [make_clock(name=f"Event {i}", creation_source=f"random_event:x:{i}") for i in range(cap)]
     outcome = resolve_move_outcome(game, "adventure/gather_information", "WEAK_HIT", target_npc_id=None, match=False)
     assert len(game.world.clocks) == cap

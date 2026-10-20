@@ -5,7 +5,7 @@ threats:
   autonomous_tick_marks: 1
   menace_high_threshold: 0.75
   category_oracle_collection: threat
-  max_per_chapter: 3
+  max_open_emergent: 3
   by_origin:
     pc_negative:
       rank: dangerous

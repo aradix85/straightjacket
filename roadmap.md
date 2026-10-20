@@ -20,7 +20,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 ## Sessions with the user
 
 - The user writes in Dutch and reads with a screen reader: answers are in Dutch and in plain prose; the repository stays in English.
-- A session starts by reading every md file in the root and in `docs/`, of the CHANGELOG only the entries since the last finished step, and continues with NEXT STEP. The design document is not in the repository; README.md links it.
+- A session starts by reading every md file in the root and in `docs/`, of the CHANGELOG only the entries since the last finished step, and continues with NEXT STEP. The design document is not in the repository; README.md links it, and the user's repository `aradix85/narrative-rpg-engine` holds it as a pdf (version 2.4), which `pdftotext` reads. It is theory, and the engine is its practice, which may depart from it (the user's words).
 - The user wants as much as possible to come from the source material: where a rulebook table can settle what the narrator still invents, that is the fix to reach for, ahead of new prompt wording, which on Sonnet stayed within the noise (9f).
 - The Elvira sessions a step needs are part of the work; a twelve-turn session on Sonnet costs about 55 to 65 cents. Say what a measuring round will cost before starting it; the API spend limit is set in the Claude Console (Settings, Billing). The user keeps runs to what a change needs, no extra ones, since they are costly.
 - Elvira runs on the real models again since 9i, the user's choice now that the work builds rather than tidies, but only when a run makes a real difference to the work, and never more runs or turns than that needs: tokens and credit are not to be wasted. A measurement of the engine as it was, when the decision does not hang on it, is no such run. The runs that releases without them left open are not caught up.
@@ -61,7 +61,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 **Revelations and Kishōtenketsu (9i).** Kishōtenketsu came from EdgeTales, where an AI wrote the whole blueprint, and skipped the Adventure Crafter; it is gone, so every chapter's plan comes from the Adventure Crafter, flexible and unpredictable as the user wants it. Each act has one revelation from its own turning point, which lands when its keyed scene fires, at the latest at its act's end, on a turn that does not fail, a dialog included (`docs/mechanics.md`, Revelations). The user's choices.
 
-**From EdgeTales to the sources (9r).** The user wants the engine to move as far as it can from what came with EdgeTales to its own systems and the sources. Every rule that decides facts, pacing, or behaviour in the fiction has an origin: a source, an engine rule with its register entry, or EdgeTales without a source, and a rule of the last kind goes to the step whose source replaces it. Technique that decides nothing in the fiction, such as the activation search, saves, streaming, and the correction, stays whatever its origin. The user's choice; 9r makes the list, and AUDIT.md's principle 6 keeps it.
+**From EdgeTales to the sources (9r).** The user wants the engine to move as far as it can from what came with EdgeTales to its own systems and the sources. Every rule that decides facts, pacing, or behaviour in the fiction has an origin: a source, an engine rule with its register entry, or EdgeTales without a source, and a rule of the last kind goes to the step whose source replaces it. Technique that decides nothing in the fiction, such as the activation search, saves, streaming, and the correction, stays whatever its origin. The user's choice; 9r made the list, and AUDIT.md's principle 6 keeps it.
 
 **Sources bought when a step needs them.** A Word Mill book or Mythic Magazine issue is bought only for a gap the setting's Datasworn data, Mythic 2e, and the Adventure Crafter leave, when a step needs it. A step with candidates starts by reading their product pages with the user; an issue costs $4.95, and a compilation of six $14.95 is chosen when several needed issues fall in the same six. A candidate that fills no gap leaves the list. The Creature Crafter is left out, since it adjusts stat blocks Ironsworn's foes do not have. Candidates, by title in Robin's subject index of Mythic Magazine (linked from Word Mill's Mythic Magazine page), not yet read:
 
@@ -82,48 +82,19 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ---
 
-## NEXT STEP — 9r: Where each rule comes from
-
-Kishōtenketsu showed the need (9i): only a look at its origin found that it came from EdgeTales and skipped the Adventure Crafter. This step makes that look complete (Decisions, From EdgeTales to the sources). It changes no play; what it finds is built in the steps it names.
-
-**9r.1** The hit-list, by AUDIT.md's working method: every rule and structure in `gamemaster/`, `crafters/`, `ruleset/`, `game/`, the Director, and the prompts that decides facts, pacing, or behaviour in the fiction, each with its origin: a source (Datasworn, Mythic 2e, the Adventure Crafter, Blades, AIMS, the design document), an engine rule with its register entry, or EdgeTales without a source. The origin is read against the repository's first commit (a3b263f, version 0.31.0, which holds the code of the fork), EdgeTales's public code, and ORIGINS.md. EdgeTales built on the same design document, so a rule from EdgeTales may come from it; where that cannot be settled without the document, the item is marked for the user. Technique is listed as technique and stays.
-
-**9r.2** Each finding from EdgeTales without a source goes to the step whose source replaces it, or becomes a step of its own: a source first, in the order of ARCHITECTURE.md; else an engine rule with a register entry and its reason; else it goes. Candidates from 9i's first comparison, with a step already: a chapter's three acts and its epilogue (32b), the Director's agendas and arcs (11 to 13), what foes do (13c), places and encounters (10). Without one yet: the creativity seeds (Mythic's meaning tables, 33 and 34), the pacing hint from scene intensity (Mythic's chaos and scene test), the stance matrix and the information gate (Mythic's NPC behaviour, 13), the importance and reflection of NPC memories, and the chaos factor a vow's words set at the start. Found in 9i's Elvira run, to weigh with the information gate: a revelation told in a dialog drew a fact of the NPC's own beside it (a ring), past her fact budget; once, so only watched.
-
-**9r.3** AUDIT.md gains principle 6, every rule has a source, so that each later audit checks it again; its Status records this pass.
-
-### Definition of Done
-
-- Every item of 9r.1's hit-list has its origin, and each finding from EdgeTales without a source has its place: a step, the register, or gone. The CHANGELOG entry gives each query with its hits, as AUDIT.md's Output asks.
-- AUDIT.md has principle 6 and its Status line; the items that wait for the user are listed for them.
-- The quality gate is green. No Elvira run, since play does not change.
-
-### Reference patterns
-
-- The method: AUDIT.md, Working method and Output.
-- An origin that skipped its source: the decision "Revelations and Kishōtenketsu (9i)".
-- A kept engine rule: an entry of `docs/divergences.md`.
-- The fork's code: `git show a3b263f:<path>`; EdgeTales's public code is linked from ORIGINS.md.
-
----
-
-## Next steps
-
-Sketches, in the order of work.
-
-### 9j — Rules conformance: classic and the Adventure Crafter
+## NEXT STEP — 9j: Rules conformance: classic and the Adventure Crafter
 
 Each substep starts by reading its rule in the book (the Datasworn texts, Delve, the Adventure Crafter) and builds what the reading settles; where the engine already follows the book, the CHANGELOG says so and nothing changes. Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence.
 
 **9j.1** Which gains a marked condition blocks, per ruleset. In Starforged and Sundered Isles a meter whose condition is marked rises only through the move that clears it, while the engine checks only in Endure and the recovery moves, so Sojourn's gains still raise it. Classic's move texts ask only for the meter above 0, but its Datasworn rules text (`rules.impacts.conditions`) says a condition blocks its track; which holds is settled first. The register entries "Classic Ironsworn borrows one Starforged impact rule" and "Marked conditions block only Endure and the recovery moves" leave.
 
-**9j.2** Classic's bonds special track, which the campaign holds since 9n.2c: Forge a Bond marks it, and Write Your Epilogue (13b) rolls it. Today classic's Forge a Bond marks nothing on a hit (`relationship/forge_a_bond` in `ruleset/move_outcomes.yaml`).
+**9j.2** Classic's bonds special track, which the campaign holds since 9n.2c: Forge a Bond marks it, and Write Your Epilogue (13b) rolls it. Today classic's Forge a Bond marks nothing on a hit (`relationship/forge_a_bond` in `ruleset/move_outcomes.yaml`), where the book also gives +1 spirit or +2 momentum. Found in 9r: classic Ironsworn and Delve have no connection track, so every NPC's closeness stays 0 there, and the stance, the information gate, position and effect, and the fifteen Adventure Crafter plot points keyed to a bond never move (register entry "Keyed scenes are the engine's"); 9i's Elvira run in classic could not have reached its revelations' bond thresholds. What closeness classic's bonds give an NPC, the ruleset's answer to `closeness`, is settled here.
 
 **9j.3** The Adventure Crafter's theme translation lets the adventure's tone pick a theme for the blueprint. Since 9i every chapter's blueprint comes from the Adventure Crafter, so the tone (`story.tones` in `gamemaster/story.yaml`) reaches each one.
 
 **9j.4** The words of the oracle and meaning tables are checked against the books.
 
-**9j.6** Advance a Threat is rolled on its Delve table when the character gives ground to a threat through inaction, failure, or delay; which misses count, and whether the autonomous tick stays as the engine's reading of delay, is checked against Delve first. A threat a random event starts takes no category from Delve's Category table yet. Forsake Your Vow (`ruleset/tracks.py` → `forsake_vow`) costs classic's spirit by the vow's rank and takes Starforged's choice of costs as a fixed choice. The register entries "Threats advance by engine rule, not by Advance a Threat" and "Forsake Your Vow costs a fixed amount of spirit" leave.
+**9j.6** Advance a Threat is rolled on its Delve table when the character gives ground to a threat through inaction, failure, or delay; which misses count, and whether the autonomous tick stays as the engine's reading of delay, is checked against Delve first. A threat a random event starts takes no category from Delve's Category table yet. Found in 9r: a threat with no vow against it whose menace fills is resolved without an event, where Delve's last box means the threat achieves its goal; a random event aims at a threat half the time; and a vow fulfilled against a threat at three quarters of its menace or more gives 2 experience in every setting (`ruleset/legacy.yaml` → `threat_overcome_bonus`), which may be a Delve rule Datasworn does not hold. Forsake Your Vow (`ruleset/tracks.py` → `forsake_vow`) costs classic's spirit by the vow's rank and takes Starforged's choice of costs as a fixed choice. The register entries "Threats advance by engine rule, not by Advance a Threat", "Threats meet their end by engine rule", and "Forsake Your Vow costs a fixed amount of spirit" leave.
 
 **9j.7** The Adventure Crafter's Meta plot points take effect. A Meta result is now a hit that does nothing, and `crafters/meta_plot_points.py` → `dispatch_meta`, its seven handlers, and the Characters List template (`crafters/adventure_crafter.py` → `lookup_characters_template`) have no production caller (an orphan-symbol carve-out in `tests/test_project_rules.py` until this step). Each handler is checked against the book first; Character Returns without an exited character needs a name from the npc generator, the handlers take the turning point's random generator, and one that needs the active plotline takes it where `roll_turning_point` holds it. The register entry "Meta plot points have no effect" leaves.
 
@@ -131,14 +102,18 @@ Each substep starts by reading its rule in the book (the Datasworn texts, Delve,
 
 **9j.10** Two labels the narrator receives read wrong, found by 9p.1's tests on the real data: a marked impact reaches the consequence tags of a dialog turn, the metadata call, and the engine's memories by its key (`mark permanently_harmed`, `consequence_labels.mark_impact` in `engine/ai_text.yaml`), where the sentence an action turn gets already uses its label; and classic's Pay the Price rows end in a period, so a result made worse reads `A new danger or foe is revealed., made worse` (`ruleset/move_effects.py` → `roll_oracle_result`).
 
-#### Definition of Done
+**9j.11** Classic's other outcomes that 9r found departing from its moves: Strike and Clash inflict classic's harm (1, or 2 with a deadly weapon), where the engine marks Starforged's progress; a miss on Swear an Iron Vow lets the character press on at -2 momentum or forsake, where the engine does neither; a miss on Test Your Bond clears the bond; Compel's weak hit asks something in return, which the engine leaves out, beside 9j.8; Sojourn's picks (Recuperate +2 health, Consort +2 spirit, and the rest, one more with a bond) replace its fixed gains; and a classic character starts with three assets of any category (`ruleset/creation.yaml` → `max_paths`, `max_starting_assets`). Each is read in the book first, since Datasworn holds the move texts but not classic's harm.
+
+**9j.12** The Adventure Crafter's procedure as the book gives it: whether its five themes are ranked once each, where the engine's theme roll can repeat one (`crafters/adventure_crafter.py` → `assign_themes`); Choose Most Logical and the plotline list's lines; and the consolidation of a full list in Mythic and the Adventure Crafter, which the engine starts at 25 entries rather than lines (`gamemaster/random_events.yaml` → `consolidation_threshold`). The register entry "The engine chooses the Adventure Crafter's plotline" leaves, or becomes Permanent where the book leaves the choice to the player.
+
+### Definition of Done
 
 - Each substep follows its source as the reading settles it, and the CHANGELOG entry names what each reading found.
 - The register entries the substeps name leave `docs/divergences.md`; one stays only where the book leaves the player a choice the engine fixes, then as a Permanent entry with its reason.
 - `dispatch_meta` and the Characters List template leave the orphan-symbol carve-out.
-- Each rule is tested through the real path, and the quality gate is green. An Elvira run only where a substep changes what the narrator is told (9j.8, 9j.10), with its cost named first.
+- Each rule is tested through the real path, and the quality gate is green. An Elvira run only where a substep changes what the narrator is told (9j.8, 9j.10, 9j.11), with its cost named first.
 
-#### Reference patterns
+### Reference patterns
 
 - A condition that blocks recovery: `ruleset/impacts.py` → `blocks_recovery`, and the recovery handlers in `ruleset/move_handlers.py`.
 - A special track a move marks: `ruleset/legacy.py` → `mark_legacy`.
@@ -146,9 +121,49 @@ Each substep starts by reading its rule in the book (the Datasworn texts, Delve,
 - A weak hit's complication: the `complication` effect of Gather Information and Compel in `ruleset/move_outcomes.yaml`.
 - A test through the real path: `tests/_creation.py` → `create_game`, and a turn with `TurnProvider` and `force_result`.
 
+---
+
+## Next steps
+
+Sketches, in the order of work.
+
 Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
 Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and whether a planned tool becomes a new one or part of it when its step becomes NEXT STEP. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
+
+### 9t — Rules conformance: Mythic and Starforged
+
+As in 9j, each substep starts by reading its rule in the book and builds what the reading settles; all were found in 9r.
+
+**9t.1** Mythic: an adventure starts at chaos 5, so the background vow's words stop moving a new game's start (`ruleset/creation.yaml` → `chaos_vow_modifiers`, `game/game_start.py` → `_compute_chaos_start`, the engine's own since 0.36.0); a New NPC event brings a new character, named by the setting's generator, instead of rolling the Characters List (register "A New NPC event draws a known character" leaves).
+
+**9t.2** Starforged's recover moves: Resupply's weak hit costs no momentum but meets a cost or complication first (`recover/resupply` in `ruleset/move_outcomes.yaml`); Sojourn makes two recover moves, one on a weak hit, as automatic strong hits instead of its fixed gains; Test Your Relationship's miss loses the connection, and its strong hit's disposition shift, which came from EdgeTales, is read against the book (register "Make a Connection shifts the NPC's disposition").
+
+**9t.3** Continue a Legacy: each legacy track's roll gives one of the options the move offers, instead of a share of its boxes, and what the successor keeps of the world follows from them (register "A successor inherits by engine rule" leaves). Step 13b's Group C names the move.
+
+**9t.4** A move whose text names its time takes it, such as classic Make Camp's several hours (register "Time of day is the engine's").
+
+### 9u — What the narrator still decides
+
+Rules of the narrator's prompt that came from EdgeTales and decide something in the fiction (9r). Each moves to the engine or goes, measured with Elvira before and after, since rewording the narrator on Sonnet stayed within the noise (9f).
+
+**9u.1** Emotional carry-through: earlier emotional beats stay in the character's body and perception, a feeling the narrator picks for the player character, against PLAYER AGENCY, INNER LIFE; it goes, since meters and impacts already reach `<character_state>`.
+
+**9u.2** The narrator's time rule (time moves forward, minutes to hours) goes; the engine's `<time>` decides it (register "Time of day is the engine's").
+
+**9u.3** The flags: the final scene's "character falls", which also stands on a despair ending, where the move's own outcome text already reaches the narrator; the crisis flag at health or spirit 0 (`ruleset/meters.yaml` → `crisis_at_zero`), from EdgeTales and with no source; and the meters' zero flags WOUNDED, BROKEN, and DEPLETED, where the Datasworn impacts reach the narrator. The meter level texts of `engine/narrator_status_descriptions.yaml` are read with them.
+
+**9u.4** The player's wishes appear at most one a scene and never in the opening, as the narrator picks; the engine schedules them instead, as threads on Mythic's list or as keyed scenes.
+
+**9u.5** What the player declares about the world: the `world_shaping` move, an EdgeTales move rolled with wits, heart, or shadow, with +1 momentum on a strong hit and no Datasworn move behind it (`ruleset/engine_moves.yaml`), and the Brain's `world_addition`. A declared fact is settled by Mythic's fate, as the facts of 9a are.
+
+**9u.6** The consequence sentences tell only what the engine decided: `health_heavy` tells of a broken bone or bleeding that no meter or impact tracks (`engine/consequence_templates.yaml`).
+
+**9u.7** Genre physics (nothing outside the genre exists, objects never act) is read against the setting's truths, which can allow what it forbids, such as classic's mysticism and Starforged's precursor vaults.
+
+**9u.8** The one unexplained background detail each scene comes from Mythic's element tables (sounds, smells, objects) with step 33, or goes.
+
+**9u.9** The off-screen death vote can never fire: it marks an NPC dead when this scene's memories of others carry `betrayed` or `devastated` at importance 9 (`ai/metadata.py` → `_check_death_corroboration`, from EdgeTales of 3 April), and since 0.37.0 only the engine writes a memory about another NPC, with labels that are never these words. It goes, with `engine/metadata_voting.yaml` and `gamemaster/death_emotions.yaml`, once the user agrees to the files going (asked in 9r).
 
 ### 9k — Scene challenges
 
@@ -170,7 +185,7 @@ The measuring setup captures narrator calls only. A set of captured calls per pr
 
 **10.1** The location and settlement categories weighted by location properties and the world state (no prosperous trading post in a region at war), each naming its game-state inputs as a fact type does in `gamemaster/fact_resolution.yaml`. A generated place takes its name from the setting's name tables (Starforged and Sundered Isles settlement names, classic's quick settlement names) where the player has not named it; the register entry "Places are rolled without the world state, and their names are narrated" leaves.
 
-**10.2** An encounter category in `gamemaster/generation.yaml`, weighted by location properties, active threats, and chaos (`engine/encounter_weights.yaml`, new); oracle for structure, AI for description; its output reaches the Brain as structured data (couples to steps 12 and 25). Of the two code paths that follow a link from one oracle row to another table (`setting/cascade.py` → `roll_oracle_cascade`, `setting/oracle_rolls.py` → `roll_oracle`), the category settles on one.
+**10.2** An encounter category in `gamemaster/generation.yaml`, weighted by location properties, active threats, and chaos (`engine/encounter_weights.yaml`, new); oracle for structure, AI for description; its output reaches the Brain as structured data (couples to steps 12 and 25). Of the two code paths that follow a link from one oracle row to another table (`setting/cascade.py` → `roll_oracle_cascade`, `setting/oracle_rolls.py` → `roll_oracle`), the category settles on one. The narrator's rule that an NPC seen elsewhere is absent until shown arriving lets the narrator bring one in (9r); an arrival becomes the encounter generator's, or a random event's.
 
 **10.3** `<generated>` tags replace unstructured invention, at a net prompt cost near zero.
 
@@ -184,13 +199,13 @@ The measuring setup captures narrator calls only. A set of captured calls per pr
 
 ### 10b — Campaign launch from the setting's oracles
 
-The opening scene and the character's start come from the setting's launch tables instead of the narrator's invention: Starforged's inciting incident and background assets, and Sundered Isles' getting-underway tables. The quest starters Datasworn carries with each truth option are candidates for the opening threads.
+The opening scene and the character's start come from the setting's launch tables instead of the narrator's invention: Starforged's inciting incident and background assets, and Sundered Isles' getting-underway tables. The quest starters Datasworn carries with each truth option are candidates for the opening threads. Found in 9r: today the narrator invents the opening from a task of the fork period (one thing out of place, one NPC present and a second glimpsed, `task_opening` in `prompts/tasks.yaml`), which starts in the morning and gets a threat clock named after the background vow at 1 of 6 (`gamemaster/opening.yaml`, from EdgeTales' opening extraction); the launch tables replace these, or the clock goes.
 
 ### 11 — NPC generation with tiers
 
-**11.0** First, with the user: does the Director keep its tool? It takes no parameters, returns the same view whatever the model asks, and was called on every Director run, so by `docs/ai.md`'s own axis it could be prompt data, saving the first of the Director's two calls (about a quarter of its cost) and the tool registry; the design document makes tool calling central (`docs/divergences.md`, Tool calling per data type). The question is whether the Director must choose the data for 11.2, or the engine already knows the promoted NPC and hands it its threads and memories; the user is no longer sure tool calling adds much. If the tool stays, two things it hands over carry nothing yet: a thread's id, which no field of the Director's answer can name, and a clock's owner, `world` and none for every clock until step 12.
+**11.0** First, with the user: does the Director keep its tool? It takes no parameters, returns the same view whatever the model asks, and was called on every Director run, so by `docs/ai.md`'s own axis it could be prompt data, saving the first of the Director's two calls (about a quarter of its cost) and the tool registry; the design document makes tool calling central (`docs/divergences.md`, Tool calling per data type). The question is whether the Director must choose the data for 11.2, or the engine already knows the promoted NPC and hands it its threads and memories; the user is no longer sure tool calling adds much. If the tool stays, two things it hands over carry nothing yet: a thread's id, which no field of the Director's answer can name, and a clock's owner, `world` and none for every clock until step 12. 9r widens the question: the Director, from EdgeTales, also decides what happens next (`narrator_guidance`, which the narrator follows), what an NPC should do or feel (`npc_guidance`), and how an NPC sees the player (reflections, with its agenda, instinct, arc, and description), all of which the design document leaves to systems (register "An AI Director steers the story and the NPCs"). Which of these stay with an AI, when the Director runs (every three scenes and on EdgeTales' list of triggers), and when a reflection falls due, which EdgeTales' importance scores time (`emotions/importance.yaml`, `npc.reflection_threshold`; only 18 of their 168 words can be reached by the labels the engine writes), is decided here with the user.
 
-**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled without an AI call from the setting's character oracles (Starforged first look, initial disposition, role, goal, revealed aspect; classic role, goal, descriptor) and the Adventure Crafter's character tables (`crafters/character_traits.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). The tables join the npc category's oracle paths beside the name tables, and the narrator receives the values as structured context.
+**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled without an AI call from the setting's character oracles (Starforged first look, initial disposition, role, goal, revealed aspect; classic role, goal, descriptor) and the Adventure Crafter's character tables (`crafters/character_traits.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). The tables join the npc category's oracle paths beside the name tables, and the narrator receives the values as structured context. They also replace what EdgeTales gave a new NPC: the default disposition and a first memory by disposition (`npc.default_new_npc_disposition`, `disposition_to_seed_emotion`), with Starforged's initial disposition where the setting has one; the opening extraction's agendas, instincts, and secrets go to 11.2.
 
 **11.2** Tier 2 (recurring): full AIMS and a goal clock; the Director writes only the AIMS, from the tier-1 base and the active threads, with always-relevant context (location, faction state once step 14 lands) injected.
 
@@ -202,7 +217,7 @@ The opening scene and the character's start come from the setting's launch table
 
 **11b.1** NPCs who walk out of a scene can be pulled back next scene by the activation bonus without reason. The engine counts an NPC as in a scene only when the narration names it or it is the target (`gamemaster/npc/matching.py` → `present_in_narration`), so a passing mention of someone absent still counts. The extractor reports `exited_npc_ids` (like `deceased_npcs`); `NpcData` gets an absent-until-scene value (the save format breaks); activation scores the NPC zero while absent unless the player names them or the Brain targets them; a chapter start clears it. Tests for exit, suppression, the player-name override, and the chapter reset.
 
-**11b.2** An active NPC with an empty connection track and no new memory for N scenes (yaml) moves to background, but not in the scene they reappear.
+**11b.2** An active NPC with an empty connection track and no new memory for N scenes (yaml) moves to background, but not in the scene they reappear. Found in 9r, all from EdgeTales: retirement above `npc.max_active` (12) weighs closeness three times (`description_dedup.bond_multiplier`), set for EdgeTales' bond of 0 to 4 where closeness now counts 0 to 10 boxes, and the chapter boundary moves an NPC with no bond, at most one memory, and no agenda to background and keeps five memories of every NPC (`gamemaster/chapter.yaml`).
 
 ### 11c — NPC-to-NPC memories in the prompt
 
@@ -224,7 +239,7 @@ Builds on step 11 and `check_npc_agency` (`pacing.npc_agency_interval`). No cloc
 
 ### 13 — NPC behavior via fate
 
-Fate plus expected behavior derived from AIMS and stance (`mythic_gme_2e.json` → `npc_behavior`): the engine derives the expected behavior, asks a fate question, and interprets the answer, with a move list with cooldown as refinement. It replaces the 12.3 callable; once per scene after scene-end bookkeeping, for NPCs with a goal clock and AIMS, at most one per scene.
+Fate plus expected behavior derived from AIMS and stance (`mythic_gme_2e.json` → `npc_behavior`): the engine derives the expected behavior, asks a fate question, and interprets the answer, with a move list with cooldown as refinement. It replaces the 12.3 callable; once per scene after scene-end bookkeeping, for NPCs with a goal clock and AIMS, at most one per scene. Found in 9r: the stance matrix and the information gate are the engine's own since 0.39.0 and stay as engine rules (register "The narrator gets less than the full relational context"), but their closeness bands (`gamemaster/stance_bond_buckets.yaml`, the bond thresholds of `gamemaster/information_gate.yaml`) were set for EdgeTales' bond of 0 to 4 and now read 0 to 10 boxes; the gate filters only the target, so an activated NPC's reflections reach the narrator at any gate, and consolidation can lower a gate, since scenes known count from the oldest memory left. The narrator's rule of an NPC's full emotional range and the Director's `npc_guidance`, both from EdgeTales, are what fate and expected behaviour replace. Found in 9i's Elvira run: a revelation told in a dialog drew a fact of the NPC's own beside it (a ring), past her fact budget; once, so only watched.
 
 ### 13b — Unimplemented Datasworn mechanics
 
@@ -234,7 +249,7 @@ Group A, formal moves in `ruleset/move_outcomes.yaml` and `ruleset/move_categori
 
 Group B, engine triggers at their callsites, each with a tag for the narrator (`<failure_marked>`, `<setback>`, `<defeat_faced>`) and its config (failure-track length, setback redirect) in the relevant yaml: `mark_failure_on_miss` (`failure/mark_your_failure`, in the miss resolution of `ruleset/rolls.py`; Delve's failure track, which Datasworn marks optional, joins the campaign's legacy tracks here, the user's choice), `face_setback_at_min_momentum` (`suffer/face_a_setback`, at the momentum clamp of `ruleset/meters.py` → `adjust_momentum`), and `face_defeat_on_objective_loss` (`combat/face_defeat`). `advance_menace_on_miss`, `pay_the_price`, and Out of Supply already follow this pattern. A move that creates a clock whose type has keyed scenes calls `spawn_keyed_scenes_for_clock`.
 
-Group C, elsewhere or deliberately not wired: `legacy/continue_a_legacy` (succession), `fate/ask_the_oracle` (the game master's own), `scene_challenge/begin_the_scene` (9k), `threshold/overcome_destruction` (28), and the five session moves (a divergence).
+Group C, elsewhere or deliberately not wired: `legacy/continue_a_legacy` (succession, its options in 9t.3), `fate/ask_the_oracle` (the game master's own), `scene_challenge/begin_the_scene` (9k), `threshold/overcome_destruction` (28), and the five session moves (a divergence).
 
 Duels: Draw the Circle's boasts are modelled, but the duel opens no combat track, so the foe's initiative after a miss or the boast Grant first strike is narrated; wiring the duel into the combat track and position belongs here.
 
@@ -242,7 +257,7 @@ Tests: each formal move through the move-outcome pipeline, each trigger under it
 
 ### 13c — Foe actions and plot twists from oracles
 
-What a foe does in a fight comes from the setting's combat-action oracle (classic turning point combat action, Starforged and Sundered Isles misc combat action, Delve combat event) instead of the narrator. A new track's rank in classic comes from the challenge-rank oracle when the player names none, instead of the Brain's guess. Classic's major plot twist joins the turning-point sources. Each result reaches the narrator as a structured tag.
+What a foe does in a fight comes from the setting's combat-action oracle (classic turning point combat action, Starforged and Sundered Isles misc combat action, Delve combat event) instead of the narrator. A new track's rank in classic comes from the challenge-rank oracle when the player names none, instead of the Brain's guess. Classic's major plot twist joins the turning-point sources. Each result reaches the narrator as a structured tag. The match hints, an escalation, twist, or boon the narrator invents on a match (`result_match_hint_*` in `prompts/blocks.yaml`, from EdgeTales), take classic's major plot twist and Mythic's plot-twist table (9r). Whether a foe dies at a fight's end follows End the Fight's outcome, where the narration decides it now (register "The narration decides who dies").
 
 ### 14a — Faction data model
 
@@ -250,11 +265,11 @@ FactionData with name, goal, tenets, members, and its standing toward the other 
 
 ### 14b — Scheme clocks and chapter-spanning factions
 
-A scheme clock per faction that ticks on its own and queues a faction event when full (`gamemaster/clock_keyed_scenes.yaml` already covers `scheme`); factions carry over chapters through the three-place chapter pattern; faction archetypes come from the setting's Datasworn oracles through its generators (`docs/settings.md`; classic Ironsworn has none).
+A scheme clock per faction that ticks on its own and queues a faction event when full (`gamemaster/clock_keyed_scenes.yaml` already covers `scheme`); factions carry over chapters through the three-place chapter pattern; faction archetypes come from the setting's Datasworn oracles through its generators (`docs/settings.md`; classic Ironsworn has none). Found in 9r, it also settles the clocks that tick by themselves: every world-owned threat clock ticks with the chance `pacing.autonomous_clock_tick_chance` at each scene's end, from EdgeTales, where the design document asks for every N scenes or for triggers and Blades for downtime; and every new clock has six segments (`clocks.default_segments`), where Blades sizes a clock by how complex its danger is (register "Random events and plot points start dangers and clocks").
 
 ### 14c — Clock and threat pressure in narrative direction
 
-The narrator learns about a clock only when it fills, while the design document names clock states and threat levels as sources of narrative intensity. A pressure tier from the fullest clock and the highest menace feeds the existing intensity derivation, with no numbers or names in the prompt; measured with Elvira before and after.
+The narrator learns about a clock only when it fills, while the design document names clock states and threat levels as sources of narrative intensity. A pressure tier from the fullest clock and the highest menace feeds the existing intensity derivation, with no numbers or names in the prompt; measured with Elvira before and after. Found in 9r (register "Narrative direction reads the meters and the outcome"): intensity reads health and spirit, tempo the outcome, the player's relation is always caused, and the narrative position comes from EdgeTales' pacing hint (a breather after three intense scenes, action after two calm ones, `gamemaster/pacing.yaml`), never as climax; Mythic's chaos factor and scene type could give tempo and position, and the act's phase the climax. A miss or a weak hit ticks the first threat clock in the list, from EdgeTales, not the clock the consequence concerns; and the Director's rule to work a half-full clock into its guidance becomes the engine's pressure tier.
 
 ### 15 — Faction prompts and status
 
@@ -314,11 +329,11 @@ The Sundered Isles crew and morale system.
 
 ### 30 — Player vs PC knowledge
 
-Mythic's four strategies for what the player knows against what the character knows (`mythic_gme_2e.json` → `player_vs_pc_knowledge`), with a knowledge status on random events and NPC secrets.
+Mythic's four strategies for what the player knows against what the character knows (`mythic_gme_2e.json` → `player_vs_pc_knowledge`), with a knowledge status on random events and NPC secrets. An NPC's secret now comes out at the narrator's pace, never directly and over three or more scenes (`secrets_label` in `prompts/blocks.yaml`, the fork period's rule); like a revelation (9i), it could land by engine rule (9r).
 
 ### 31 — Thread progress tracks and discovery checks
 
-Mythic's thread progress track (Option C) with its phases and Flashpoints, discovery checks through the fate system, and a `thread_phase` keyed-scene trigger. Found in 9n.2e: every thread on Mythic's list is a vow today (only `ruleset/tracks.py` adds threads), so the chapter record's other open threads and the threads a successor keeps (`ruleset/succession.py` → `threads_for_successor`) stay empty until a step adds threads of the story's own, here or in 10b.
+Mythic's thread progress track (Option C) with its phases and Flashpoints, discovery checks through the fate system, and a `thread_phase` keyed-scene trigger. Found in 9n.2e: every thread on Mythic's list is a vow today (only `ruleset/tracks.py` adds threads), so the chapter record's other open threads and the threads a successor keeps (`ruleset/succession.py` → `threads_for_successor`) stay empty until a step adds threads of the story's own, here or in 10b. Found in 9r: the thread of the highest weight reaches every action and dialog prompt as `<active_thread>`, with no rule that reads it, and the keyed scenes a threat or scheme clock gets at half are the nearest the engine comes to the Flashpoints.
 
 ### 32 — Chaos factor variants
 
@@ -326,11 +341,11 @@ Mythic's chaos variants, each with its own fate chart, and the prepared-adventur
 
 ### 32b — A chapter's structure from Mythic and the Adventure Crafter
 
-A chapter's three acts of about twenty scenes (`engine/creativity_seeds.yaml` → `scene_range_default`, `blueprint.act_phases` in `crafters/adventure_crafter.yaml`), with one turning point rolled for each at chapter start, came from EdgeTales, not from a source. Read against Mythic 2e and the Adventure Crafter first: when the books roll a turning point and when an adventure ends; the chapter then follows them, its revelations (9i) staying bound to its turning points, and a departure the reading finds goes to the register. Read beside the register entry "Chaos factor per turn" and step 32. Found in 9i's Elvira run: both revelations landed at their act's end, since their keyed scenes were bond thresholds (6 and 7) that eighteen scenes did not reach; fifteen of the 33 plot points of `keyed_scene_mapping` wait for a bond, at thresholds the engine chose, not the book.
+A chapter's three acts of about twenty scenes (`engine/creativity_seeds.yaml` → `scene_range_default`, `blueprint.act_phases` in `crafters/adventure_crafter.yaml`), with one turning point rolled for each at chapter start, came from EdgeTales, not from a source. Read against Mythic 2e and the Adventure Crafter first: when the books roll a turning point and when an adventure ends; the chapter then follows them, its revelations (9i) staying bound to its turning points, and a departure the reading finds goes to the register. Read beside the register entry "Chaos factor per turn" and step 32. Found in 9i's Elvira run: both revelations landed at their act's end, since their keyed scenes were bond thresholds (6 and 7), which classic, having no connection tracks, never reaches (9j.2); fifteen of the 33 plot points of `keyed_scene_mapping` wait for a bond, at thresholds the engine chose, not the book (register "Keyed scenes are the engine's"). Found in 9r, all from EdgeTales without a source: the act progress shares (`story_state.act_early_share`, `act_mid_share`) and the "nearing conclusion" signal, the completion at the latest `story_state.completion_overrun_scenes` past the last act, the aftermath act after a dismissed epilogue, three possible endings, the story-ending blocks of `prompts/blocks.yaml`, the act mood and the story arc the blueprint voicing writes (conflict, antagonist, theme, act titles, goals, moods, and triggers, the last read by nothing now), the Director's run at the climax, and the chapter opening's time skip with a new threat that has no ThreatData and one or two new NPCs (`task_chapter_opening`); the epilogue's source is Write Your Epilogue (13b).
 
 ### 33 — Themed element tables
 
-`gamemaster/random_events.py` → `roll_meaning_table` reads only actions and descriptions; the 45 themed tables in `mythic_gme_2e.json` → `meaning_tables.elements` join random events by context, six high-use tables first.
+`gamemaster/random_events.py` → `roll_meaning_table` reads only actions and descriptions; the 45 themed tables in `mythic_gme_2e.json` → `meaning_tables.elements` join random events by context, six high-use tables first. They also take the place of the creativity seeds, thirty words from EdgeTales' fallback list that the opening and chapter tasks get (`engine/creativity_seeds.yaml`), with the names, locations, and characters tables (9r).
 
 ### 34 — Remaining themed tables
 
@@ -371,3 +386,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9i — Revelations settled by the engine:** one revelation per act, seeded from its own turning point, lands when its keyed scene fires or at its act's end, on a turn that does not fail, and reaches the narrator as a `<revelation>` it must tell (`docs/mechanics.md`, Revelations); the revelation check, its cluster, and Kishōtenketsu are gone, and a chapter drops the old chapter's Adventure Crafter keyed scenes. Elvira, twenty turns of classic: the revelations of acts 1 and 2 landed at their act's end, in scenes 7 and 14, and both came across; the third act was not reached.
 - **9q — Elvira reaches what a scenario prepares:** a missed aim is a problem; a scenario fixes the results of its first turns through a seam in Elvira alone, or starts at its moment, such as a game over waiting for a successor, and plays in direct mode only (`docs/elvira.md`, Scenarios). Tested on the mock provider; the scenarios have not run on the real models.
 - **9s — NPCs named by whole names:** a text names an NPC by its name or an alias as whole words, or by a given name that keeps its capital, never by one word of a descriptive alias, which in 9i's Elvira run moved two NPCs along with the player (`docs/mechanics.md`, Memory and activation). Presence, introduction, moving along, opening memories, and activation use the one test.
+- **9r — Where each rule comes from:** every rule that decides facts, pacing, or behaviour in the fiction was read against the first commit, EdgeTales of 31 March, the design document, and the books; what came from EdgeTales or the engine without a source went to the step that replaces it (9j, 9t, 9u, 10, 10b, 11, 11b, 13, 13b, 13c, 14b, 14c, 30, 31, 32b, 33) and to the register, and AUDIT.md's principle 6 keeps it so. The design document is theory that gives a rule its aim, not its form (the user's words). Fixed on the way: a lore figure who appears becomes active, an overcome threat is told once, only threat clocks press the position, and the caps on spawned threats and clocks count the open ones.

@@ -7,14 +7,24 @@ from collections.abc import Callable
 from ..gamemaster.config import gm
 from ..ids import unique_id
 from ..logging_util import log
-from ..models import BrainResult, ClockData, GameState, ProgressTrack, RollResult, ThreadEntry, consequence
+from ..models import (
+    BrainResult,
+    ClockData,
+    GameState,
+    ProgressTrack,
+    RollResult,
+    ThreadEntry,
+    ThreatData,
+    ThreatEvent,
+    consequence,
+)
 from .bond import connection_track, connection_track_id
 from .config import rules
 from .impacts import clear_impact
 from .legacy import apply_threat_overcome_bonus, mark_legacy, mark_legacy_ticks, shifted_rank
 from .moves import get_moves
 from .outcome_result import OutcomeResult, move_outcome_config
-from .progress import filled_boxes, mark_progress, new_track
+from .progress import filled_boxes, mark_progress, menace_boxes, menace_total_boxes, new_track
 from .suffer import suffer
 
 
@@ -251,6 +261,21 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
 
                 if threat.status == "overcome":
                     apply_threat_overcome_bonus(game, threat)
+                    _tell_overcome_under_pressure(game, threat)
+
+
+def _tell_overcome_under_pressure(game: GameState, threat: ThreatData) -> None:
+    if menace_boxes(threat) / menace_total_boxes(threat) < rules().threats.menace_high_threshold:
+        return
+    game.world.pending_threat_events.append(
+        ThreatEvent(
+            threat_id=threat.id,
+            threat_name=threat.name,
+            menace_full=False,
+            source="overcome_under_pressure",
+            development="",
+        )
+    )
 
 
 def complete_track_of_clock(game: GameState, clock: ClockData) -> None:

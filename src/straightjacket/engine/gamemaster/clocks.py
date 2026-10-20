@@ -24,8 +24,10 @@ def _unique_clock_name(game: GameState, base_name: str) -> str:
 
 
 def _emergent_cap_reached(game: GameState) -> bool:
-    emergent = sum(1 for c in game.world.clocks if c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
-    return emergent >= gm().clocks.max_clocks_per_chapter
+    emergent = sum(
+        1 for c in game.world.clocks if not c.fired and c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES)
+    )
+    return emergent >= gm().clocks.max_open_emergent
 
 
 def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) -> None:
@@ -73,7 +75,7 @@ def spawn_emergent_clock(
         return None
     cfg = gm().clocks
     if _emergent_cap_reached(game):
-        log(f"[Clock] emergent clock cap {cfg.max_clocks_per_chapter} reached, no clock from '{source}'")
+        log(f"[Clock] emergent clock cap {cfg.max_open_emergent} reached, no clock from '{source}'")
         return None
     clock = new_clock(
         name=_unique_clock_name(game, base_name),
@@ -118,7 +120,7 @@ def spawn_complication_clock(game: GameState, kind: str, danger: str) -> ClockDa
         log(f"[Complication] {cfg.complication.max_open} complication clock(s) already open, no clock for '{danger}'")
         return None
     if _emergent_cap_reached(game):
-        log(f"[Complication] emergent clock cap {cfg.max_clocks_per_chapter} reached, no clock for '{danger}'")
+        log(f"[Complication] emergent clock cap {cfg.max_open_emergent} reached, no clock for '{danger}'")
         return None
     clock = new_clock(
         name=_unique_clock_name(game, danger),

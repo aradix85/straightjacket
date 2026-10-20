@@ -76,6 +76,10 @@ def test_random_event_threat_respects_the_threat_cap(load_engine: None) -> None:
     spawn_danger_from_random_event(g, _re("pc_negative", target_id="t_extra"))
     assert len(g.threats) == 3
 
+    g.threats[0].status = "overcome"
+    spawn_danger_from_random_event(g, _re("pc_negative", target_id="t_after_one_overcome"))
+    assert len(g.threats) == 4
+
 
 def test_ac_threat_spawns_for_mapped_plot_point(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")

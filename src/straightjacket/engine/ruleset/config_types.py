@@ -55,7 +55,7 @@ class ThreatConfig:
     autonomous_tick_marks: int
     menace_high_threshold: float
     category_oracle_collection: str
-    max_per_chapter: int
+    max_open_emergent: int
     by_origin: dict[str, ThreatCreationMappingEntry]
 
 

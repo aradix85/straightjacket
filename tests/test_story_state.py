@@ -203,7 +203,7 @@ def test_check_story_completion_backfills_transitions(load_engine: None) -> None
 def test_check_story_completion_fallback_far_past_end(load_engine: None) -> None:
     from straightjacket.engine.story_state import check_story_completion
 
-    offset = gm().story_state.crisis_scene_offset
+    offset = gm().story_state.completion_overrun_scenes
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5)])
     g.narrative.scene_count = 5 + offset + 1
