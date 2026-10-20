@@ -163,8 +163,10 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
         model=model,
         system=system,
         messages=[{"role": "user", "content": prompt}],
+        json_schema=None,
         tools=get_tools(),
         log_role="director",
+        cached_system_prefix="",
         **{**params, "max_retries": 1},
     )
     try:
@@ -186,7 +188,9 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
         system=system,
         messages=[{"role": "user", "content": prompt}],
         json_schema=get_director_output_schema([npc.id for npc in game.npcs if _reflection_eligible(npc)]),
+        tools=None,
         log_role="director",
+        cached_system_prefix="",
         **params,
     )
     try:

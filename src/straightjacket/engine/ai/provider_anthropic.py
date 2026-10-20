@@ -46,15 +46,13 @@ class AnthropicProvider:
             "system": spec.system,
             "messages": spec.messages,
         }
-        extra: dict[str, Any] = dict(spec.extra_body) if spec.extra_body else {}
+        extra: dict[str, Any] = dict(spec.extra_body)
 
         sampling: dict[str, Any] = {}
         if spec.temperature is not None:
             sampling["temperature"] = spec.temperature
         if spec.top_p is not None:
             sampling["top_p"] = spec.top_p
-        if spec.top_k is not None:
-            sampling["top_k"] = spec.top_k
 
         output_config: dict[str, Any] = extra.pop("output_config") if "output_config" in extra else {}
         if spec.json_schema is not None:

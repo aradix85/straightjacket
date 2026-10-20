@@ -287,7 +287,6 @@ _CONFIG_BINDING_FILES = frozenset(
 )
 
 _EXTERNAL_STRUCTURE_DATACLASSES: set[tuple[str, str]] = {
-    ("engine/ai/provider_base.py", "AICallSpec"),
     ("engine/ai/provider_base.py", "AIResponse"),
     ("engine/setting/packages.py", "_OraclePathsPartial"),
     ("engine/setting/packages.py", "_CreationFlowPartial"),
@@ -913,13 +912,10 @@ def _is_load_ref(node: ast.AST, name: str) -> bool:
     return False
 
 
-_ORPHAN_YAML_KEY_CARVE_OUT: set[tuple[str, str]] = set()
-
-
 def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
     py_text = "\n".join(
         line
-        for p in (*_iter_source_files(), *_iter_test_files())
+        for p in _iter_source_files()
         for line in p.read_text(encoding="utf-8").splitlines()
         if not line.lstrip().startswith(("from ", "import "))
     )
@@ -933,8 +929,6 @@ def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
             continue
         for key in data:
             if not isinstance(key, str):
-                continue
-            if (yfile.relative_to(REPO_ROOT).as_posix(), key) in _ORPHAN_YAML_KEY_CARVE_OUT:
                 continue
             literal_patterns = [f'"{key}"', f"'{key}'", f".{key}", f"['{key}']", f'["{key}"]']
             if any(p in py_text for p in literal_patterns):
@@ -952,10 +946,14 @@ def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
 def _defines(path: Path, name: str) -> bool:
     if not path.exists():
         return False
-    return any(
-        isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) and n.name == name
-        for n in ast.walk(_load(path)[2])
-    )
+    for node in ast.walk(_load(path)[2]):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) and node.name == name:
+            return True
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in node.targets):
+            return True
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == name:
+            return True
+    return False
 
 
 def _has_broad_except(path: Path) -> bool:
@@ -1110,18 +1108,6 @@ def _check_code_map_complete() -> tuple[str, list[Violation]]:
     return "DOC DRIFT: ARCHITECTURE.md code map", violations
 
 
-def _defines_top_level(path: Path, name: str) -> bool:
-    tree = _load(path)[2]
-    for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) and node.name == name:
-            return True
-        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in node.targets):
-            return True
-        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == name:
-            return True
-    return False
-
-
 def _resolve_src_path(rel: str) -> Path | None:
     matches = [p for p in _iter_source_files() if p.as_posix().endswith("/" + rel)]
     return matches[0] if len(matches) == 1 else None
@@ -1137,7 +1123,7 @@ def _check_doc_symbols_exist() -> tuple[str, list[Violation]]:
                 path = _resolve_src_path(rel)
                 if path is None:
                     violations.append(Violation(_doc_name(doc), lineno, f"`{rel}` does not resolve to one source file"))
-                elif not _defines_top_level(path, name):
+                elif not _defines(path, name):
                     violations.append(Violation(_doc_name(doc), lineno, f"`{rel}` does not define {name!r}"))
     return "DOC DRIFT: an md file names a symbol that does not exist", violations
 

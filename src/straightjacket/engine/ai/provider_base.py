@@ -29,15 +29,14 @@ class AICallSpec:
     system: str
     messages: list[dict[str, Any]]
     max_tokens: int
-    max_retries: int = 0
-    temperature: float | None = None
-    top_p: float | None = None
-    top_k: int | None = None
-    extra_body: dict[str, Any] | None = None
-    json_schema: dict[str, Any] | None = None
-    tools: list[dict[str, Any]] | None = None
-    log_role: str = ""
-    cached_system_prefix: str = ""
+    max_retries: int
+    temperature: float | None
+    top_p: float | None
+    extra_body: dict[str, Any]
+    json_schema: dict[str, Any] | None
+    tools: list[dict[str, Any]] | None
+    log_role: str
+    cached_system_prefix: str
 
 
 def normalize_stop_reason(raw: str, truncated_values: tuple[str, ...], tool_use_value: str, refusal_value: str) -> str:

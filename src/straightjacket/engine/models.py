@@ -109,6 +109,7 @@ class TurnSnapshot(SerializableMixin):
     backstory: str
     crisis_mode: bool
     end_reason: str
+    post_epilogue_director_done: bool
     player_input: str
     brain: BrainResult | None
     roll: RollResult | None
@@ -173,6 +174,7 @@ class GameState(SerializableMixin):
             backstory=self.backstory,
             crisis_mode=self.crisis_mode,
             end_reason=self.end_reason,
+            post_epilogue_director_done=self.post_epilogue_director_done,
             player_input="",
             brain=None,
             roll=None,
@@ -193,6 +195,7 @@ class GameState(SerializableMixin):
         self.backstory = snap.backstory
         self.crisis_mode = snap.crisis_mode
         self.end_reason = snap.end_reason
+        self.post_epilogue_director_done = snap.post_epilogue_director_done
         meters = " ".join(f"{name}={value}" for name, value in self.resources.meters.items())
         log(f"[GameState] Restored from snapshot: {meters} chaos={self.world.chaos_factor}")
 

@@ -85,3 +85,22 @@ def test_a_lore_figure_that_is_known_or_nameless_adds_no_npc(load_engine: None) 
         lore_npcs=[{"name": "Kira", "description": "Already exists"}, {"name": " ", "description": "No name"}],
     )
     assert [n.name for n in game.npcs] == ["Kira", "Borin"]
+
+
+def test_a_rename_when_no_npc_is_known_fails_the_extraction_only(load_engine: None) -> None:
+    import json
+
+    from straightjacket.engine.ai.narrator import call_narrator_metadata
+    from tests._helpers import make_brain_result
+    from tests._mocks import MockProvider
+
+    game = make_game_state(player_name="Hero")
+    reply = {
+        "new_npcs": [{"name": "Orla", "description": "a ferrywoman", "disposition": "neutral"}],
+        "npc_renames": [None],
+        "npc_details": [],
+        "deceased_npcs": [],
+        "lore_npcs": [],
+    }
+    metadata = call_narrator_metadata(MockProvider(json.dumps(reply)), "Orla waits.", game, make_brain_result(), [])
+    assert metadata["npc_renames"] == metadata["new_npcs"] == []

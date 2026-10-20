@@ -82,9 +82,14 @@ def ask_bot(system: str, user: str, max_tokens: int = 300) -> str:
         system=system,
         messages=[{"role": "user", "content": user}],
         max_tokens=max_tokens,
+        max_retries=0,
         temperature=_bot["temperature"],
+        top_p=None,
         extra_body=dict(_bot["extra_body"]),
+        json_schema=None,
+        tools=None,
         log_role=ELVIRA_ROLE,
+        cached_system_prefix="",
     )
     response = post_process_response(bot_provider().create_message(spec))
     return response.content.strip()

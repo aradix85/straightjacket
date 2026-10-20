@@ -75,7 +75,10 @@ def call_recap(provider: AIProvider, game: GameState) -> str:
         model=model_for_role("recap"),
         system=get_prompt("recap", lang=lang, content_boundaries_block=content_boundaries_block(game)),
         messages=[{"role": "user", "content": request}],
+        json_schema=None,
+        tools=None,
         log_role="recap",
+        cached_system_prefix="",
         **sampling_params("recap"),
     )
     try:

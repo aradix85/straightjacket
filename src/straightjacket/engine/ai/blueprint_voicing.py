@@ -115,7 +115,9 @@ def call_blueprint_voicing(
             system=system,
             messages=list(messages),
             json_schema=schema,
+            tools=None,
             log_role="blueprint_voicing",
+            cached_system_prefix="",
             **params,
         )
         try:

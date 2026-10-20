@@ -33,7 +33,19 @@ def _full_config_data(**overrides: object) -> dict[str, Any]:
                     "extra_body": {"foo": "bar"},
                 }
             },
-            "role_cluster": {"recap": "classification"},
+            "role_cluster": dict.fromkeys(
+                (
+                    "narrator",
+                    "blueprint_voicing",
+                    "director",
+                    "recap",
+                    "brain",
+                    "correction",
+                    "narrator_metadata",
+                    "opening_setup",
+                ),
+                "classification",
+            ),
         },
     }
     base.update(overrides)
@@ -66,11 +78,12 @@ def test_a_role_reaches_the_settings_of_its_cluster_and_provider(read_config: Ca
     assert (provider.type, provider.api_key_env, provider.timeout_seconds) == ("openai_compatible", "LOCAL_KEY", 30.0)
 
 
-def test_a_sampling_value_set_to_null_is_not_sent(read_config: Callable[[dict[str, Any]], None]) -> None:
+def test_a_sampling_value_set_to_null_stays_unset(read_config: Callable[[dict[str, Any]], None]) -> None:
     data = _full_config_data()
     data["ai"]["clusters"]["classification"].update(temperature=None, top_p=None)
     read_config(data)
-    assert not {"temperature", "top_p"} & set(config_loader.sampling_params("recap"))
+    params = config_loader.sampling_params("recap")
+    assert (params["temperature"], params["top_p"]) == (None, None)
 
 
 def _cluster(data: dict[str, Any]) -> dict[str, Any]:
@@ -91,6 +104,14 @@ def _cluster(data: dict[str, Any]) -> dict[str, Any]:
         (lambda data: data["ai"]["clusters"].update(classification="qwen"), "must be a mapping"),
         (lambda data: _cluster(data).update(provider="elsewhere"), r"not defined under ai\.providers"),
         (lambda data: data["ai"]["role_cluster"].update(recap="creative"), r"not defined under ai\.clusters"),
+        (
+            lambda data: data["ai"]["role_cluster"].update(narator="classification"),
+            r"ai\.role_cluster has unknown keys \['narator'\]",
+        ),
+        (
+            lambda data: data["ai"]["role_cluster"].pop("recap"),
+            r"ai\.role_cluster missing required fields: \['recap'\]",
+        ),
     ],
     ids=[
         "empty",
@@ -100,6 +121,8 @@ def _cluster(data: dict[str, Any]) -> dict[str, Any]:
         "not_a_mapping",
         "unknown_provider",
         "unknown_cluster",
+        "unknown_role",
+        "missing_role",
     ],
 )
 def test_a_config_file_that_does_not_fit_stops_loading(

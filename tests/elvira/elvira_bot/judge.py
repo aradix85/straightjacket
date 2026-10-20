@@ -79,9 +79,14 @@ def judge_turn(
         system=_p("judge_system"),
         messages=[{"role": "user", "content": user}],
         max_tokens=judge_cfg["max_tokens"],
-        json_schema=JUDGE_SCHEMA,
+        max_retries=0,
+        temperature=None,
+        top_p=None,
         extra_body=dict(judge_cfg["extra_body"]),
+        json_schema=JUDGE_SCHEMA,
+        tools=None,
         log_role=ELVIRA_ROLE,
+        cached_system_prefix="",
     )
     try:
         verdict: dict[str, Any] = json.loads(bot_provider().create_message(spec).content)

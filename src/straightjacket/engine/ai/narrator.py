@@ -42,6 +42,8 @@ def call_narrator(
         model=model_for_role("narrator"),
         system=system,
         messages=messages,
+        json_schema=None,
+        tools=None,
         log_role="narrator",
         cached_system_prefix=cached_prefix,
         **sampling_params("narrator"),
@@ -88,7 +90,9 @@ def call_opening_setup(provider: AIProvider, narration: str, game: GameState) ->
         system=system,
         messages=[{"role": "user", "content": prompt}],
         json_schema=get_opening_setup_schema(),
+        tools=None,
         log_role="opening_setup",
+        cached_system_prefix="",
         **sampling_params("opening_setup"),
     )
     try:
@@ -164,11 +168,15 @@ def call_narrator_metadata(
         system=system,
         messages=[{"role": "user", "content": prompt}],
         json_schema=get_narrator_metadata_schema(npc_ids),
+        tools=None,
         log_role="narrator_metadata",
+        cached_system_prefix="",
         **sampling_params("narrator_metadata"),
     )
     try:
         metadata: dict[str, Any] = json.loads(create_with_retry(provider, spec).content)
+        if not npc_ids and (metadata["npc_renames"] or metadata["npc_details"]):
+            raise ValueError("the metadata renames or details an NPC, but no NPC is known")
         log(
             f"[Metadata] Extracted: "
             f"{len(metadata['new_npcs'])} new NPCs, "

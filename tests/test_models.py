@@ -223,3 +223,13 @@ def test_a_restore_brings_back_the_tracks_and_the_combat_position() -> None:
     assert game.progress_tracks[1].status == "active"
     assert game.progress_tracks[1].ticks == 0
     assert game.world.combat_position == "in_control"
+
+
+def test_a_restore_brings_back_the_backstory_and_the_directors_epilogue_run() -> None:
+    game = make_game_state()
+    game.backstory = "Raised by the river folk."
+    snap = game.snapshot()
+    game.backstory = "Changed by a correction."
+    game.post_epilogue_director_done = True
+    game.restore(snap)
+    assert (game.backstory, game.post_epilogue_director_done) == ("Raised by the river folk.", False)

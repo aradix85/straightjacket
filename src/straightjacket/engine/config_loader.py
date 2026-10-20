@@ -93,6 +93,16 @@ _AI_KEYS = ("prompts_dir", "providers", "clusters", "role_cluster")
 _PROVIDER_KEYS = ("type", "api_base", "api_key_env", "timeout_seconds")
 _CLUSTER_KEYS = ("provider", "model", "temperature", "top_p", "max_tokens", "max_retries", "extra_body")
 _LANGUAGE_KEYS = ("narration_language",)
+_ROLES = (
+    "narrator",
+    "blueprint_voicing",
+    "director",
+    "recap",
+    "brain",
+    "correction",
+    "narrator_metadata",
+    "opening_setup",
+)
 
 
 def _parse_config(data: dict[str, Any]) -> AppConfig:
@@ -130,6 +140,7 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
             extra_body=dict(cdata["extra_body"]),
         )
 
+    _check_keys("ai.role_cluster", ad["role_cluster"], _ROLES)
     for role, cname in ad["role_cluster"].items():
         if cname not in clusters:
             raise ValueError(
@@ -184,11 +195,6 @@ def narration_language() -> str:
 
 def _cluster_for_role(role: str) -> ClusterConfig:
     _c = cfg()
-    if role not in _c.ai.role_cluster:
-        raise ValueError(
-            f"Role '{role}' has no cluster assignment in config.yaml. "
-            f"Add '{role}: <cluster_name>' under ai.role_cluster."
-        )
     return _c.ai.clusters[_c.ai.role_cluster[role]]
 
 
@@ -207,15 +213,10 @@ def model_for_role(role: str) -> str:
 def sampling_params(role: str) -> dict[str, Any]:
     cluster = _cluster_for_role(role)
 
-    params: dict[str, Any] = {
+    return {
         "max_tokens": cluster.max_tokens,
         "max_retries": cluster.max_retries,
+        "temperature": cluster.temperature,
+        "top_p": cluster.top_p,
+        "extra_body": cluster.extra_body,
     }
-    if cluster.temperature is not None:
-        params["temperature"] = cluster.temperature
-    if cluster.top_p is not None:
-        params["top_p"] = cluster.top_p
-    if cluster.extra_body:
-        params["extra_body"] = cluster.extra_body
-
-    return params

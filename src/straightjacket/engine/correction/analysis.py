@@ -78,6 +78,8 @@ def call_correction_brain(
         system=get_prompt("correction_brain", lang=lang),
         messages=[{"role": "user", "content": user_msg}],
         json_schema=get_correction_output_schema([n.id for n in game.npcs]),
+        tools=None,
+        cached_system_prefix="",
         **sampling_params("correction"),
     )
     log(f"[Correction] Analysing: {correction_text[: _trunc.log_long]}")

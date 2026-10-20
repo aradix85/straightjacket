@@ -317,6 +317,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
             system=system,
             messages=list(messages),
             json_schema=schema,
+            tools=None,
             log_role="brain",
             cached_system_prefix=cached_prefix,
             **params,

@@ -81,9 +81,7 @@ class OpenAICompatibleProvider:
         if spec.top_p is not None:
             create_kwargs["top_p"] = spec.top_p
 
-        extra: dict[str, Any] = dict(spec.extra_body) if spec.extra_body else {}
-        if spec.top_k is not None:
-            extra["top_k"] = spec.top_k
+        extra: dict[str, Any] = dict(spec.extra_body)
         if extra:
             create_kwargs["extra_body"] = extra
 

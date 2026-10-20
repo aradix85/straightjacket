@@ -34,6 +34,14 @@ def _spec(**overrides: Any) -> AICallSpec:
         "system": "system text",
         "messages": [{"role": "user", "content": "hello"}],
         "max_tokens": 64,
+        "max_retries": 0,
+        "temperature": None,
+        "top_p": None,
+        "extra_body": {},
+        "json_schema": None,
+        "tools": None,
+        "log_role": "narrator",
+        "cached_system_prefix": "",
     }
     base.update(overrides)
     return AICallSpec(**base)
@@ -119,13 +127,13 @@ class TestAnthropicProvider:
     ) -> None:
         anthropic_endpoint.response = _anthropic_reply()
         schema = {"title": "brain_output", "type": "object"}
-        spec = _spec(temperature=0.5, top_p=0.9, top_k=40, json_schema=schema, tools=[_tool()])
+        spec = _spec(temperature=0.5, top_p=0.9, json_schema=schema, tools=[_tool()])
         _anthropic().create_message(spec)
         sent = anthropic_endpoint.calls[0]
         assert sent["system"] == "system text"
         assert sent["messages"] == [{"role": "user", "content": "hello"}]
-        assert sent["extra_body"] == {"temperature": 0.5, "top_p": 0.9, "top_k": 40}
-        assert not {"temperature", "top_p", "top_k"} & set(sent)
+        assert sent["extra_body"] == {"temperature": 0.5, "top_p": 0.9}
+        assert not {"temperature", "top_p"} & set(sent)
         assert sent["output_config"] == {
             "format": {"type": "json_schema", "schema": provider_anthropic.anthropic.transform_schema(schema)}
         }
@@ -197,12 +205,10 @@ class TestOpenAICompatibleProvider:
         }
         assert sent["tools"] == [_tool()]
 
-    def test_top_k_merges_into_extra_body_without_mutating_spec(self, openai_endpoint: _FakeEndpoint) -> None:
+    def test_the_clusters_extra_body_reaches_the_request(self, openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response("ok", "stop", None)
-        extra = {"reasoning_effort": "none"}
-        _openai().create_message(_spec(extra_body=extra, top_k=30))
-        assert openai_endpoint.calls[0]["extra_body"] == {"reasoning_effort": "none", "top_k": 30}
-        assert extra == {"reasoning_effort": "none"}
+        _openai().create_message(_spec(extra_body={"reasoning_effort": "none"}))
+        assert openai_endpoint.calls[0]["extra_body"] == {"reasoning_effort": "none"}
 
     def test_unset_options_are_not_sent(self, openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response("ok", "stop", None)
@@ -234,7 +240,7 @@ def _accepted(create: Any) -> set[str]:
 
 def test_anthropic_request_uses_only_parameters_the_installed_sdk_accepts(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = _anthropic_reply()
-    spec = _spec(temperature=0.5, top_p=0.9, top_k=40, json_schema={"title": "t", "type": "object"}, tools=[_tool()])
+    spec = _spec(temperature=0.5, top_p=0.9, json_schema={"title": "t", "type": "object"}, tools=[_tool()])
     _anthropic().create_message(spec)
     accepted = _accepted(provider_anthropic.anthropic.resources.messages.Messages.create)
     assert set(anthropic_endpoint.calls[0]) <= accepted
@@ -245,7 +251,6 @@ def test_openai_request_uses_only_parameters_the_installed_sdk_accepts(openai_en
     spec = _spec(
         temperature=0.5,
         top_p=0.9,
-        top_k=40,
         extra_body={"reasoning_effort": "none"},
         json_schema={"title": "t", "type": "object"},
         tools=[_tool()],

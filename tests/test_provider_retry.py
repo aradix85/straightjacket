@@ -24,8 +24,14 @@ def _spec(max_retries: int = 2) -> AICallSpec:
         system="s",
         messages=[{"role": "user", "content": "hi"}],
         max_tokens=8,
-        log_role="narrator",
         max_retries=max_retries,
+        temperature=None,
+        top_p=None,
+        extra_body={},
+        json_schema=None,
+        tools=None,
+        log_role="narrator",
+        cached_system_prefix="",
     )
 
 

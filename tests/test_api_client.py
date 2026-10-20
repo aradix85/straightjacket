@@ -59,7 +59,16 @@ def two_providers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, 
                 "prose": {"type": "anthropic", "api_base": "", "api_key_env": "PROSE_KEY", "timeout_seconds": 30},
             },
             "clusters": {"narrator": _cluster("prose", "model-b"), "classification": _cluster("fast", "model-a")},
-            "role_cluster": {"narrator": "narrator", "brain": "classification"},
+            "role_cluster": {
+                "narrator": "narrator",
+                "blueprint_voicing": "classification",
+                "director": "classification",
+                "recap": "classification",
+                "brain": "classification",
+                "correction": "classification",
+                "narrator_metadata": "classification",
+                "opening_setup": "classification",
+            },
         },
     }
     config_file = tmp_path / "config.yaml"
@@ -76,9 +85,18 @@ def _spec(role: str, **fields: Any) -> AICallSpec:
         model="m",
         system="You are the Brain.",
         messages=[{"role": "user", "content": "hi"}],
-        max_tokens=8,
-        log_role=role,
-        **fields,
+        **{
+            "max_tokens": 8,
+            "max_retries": 0,
+            "temperature": None,
+            "top_p": None,
+            "extra_body": {},
+            "json_schema": None,
+            "tools": None,
+            "log_role": role,
+            "cached_system_prefix": "",
+            **fields,
+        },
     )
 
 
@@ -91,7 +109,7 @@ def test_each_role_is_routed_to_its_clusters_provider(two_providers: dict[str, _
 
 
 def test_call_without_a_known_role_raises(two_providers: dict[str, _FakeAdapter]) -> None:
-    with pytest.raises(ValueError, match="no cluster assignment"):
+    with pytest.raises(KeyError):
         api_client.get_provider().create_message(_spec(""))
 
 
