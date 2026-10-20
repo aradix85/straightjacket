@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.21.1] — 2026-10-21
+
+Every md file read against steps 9s and 9r. README.md and ORIGINS.md link the design document's repository and say that the register also lists the rules still carried over from EdgeTales, with the steps that take them over; `docs/ai.md` points from the Director's role to its register entry and to 11.0. Roadmap 11b.1 gains a finding: Elvira's check for NPCs that change place unseen counts an NPC as named only by a part of its name, not by the engine's `named_in`, so a whole alias in the narration reads as a move unseen. SECURITY.md, CONTRIBUTING.md, `docs/elvira.md`, `docs/settings.md`, and `docs/mechanics.md` needed nothing more.
+
+Quality gate: 1767 tests, no code changed. Save format unchanged.
+
 ## [2026.10.21.0] — 2026-10-21
 
 ARCHITECTURE.md and CONTRIBUTING.md follow step 9r. The order of preference now says that every rule that decides something in the fiction names its origin, a source or an engine rule with its reason in the register (AUDIT.md, principle 6), and that what came from EdgeTales without a source is taken over in the step that names it and leaves only once that does its work. "Record every departure from a source" adds that a new rule without a source gets a register entry, and that a rule from EdgeTales leaves only in the change that replaces it or routes its work to a system the engine already has.

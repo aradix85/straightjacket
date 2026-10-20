@@ -24,7 +24,7 @@ Creates a venv, installs dependencies, downloads any game data file that is miss
 
 You type what your character does. An AI classifier reads it and picks the move and stat, choosing only from the moves the engine allows in that situation. The engine rolls the dice and applies every mechanical consequence. An AI narrator writes the scene within those constraints. The AI never rolls, never decides whether an action succeeds, never moves resources, and never controls the player character. That's the straightjacket.
 
-Not everything is engine-decided yet: `docs/divergences.md` lists what the narrator still invents where a system could decide, each with the roadmap step that takes it over.
+Not everything is engine-decided yet: `docs/divergences.md` lists what the narrator still invents where a system could decide, and the rules still carried over from EdgeTales, each with the roadmap step that takes it over.
 
 Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (chaos factor, scene structure, random events), the Adventure Crafter (plot structure and turning points), and Blades in the Dark (position & effect, clocks).
 
@@ -48,7 +48,7 @@ Text-in, text-out, and built for screen readers from the start by a blind develo
 - [CHANGELOG.md](CHANGELOG.md) — release log since September 2026; earlier releases are in git history
 - [roadmap.md](roadmap.md) — internal working doc: what gets built next, and in what order
 - [AUDIT.md](AUDIT.md) — internal working doc: how the codebase is audited against its principles
-- [Narrative RPG Engine design document](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u) — the theoretical concept this project puts into practice, published on itch.io
+- [Narrative RPG Engine design document](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u) — the theoretical concept this project puts into practice, published on itch.io and in the author's repository [narrative-rpg-engine](https://github.com/aradix85/narrative-rpg-engine)
 
 ---
 
