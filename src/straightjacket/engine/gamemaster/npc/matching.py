@@ -1,5 +1,4 @@
 import re
-from collections.abc import Iterable
 from dataclasses import dataclass
 
 from ...ids import next_id
@@ -163,8 +162,8 @@ def resolve_about_npc(game: GameState, raw: str, owner_id: str) -> str | None:
     return None
 
 
-def next_npc_id(game: GameState, reserved: Iterable[str] = ()) -> str:
-    return next_id(NPC_ID_PREFIX, [*(n.id for n in game.npcs), *reserved])
+def next_npc_id(game: GameState) -> str:
+    return next_id(NPC_ID_PREFIX, [n.id for n in game.npcs])
 
 
 def edit_distance_le1(a: str, b: str) -> bool:

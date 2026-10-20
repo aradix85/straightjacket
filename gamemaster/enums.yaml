@@ -47,4 +47,3 @@ npc_status_groups:
   in_play: [active, background]
   reactivatable: [background, lore]
   description_matchable: [active, background, lore]
-  chapter_returning: [active, background, deceased]

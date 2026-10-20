@@ -17,12 +17,11 @@ from ..crafters.blueprint import (
 from ..director import new_guidance
 from ..engine_loader import eng
 from ..gamemaster.config import gm
-from ..gamemaster.npc.matching import next_npc_id
 from ..gamemaster.npc.memory import consolidate_memory
 from ..gamemaster.story import choose_story_structure
 from ..gamemaster.world import clear_facts
 from ..logging_util import log
-from ..models import ChapterSummary, GameState, NpcData
+from ..models import ChapterSummary, GameState
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
 from ..prompt_loader import get_prompt
@@ -67,14 +66,9 @@ def start_new_chapter(provider: AIProvider, game: GameState) -> str:
     else:
         game.world.current_scene_context = _defaults["new_chapter_blank"]
 
-    returning = gm().npc_status_groups.chapter_returning
-    returning_npcs = [copy.deepcopy(n) for n in game.npcs if n.status in returning]
+    narration, setup_data = _generate_chapter_opening(provider, game)
 
-    narration, setup_data = _generate_chapter_opening(provider, game, returning_npcs)
-
-    _merge_returning_npcs(game, returning_npcs)
-
-    if setup_data is not None and setup_data["deceased_npcs"]:
+    if setup_data["deceased_npcs"]:
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     _record_chapter_opening(game, narration)
@@ -179,9 +173,7 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
         consolidate_memory(npc)
 
 
-def _generate_chapter_opening(
-    provider: AIProvider, game: GameState, returning_npcs: list[NpcData]
-) -> tuple[str, dict[str, Any] | None]:
+def _generate_chapter_opening(provider: AIProvider, game: GameState) -> tuple[str, dict[str, Any]]:
     structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
@@ -205,13 +197,8 @@ def _generate_chapter_opening(
 
     _apply_blueprint(game, seed, voicing)
 
-    returning_ids = {n.id for n in returning_npcs}
-    new_parser_npcs = [n for n in game.npcs if n.id not in returning_ids]
-    if new_parser_npcs:
-        log(f"[Campaign] New NPCs already extracted by parser ({len(new_parser_npcs)}), skipping opening_setup call")
-        return narration, None
     setup_data = call_opening_setup(provider, narration, game)
-    apply_opening_setup(game, setup_data, returning_npcs=returning_npcs, label="ChapterSetup")
+    apply_opening_setup(game, setup_data, label="ChapterSetup")
     return narration, setup_data
 
 
@@ -220,30 +207,6 @@ def _apply_blueprint(game: GameState, seed: BlueprintSeed, voicing: dict[str, An
         game.narrative.story_blueprint = materialize_blueprint(seed, voicing)
     else:
         game.narrative.story_blueprint = None
-
-
-def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> None:
-    new_npc_names = {n.name.lower().strip() for n in game.npcs}
-    id_remap: dict[str, str] = {}
-
-    for old_npc in returning_npcs:
-        if old_npc.name.lower().strip() in new_npc_names:
-            continue
-        old_id = old_npc.id
-        fresh_id = next_npc_id(game)
-        id_remap[old_id] = fresh_id
-        old_npc.id = fresh_id
-        old_npc.introduced = True
-        game.npcs.append(old_npc)
-        new_npc_names.add(old_npc.name.lower().strip())
-
-    for npc in game.npcs:
-        for mem in npc.memory:
-            if mem.about_npc is not None and mem.about_npc in id_remap:
-                mem.about_npc = id_remap[mem.about_npc]
-
-    if game.world.current_location and not game.world.location_history:
-        game.world.location_history.append(game.world.current_location)
 
 
 def _record_chapter_opening(game: GameState, narration: str) -> None:

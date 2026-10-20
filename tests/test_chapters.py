@@ -138,6 +138,14 @@ def test_a_created_game_moves_into_its_next_chapter(load_engine: None) -> None:
     assert assert_game_state(game, turn=1) == []
 
 
+def test_a_chapter_opening_registers_its_people_and_place_beside_a_lore_figure(load_engine: None) -> None:
+    game = _game()
+    game.npcs.append(make_npc(id="npc_2", name="The Founder", status="lore"))
+    _next_chapter(game, OpeningProvider([("Dace Orrin", "A dockhand.", "neutral")], "Ring Dock"))
+    assert game.world.current_location == "Ring Dock"
+    assert sorted(n.name for n in game.npcs) == ["Dace Orrin", "Kira Vance", "The Founder"]
+
+
 def test_a_game_that_is_over_cannot_start_a_chapter(load_engine: None) -> None:
     game = _game()
     game.end_reason = "death"

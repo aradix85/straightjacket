@@ -293,7 +293,6 @@ class NpcStatusGroups:
     in_play: list[str]
     reactivatable: list[str]
     description_matchable: list[str]
-    chapter_returning: list[str]
 
 
 @dataclass

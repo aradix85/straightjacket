@@ -194,11 +194,10 @@ def _generate_succession_opening(provider: AIProvider, game: GameState) -> str:
 
     _apply_blueprint(game, seed, voicing)
 
-    if not [n for n in game.npcs if n.introduced]:
-        setup_data = call_opening_setup(provider, narration, game)
-        apply_opening_setup(game, setup_data, returning_npcs=list(game.npcs), label="SuccessionSetup")
-        if setup_data["deceased_npcs"]:
-            process_deceased_npcs(game, setup_data["deceased_npcs"])
+    setup_data = call_opening_setup(provider, narration, game)
+    apply_opening_setup(game, setup_data, label="SuccessionSetup")
+    if setup_data["deceased_npcs"]:
+        process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     return narration
 

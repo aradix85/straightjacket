@@ -1,9 +1,8 @@
-from collections.abc import Sequence
 from typing import Any
 
 from ..engine_loader import eng
 from ..gamemaster.npc.lifecycle import new_npc
-from ..gamemaster.npc.matching import apply_name_sanitization, fuzzy_match_existing_npc, next_npc_id
+from ..gamemaster.npc.matching import apply_name_sanitization, find_npc, fuzzy_match_existing_npc, next_npc_id
 from ..gamemaster.npc.memory import score_importance
 from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.world import update_location
@@ -23,27 +22,19 @@ def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
     return None
 
 
-def register_extracted_npcs(
-    game: GameState,
-    npc_dicts: list[dict[str, Any]],
-    *,
-    skip_names: set[str],
-    reserved_ids: set[str],
-) -> None:
+def register_extracted_npcs(game: GameState, npc_dicts: list[dict[str, Any]]) -> None:
     player_lower = game.player_name.lower().strip()
-    skip = set(skip_names)
-    skip.add(player_lower)
 
     for nd in npc_dicts:
         name = nd["name"].lower().strip()
-        if not name or name in skip:
+        if not name or name == player_lower:
             continue
-        known, _match_type = fuzzy_match_existing_npc(game, nd["name"])
+        known = find_npc(game, nd["name"]) or fuzzy_match_existing_npc(game, nd["name"])[0]
         if known is not None:
             log(f"[NPC] Extracted '{nd['name']}' is the known '{known.name}', not a new NPC")
             continue
         npc = new_npc(
-            id=next_npc_id(game, reserved_ids),
+            id=next_npc_id(game),
             name=nd["name"],
             disposition=nd["disposition"],
             status="active",
@@ -85,28 +76,12 @@ def seed_opening_memories(game: GameState, memory_updates: list[dict[str, Any]])
         target.importance_accumulator = target.importance_accumulator + imp
 
 
-def apply_opening_setup(
-    game: GameState,
-    data: dict[str, Any],
-    *,
-    returning_npcs: Sequence[NpcData] = (),
-    label: str,
-) -> None:
-    skip_names: set[str] = {n.name.lower().strip() for n in returning_npcs}
-
+def apply_opening_setup(game: GameState, data: dict[str, Any], *, label: str) -> None:
     if data["npcs"]:
-        register_extracted_npcs(
-            game,
-            data["npcs"],
-            skip_names=skip_names,
-            reserved_ids={n.id for n in returning_npcs},
-        )
-        if returning_npcs:
-            returning_ids = {r.id for r in returning_npcs}
-            new_names = [n.name for n in game.npcs if n.id not in returning_ids]
-            log(f"[{label}] Registered {len(new_names)} new NPCs: {new_names}")
-        else:
-            log(f"[{label}] Registered {len(game.npcs)} NPCs: {[n.name for n in game.npcs]}")
+        known_ids = {n.id for n in game.npcs}
+        register_extracted_npcs(game, data["npcs"])
+        new_names = [n.name for n in game.npcs if n.id not in known_ids]
+        log(f"[{label}] Registered {len(new_names)} new NPCs: {new_names}")
 
     seed_opening_memories(game, data["memory_updates"])
 

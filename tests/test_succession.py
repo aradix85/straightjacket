@@ -415,3 +415,11 @@ def test_a_successors_opening_registers_its_people_at_the_engines_time(aria: Gam
     assert [n.name for n in aria.npcs] == ["Mara Voss"]
     assert aria.world.current_location == "Memorial"
     assert aria.world.time_of_day == gm().opening.time_of_day
+
+
+def test_a_successors_opening_registers_its_people_and_place_beside_the_npcs_who_stay(aria: GameState) -> None:
+    [kira] = aria.npcs
+    assert kira.introduced
+    _succeed(aria, _successor())
+    assert [n.name for n in aria.npcs] == ["Kira", "Mara Voss"]
+    assert aria.world.current_location == "Memorial"

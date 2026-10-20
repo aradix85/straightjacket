@@ -14,53 +14,29 @@ def _npc(name: str, description: str, disposition: str) -> dict[str, Any]:
     }
 
 
-def test_register_extracted_npcs_skips_player(load_engine: None) -> None:
-    from straightjacket.engine.game.setup_common import register_extracted_npcs
+def _setup(*npcs: dict[str, Any]) -> dict[str, Any]:
+    return {"npcs": list(npcs), "memory_updates": [], "location": "Dock", "scene_context": ""}
+
+
+def test_an_opening_registers_neither_the_player_nor_a_known_npc_again(load_engine: None) -> None:
+    from straightjacket.engine.game.setup_common import apply_opening_setup
 
     game = make_game_state(player_name="Hero")
-    game.world.current_location = "Tavern"
-    register_extracted_npcs(
+    game.npcs = [make_npc(id="npc_1", name="Kira", status="deceased")]
+    apply_opening_setup(
         game,
-        [
-            _npc("Mira", "Scout", "friendly"),
-            _npc("Hero", "Player", "neutral"),
-        ],
-        skip_names=set(),
-        reserved_ids=set(),
+        _setup(_npc("Kira", "Scout", "friendly"), _npc("Hero", "Player", "neutral"), _npc("Borin", "Smith", "neutral")),
+        label="OpeningSetup",
     )
-    assert [(n.id, n.name) for n in game.npcs] == [("npc_1", "Mira")]
+    assert [(n.id, n.name) for n in game.npcs] == [("npc_1", "Kira"), ("npc_2", "Borin")]
 
 
-def test_register_extracted_npcs_skips_returning(load_engine: None) -> None:
-    from straightjacket.engine.game.setup_common import register_extracted_npcs
-
-    game = make_game_state(player_name="Hero")
-    register_extracted_npcs(
-        game,
-        [
-            _npc("Kira", "Scout", "friendly"),
-            _npc("Borin", "Smith", "neutral"),
-        ],
-        skip_names={"kira"},
-        reserved_ids=set(),
-    )
-    names = {n.name for n in game.npcs}
-    assert "Kira" not in names
-    assert "Borin" in names
-
-
-def test_a_chapter_opening_does_not_split_a_returning_npc_by_a_shorter_name(load_engine: None) -> None:
+def test_an_opening_does_not_split_a_known_npc_by_a_shorter_name(load_engine: None) -> None:
     from straightjacket.engine.game.setup_common import apply_opening_setup
 
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Maren Silk", description="A smuggler.")]
-    data = {
-        "npcs": [_npc("Maren", "A smuggler", "neutral")],
-        "memory_updates": [],
-        "location": "Dock",
-        "scene_context": "",
-    }
-    apply_opening_setup(game, data, returning_npcs=list(game.npcs), label="OpeningSetup")
+    apply_opening_setup(game, _setup(_npc("Maren", "A smuggler", "neutral")), label="OpeningSetup")
     assert [n.name for n in game.npcs] == ["Maren Silk"]
 
 
