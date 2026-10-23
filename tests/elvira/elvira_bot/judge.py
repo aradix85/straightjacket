@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import re
 from typing import Any
@@ -26,11 +27,16 @@ JUDGE_SCHEMA: dict[str, Any] = {
 }
 
 _REVELATION = re.compile(r"<revelation\b[^>]*>(.*?)</revelation>", re.S)
+_CONSEQUENCE = re.compile(r"<consequence>(.*?)</consequence>", re.S)
 
 
 def revelation_in(narrator_prompt: str) -> str:
     found = _REVELATION.search(narrator_prompt)
     return found.group(1).strip() if found else ""
+
+
+def consequences_in(narrator_prompt: str) -> list[str]:
+    return [html.unescape(found.strip()) for found in _CONSEQUENCE.findall(narrator_prompt)]
 
 
 def _move_outcome(game: GameState, move_id: str, result: str | None) -> tuple[str, str]:
@@ -53,6 +59,7 @@ def judge_turn(
     previous: str,
     move_id: str,
     revelation: str,
+    consequences: list[str],
 ) -> dict[str, Any]:
     scene = game.narrative.scene_count
     npcs = "\n".join(
@@ -73,6 +80,7 @@ def judge_turn(
         move=move_name,
         move_outcome=move_text,
         revelation=revelation or _p("judge_none_revelation"),
+        consequences="\n".join(f"- {c}" for c in consequences) or _p("judge_none_consequences"),
     )
     spec = AICallSpec(
         model=bot_model(),

@@ -87,7 +87,49 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ---
 
-## NEXT STEP — 9j: Rules conformance: classic and the Adventure Crafter
+## NEXT STEP — 9w: Reach a Milestone, and Elvira tests what the engine does
+
+At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026.10.23.2). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone, and Reach a Milestone before all of it.
+
+**9w.R** Reach a Milestone, moved from 13b at the user's choice, first: no move marks a vow's progress, so Fulfill Your Vow rolls against an empty track, always misses, and recommits, and a vow is never fulfilled in play; with it go the quests legacy track, classic's experience by rank, a vow's bound impact cleared, and a threat overcome. The move rolls nothing, so it needs a turn for a formal move without a roll, which 9k.1 and 9k.2 describe for Begin the Scene and the register entry "Develop Your Relationship without a bond comes only from Test Your Relationship" waits for: `available_moves` lets through the roll-less moves a yaml list names, the Brain names the vow by its track id, and the engine marks progress by the vow's rank and tells the narrator without dice. Read both rulesets' texts first: the milestones they name, and how often a vow may be marked. An Elvira scenario plays a vow to its fulfilment.
+
+**9w.0** Suspected engine faults, verified first: Save-as switches the slot autosaves write to (`web/handlers.py`), while selecting a player loads `autosave`; a correction with no snapshot returns its notice as the narration, which the handler saves as chat (`correction/orchestrator.py`); a burn on a game-over turn comes after `prepare_succession` in the handler, and the campaign snapshot lacks `predecessors`, so the restore leaves a predecessor behind; the AI's narration enters `<narration>` (`ai/narrator.py`) and `<latest_scene>` (`director.py`) unescaped, where the correction escapes it.
+
+**9w.1** Faults in Elvira herself. In WebSocket mode `recv_until` spins on a message it does not want until a timeout no one catches, and `collect_turn` counts a turn without narration as an empty success. A failed correction is not rolled back; the injected turn drops every warning, real ones too; a failed save only prints, so the load-back blames serialization; a failed burn decision is swallowed; failed corrections and burns count as covered, and failed judgments are no problems; the game's and the judge's calls skip the retry wrapper; `--ws --matrix` plays direct mode. Her code breaks the rules the scans read only in `src/`: silent fallbacks, broad excepts beyond AI calls, dataclass defaults, inline imports, domain lists copied into `invariants.py`, checks that cannot fail, dead code (`TurnRecord.has_issues`, `final_state_dict`, a doubled report line, the `load_existing` path), the stale `[MoveOutcome]` prefix, and code the two runners copy from each other. The scans extend to `tests/elvira`.
+
+**9w.2** What a run sees: a count of each move played against the moves on offer; the scene type, position, and effect in the report; the engine's log prefixes she misses (scene, random event, NPC, complication, clock fill, succession, epilogue, roll, correction, blueprint voicing, parser) with targets for Face Death, the dying clock, a death that ends the game, an act transition, a keyed scene, a random event, a threat spawned or achieving its goal, legacy marks, the epilogue, and NPC renames, merges, and lore figures; the correction's kind and operations; invariants on threats, impacts, legacy and experience, keyed scenes, the blueprint, the time of day, the dying clock, the caps on open clocks, and the dead staying dead; the narrator's prompt held against the turn (its result, consequences, revelation, and the player's words escaped); the leak check on openings, the epilogue, and the recap; every engine tag of the prompt before the judge, who says whether each came across; and the prompt cache's reads in her meter.
+
+**9w.3** What a run reaches: scenarios for Starforged's connections and threats, recovery with marked impacts, a vow near full for Fulfill Your Vow, a threat no vow faces, a death through Face Death, `/advance` with experience, a successor after a retirement and after despair, a longer second chapter, corrections made from the state (a rename, a place, a time, a merge, a split), hostile player text against the escaping, wishes and content lines, a forced match; and failures injected after several kinds of turn. The Brain has no hint for classic Forge a Bond (`brain_trigger_hints` in `engine/ai_text.yaml`), which the `bond` scenario's first run will show.
+
+**9w.4** WebSocket mode plays the real handlers: coverage, the judge, and the checks of direct mode, shared rather than copied; the handlers' rollback under an injected failure; loading, the save list, deleting a player, `/advance`, retiring, succession, story completion, a dismissed epilogue, and a reconnect; the probes after later states.
+
+### Definition of Done
+
+- A vow can be fulfilled in play through Reach a Milestone and Fulfill Your Vow, tested through the real path.
+- The suspected engine faults of 9w.0 are fixed or found sound, each with a test.
+- Elvira's own faults are gone, and the project-rule scans read `tests/elvira` too.
+- Every mechanic the hit-lists name that a run can reach is counted, checked, or judged, and a scenario prepares what a random run seldom reaches; what the engine cannot reach yet is named with its step.
+- WebSocket mode records coverage and runs the checks of direct mode through shared code.
+- Elvira runs only where they make a real difference, with their cost named first.
+
+### Reference patterns
+
+- A scenario: `tests/elvira/elvira_bot/scenarios.py` → `prepare_scenario`, its config in `tests/elvira/elvira_config.yaml`.
+- A coverage target from the log: `tests/elvira/elvira_bot/coverage.py` → `EVENT_COUNTS`.
+- What the narrator was told, read from its prompt: `tests/elvira/elvira_bot/judge.py` → `consequences_in`.
+- A roll-less move the Brain is offered: none yet; 9w.R makes the first.
+
+---
+
+## Next steps
+
+Sketches, in the order of work.
+
+Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
+
+The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and a step that wants another decides whether it becomes a new tool or part of that one. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
+
+### 9j — Rules conformance: classic and the Adventure Crafter
 
 Each substep starts by reading its rule in the book (the Datasworn texts, Delve, the Adventure Crafter) and builds what the reading settles; where the engine already follows the book, the CHANGELOG says so and nothing changes. Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence. What remains needs a book or the user: 9j.3 the user's choice of a theme per tone, asked first, the rest of 9j.6 the Delve book, and 9j.4, 9j.7, and 9j.12 the text of Mythic and the Adventure Crafter, which `data/adventure_crafter.json` and `data/mythic_gme_2e.json` do not hold whole and the user downloads again when a reading needs it.
 
@@ -101,29 +143,19 @@ Each substep starts by reading its rule in the book (the Datasworn texts, Delve,
 
 **9j.12** The Adventure Crafter's procedure as the book gives it: whether its five themes are ranked once each, where the engine's theme roll can repeat one (`crafters/adventure_crafter.py` → `assign_themes`), which then rolls on the JSON's random themes rather than the copy in `theme_die_table` (AUDIT.md, Open); Choose Most Logical and the plotline list's lines; and the consolidation of a full list in Mythic and the Adventure Crafter, which the engine starts at 25 entries rather than lines (`gamemaster/random_events.yaml` → `consolidation_threshold`). The register entry "The engine chooses the Adventure Crafter's plotline" leaves, or becomes Permanent where the book leaves the choice to the player.
 
-### Definition of Done
+Definition of done:
 
 - Each substep follows its source as the reading settles it, and the CHANGELOG entry names what each reading found.
 - The register entries the substeps name leave `docs/divergences.md`; one stays only where the book leaves the player a choice the engine fixes, then as a Permanent entry with its reason.
 - `dispatch_meta` and the Characters List template leave the orphan-symbol carve-out.
 - Each rule is tested through the real path, and the quality gate is green. An Elvira run only where a substep changes what the narrator is told, with its cost named first.
 
-### Reference patterns
+Reference patterns:
 
 - A special track a move marks: `ruleset/legacy.py` → `mark_legacy`.
 - A table a move rolls: `ruleset/move_effects.py` → `roll_move_table`, with the rows `move_table_rows` in `ruleset/move_outcomes.yaml` names.
 - A weak hit's complication: the `complication` effect of Gather Information and Compel in `ruleset/move_outcomes.yaml`.
 - A test through the real path: `tests/_creation.py` → `create_game`, and a turn with `TurnProvider` and `force_result`.
-
----
-
-## Next steps
-
-Sketches, in the order of work.
-
-Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
-
-The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and a step that wants another decides whether it becomes a new tool or part of that one. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
 
 ### 9t — Rules conformance: Mythic and Starforged
 
@@ -175,7 +207,7 @@ The scene challenge of Starforged and Sundered Isles is configured but unreachab
 
 ### 9m — Measuring the other prompts
 
-Found in 9j.11's Elvira run: her judge scored as invention, twice, the demand a weak hit on classic Compel asks the narrator to tell, since it sees the move's text but not the consequences the narrator was told (`docs/elvira.md`, Player and judge); the judge gets them. The measuring setup captures narrator calls only. A set of captured calls per prompt, with a judge that checks each answer against its input, comes before any change to the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `blueprint_voicing`, or `recap`.
+The measuring setup captures narrator calls only. A set of captured calls per prompt, with a judge that checks each answer against its input, comes before any change to the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `blueprint_voicing`, or `recap`.
 
 ### 10 — Location and encounter generators
 
@@ -243,7 +275,7 @@ Fate plus expected behavior derived from AIMS and stance (`mythic_gme_2e.json` �
 
 Datasworn data the engine holds but does not act on comes here when no other step names it. The Datasworn moves of the shipped settings that are neither formal moves in `ruleset/move_outcomes.yaml` nor covered elsewhere (expeditions, sites, and Sundered Isles in 25, 26, and 28; asset abilities in 18 to 20) are wired by "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move, a consequence that fires on a condition an engine trigger.
 
-Group A, formal moves in `ruleset/move_outcomes.yaml` and `ruleset/move_categories.yaml`, reusing the handler patterns: Forsake Your Vow as the player's choice (`quest/forsake_your_vow`, today only an engine trigger), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs step 11's NPC-action context), `relationship/write_your_epilogue` (with the retire flow), `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress marks `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`, and Develop Your Relationship without a bond as the player's own move (today only Test Your Relationship's follow-up; its `without_bond` effects are in `ruleset/move_outcomes.yaml`), with the divergence "Develop Your Relationship without a bond comes only from Test Your Relationship" leaving.
+Group A, formal moves in `ruleset/move_outcomes.yaml` and `ruleset/move_categories.yaml`, reusing the handler patterns: Forsake Your Vow as the player's choice (`quest/forsake_your_vow`, today only an engine trigger), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs step 11's NPC-action context), `relationship/write_your_epilogue` (with the retire flow), `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress marks `legacy/advance`, `legacy/earn_experience`, `quest/advance`, and Develop Your Relationship without a bond as the player's own move (today only Test Your Relationship's follow-up; its `without_bond` effects are in `ruleset/move_outcomes.yaml`), with the divergence "Develop Your Relationship without a bond comes only from Test Your Relationship" leaving.
 
 Group B, engine triggers at their callsites, each with a tag for the narrator (`<failure_marked>`, `<setback>`, `<defeat_faced>`) and its config (failure-track length, setback redirect) in the relevant yaml: `mark_failure_on_miss` (`failure/mark_your_failure`, at the miss in `game/action_resolution.py`, beside `advance_menace_on_miss`; Delve's failure track, which Datasworn marks optional, joins the campaign's legacy tracks here, the user's choice), `face_setback_at_min_momentum` (`suffer/face_a_setback`, at the momentum clamp of `ruleset/meters.py` → `adjust_momentum`), and `face_defeat_on_objective_loss` (`combat/face_defeat`). `advance_menace_on_miss`, `pay_the_price`, and Out of Supply already follow this pattern. A move that creates a clock whose type has keyed scenes calls `spawn_keyed_scenes_for_clock`.
 

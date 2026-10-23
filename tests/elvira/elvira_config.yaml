@@ -76,6 +76,9 @@ logging:
   - "[FollowUp]"
   - "[Impact]"
   - "[Suffer]"
+  - "[Threat]"
+  - "[Track]"
+  - "[Bond]"
 
 scenarios:
   near_death:
@@ -122,3 +125,27 @@ scenarios:
     directive: "bot_turn_directive_investigate"
     expect: ["complication_clock"]
     results: [WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT]
+  bond:
+    setting: classic
+    turns: 6
+    directive: "bot_turn_directive_bond"
+    expect: ["bond_sealed"]
+    companion: true
+    results: [STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT]
+  forsaken_bond:
+    setting: classic
+    turns: 6
+    directive: "bot_turn_directive_companion"
+    expect: ["vow_forsaken", "follow_up_move", "bond_tested"]
+    companion: true
+    bonded: true
+    vow_to_companion: true
+    threat_on_vow: {origin: pc_negative, menace: full}
+  threat_advance:
+    setting: classic
+    turns: 6
+    style: "aggressor"
+    directive: "bot_turn_directive_physical_risk"
+    expect: ["threat_advanced"]
+    threat_on_vow: {origin: pc_negative, menace: fresh}
+    results: [MISS, MISS, MISS, MISS, MISS, MISS]

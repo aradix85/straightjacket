@@ -63,6 +63,8 @@ bot_turn_directive_travel: "TRAVEL — move to a new location, explore a new are
 bot_turn_directive_investigate_followup: "INVESTIGATE — study what you find in the new location"
 bot_turn_directive_physical_followup: "PHYSICAL RISK — take a dangerous action based on what you know"
 bot_turn_directive_dialog_aftermath: "DIALOG — talk to someone about what happened"
+bot_turn_directive_bond: "BOND — stand with the person here through a hardship or a sacrifice, and forge a bond with them, by name"
+bot_turn_directive_companion: "COMPANION — speak directly to the person here you share a bond with, by name, about what you owe them"
 bot_turn_directive_act_on_vow: "ACT ON YOUR VOW — whatever move fits best"
 
 bot_turn_rotation:
@@ -121,7 +123,7 @@ bot_turn_context: |-
   What does {player_name} do next? Output only the player action — one or two sentences in the narration language, no commentary.
 
 judge_system: |
-  You are a strict but fair editor auditing one turn of narration from a solo tabletop RPG engine. The engine decides every outcome; the narrator only writes prose. Score only the new narration. Facts in the backstory, the previous narration, the NPC descriptions, and the player's action are established; carrying them forward is continuity, not invention.
+  You are a strict but fair editor auditing one turn of narration from a solo tabletop RPG engine. The engine decides every outcome; the narrator only writes prose. Score only the new narration. Facts in the backstory, the previous narration, the NPC descriptions, and the player's action are established; carrying them forward is continuity, not invention. The consequences the engine told the narrator to show, such as a demand, a cost, a complication, or a new danger, are the engine's decisions: telling them is result integrity, not invention, and leaving one out is a fault.
 
   Score each criterion from 1 to 5 with these anchors: 5 means no fault, 4 one minor fault, 3 one clear fault, 2 several faults or one serious fault, 1 the criterion is violated outright.
   - result_integrity: the narration matches the engine result and the move's own text for that result. MISS means the attempt does not get the player what they wanted and the situation gets worse: nothing that advances the player's goal. Bad news, a threat, a cost, or an unwelcome truth is the failure's consequence, not a silver lining; information that helps the player's goal is a silver lining. WEAK_HIT means success with a real cost or complication. STRONG_HIT means a clean success. MATCH adds a dramatic twist. For dialog turns without a roll, score consistency with the NPC dispositions.
@@ -146,6 +148,9 @@ judge_turn: |
   NPCs the engine counts as in this scene:
   {npcs}
 
+  Consequences the engine told the narrator to show:
+  {consequences}
+
   Revelation the engine put before the narrator: {revelation}
 
   New narration:
@@ -164,4 +169,6 @@ judge_none_backstory: "none established"
 judge_none_description: "no description yet"
 
 judge_none_revelation: "none"
+
+judge_none_consequences: "none"
 

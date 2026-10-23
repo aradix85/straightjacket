@@ -61,6 +61,7 @@ def test_the_judge_sees_the_move_text_the_previous_narration_and_what_is_establi
         "Rain drums on the chapel roof.",
         "adventure/gather_information",
         "",
+        [],
     )
     assert verdict["overall"] == 9
     assert "revelation_conveyed" not in verdict
@@ -88,6 +89,7 @@ def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monk
         "",
         "",
         "",
+        [],
     )
     user = seen[0].messages[0]["content"]
     assert _p("judge_none_move") in user
@@ -104,7 +106,41 @@ def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_i
     assert judge.revelation_in("<scene>\n</scene>") == ""
 
     verdict = judge.judge_turn(
-        {"max_tokens": 200, "extra_body": {}}, _game(), "I ask Mira.", "She hesitates.", None, False, "", "", revelation
+        {"max_tokens": 200, "extra_body": {}},
+        _game(),
+        "I ask Mira.",
+        "She hesitates.",
+        None,
+        False,
+        "",
+        "",
+        revelation,
+        [],
     )
     assert verdict["revelation_conveyed"] is True
     assert "The harbourmaster sold the maps." in seen[0].messages[0]["content"]
+
+
+def test_the_judge_sees_the_consequences_the_narrator_was_told_to_show(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    judge, seen = _judge_with_capture(monkeypatch)
+    prompt = (
+        "<scene>\n<consequence>They agree, but on a condition Talan &amp; kin will have to meet.</consequence>"
+        "\n<consequence>momentum +1</consequence>\n</scene>"
+    )
+    consequences = judge.consequences_in(prompt)
+    assert consequences == ["They agree, but on a condition Talan & kin will have to meet.", "momentum +1"]
+    judge.judge_turn(
+        {"max_tokens": 200, "extra_body": {}},
+        _game(),
+        "I press Mira for the truth.",
+        "She names her price.",
+        "WEAK_HIT",
+        False,
+        "",
+        "relationship/compel",
+        "",
+        consequences,
+    )
+    assert "- They agree, but on a condition Talan & kin will have to meet." in seen[0].messages[0]["content"]

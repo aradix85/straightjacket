@@ -76,6 +76,90 @@ def test_an_open_clock_is_one_segment_from_full(load_engine: None) -> None:
     assert game.world.clocks[0].filled == 5
 
 
+def test_a_bond_scenario_keeps_one_companion_and_seals_a_bond_with_them(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.bond import get_npc_bond
+    from tests._creation import library_game
+    from tests._helpers import make_npc
+    from tests.elvira.elvira_bot.scenarios import prepare_scenario
+
+    game = library_game()
+    game.npcs.append(make_npc(id="npc_9", name="Tamsin", status="active"))
+    notes = prepare_scenario(game, {"expect": ["bond_sealed"], "companion": True, "bonded": True})
+    assert notes == ["Mira is the one NPC in play", "a bond sealed with Mira"]
+    assert [n.status for n in game.npcs] == ["active", "background"]
+    assert get_npc_bond(game, "npc_1") == 10
+
+
+def test_a_forsaken_bond_scenario_makes_the_vow_to_the_companion_and_fills_a_threat_on_it(
+    load_engine: None,
+) -> None:
+    from tests._creation import library_game
+    from tests.elvira.elvira_bot.scenarios import prepare_scenario
+
+    game = library_game()
+    spec = {"expect": ["bond_tested"], "companion": True, "bonded": True, "vow_to_companion": True}
+    prepare_scenario(game, {**spec, "threat_on_vow": {"origin": "pc_negative", "menace": "full"}})
+    vow = next(t for t in game.progress_tracks if t.track_type == "vow")
+    threat = game.threats[-1]
+    assert (vow.vowed_to, threat.linked_vow_id, threat.menace_full) == ("npc_1", vow.id, True)
+
+
+def test_a_threat_scenario_takes_only_a_menace_it_knows(load_engine: None) -> None:
+    from tests._creation import library_game
+    from tests.elvira.elvira_bot.scenarios import prepare_scenario
+
+    with pytest.raises(KeyError, match="half"):
+        prepare_scenario(
+            library_game(),
+            {"expect": ["threat_advanced"], "threat_on_vow": {"origin": "pc_negative", "menace": "half"}},
+        )
+
+
+def test_the_coverage_counts_what_the_engine_logs_for_bonds_threats_and_forsaken_vows(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import logging
+
+    from straightjacket.engine.ruleset import move_outcome, threats, tracks
+    from straightjacket.engine.ruleset.bond import seal_bond
+    from straightjacket.engine.ruleset.move_outcome import make_due_bond_test
+    from straightjacket.engine.ruleset.outcome_result import new_outcome
+    from straightjacket.engine.ruleset.threats import advance_menace_on_miss, resolve_full_menace
+    from tests._creation import library_game
+    from tests._helpers import emit_engine_log
+    from tests.elvira.elvira_bot.coverage import Coverage, world_view
+    from tests.elvira.elvira_bot.runner import _EventCapture, load_config
+    from tests.elvira.elvira_bot.scenarios import prepare_scenario
+
+    game = library_game()
+    coverage = Coverage()
+    before = world_view(game)
+    seal_bond(game, game.npcs[0])
+    coverage.observe_turn(before, world_view(game), None, False, "dialog")
+    prepare_scenario(
+        game,
+        {
+            "expect": ["bond_tested"],
+            "vow_to_companion": True,
+            "threat_on_vow": {"origin": "pc_negative", "menace": "fresh"},
+        },
+    )
+    emit_engine_log(monkeypatch, threats, tracks, move_outcome)
+    events = _EventCapture(load_config(ELVIRA_CONFIG)["logging"]["event_prefixes"])
+    logger = logging.getLogger("rpg_engine")
+    logger.addHandler(events)
+    try:
+        advance_menace_on_miss(game)
+        game.threats[-1].menace_ticks = game.threats[-1].max_menace_ticks
+        outcome = new_outcome()
+        resolve_full_menace(game, outcome)
+        make_due_bond_test(game, "npc_1", None, outcome)
+    finally:
+        logger.removeHandler(events)
+    coverage.observe_events(events.lines)
+    assert {"bond_sealed", "threat_advanced", "vow_forsaken", "bond_tested"} <= set(coverage.exercised())
+
+
 def test_every_configured_scenario_fixes_only_results_the_ruleset_rolls(load_engine: None) -> None:
     from tests.elvira.elvira_bot.fixed_results import check_results
     from tests.elvira.elvira_bot.runner import load_config

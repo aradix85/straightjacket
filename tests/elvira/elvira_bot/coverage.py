@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from straightjacket.engine.gamemaster.clocks import open_complications
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.bond import bonded_tracks
 
 TARGETS = (
     "result:MISS",
@@ -35,6 +36,21 @@ TARGETS = (
     "pay_the_price",
     "fact_resolved",
     "ai_failure_rollback",
+    "bond_sealed",
+    "bond_tested",
+    "threat_advanced",
+    "vow_forsaken",
+)
+
+EVENT_COUNTS = (
+    ("follow_up_move", "[FollowUp]", ""),
+    ("impact_marked", "[Impact]", " applied "),
+    ("pay_the_price", "[PayThePrice]", ""),
+    ("fact_resolved", "[Fact] Resolved", ""),
+    ("place_generated", "[Generate] New place", ""),
+    ("bond_tested", "[Bond]", "tests the bond"),
+    ("threat_advanced", "[Threat] Menace advance", ""),
+    ("vow_forsaken", "[Track]", "(vow) → failed"),
 )
 
 STEERING = (
@@ -50,6 +66,7 @@ class WorldView:
     fired_clocks: set[str]
     open_complications: set[str]
     location: str
+    bonds: set[str]
 
 
 @dataclass
@@ -88,17 +105,15 @@ class Coverage:
         )
         if after.location and after.location != before.location:
             self.hit("location_change")
+        self.hit("bond_sealed", len(after.bonds - before.bonds))
 
     def observe_events(self, events: list[str]) -> None:
         if any(e.startswith("[Bonus]") and "ignored" not in e for e in events):
             self.hit("bonus_used")
         if any(e.startswith("[Chain]") and "skipped" not in e for e in events):
             self.hit("chained_move")
-        self.hit("follow_up_move", sum(1 for e in events if e.startswith("[FollowUp]")))
-        self.hit("impact_marked", sum(1 for e in events if e.startswith("[Impact]") and " applied " in e))
-        self.hit("pay_the_price", sum(1 for e in events if e.startswith("[PayThePrice]")))
-        self.hit("fact_resolved", sum(1 for e in events if e.startswith("[Fact] Resolved")))
-        self.hit("place_generated", sum(1 for e in events if e.startswith("[Generate] New place")))
+        for target, prefix, part in EVENT_COUNTS:
+            self.hit(target, sum(1 for e in events if e.startswith(prefix) and part in e))
 
     def steer(self, turn: int, max_turns: int) -> str | None:
         if turn <= max_turns // 2:
@@ -124,4 +139,5 @@ def world_view(game: GameState) -> WorldView:
         fired_clocks={c.name for c in game.world.clocks if c.fired},
         open_complications={c.name for c in open_complications(game)},
         location=game.world.current_location,
+        bonds={t.id for t in bonded_tracks(game)},
     )

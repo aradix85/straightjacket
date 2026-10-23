@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import random
 import shutil
 from collections.abc import Callable
@@ -48,6 +49,15 @@ def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
     monkeypatch.setattr(move_effects, "roll_oracle_result", recording)
     return rolled
+
+
+def emit_engine_log(monkeypatch: pytest.MonkeyPatch, *modules: ModuleType) -> None:
+    def log(msg: str, level: str = "info") -> None:
+        logger = logging.getLogger("rpg_engine")
+        logger.handle(logger.makeRecord(logger.name, logging.getLevelName(level.upper()), "", 0, msg, None, None))
+
+    for module in modules:
+        monkeypatch.setattr(module, "log", log)
 
 
 def make_game_state(**kwargs: Any) -> Any:

@@ -63,6 +63,26 @@ def test_a_scenario_that_starts_at_a_game_over_plays_the_successor(
     assert session.turns[0].error == ""
 
 
+def test_a_threat_on_the_vow_advances_on_a_miss(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from straightjacket.engine.ruleset import threats
+    from tests._helpers import emit_engine_log
+
+    runner = _mock_direct_runner(monkeypatch, tmp_path)
+    emit_engine_log(monkeypatch, threats)
+    session = _scenario_run(runner, "threat_advance", 2)
+    assert session.scenario["missed"] == []
+
+
+def test_a_scenario_plays_the_setting_it_names(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    runner = _mock_direct_runner(monkeypatch, tmp_path)
+    session = _scenario_run(runner, "bond", 1)
+    assert session.config["game"]["setting_id"] == "classic"
+
+
 def test_elvira_plays_a_short_session_end_to_end(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

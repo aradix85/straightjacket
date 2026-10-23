@@ -53,7 +53,7 @@ from .display import print_narration, print_state, print_summary
 from .faults import NarratorOutage
 from .fixed_results import fixed_result
 from .invariants import assert_game_state, check_turn_replacement
-from .judge import judge_turn, revelation_in
+from .judge import consequences_in, judge_turn, revelation_in
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
     check_chapter_continuity,
@@ -103,10 +103,10 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     clean_before = session_cfg["clean_before_run"]
     style = behavior["style"] or _random.choice(available_styles())
     burn_setting = behavior["burn_momentum"]
-    setting_id = game_cfg["setting_id"] or _random.choice(selectable_settings())
+    scenario_name, scenario = _scenario_spec(bot_cfg)
+    setting_id = _setting_of(game_cfg, scenario)
     game_cfg = {**game_cfg, "setting_id": setting_id}
     inject_turn = session_cfg["inject_ai_failure_turn"]
-    scenario_name, scenario = _scenario_spec(bot_cfg)
     log_file_base = Path(log_cfg["log_file"])
     timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
     log_file = _log_stem(log_file_base, setting_id, style, scenario_name, timestamp)
@@ -479,6 +479,7 @@ def _play_turn(
             previous_narration,
             roll.move if roll else "",
             rec.revelation,
+            consequences_in(provider.narrator_prompt),
         )
         _print_audit(rec.judge)
 
@@ -519,6 +520,12 @@ def _check_turn(
 def _scenario_spec(bot_cfg: dict) -> tuple[str, dict | None]:
     name = bot_cfg["session"]["scenario"]
     return name, (bot_cfg["scenarios"][name] if name else None)
+
+
+def _setting_of(game_cfg: dict, scenario: dict | None) -> str:
+    if scenario is not None and "setting" in scenario:
+        return str(scenario["setting"])
+    return str(game_cfg["setting_id"]) or _random.choice(selectable_settings())
 
 
 def _log_stem(base: Path, setting_id: str, style: str, scenario_name: str, timestamp: str) -> Path:
