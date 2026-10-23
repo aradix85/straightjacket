@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.23.9] — 2026-10-23
+
+A new step 9x, the user's choice: the documents become shorter and split by layer, without losing a fact, since every session reads them anew. `docs/mechanics.md` splits along the four layers so a session reads only the one its step touches, and a sub-agent holds old against new. It comes after 9w.0 and before step 18, which reads the rules.
+
+Quality gate: documentation only, 1844 tests. Save format unchanged.
+
 ## [2026.10.23.8] — 2026-10-23
 
 The Elvira run that 2026.10.23.7 announced: `vow_fulfilment` in Sundered Isles, dialogist, six turns, about $0.40 at full input price. No engine problem and no invariant violation, but neither aim was reached. Her player claimed completed steps, yet her background vow is an oracle pair, "Overwhelm Bond", to which no deed can be tied, so the Brain rightly read the claims as world shaping, Compel, and dialog, and no turn declared the vow fulfilled. Roadmap 9w.3 records what the scenario needs: a vow with a goal she can make headway on, and directives that name it.
