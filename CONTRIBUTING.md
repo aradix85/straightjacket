@@ -25,7 +25,7 @@ A release that changes the game or the code is checked before its commit by sub-
 6. The md files of the repository root and `docs/`: every statement the change makes wrong.
 7. The tests: every new behaviour and every fix has a test that fails without it, through the real path where the behaviour plays in a turn (Testing).
 
-A release that touches several areas, such as the rules, the page, and the documents, splits the check among checkers that run side by side, one per area, each with the list above and a task sharpened to its files and to the cases its area can go wrong in, so that the check takes as long as its largest part; a small release has one checker. Each reports its findings with file and line, the most important first, and marks what it cannot settle; the session reads each against the code before it acts on it.
+A release that touches several areas, such as the rules, the page, and the documents, splits the check among checkers that run side by side, one per area, each with the list above and a task sharpened to its files and to the cases its area can go wrong in, so that the check takes as long as its largest part; a small release has one checker. A checker reads and reasons; it does not run the quality gate, which the session has run, and tries a case in a script of its own only where reading cannot settle it. Each reports its findings with file and line, the most important first, and marks what it cannot settle; the session reads each against the code before it acts on it.
 
 ## Rules for a change
 
