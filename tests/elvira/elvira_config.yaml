@@ -43,13 +43,8 @@ judge:
     output_config: {effort: "low"}
 
 prices:
-  gpt-6-luna: [0.10, 0.50]
   claude-haiku-5-5: [0.10, 0.50]
   claude-sonnet-5-5: [2.00, 10.00]
-  zai-org/GLM-5.3-Flash: [0.15, 0.50]
-  zai-org/GLM-5.3: [1.40, 4.40]
-  accounts/fireworks/models/glm-5p3: [1.40, 4.40]
-  accounts/fireworks/routers/glm-5p3-fast: [2.10, 6.60]
 
 logging:
   log_file: "elvira_session.json"

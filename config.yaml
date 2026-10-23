@@ -13,26 +13,6 @@ ai:
       api_base: ""
       api_key_env: "ANTHROPIC_API_KEY"
       timeout_seconds: 120
-    openai:
-      type: "openai_compatible"
-      api_base: ""
-      api_key_env: "OPENAI_API_KEY"
-      timeout_seconds: 120
-    fireworks:
-      type: "openai_compatible"
-      api_base: "https://api.fireworks.ai/inference/v1"
-      api_key_env: "FIREWORKS_API_KEY"
-      timeout_seconds: 120
-    openrouter:
-      type: "openai_compatible"
-      api_base: "https://openrouter.ai/api/v1"
-      api_key_env: "OPENROUTER_API_KEY"
-      timeout_seconds: 120
-    together:
-      type: "openai_compatible"
-      api_base: "https://api.together.xyz/v1"
-      api_key_env: "TOGETHER_API_KEY"
-      timeout_seconds: 120
 
   clusters:
     narrator:

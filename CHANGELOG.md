@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.23.5] — 2026-10-23
+
+The documents state the current situation, the user's choice: data that is no longer relevant or that changes over time leaves them. `docs/ai.md` loses its notes on moving a cluster to other hosts and why Sonnet 5.5 was chosen over other models, and says that every cluster runs Sonnet 5.5; the roadmap loses the cost of a run, the user's monthly credit, and the prices of Mythic Magazine issues, and a run's cost is estimated from the last run's report. `config.yaml` keeps only the Anthropic provider and Elvira's config only the prices of the models in use; the OpenAI-compatible adapter stays, for others who want another provider (`docs/ai.md`, Adding a new AI provider).
+
+Quality gate: 1830 tests. Save format unchanged.
+
 ## [2026.10.23.4] — 2026-10-23
 
 The user also deleted `mimo_probe` beside the project on the laptop, the measuring setup of 9f; roadmap.md no longer names it, nor the OpenAI key its judges used, and step 9m builds a measuring setup of its own. The user stays on Claude Sonnet 5.5 for every role for the long future, paid from the $200 of API credit a month their Claude Max subscription brings, which Sessions with the user now records.
