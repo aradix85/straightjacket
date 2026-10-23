@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.23.3] — 2026-10-23
+
+The user deleted `straightjacket_audit` beside the project on the laptop, the scripts, hit-lists, and logs of the sessions that worked there, whose audits are done; roadmap.md's Sessions with the user names only `mimo_probe` now.
+
+Quality gate: documentation only, 1830 tests. Save format unchanged.
+
 ## [2026.10.23.2] — 2026-10-23
 
 Elvira reaches and judges what 9j.11's run could not, at the user's request that she be able to test everything. Her judge now sees the consequences the engine told the narrator to show, read from the narrator's prompt (`tests/elvira/elvira_bot/judge.py` → `consequences_in`), and its rules say that telling them is result integrity, where it had scored the demand of classic Compel's weak hit as invention twice. Three classic scenarios prepare what a random run seldom reaches: `bond` keeps one NPC in play and has the player bind themselves to them, so Forge a Bond seals a bond; `forsaken_bond` seals that bond, makes the background vow to them, and sets a threat on the vow at full menace, so the first turn forsakes the vow and a later dialog makes Test Your Bond; and `threat_advance` sets a threat on the vow and misses, so Delve's Advance a Threat marks menace. A scenario may name its setting (`runner.py` → `_setting_of`). Her coverage counts sealed bonds, bond tests, threat advances, and forsaken vows, read from the bonded connections and from the log lines of `[Bond]`, `[Threat]`, and `[Track]`, which join her captured events; the engine logs the bond test it makes. Her counts of log lines are a table now (`coverage.py` → `EVENT_COUNTS`), which keeps `observe_events` under the complexity limit, and a test feeds them the lines the engine really logs (`tests/_helpers.py` → `emit_engine_log`, since the tests silence the engine's log). The release's check found that the bond scenario's directive said "swear", which points the Brain at Swear an Iron Vow, that the forsaken bond's player was not told whom to address, and that the scenario's threat had a hand-written name; the directives now name the bond and the companion, the threat's name is rolled from the setting, and both scenarios have six turns, since the third is the injected AI failure.
