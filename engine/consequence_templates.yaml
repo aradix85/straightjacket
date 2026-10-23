@@ -66,6 +66,9 @@ consequence_templates:
   obstacle:
   - A significant obstacle stands in the way before {player} can begin the quest, and {player} must overcome it first.
   - The quest cannot begin yet; something stands in {player}'s way that must be overcome first.
+  bond_tested:
+  - '{player} meets {npc} again after forsaking the vow made to them, and the bond between them is put to the test.'
+  - 'The forsaken vow stands between {player} and {npc} now, and it tests the bond they share.'
   loyalty_test:
   - The bond is fragile, and they ask {player} to prove loyalty, something {player} has yet to do for them.
   - The bond holds for now, but they want proof of {player}'s loyalty first.

@@ -7,11 +7,25 @@ How to change Straightjacket: the workflow, the rules every change keeps, the co
 1. `ruff check --fix src/ tests/` and `ruff format src/ tests/`: must be clean.
 2. `python -m pytest tests/ -q --cov`: every test passes, and total coverage stays at or above `fail_under` in `pyproject.toml` (`[tool.coverage.report]`). When the total stays past the next whole percent in every run, raise `fail_under` to it, since the random paths a run takes move the total by a few hundredths; never lower it.
 3. `mypy src/ --config-file pyproject.toml`: must be clean.
-4. Read the whole diff back before the commit, after every substep, and fix what it finds: no new default or parameter for tests, no broad except, no guard against a state that cannot occur, no dead branch or symbol, nothing that copies what already exists, nothing illogical or unclear, every caller and every document the change touches updated, and for every fix a test that fails without it. A green suite does not replace this reading, since tests written beside the code share its blind spots.
-5. A change to the turn pipeline, AI calls, prompts, or configuration first gets a short Elvira run (8 to 20 turns, `docs/elvira.md`), and every engine warning in its report is a finding.
-6. One CHANGELOG entry per finished piece of work, not one per measurement, and only after its checks have been read: what changed, why, what was measured, and the quality gate, in a few sentences. The version in `pyproject.toml` matches the newest entry.
+4. Read the whole diff back before the commit, after every substep, and fix what it finds: no new default or parameter for tests, no broad except, no guard against a state that cannot occur, no dead branch or symbol, nothing that copies what already exists, nothing illogical or unclear, every caller and every document the change touches updated, and for every fix a test that fails without it. A green suite does not replace this reading, since tests written beside the code share its blind spots. Then the release is checked by eyes that did not write it (Checking a release).
+5. A change to the turn pipeline, AI calls, prompts, or configuration gets a short Elvira run (8 to 20 turns, `docs/elvira.md`), and every engine warning in its report is a finding. The run plays where the API keys are, on the maintainer's laptop, so it follows the push to main rather than preceding it (the user's choice): the release's CHANGELOG entry says that the run follows, and what the run finds is fixed in a following release, whose entry also reports the run.
+6. One CHANGELOG entry per finished piece of work, not one per measurement, and only after its checks other than that Elvira run have been read: what changed, why, what was measured, and the quality gate, in a few sentences. The version in `pyproject.toml` matches the newest entry.
 
 An outside contributor forks, branches, and opens a pull request that says what changed and why. The maintainer's sessions commit each finished release to main and push it, and hand off to sub-agents whatever reading, searching, or checking can be handed off, so that only findings fill a session's context (roadmap.md, Sessions with the user).
+
+## Checking a release
+
+A release that changes the game or the code is checked before its commit by sub-agents that did not write it (roadmap.md, Sessions with the user); a release of documentation alone is not, since there the check adds little. A checker sees no conversation, so it is told what the change intends and the user's choices it carries; it reads the diff, untracked files included, against each of these where it stands, and the files themselves where it needs them:
+
+1. This document: the reading of Workflow step 4, Rules for a change, Project rules, and Code standards.
+2. ARCHITECTURE.md: the order of preference (a source first, then an engine rule, the AI last), the four layers with what each owns, and the import layers.
+3. AUDIT.md: the six principles, applied to the changed code only, by the questions of their passes.
+4. roadmap.md: the Decisions the change touches, and the definition of done of NEXT STEP.
+5. `docs/divergences.md`: a departure from a source that the change adds or settles has its entry, and an entry the change makes wrong is fixed.
+6. The md files of the repository root and `docs/`: every statement the change makes wrong.
+7. The tests: every new behaviour and every fix has a test that fails without it, through the real path where the behaviour plays in a turn (Testing).
+
+A release that touches several areas, such as the rules, the page, and the documents, splits the check among checkers that run side by side, one per area, each with the list above and a task sharpened to its files and to the cases its area can go wrong in, so that the check takes as long as its largest part; a small release has one checker. Each reports its findings with file and line, the most important first, and marks what it cannot settle; the session reads each against the code before it acts on it.
 
 ## Rules for a change
 

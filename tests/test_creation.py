@@ -120,8 +120,6 @@ def test_build_creation_options_has_creation_defaults(load_engine: None) -> None
 
     opts = build_creation_options()
     cd = opts["creation_defaults"]
-    assert cd["max_paths"] == 2
-    assert cd["max_starting_assets"] == 1
     assert cd["pronoun_options"] == ["he/him", "she/her", "they/them"]
     assert cd["background_vow_default_rank"] == "extreme"
     assert "epic" in cd["vow_ranks"]
@@ -171,10 +169,20 @@ def test_build_creation_options_settings_have_starting_assets(load_engine: None)
     from straightjacket.web.serializers import build_creation_options
 
     opts = build_creation_options()
-    sf = next(s for s in opts["settings"] if s["id"] == "starforged")
-    assert len(sf["starting_assets"]) > 0
-    cats = {a["category"] for a in sf["starting_assets"]}
-    assert "companion" in cats
+    cats = {s["id"]: {a["category"] for a in s["starting_assets"]} for s in opts["settings"]}
+    assert cats["starforged"] == {"Companion Assets", "Module Assets", "Command Vehicle Assets"}
+    assert cats["classic"] == {"Path Assets", "Companion Assets", "Combat Talent Assets", "Ritual Assets"}
+
+
+def test_classic_takes_three_assets_of_any_kind_and_starforged_two_paths_and_one_more(load_engine: None) -> None:
+    from straightjacket.web.serializers import build_creation_options
+
+    opts = build_creation_options()
+    assert {s["id"]: (s["max_paths"], s["max_starting_assets"]) for s in opts["settings"]} == {
+        "classic": (0, 3),
+        "starforged": (2, 1),
+        "sundered_isles": (2, 1),
+    }
 
 
 def test_build_creation_options_classic_no_backstory(load_engine: None) -> None:
@@ -195,10 +203,12 @@ def test_build_creation_options_sends_what_the_creation_form_reads(load_engine: 
         "title",
         "description",
         "paths",
+        "max_paths",
         "truths",
         "name_tables",
         "backstory_prompts",
         "starting_assets",
+        "max_starting_assets",
         "default_tone",
         "stats",
     }
@@ -264,6 +274,10 @@ _CHARACTER = {
         ("starforged", {"paths": ["a", "b", "c"]}, "Too many paths"),
         ("starforged", {"paths": ["alchemist"]}, "not among the paths of"),
         ("starforged", {"assets": ["a", "b"]}, "Too many starting assets"),
+        ("starforged", {"paths": ["ace", "ace"]}, "chosen twice"),
+        ("classic", {"paths": ["alchemist"]}, "Too many paths"),
+        ("classic", {"assets": ["alchemist", "hawk", "archer", "augur"]}, "Too many starting assets"),
+        ("classic", {"assets": ["hawk", "hawk"]}, "chosen twice"),
         ("starforged", {"assets": ["ace"]}, "not in allowed categories"),
         ("delve", {"assets": ["ace"]}, "not in allowed categories"),
         ("starforged", {"background_vow_rank": "legendary"}, "Invalid vow rank"),
@@ -290,6 +304,14 @@ def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None
     names = [own.asset("path", pid)["name"] for pid in ("ace", "explorer")]
     assert character.concept == ", ".join(names)
     assert character.background_vow_rank == "epic"
+
+
+def test_a_classic_character_takes_the_paths_among_its_three_assets(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.character import make_character
+    from straightjacket.engine.setting.packages import load_package
+
+    character = make_character({**_CHARACTER, "assets": ["hawk", "alchemist", "archer"]}, load_package("classic"))
+    assert (character.paths, character.assets, character.concept) == (["alchemist"], ["hawk", "archer"], "Alchemist")
 
 
 def _take_up(vow_subject: str) -> Any:

@@ -34,3 +34,7 @@ suffer:
         formidable: 3
         extreme: 4
         epic: 5
+      starforged: null
+    bond_test:
+      classic: relationship/test_your_bond
+      starforged: null

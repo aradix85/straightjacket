@@ -26,7 +26,7 @@ from ..models import (
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
-from ..ruleset.consequences import generate_consequence_sentences
+from ..ruleset.consequences import consequence_texts, generate_consequence_sentences
 from ..xml_utils import xe as _xe
 from .analysis import call_correction_brain
 from .ops import apply_correction_ops
@@ -56,7 +56,7 @@ def _rewrite_prompt(
             oracle_answer=last_entry.oracle_answer,
             random_events=snap.random_events,
             threat_events=snap.threat_events,
-            consequences=consequences,
+            consequence_texts=consequence_texts(consequences, game, brain),
             clock_fill_results=snap.clock_fill_results,
             npc_agency=snap.npc_agency,
             facts=facts,

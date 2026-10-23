@@ -11,7 +11,7 @@ from straightjacket.engine.game.succession import (
     start_succession_with_character,
 )
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import CampaignState, GameState
+from straightjacket.engine.models import CampaignState, GameState, NpcData, ProgressTrack
 from straightjacket.engine.ruleset.meters import starting_resources
 from straightjacket.engine.ruleset.progress import filled_boxes, new_track
 from straightjacket.engine.ruleset.succession import (
@@ -21,7 +21,14 @@ from straightjacket.engine.ruleset.succession import (
     seed_successor_legacy,
     threads_for_successor,
 )
-from tests._creation import OPENING_TEXT, OpeningProvider, TurnProvider, create_game, creation_data
+from tests._creation import (
+    OPENING_TEXT,
+    OpeningProvider,
+    TurnProvider,
+    create_game,
+    creation_data,
+    library_game,
+)
 from tests._helpers import (
     make_character_entry,
     make_game_state,
@@ -157,6 +164,12 @@ def test_seed_successor_legacy_preserves_xp(aria: GameState) -> None:
     assert aria.campaign.xp_spent == 4
 
 
+def _carry_over(game: GameState, npcs: list[NpcData], tracks: list[ProgressTrack]) -> tuple[Any, Any]:
+    game.npcs = npcs
+    game.progress_tracks = tracks
+    return apply_npc_carryover(game)
+
+
 @pytest.mark.parametrize(
     ("status", "ticks", "expected_filled_boxes"),
     [
@@ -165,17 +178,19 @@ def test_seed_successor_legacy_preserves_xp(aria: GameState) -> None:
         ("lore", 20, 2),
     ],
 )
-def test_carryover_track_filled_boxes_per_status(status: str, ticks: int, expected_filled_boxes: int) -> None:
+def test_carryover_track_filled_boxes_per_status(
+    aria: GameState, status: str, ticks: int, expected_filled_boxes: int
+) -> None:
     npc = make_npc(id="npc_1", name="NPC", status=status)
     track = make_progress_track(
         id="connection_npc_1", name="NPC", track_type="connection", rank="dangerous", ticks=ticks
     )
-    kept_npcs, kept_tracks = apply_npc_carryover([npc], [track])
+    kept_npcs, kept_tracks = _carry_over(aria, [npc], [track])
     assert len(kept_npcs) == 1
     assert filled_boxes(kept_tracks[0]) == expected_filled_boxes
 
 
-def test_carryover_deceased_npc_pruned_entirely() -> None:
+def test_carryover_deceased_npc_pruned_entirely(aria: GameState) -> None:
     alive = make_npc(id="npc_a", name="Alive", status="active")
     dead = make_npc(id="npc_d", name="Dead", status="deceased")
     alive_track = make_progress_track(
@@ -184,38 +199,50 @@ def test_carryover_deceased_npc_pruned_entirely() -> None:
     dead_track = make_progress_track(
         id="connection_npc_d", name="Dead", track_type="connection", rank="dangerous", ticks=12
     )
-    kept_npcs, kept_tracks = apply_npc_carryover([alive, dead], [alive_track, dead_track])
+    kept_npcs, kept_tracks = _carry_over(aria, [alive, dead], [alive_track, dead_track])
     kept_ids = {n.id for n in kept_npcs}
     assert kept_ids == {"npc_a"}
     kept_track_ids = {t.id for t in kept_tracks}
     assert kept_track_ids == {"connection_npc_a"}
 
 
-def test_carryover_unknown_status_raises() -> None:
+def test_carryover_unknown_status_raises(aria: GameState) -> None:
     npc = make_npc(id="npc_x", name="Strange", status="active")
     npc.status = "weird"
     with pytest.raises(ValueError, match=r"no succession\.npc_carryover rule"):
-        apply_npc_carryover([npc], [])
+        _carry_over(aria, [npc], [])
 
 
-def test_carryover_preserves_track_name_and_rank() -> None:
+def test_carryover_preserves_track_name_and_rank(aria: GameState) -> None:
     npc = make_npc(id="npc_1", name="Mira", status="active")
     track = make_progress_track(
         id="connection_npc_1", name="Mira Whisperer", track_type="connection", rank="formidable", ticks=16
     )
-    _, kept_tracks = apply_npc_carryover([npc], [track])
+    _, kept_tracks = _carry_over(aria, [npc], [track])
     assert kept_tracks[0].name == "Mira Whisperer"
     assert kept_tracks[0].rank == "formidable"
 
 
-def test_carryover_keeps_only_the_connections_of_every_track_it_is_given() -> None:
+def test_carryover_keeps_only_the_connections_of_every_track_it_is_given(aria: GameState) -> None:
     npc = make_npc(id="npc_1", name="Mira", status="active")
     connection = make_progress_track(
         id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=8
     )
     vow = make_progress_track(id="vow_find_mira", name="Find Mira", track_type="vow", rank="dangerous", ticks=8)
-    _, kept_tracks = apply_npc_carryover([npc], [vow, connection])
+    _, kept_tracks = _carry_over(aria, [npc], [vow, connection])
     assert [t.id for t in kept_tracks] == ["connection_npc_1"]
+
+
+def test_a_classic_successor_keeps_the_people_but_not_the_bonds(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.bond import get_npc_bond, seal_bond
+
+    game = library_game()
+    mira = game.npcs[0]
+    seal_bond(game, mira)
+    _succeed(game, _successor())
+    assert mira in game.npcs
+    assert get_npc_bond(game, mira.id) == 0
+    assert all(t.track_type != "connection" for t in game.progress_tracks)
 
 
 def test_filter_drops_vow_threads() -> None:

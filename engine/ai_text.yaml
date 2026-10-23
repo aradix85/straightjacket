@@ -44,6 +44,7 @@ ai_text:
     bond_request: bond_request
     bond_sealed: '{name}: bond sealed'
     bond_cleared: '{name}: bond cleared'
+    bond_tested: '{name}: the bond is tested, since the vow "{vow}" made to them was forsaken'
     obstacle: obstacle
     loyalty_test: loyalty_test
     focus_roll: '{action}, rolled again: {result}'

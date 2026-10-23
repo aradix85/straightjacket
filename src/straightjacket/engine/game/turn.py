@@ -39,10 +39,10 @@ from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
 from ..ruleset.config import rules
-from ..ruleset.consequences import generate_consequence_sentences
+from ..ruleset.consequences import consequence_texts, generate_consequence_sentences
 from ..ruleset.make_move import RollOutcome, roll_move
 from ..ruleset.meters import momentum
-from ..ruleset.move_outcome import make_follow_up_moves
+from ..ruleset.move_outcome import make_due_bond_test, make_follow_up_moves
 from ..ruleset.moves import get_moves
 from ..ruleset.outcome_result import new_outcome
 from ..ruleset.rolls import can_burn_momentum
@@ -285,6 +285,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)
     pending_fills.extend(agency_fill_results)
     engine_moves = new_outcome()
+    make_due_bond_test(game, brain.target_npc, None, engine_moves)
     tick_dying_clock(game, engine_moves)
     threat_events = take_pending_threat_events(game)
     threat_events.extend(resolve_full_menace(game, engine_moves))
@@ -303,7 +304,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         oracle_answer=oracle_answer,
         random_events=ctx.pending_random_events,
         threat_events=threat_events,
-        consequences=engine_moves.consequences,
+        consequence_texts=consequence_texts(engine_moves.consequences, game, brain),
         clock_fill_results=pending_fills,
         npc_agency=npc_agency,
         facts=ctx.facts,

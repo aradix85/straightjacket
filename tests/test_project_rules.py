@@ -33,7 +33,6 @@ _AI_CALL_CARVE_OUT_FILES = {
 
 
 _AI_CALL_CARVE_OUT_TESTS = {
-    "elvira/elvira_bot/creation.py",
     "elvira/elvira_bot/runner.py",
     "elvira/elvira_bot/ws_runner.py",
     "elvira/elvira_bot/judge.py",

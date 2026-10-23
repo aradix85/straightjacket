@@ -1,6 +1,10 @@
 creation:
-  max_paths: 2
-  max_starting_assets: 1
+  max_paths:
+    starforged: 2
+    classic: 0
+  max_starting_assets:
+    starforged: 1
+    classic: 3
   background_vow_default_rank: extreme
   pronoun_options:
   - he/him

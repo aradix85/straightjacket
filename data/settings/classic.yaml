@@ -49,6 +49,7 @@ creation_flow:
   has_name_tables: false
   has_ship_creation: false
   starting_asset_categories:
+    - path
     - companion
-    - ritual
     - combat_talent
+    - ritual

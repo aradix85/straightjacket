@@ -19,6 +19,7 @@ from ..models import (
     consequence,
 )
 from .bond import connection_track, connection_track_id
+from .bonuses import bond_of_bonus
 from .config import rules
 from .datasworn import load_ruleset
 from .impacts import clear_impact
@@ -60,7 +61,10 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
         log(f"[Track] {track_type} '{brain.track_name}' is already active; not created again")
         return
     track = _add_track(game, base_id, brain.track_name, track_type, brain.track_rank)
-    if track_type == "vow" and brain.target_threat is not None:
+    if track_type != "vow":
+        return
+    track.vowed_to = bond_of_bonus(game, brain.bonus_id)
+    if brain.target_threat is not None:
         threat = next(t for t in game.threats if t.id == brain.target_threat)
         threat.linked_vow_id = track.id
         log(f"[Threat] '{threat.name}' now has the vow '{track.name}' sworn against it")
@@ -107,7 +111,7 @@ def start_bound_vow(game: GameState, name: str, rank: str, impact: str) -> Progr
 
 def forsake_vow(game: GameState, vow: ProgressTrack, result: OutcomeResult) -> None:
     cfg = rules().suffer.forsake_vow
-    by_rank = cfg.cost_by_rank.get(load_ruleset(game.setting_id).id)
+    by_rank = cfg.cost_by_rank[load_ruleset(game.setting_id).id]
     complete_track(game, vow.id, "failed")
     result.consequences.append(consequence("forsake_vow", vow=vow.name))
     suffer(game, cfg.meter, by_rank[vow.rank] if by_rank is not None else cfg.cost, result)

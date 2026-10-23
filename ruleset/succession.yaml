@@ -7,6 +7,10 @@ succession:
       WEAK_HIT: 0.5
       MISS: 0.0
 
+  connections_kept:
+    starforged: true
+    classic: false
+
   npc_carryover:
     active:
       keep: true

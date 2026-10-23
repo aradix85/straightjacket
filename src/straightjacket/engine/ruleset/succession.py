@@ -4,6 +4,7 @@ from ..logging_util import log
 from ..models import GameState, InheritanceRollResult, NpcData, PredecessorRecord, ProgressTrack, ThreadEntry
 from .bond import connection_track_id
 from .config import rules
+from .datasworn import load_ruleset
 from .progress import filled_boxes, ticks_for_filled_boxes
 from .rolls import roll_progress
 from .tracks import is_vow_thread
@@ -62,12 +63,13 @@ def threads_for_successor(threads: list[ThreadEntry]) -> list[ThreadEntry]:
     return kept
 
 
-def apply_npc_carryover(npcs: list[NpcData], tracks: list[ProgressTrack]) -> tuple[list[NpcData], list[ProgressTrack]]:
+def apply_npc_carryover(game: GameState) -> tuple[list[NpcData], list[ProgressTrack]]:
     carryover = rules().succession.npc_carryover
+    connections_kept = rules().succession.connections_kept[load_ruleset(game.setting_id).id]
     kept_npcs: list[NpcData] = []
     kept_track_ids: set[str] = set()
 
-    for npc in npcs:
+    for npc in game.npcs:
         if npc.status not in carryover:
             raise ValueError(
                 f"NPC {npc.id} has status {npc.status!r} with no succession.npc_carryover rule. "
@@ -78,11 +80,12 @@ def apply_npc_carryover(npcs: list[NpcData], tracks: list[ProgressTrack]) -> tup
             log(f"[Succession] Pruning {npc.status} NPC: {npc.name} ({npc.id})")
             continue
         kept_npcs.append(npc)
-        kept_track_ids.add(connection_track_id(npc.id))
+        if connections_kept:
+            kept_track_ids.add(connection_track_id(npc.id))
 
     kept_tracks: list[ProgressTrack] = []
-    npc_status_by_track: dict[str, str] = {connection_track_id(n.id): n.status for n in npcs}
-    for track in tracks:
+    npc_status_by_track: dict[str, str] = {connection_track_id(n.id): n.status for n in game.npcs}
+    for track in game.progress_tracks:
         if track.id not in kept_track_ids:
             continue
         status = npc_status_by_track[track.id]
@@ -95,6 +98,7 @@ def apply_npc_carryover(npcs: list[NpcData], tracks: list[ProgressTrack]) -> tup
             rank=track.rank,
             max_ticks=track.max_ticks,
             bound_impact=track.bound_impact,
+            vowed_to=None,
             ticks=0,
             status="active",
             completions=0,

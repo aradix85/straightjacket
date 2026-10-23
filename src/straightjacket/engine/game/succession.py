@@ -142,7 +142,7 @@ def start_succession_with_character(
 
     _close_previous_chapter(game)
 
-    kept_npcs, kept_conn_tracks = apply_npc_carryover(game.npcs, game.progress_tracks)
+    kept_npcs, kept_conn_tracks = apply_npc_carryover(game)
 
     surviving_threads = threads_for_successor(list(game.narrative.threads))
     surviving_threats = list(game.threats)

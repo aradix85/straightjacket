@@ -43,6 +43,9 @@ def get_npc_bond(game: GameState, npc_id: str) -> int:
 
 
 def merge_connections(game: GameState, kept: NpcData, merged: NpcData) -> None:
+    for track in game.progress_tracks:
+        if track.vowed_to == merged.id:
+            track.vowed_to = kept.id
     merged_track = connection_track(game, merged.id)
     if merged_track is None:
         return

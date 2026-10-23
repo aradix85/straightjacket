@@ -16,7 +16,7 @@ from ..models import (
     consequence,
 )
 from ..ruleset.make_move import RollOutcome
-from ..ruleset.move_outcome import make_follow_up_moves
+from ..ruleset.move_outcome import make_due_bond_test, make_follow_up_moves
 from ..ruleset.outcome_result import OutcomeResult
 from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import (
@@ -98,6 +98,7 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)
     fill_results.extend(agency_fill_results)
 
+    make_due_bond_test(game, brain.target_npc, brain.move, action.outcome)
     threat_events = _collect_threat_events(game, roll, action.outcome)
     tick_dying_clock(game, action.outcome)
     make_follow_up_moves(game, action.outcome)

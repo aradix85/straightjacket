@@ -177,6 +177,7 @@ def _build_succession(succession_raw: dict[str, Any]) -> SuccessionConfig:
     reject_unknown(SuccessionConfig, succession_raw)
     return SuccessionConfig(
         inheritance=build_strict(InheritanceConfig, dict(succession_raw["inheritance"])),
+        connections_kept=dict(succession_raw["connections_kept"]),
         npc_carryover={
             status: build_strict(NpcCarryoverEntry, dict(entry))
             for status, entry in succession_raw["npc_carryover"].items()

@@ -45,7 +45,7 @@ NPC activation (gamemaster/npc/activation.py) → decides which NPCs get full co
   ↓
 Roll (ruleset/make_move.py) → the move's Ironsworn roll: STRONG_HIT, WEAK_HIT, or MISS; the momentum-burn offer and a second snapshot
   ↓
-Consequences (game/action_resolution.py) → position and effect, move outcome, combat position, clock ticks, threats, the dying clock, follow-up moves (Endure, Face Death), crisis check
+Consequences (game/action_resolution.py) → position and effect, move outcome, combat position, clock ticks, a bond test a forsaken vow asks, threats, the dying clock, follow-up moves (Endure, Face Death), crisis check
   ↓
 Facts and revelation (game/turn.py) → the facts the result settles or clears, and the act's revelation if it lands
   ↓
@@ -62,7 +62,7 @@ Save (web/handlers.py, persistence.py)
 Director (game/director_runner.py) → after the turn is returned, when the scene end called for it: NPC reflections; saved again
 ```
 
-Dialog turns skip the roll and the move's consequences, but resolve pending clock fills, NPC agency, pending threat events, the dying clock, a full menace track, their follow-up moves, the crisis, and a revelation. A `##` correction of a misread input and a momentum burn play parts of this pipeline again from a snapshot, and a correction of the state edits it and narrates again (`docs/mechanics.md`, Shared outcome resolution).
+Dialog turns skip the roll and the move's consequences, but resolve pending clock fills, NPC agency, a bond test a forsaken vow asks of the NPC they are aimed at, pending threat events, the dying clock, a full menace track, their follow-up moves, the crisis, and a revelation. A `##` correction of a misread input and a momentum burn play parts of this pipeline again from a snapshot, and a correction of the state edits it and narrates again (`docs/mechanics.md`, Shared outcome resolution).
 
 ## Code map
 

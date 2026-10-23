@@ -87,6 +87,7 @@ class ProgressTrack(SerializableMixin):
     rank: str
     max_ticks: int
     bound_impact: str
+    vowed_to: str | None
     ticks: int
     status: str
     completions: int

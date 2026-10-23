@@ -16,6 +16,7 @@ def new_track(*, id: str, name: str, track_type: str, rank: str) -> ProgressTrac
         rank=rank,
         max_ticks=rules().progress.max_ticks,
         bound_impact="",
+        vowed_to=None,
         ticks=0,
         status="active",
         completions=0,

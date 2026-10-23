@@ -23,9 +23,6 @@ class Character:
 
 
 def _path_names(paths: list[str], own: RulesFile) -> list[str]:
-    max_paths = rules().creation.max_paths
-    if len(paths) > max_paths:
-        raise ValueError(f"Too many paths: {len(paths)} (max {max_paths})")
     names: list[str] = []
     for pid in paths:
         path = own.asset("path", pid)
@@ -36,13 +33,23 @@ def _path_names(paths: list[str], own: RulesFile) -> list[str]:
 
 
 def _validate_assets(assets: list[str], pkg: SettingPackage, own: RulesFile) -> None:
-    max_assets = rules().creation.max_starting_assets
-    if len(assets) > max_assets:
-        raise ValueError(f"Too many starting assets: {len(assets)} (max {max_assets})")
     allowed_cats = set(pkg.creation_flow.starting_asset_categories)
     for asset_id in assets:
         if not any(own.asset(cat, asset_id) for cat in allowed_cats):
             raise ValueError(f"Asset '{asset_id}' not in allowed categories: {allowed_cats}")
+
+
+def _check_choices(paths: list[str], assets: list[str], ruleset_id: str) -> None:
+    creation = rules().creation
+    for kind, picks, limit in (
+        ("paths", paths, creation.max_paths[ruleset_id]),
+        ("starting assets", assets, creation.max_starting_assets[ruleset_id]),
+    ):
+        if len(picks) > limit:
+            raise ValueError(f"Too many {kind}: {len(picks)} (max {limit})")
+    chosen = paths + assets
+    if len(set(chosen)) < len(chosen):
+        raise ValueError(f"An asset is chosen twice: {chosen}")
 
 
 def make_character(creation_data: dict[str, Any], pkg: SettingPackage) -> Character:
@@ -52,9 +59,13 @@ def make_character(creation_data: dict[str, Any], pkg: SettingPackage) -> Charac
     background_vow = creation_data["background_vow"]
     vow_rank = creation_data["background_vow_rank"]
     validate_stats(stats, pkg.id)
-    own = load_ruleset(pkg.id).setting_file
-    path_names = _path_names(paths, own)
+    ruleset = load_ruleset(pkg.id)
+    own = ruleset.setting_file
+    _check_choices(paths, assets, ruleset.id)
     _validate_assets(assets, pkg, own)
+    paths += [asset_id for asset_id in assets if own.asset("path", asset_id) is not None]
+    assets = [asset_id for asset_id in assets if asset_id not in paths]
+    path_names = _path_names(paths, own)
     if not background_vow:
         raise ValueError("creation_data['background_vow'] is empty. The background vow becomes the first vow track.")
     if vow_rank and vow_rank not in ranks():

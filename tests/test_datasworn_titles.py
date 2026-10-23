@@ -8,7 +8,10 @@ def test_path_and_asset_titles_are_the_datasworn_names(load_engine: None) -> Non
     for setting in build_creation_options()["settings"]:
         own = load_ruleset(setting["id"]).setting_file
         assert {p["title"] for p in setting["paths"]} == {a["name"] for a in own.assets_of("path")}
-        assert all(a["title"] == own.asset(a["category"], a["id"])["name"] for a in setting["starting_assets"])
+        category_of = {own.assets[cat]["name"]: cat for cat in own.assets}
+        assert all(
+            a["title"] == own.asset(category_of[a["category"]], a["id"])["name"] for a in setting["starting_assets"]
+        )
 
 
 def test_an_oracle_tables_title_is_its_datasworn_name(load_engine: None) -> None:

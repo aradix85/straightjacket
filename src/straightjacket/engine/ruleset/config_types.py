@@ -11,8 +11,8 @@ class StatsConfig:
 
 @dataclass
 class CreationConfig:
-    max_paths: int
-    max_starting_assets: int
+    max_paths: dict[str, int]
+    max_starting_assets: dict[str, int]
     background_vow_default_rank: str
     pronoun_options: list[str]
     chaos_vow_modifiers: dict[str, list[str]]
@@ -184,6 +184,7 @@ class NpcCarryoverEntry:
 @dataclass
 class SuccessionConfig:
     inheritance: InheritanceConfig
+    connections_kept: dict[str, bool]
     npc_carryover: dict[str, NpcCarryoverEntry]
 
 
@@ -221,7 +222,8 @@ class DyingClockConfig:
 class ForsakeVowConfig:
     meter: str
     cost: int
-    cost_by_rank: dict[str, dict[str, int]]
+    cost_by_rank: dict[str, dict[str, int] | None]
+    bond_test: dict[str, str | None]
 
 
 @dataclass

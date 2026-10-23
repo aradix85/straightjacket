@@ -153,7 +153,8 @@ def build_creation_options() -> dict[str, Any]:
         if not pkg.playable:
             continue
 
-        own = load_ruleset(pkg_id).setting_file
+        ruleset = load_ruleset(pkg_id)
+        own = ruleset.setting_file
         paths = []
         for asset in own.assets_of("path"):
             asset_id = asset["_id"].rsplit("/", 1)[-1]
@@ -201,7 +202,7 @@ def build_creation_options() -> dict[str, Any]:
                     {
                         "id": asset_id,
                         "title": asset["name"],
-                        "category": cat,
+                        "category": own.assets[cat]["name"],
                     }
                 )
 
@@ -211,10 +212,12 @@ def build_creation_options() -> dict[str, Any]:
                 "title": pkg.title,
                 "description": pkg.description,
                 "paths": paths,
+                "max_paths": rules().creation.max_paths[ruleset.id],
                 "truths": truths,
                 "name_tables": name_tables,
                 "backstory_prompts": backstory_prompts,
                 "starting_assets": starting_assets,
+                "max_starting_assets": rules().creation.max_starting_assets[ruleset.id],
                 "default_tone": pkg.default_tone,
                 "stats": list(stat_descriptions(pkg_id)),
             }
@@ -229,8 +232,6 @@ def build_creation_options() -> dict[str, Any]:
             "max": max(stat_array),
         },
         "creation_defaults": {
-            "max_paths": rules().creation.max_paths,
-            "max_starting_assets": rules().creation.max_starting_assets,
             "background_vow_default_rank": rules().creation.background_vow_default_rank,
             "pronoun_options": rules().creation.pronoun_options,
             "vow_ranks": ranks(),

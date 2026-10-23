@@ -698,10 +698,8 @@ function renderCreationForm(options, forcedSettingId) {
   cd.pronoun_options.forEach(p => { html += `<option value="${esc(p)}">${esc(p)}</option>`; });
   html += `</select></div>`;
 
-  // Paths
-  html += `<div class="field"><label>${s("ui.paths")}</label><div style="display:flex;gap:0.5rem">`;
-  for (let i = 1; i <= cd.max_paths; i++) html += `<select class="path-select" aria-label="${s("ui.paths")} ${i}" style="flex:1"></select>`;
-  html += `</div></div>`;
+  // Path container (populated per setting)
+  html += `<div class="field" id="path-container"></div>`;
 
   // Truths container (populated per setting)
   html += `<div class="field" id="truths-container"></div>`;
@@ -739,11 +737,15 @@ function renderCreationForm(options, forcedSettingId) {
 
   // Path updates
   function updatePaths() {
-    const paths = curSetting().paths;
-    document.querySelectorAll(".path-select").forEach((sel, i) => {
-      sel.innerHTML = paths.map(p => `<option value="${esc(p.id)}">${esc(p.title)}</option>`).join("");
-      sel.selectedIndex = Math.min(i, paths.length - 1);
-    });
+    const st = curSetting();
+    const container = $("path-container");
+    if (!st.max_paths) { container.innerHTML = ""; container.classList.add("hidden"); return; }
+    container.classList.remove("hidden");
+    const options = st.paths.map(p => `<option value="${esc(p.id)}">${esc(p.title)}</option>`).join("");
+    let h = `<label>${s("ui.paths")}</label><div style="display:flex;gap:0.5rem">`;
+    for (let i = 1; i <= st.max_paths; i++) h += `<select class="path-select" aria-label="${s("ui.paths")} ${i}" style="flex:1">${options}</select>`;
+    container.innerHTML = h + `</div>`;
+    document.querySelectorAll(".path-select").forEach((sel, i) => { sel.selectedIndex = Math.min(i, st.paths.length - 1); });
   }
 
   // Truths updates
@@ -766,8 +768,9 @@ function renderCreationForm(options, forcedSettingId) {
   // Starting assets
   function updateAssets() {
     const container = $("asset-container");
-    const assets = curSetting().starting_assets;
-    if (!assets.length) { container.innerHTML = ""; container.classList.add("hidden"); return; }
+    const st = curSetting();
+    const assets = st.starting_assets;
+    if (!assets.length || !st.max_starting_assets) { container.innerHTML = ""; container.classList.add("hidden"); return; }
     container.classList.remove("hidden");
     let assetOptions = `<option value="">${s("ui.no_choice")}</option>`;
     let lastCat = "";
@@ -777,7 +780,7 @@ function renderCreationForm(options, forcedSettingId) {
     });
     if (lastCat) assetOptions += `</optgroup>`;
     let h = `<label>${s("ui.starting_assets")}</label>`;
-    for (let i = 1; i <= cd.max_starting_assets; i++) {
+    for (let i = 1; i <= st.max_starting_assets; i++) {
       h += `<select class="asset-select" aria-label="${s("ui.starting_assets")} ${i}" style="width:100%">${assetOptions}</select>`;
     }
     container.innerHTML = h;
@@ -854,13 +857,16 @@ function renderCreationForm(options, forcedSettingId) {
     });
 
     const assets = [...document.querySelectorAll(".asset-select")].map(sel => sel.value).filter(v => v);
+    const paths = [...document.querySelectorAll(".path-select")].map(sel => sel.value);
+    const chosen = [...paths, ...assets];
+    if (new Set(chosen).size < chosen.length) { alert(s("ui.assets_distinct")); return; }
 
     const creationData = {
       setting_id: document.querySelector('input[name="setting"]:checked')?.value,
       tone: $("c-tone").value,
       player_name: $("c-name").value.trim() || currentPlayer,
       pronouns: $("c-pronouns").value,
-      paths: [...document.querySelectorAll(".path-select")].map(sel => sel.value),
+      paths,
       backstory: $("c-backstory").value.trim(),
       background_vow: $("c-vow").value.trim(),
       background_vow_rank: $("c-vow-rank").value,

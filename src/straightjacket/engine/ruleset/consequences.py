@@ -45,8 +45,8 @@ def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
         return f"complication_{values['kind']}", "", ""
     if c.kind in ("complication_clock", "complication_averted"):
         return c.kind, "", values["name"]
-    if c.kind == "bond_sealed":
-        return "bond_sealed", values["name"], ""
+    if c.kind in ("bond_sealed", "bond_tested"):
+        return c.kind, values["name"], ""
     if c.kind in ("bond_request", "obstacle", "loyalty_test"):
         return c.kind, "", ""
     if c.kind == "bond_cleared":
@@ -56,15 +56,28 @@ def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
     return None
 
 
+def _target_name(game: GameState, brain: BrainResult) -> str:
+    target = find_npc(game, brain.target_npc) if brain.target_npc else None
+    return target.name if target else ""
+
+
+def consequence_texts(consequences: list[Consequence], game: GameState, brain: BrainResult) -> list[str]:
+    npc_name = _target_name(game, brain)
+    location = game.world.current_location
+    return [
+        c.label if _sentence_event(c) is None else resolve_consequence_sentence(c, game.player_name, npc_name, location)
+        for c in consequences
+    ]
+
+
 def generate_consequence_sentences(
     consequences: list[Consequence],
     clock_events: list[ClockEvent],
     game: GameState,
     brain: BrainResult,
 ) -> list[str]:
-    target = find_npc(game, brain.target_npc) if brain.target_npc else None
     player = game.player_name
-    npc_name = target.name if target else ""
+    npc_name = _target_name(game, brain)
     location = game.world.current_location
 
     sentences: list[str] = []
