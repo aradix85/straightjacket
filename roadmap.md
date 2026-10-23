@@ -28,8 +28,8 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 - The Elvira sessions a step needs are part of the work; a twelve-turn session on Sonnet costs about 55 to 65 cents. Say what a measuring round will cost before starting it; the API spend limit is set in the Claude Console (Settings, Billing). The user keeps runs to what a change needs, no extra ones, since they are costly.
 - Elvira runs on the real models again since 9i, the user's choice now that the work builds rather than tidies, but only when a run makes a real difference to the work, and never more runs or turns than that needs: tokens and credit are not to be wasted. A measurement of the engine as it was, when the decision does not hang on it, is no such run. The runs that releases without them left open are not caught up.
 - Each finished release is committed and pushed to main.
-- The API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira, `OPENAI_API_KEY` for the judges of the measuring setup); a process started by a tool may need them set in its own environment.
-- Outside the repository, in `C:\Users\radix\Documents`: the measuring setup for prompt tuning in `mimo_probe`, whose README.md says how to use it.
+- The API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira); a process started by a tool may need them set in its own environment.
+- Every role stays on Claude Sonnet 5.5 for the long future (`docs/ai.md`, Model assignment), the user's choice, since their Claude Max subscription brings $200 of API credit a month; the runs a step needs are paid from it, and their cost is still named first.
 
 ## Reference patterns
 
@@ -207,7 +207,7 @@ The scene challenge of Starforged and Sundered Isles is configured but unreachab
 
 ### 9m — Measuring the other prompts
 
-The measuring setup captures narrator calls only. A set of captured calls per prompt, with a judge that checks each answer against its input, comes before any change to the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `blueprint_voicing`, or `recap`.
+The measuring setup of 9f, outside the repository, is gone (the user removed it), so 9m builds its own. A set of captured calls per prompt, with a judge that checks each answer against its input, comes before any change to the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `blueprint_voicing`, or `recap`.
 
 ### 10 — Location and encounter generators
 

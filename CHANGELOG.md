@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.23.4] — 2026-10-23
+
+The user also deleted `mimo_probe` beside the project on the laptop, the measuring setup of 9f; roadmap.md no longer names it, nor the OpenAI key its judges used, and step 9m builds a measuring setup of its own. The user stays on Claude Sonnet 5.5 for every role for the long future, paid from the $200 of API credit a month their Claude Max subscription brings, which Sessions with the user now records.
+
+Quality gate: documentation only, 1830 tests. Save format unchanged.
+
 ## [2026.10.23.3] — 2026-10-23
 
 The user deleted `straightjacket_audit` beside the project on the laptop, the scripts, hit-lists, and logs of the sessions that worked there, whose audits are done; roadmap.md's Sessions with the user names only `mimo_probe` now.
