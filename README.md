@@ -42,6 +42,7 @@ Text-in, text-out, and built for screen readers from the start by a blind develo
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — the core idea, turn pipeline, code map, state, configuration, interface
 - [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, project rules, code standards, testing
+- [AGENTS.md](AGENTS.md) — how sessions hand work to sub-agents, what every sub-agent is given, and how a release is checked
 - [docs/ai.md](docs/ai.md), [docs/mechanics.md](docs/mechanics.md), [docs/settings.md](docs/settings.md), [docs/divergences.md](docs/divergences.md), [docs/elvira.md](docs/elvira.md) — the AI layer, the game mechanics, settings, rulesets, and character creation, deliberate departures from the source rulebooks and the design document, and the test player Elvira
 - [ORIGINS.md](ORIGINS.md) — where the project comes from, and credits
 - [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model

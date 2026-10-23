@@ -544,7 +544,8 @@ def _apply_scenario(game: GameState, name: str, spec: dict | None, slog: Session
 
 def _directive(spec: dict | None, coverage: Coverage, turn: int, max_turns: int) -> str | None:
     if spec is not None and "directive" in spec:
-        return str(spec["directive"])
+        directives: list[str] = spec["directive"]
+        return directives[min(turn, len(directives)) - 1]
     return coverage.steer(turn, max_turns)
 
 

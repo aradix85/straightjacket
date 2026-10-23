@@ -66,7 +66,8 @@ bot_turn_directive_dialog_aftermath: "DIALOG — talk to someone about what happ
 bot_turn_directive_bond: "BOND — stand with the person here through a hardship or a sacrifice, and forge a bond with them, by name"
 bot_turn_directive_companion: "COMPANION — speak directly to the person here you share a bond with, by name, about what you owe them"
 bot_turn_directive_act_on_vow: "ACT ON YOUR VOW — whatever move fits best"
-bot_turn_directive_vow_end: "YOUR VOW IS NEAR ITS END — say what real headway you have just made on it, and once its goal is reached, declare the vow fulfilled"
+bot_turn_directive_milestone: "MILESTONE — tell of a significant step on your vow that your character has just completed, as a deed already done: an obstacle overcome, vital support won, or a crucial item found"
+bot_turn_directive_vow_end: "VOW FULFILLED — the goal of your vow is reached: declare the vow fulfilled"
 
 bot_turn_rotation:
   - bot_turn_directive_dialog

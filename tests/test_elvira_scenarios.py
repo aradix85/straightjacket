@@ -340,3 +340,19 @@ def test_the_report_says_when_no_miss_was_audited() -> None:
 
     slog = SessionLog(turns=[_audited_turn(1, "WEAK_HIT", 4, 7)])
     assert "No misses audited." in _audit_lines(slog)
+
+
+def test_a_scenario_gives_each_turn_its_own_directive_and_repeats_the_last(load_engine: None) -> None:
+    from tests.elvira.elvira_bot.ai_helpers import _p
+    from tests.elvira.elvira_bot.coverage import Coverage
+    from tests.elvira.elvira_bot.runner import _directive, load_config
+
+    scenarios = load_config(ELVIRA_CONFIG)["scenarios"]
+    for spec in scenarios.values():
+        for key in spec.get("directive", []):
+            assert _p(key)
+    spec = scenarios["vow_fulfilment"]
+    picked = [_directive(spec, Coverage(), turn, spec["turns"]) for turn in range(1, spec["turns"] + 1)]
+    assert picked[0] == spec["directive"][0]
+    assert picked[-1] == picked[-2] == spec["directive"][-1]
+    assert picked[: len(spec["directive"])] == spec["directive"]

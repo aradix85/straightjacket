@@ -80,7 +80,7 @@ scenarios:
   near_death:
     turns: 8
     style: "aggressor"
-    directive: "bot_turn_directive_physical_risk"
+    directive: ["bot_turn_directive_physical_risk"]
     expect: ["follow_up_move", "impact_marked"]
     resources: {health: 0, spirit: 0, supply: 0}
     results: [MISS, MISS, MISS, MISS, MISS, MISS, MISS, MISS]
@@ -102,13 +102,13 @@ scenarios:
   combat:
     turns: 6
     style: "aggressor"
-    directive: "bot_turn_directive_attack"
+    directive: ["bot_turn_directive_attack"]
     expect: ["combat"]
     combat: true
   miss:
     turns: 10
     burn_momentum: "never"
-    directive: "bot_turn_directive_investigate"
+    directive: ["bot_turn_directive_investigate"]
     expect: ["result:MISS"]
     results: [MISS, MISS, MISS, MISS, MISS, MISS, MISS, MISS, MISS, MISS]
   clock:
@@ -118,20 +118,20 @@ scenarios:
     results: [MISS, MISS, MISS, MISS, MISS, MISS]
   complication:
     turns: 10
-    directive: "bot_turn_directive_investigate"
+    directive: ["bot_turn_directive_investigate"]
     expect: ["complication_clock"]
     results: [WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT]
   bond:
     setting: classic
     turns: 6
-    directive: "bot_turn_directive_bond"
+    directive: ["bot_turn_directive_bond"]
     expect: ["bond_sealed"]
     companion: true
     results: [STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT]
   forsaken_bond:
     setting: classic
     turns: 6
-    directive: "bot_turn_directive_companion"
+    directive: ["bot_turn_directive_companion"]
     expect: ["vow_forsaken", "follow_up_move", "bond_tested"]
     companion: true
     bonded: true
@@ -139,7 +139,12 @@ scenarios:
     threat_on_vow: {origin: pc_negative, menace: full}
   vow_fulfilment:
     turns: 6
-    directive: "bot_turn_directive_vow_end"
+    directive:
+    - "bot_turn_directive_milestone"
+    - "bot_turn_directive_milestone"
+    - "bot_turn_directive_milestone"
+    - "bot_turn_directive_milestone"
+    - "bot_turn_directive_vow_end"
     expect: ["milestone_reached", "vow_fulfilled"]
     vow_boxes: 7
     results: [STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT]
@@ -147,7 +152,7 @@ scenarios:
     setting: classic
     turns: 6
     style: "aggressor"
-    directive: "bot_turn_directive_physical_risk"
+    directive: ["bot_turn_directive_physical_risk"]
     expect: ["threat_advanced"]
     threat_on_vow: {origin: pc_negative, menace: fresh}
     results: [MISS, MISS, MISS, MISS, MISS, MISS]

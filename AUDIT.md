@@ -13,7 +13,7 @@ Earlier audits produced false reassurance: asked "is the codebase config-driven?
 
 One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule; principle 6 reads origins across the layers, so one session covers it whole. The mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status, and anything to pick up next time as an open item.
 
-A session fixes every clear violation it finds, in the same session and by CONTRIBUTING.md's Workflow and rules for a change: callers and tests in the same commit, the quality gate green, the release checked (CONTRIBUTING.md, Checking a release), one CHANGELOG entry, the release committed to main and pushed, and after it a short Elvira run when the turn pipeline, prompts, or configuration changed. Only what needs the user's decision, or belongs to another principle or submodule, becomes an open item. Deleting a file the user did not name waits for the user's consent.
+A session fixes every clear violation it finds, in the same session and by CONTRIBUTING.md's Workflow and rules for a change: callers and tests in the same commit, the quality gate green, the release checked (AGENTS.md, Checking a release), one CHANGELOG entry, the release committed to main and pushed, and after it a short Elvira run when the turn pipeline, prompts, or configuration changed. Only what needs the user's decision, or belongs to another principle or submodule, becomes an open item. Deleting a file the user did not name waits for the user's consent.
 
 A session also fixes what it meets that is ugly, illogical, or broken, even where no principle names it (CONTRIBUTING.md, Lean, not defensive): a fix leaves less structure behind, not more. Where a fix would add structure, such as a new protocol step or layer, the session weighs it against that, as the maintainer has left such calls to the session.
 
@@ -21,7 +21,7 @@ A session also fixes what it meets that is ugly, illogical, or broken, even wher
 
 **Hit-lists, never verdicts.** "Is principle X satisfied?" becomes "where does the codebase fail principle X?", answered with a list, even an empty one.
 
-**Fan out to sub-agents.** The reading of a hit-list goes to sub-agents, one per submodule or per batch of hits, each working from CONTRIBUTING.md and this document and returning its hits classified with file and line; the session merges their lists, checks a sample of each against the code, and makes the fixes itself. Only the lists enter the session's context (roadmap.md, Sessions with the user).
+**Fan out to sub-agents.** The reading of a hit-list goes to sub-agents, each given AGENTS.md and this document (AGENTS.md, Audits); only their lists enter the session's context.
 
 **Grep first, reason second.** Whatever can be a grep query is run as one before any reading; the result is the candidate list, and reasoning happens per hit. Every query is run with an exact pattern, and its result count goes into the CHANGELOG entry. Where a principle needs reasoning that no grep captures, say so and read file by file within one submodule.
 
