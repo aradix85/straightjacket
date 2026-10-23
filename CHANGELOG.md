@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.23.8] — 2026-10-23
+
+The Elvira run that 2026.10.23.7 announced: `vow_fulfilment` in Sundered Isles, dialogist, six turns, about $0.40 at full input price. No engine problem and no invariant violation, but neither aim was reached. Her player claimed completed steps, yet her background vow is an oracle pair, "Overwhelm Bond", to which no deed can be tied, so the Brain rightly read the claims as world shaping, Compel, and dialog, and no turn declared the vow fulfilled. Roadmap 9w.3 records what the scenario needs: a vow with a goal she can make headway on, and directives that name it.
+
+Quality gate: documentation only, 1844 tests. Save format unchanged.
+
 ## [2026.10.23.7] — 2026-10-23
 
 How sessions hand work to sub-agents, and what the Elvira run of 2026.10.23.6 found, with the user's choices. AGENTS.md is now the one home of what a session hands off and keeps, what a sub-agent's task carries (the touched files, questions aimed at the seams the change can go wrong in, one open question, a budget of about forty tool calls), how a release is checked, which moved there from CONTRIBUTING.md and now starts with the code as soon as it is done, and how audits and readings of a source use sub-agents. Every sub-agent is given it, and roadmap.md, CONTRIBUTING.md, AUDIT.md, and README.md point to it. The two checks of 2026.10.23.6 took 78 and 89 minutes and found real faults; the aimed questions, the budget, and the early start are to keep what they find in less of the time. Only a release that changes the game, its code or the stores the engine reads, gets a check by sub-agents; one that changes only documents, tests, or Elvira is read back by the session, as this one was after its checker had run for twenty minutes (the user's choice).
