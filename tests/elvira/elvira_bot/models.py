@@ -145,13 +145,11 @@ class TurnRecord:
 
     def to_compact_dict(self) -> dict:
         d: dict = {"turn": self.turn, "scene": self.scene}
-        if self.roll:
-            d["result"] = self.roll.result
-            d["move"] = self.engine_log.move if self.engine_log else ""
-            if self.roll.match:
-                d["match"] = True
-        else:
-            d["result"] = "dialog"
+        if self.engine_log is not None:
+            d["result"] = self.engine_log.result
+            d["move"] = self.engine_log.move
+        if self.roll and self.roll.match:
+            d["match"] = True
         d["action"] = self.action[:80]
         sa = self.state_after
         d["state"] = " ".join([*(f"{name} {value}" for name, value in sa.meters.items()), f"chaos {sa.chaos}"])

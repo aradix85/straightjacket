@@ -243,7 +243,9 @@ def test_every_move_that_marks_progress_names_its_track_category(load_engine: No
     import yaml
 
     outcomes = yaml.safe_load((REPO / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8"))["move_outcomes"]
-    marking = sorted(move for move, results in outcomes.items() if "mark_progress" in str(results))
+    marking = sorted(
+        move for move, results in outcomes.items() if re.search(r"'(mark_progress|milestone)\b", str(results))
+    )
     categories = rules().get_raw("progress_mark_categories")
     assert sorted(categories) == marking
     assert set(categories.values()) <= set(rules().get_raw("track_types_by_category"))

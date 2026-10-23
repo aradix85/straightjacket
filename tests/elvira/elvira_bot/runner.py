@@ -439,7 +439,8 @@ def _play_turn(
     rec = record_turn(game, turn, action, narration, roll)
     rec.turn_secs = round(time.monotonic() - started, 1)
     _record_stream(rec, stream, sentences, first_at, narration, slog, coverage)
-    result = roll.result if roll else None
+    played = game.narrative.session_log[-1]
+    result, played_move = played.result, played.move
     match = bool(roll and roll.match)
     coverage.observe_turn(before, world_view(game), result, match, roll.move if roll else "")
 
@@ -477,7 +478,7 @@ def _play_turn(
             result,
             match,
             previous_narration,
-            roll.move if roll else "",
+            played_move,
             rec.revelation,
             consequences_in(provider.narrator_prompt),
         )

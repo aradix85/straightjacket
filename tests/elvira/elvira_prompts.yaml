@@ -66,6 +66,7 @@ bot_turn_directive_dialog_aftermath: "DIALOG — talk to someone about what happ
 bot_turn_directive_bond: "BOND — stand with the person here through a hardship or a sacrifice, and forge a bond with them, by name"
 bot_turn_directive_companion: "COMPANION — speak directly to the person here you share a bond with, by name, about what you owe them"
 bot_turn_directive_act_on_vow: "ACT ON YOUR VOW — whatever move fits best"
+bot_turn_directive_vow_end: "YOUR VOW IS NEAR ITS END — say what real headway you have just made on it, and once its goal is reached, declare the vow fulfilled"
 
 bot_turn_rotation:
   - bot_turn_directive_dialog
@@ -157,6 +158,7 @@ judge_turn: |
   {narration}
 
 judge_result_dialog: "dialog turn, no roll"
+judge_result_unrolled_move: "a move made without a roll, whose consequences the engine decided"
 
 judge_match_suffix: " with MATCH (a dramatic twist)"
 

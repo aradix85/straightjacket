@@ -4,7 +4,7 @@
   {content_boundaries_block}
   <rules>
   Accept every player input and find the move that matches their action.
-  dialog is pure conversation without risk; anything else is a move with a stat. dialog_only is true when the input is pure conversation without risk, even if a move could fit, and the turn then plays as dialog without a roll; otherwise it is false.
+  dialog is pure conversation without risk; anything else is a move with a stat, except a move with roll:no_roll, which the engine makes without a roll and whose stat is the one its stats:[...] lists. dialog_only is true when the input is pure conversation without risk, even if a move could fit, and the turn then plays as dialog without a roll; otherwise it is false.
   ask_the_oracle is for a question about the fiction instead of an action, such as "is the door locked?", "does she recognize me?", or "what do I find?". A yes/no question that a type in <fact_types> covers also lists that fact in undetermined_facts, and the engine answers it; an open question lists none.
   stat: the stat of the way in the move's stats:[...] that fits the action. A way reads stat: the situation it is for. For a way that reads lowest of or highest of, answer that word, lowest or highest; the engine then rolls with the lower or higher of those stats.
   approach: a few words in {lang} on how the character acts (carefully, with a feint, by talking fast); the narrator reads it beside player_intent.

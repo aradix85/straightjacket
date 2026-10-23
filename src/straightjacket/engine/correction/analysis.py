@@ -52,7 +52,7 @@ def call_correction_brain(
             c2=str(roll.c2),
         )
         if roll
-        else _defaults["no_roll"]
+        else _defaults["no_roll"].format(result=game.narrative.session_log[-1].result)
     )
 
     w = game.world

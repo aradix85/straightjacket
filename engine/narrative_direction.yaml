@@ -17,3 +17,6 @@ narrative_direction:
     dialog:
       tempo: measured
       perspective: dialogue_rhythm
+    unrolled_move:
+      tempo: measured
+      perspective: action_detail

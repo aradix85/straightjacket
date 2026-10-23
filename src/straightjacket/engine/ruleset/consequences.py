@@ -47,7 +47,7 @@ def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
         return c.kind, "", values["name"]
     if c.kind in ("bond_sealed", "bond_tested"):
         return c.kind, values["name"], ""
-    if c.kind in ("bond_request", "obstacle", "loyalty_test"):
+    if c.kind in ("bond_request", "obstacle", "loyalty_test", "milestone"):
         return c.kind, "", ""
     if c.kind == "bond_cleared":
         return "bond_cleared", values["name"], ""

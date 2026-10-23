@@ -4,6 +4,7 @@ from typing import Any
 
 from straightjacket.engine.models import GameState, NpcData, ProgressTrack
 from straightjacket.engine.ruleset.bond import seal_bond
+from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.meters import max_momentum
 from straightjacket.engine.ruleset.progress import new_track
 from straightjacket.engine.ruleset.threats import add_threat
@@ -83,6 +84,12 @@ def _first_vow(game: GameState) -> ProgressTrack:
     return next(t for t in game.progress_tracks if t.track_type == "vow" and t.status == "active")
 
 
+def _vow_near_its_end(game: GameState, boxes: int) -> str:
+    vow = _first_vow(game)
+    vow.ticks = boxes * rules().progress.ticks_per_box
+    return f"the vow '{vow.name}' at {boxes} of {rules().progress.boxes} boxes"
+
+
 def _vow_to_companion(game: GameState) -> str:
     companion = _companion(game)
     if companion is None:
@@ -131,6 +138,8 @@ def prepare_scenario(game: GameState, spec: dict[str, Any]) -> list[str]:
         notes.append(_keep_one_companion(game))
     if "bonded" in spec:
         notes.append(_bond_with_companion(game))
+    if "vow_boxes" in spec:
+        notes.append(_vow_near_its_end(game, int(spec["vow_boxes"])))
     if "vow_to_companion" in spec:
         notes.append(_vow_to_companion(game))
     if "threat_on_vow" in spec:

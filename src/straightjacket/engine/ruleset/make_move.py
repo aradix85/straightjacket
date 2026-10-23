@@ -5,7 +5,7 @@ from typing import Any
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, GameState, ProgressTrack, RollResult, consequence
+from ..models import BrainResult, GameState, ProgressTrack, RollResult, consequence, labels_of
 from ..setting.loader import OracleTable
 from ..setting.oracle_rolls import plain_text, roll_rows
 from .boasts import apply_boasts
@@ -21,7 +21,7 @@ from .outcome_result import OutcomeResult, move_outcome_config
 from .progress import filled_boxes
 from .roll_sources import best_roll_option, roll_by_method, roll_source_without_stat
 from .rolls import downgrade_in_position, keep_action_dice, keep_progress_dice, roll_action, roll_progress
-from .tracks import find_progress_track
+from .tracks import apply_progress_and_legacy, find_progress_track
 
 
 @dataclass
@@ -63,6 +63,18 @@ def roll_move(game: GameState, brain: BrainResult, earlier: RollResult | None) -
         _log_action_roll(roll, adds, cancelled=rolled_momentum < 0 and -rolled_momentum == roll.d1)
 
     return RollOutcome(roll=roll, ds_move=ds_move, track=track)
+
+
+def plays_without_roll(move: str) -> bool:
+    return move in rules().offered_without_roll
+
+
+def make_move_without_roll(game: GameState, brain: BrainResult) -> OutcomeResult:
+    effects = parse_effects(move_outcome_config(game, brain.move)["no_roll"])
+    outcome = apply_effects(game, effects, target_npc_id=brain.target_npc)
+    apply_progress_and_legacy(game, outcome, brain, None)
+    log(f"[Move] {brain.move} without a roll: {', '.join(labels_of(outcome.consequences))}")
+    return outcome
 
 
 def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> tuple[str, int]:

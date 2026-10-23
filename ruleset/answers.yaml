@@ -27,5 +27,6 @@ action_phrases:
   connection/make_a_connection: reached out
   connection/test_your_relationship: tested a bond
   recover/resupply: resupplied
+  quest/reach_a_milestone: made headway on a quest
   world_shaping: shaped the world
   _catchall: acted

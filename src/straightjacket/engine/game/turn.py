@@ -40,7 +40,7 @@ from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
 from ..ruleset.config import rules
 from ..ruleset.consequences import consequence_texts, generate_consequence_sentences
-from ..ruleset.make_move import RollOutcome, roll_move
+from ..ruleset.make_move import RollOutcome, make_move_without_roll, plays_without_roll, roll_move
 from ..ruleset.meters import momentum
 from ..ruleset.move_outcome import make_due_bond_test, make_follow_up_moves
 from ..ruleset.moves import get_moves
@@ -156,8 +156,8 @@ def _play_turn(
         narrator_note=narrator_note,
     )
 
-    if is_dialog_branch(brain):
-        narration, director_ctx = _process_dialog_turn(ctx)
+    if is_dialog_branch(brain) or plays_without_roll(brain.move):
+        narration, director_ctx = _process_unrolled_turn(ctx)
         return narration, None, None, director_ctx
 
     game.narrative.scene_count += 1
@@ -271,12 +271,25 @@ def build_scene_context(
     )
 
 
-def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
+def _unrolled_result(brain: BrainResult) -> str:
+    if asks_the_oracle(brain.move):
+        return "oracle"
+    return "dialog" if is_dialog_branch(brain) else "unrolled_move"
+
+
+def _history_key(result: str) -> str:
+    if result == "oracle":
+        return "history_oracle"
+    return "history_dialog" if result == "dialog" else "history_unrolled_move"
+
+
+def _process_unrolled_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     game = ctx.game
     brain = ctx.brain
-    is_oracle = asks_the_oracle(brain.move)
-    result = "oracle" if is_oracle else "dialog"
+    result = _unrolled_result(brain)
+    is_oracle = result == "oracle"
     game.narrative.scene_count += 1
+    _snapshot_of_turn(game).roll = None
 
     oracle_answer = roll_oracle_answer(game) if is_oracle and not ctx.facts else ""
 
@@ -284,7 +297,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     game.world.pending_clock_fills.clear()
     npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)
     pending_fills.extend(agency_fill_results)
-    engine_moves = new_outcome()
+    engine_moves = make_move_without_roll(game, brain) if result == "unrolled_move" else new_outcome()
     make_due_bond_test(game, brain.target_npc, None, engine_moves)
     tick_dying_clock(game, engine_moves)
     threat_events = take_pending_threat_events(game)
@@ -301,6 +314,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         scene_setup=ctx.scene_setup,
         activated_npcs=ctx.activated_npcs,
         mentioned_npcs=ctx.mentioned_npcs,
+        result=result,
         oracle_answer=oracle_answer,
         random_events=ctx.pending_random_events,
         threat_events=threat_events,
@@ -337,7 +351,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         ),
         pacing_type="breather",
         prompt_summary=get_prompt(
-            "history_oracle" if is_oracle else "history_dialog",
+            _history_key(result),
             intent=(brain.player_intent or ctx.player_message)[: eng().truncations.log_medium],
         ),
         agency_clock_events=agency_clock_events,
@@ -459,7 +473,6 @@ def _narrate_action_and_finalize(
             result=roll.result,
             intent=(brain.player_intent or player_message)[: eng().truncations.log_medium],
         ),
-        roll=roll,
         agency_clock_events=action_res.agency_clock_events,
         threat_events=action_res.threat_events,
     )

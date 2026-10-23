@@ -84,7 +84,7 @@ def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monk
         _game(),
         "I ask Mira about the fire.",
         "She shrugs.",
-        None,
+        "dialog",
         False,
         "",
         "",
@@ -94,6 +94,29 @@ def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monk
     user = seen[0].messages[0]["content"]
     assert _p("judge_none_move") in user
     assert _p("judge_none_previous") in user
+    assert _p("judge_result_dialog") in user
+
+
+def test_the_judge_names_a_move_without_a_roll(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from tests.elvira.elvira_bot.ai_helpers import _p
+
+    judge, seen = _judge_with_capture(monkeypatch)
+    judge.judge_turn(
+        {"max_tokens": 200, "extra_body": {}},
+        _game(),
+        "With the map read, the way is clear.",
+        "The lines on the vellum finally make sense.",
+        "unrolled_move",
+        False,
+        "",
+        "quest/reach_a_milestone",
+        "",
+        [],
+    )
+    user = seen[0].messages[0]["content"]
+    assert _p("judge_result_unrolled_move") in user
+    assert _p("judge_result_dialog") not in user
+    assert "Reach a Milestone" in user
 
 
 def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_it_came_across(
@@ -110,7 +133,7 @@ def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_i
         _game(),
         "I ask Mira.",
         "She hesitates.",
-        None,
+        "dialog",
         False,
         "",
         "",

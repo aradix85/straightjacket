@@ -27,6 +27,7 @@ memory_emotions:
     gather_information_partial: cautiously_informed
     gather_information_success: enlightened
     dialog: neutral
+    unrolled_move: neutral
   disposition_suffix:
     hostile: _hostile
     distrustful: _wary
@@ -58,6 +59,7 @@ memory_result_text:
   gather_information_partial: pieced together partial information
   gather_information_success: uncovered what was needed
   dialog: exchanged words
+  unrolled_move: it was done
 memory_retrieval_weights:
   recency: 0.4
   importance: 0.35

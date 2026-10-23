@@ -72,6 +72,9 @@ consequence_templates:
   loyalty_test:
   - The bond is fragile, and they ask {player} to prove loyalty, something {player} has yet to do for them.
   - The bond holds for now, but they want proof of {player}'s loyalty first.
+  milestone:
+  - '{player} has made real headway in the quest: what was done brings the vow a significant step closer.'
+  - 'This is a milestone on {player}''s quest: the vow is a real step closer to being fulfilled.'
   bond_request:
   - The bond is sealed, but they ask something more of {player} first, a request still to be met.
   - They accept the bond on one condition, something {player} has yet to do for them.

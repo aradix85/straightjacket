@@ -59,6 +59,7 @@ class RulesetSettings(RawSections):
     engine_moves: dict[str, EngineMove]
     move_availability: dict[str, MoveAvailabilityRule]
     unoffered_roll_types: list[str]
+    offered_without_roll: list[str]
     boasts: BoastsConfig
     succession: SuccessionConfig
     pay_the_price: PayThePriceConfig
@@ -205,6 +206,7 @@ def parse_ruleset_yaml(data: dict[str, Any]) -> RulesetSettings:
             for key, rule in data["move_availability"].items()
         },
         unoffered_roll_types=list(data["unoffered_roll_types"]),
+        offered_without_roll=list(data["offered_without_roll"]),
         boasts=_build_boasts(dict(data["boasts"])),
         succession=_build_succession(dict(data["succession"])),
         pay_the_price=_build_pay_the_price(dict(data["pay_the_price"])),

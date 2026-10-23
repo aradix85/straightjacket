@@ -20,6 +20,10 @@ ai_text:
       learn something unknown; gaining a tactical edge is secure_an_advantage
     adventure/secure_an_advantage: preparing, positioning, setting up, hiding, or scouting ahead before acting, to gain a
       tactical edge for the next action; learning something new is gather_information
+    quest/reach_a_milestone: significant headway that the character has already made on a vow in <tracks>, such as a
+      critical obstacle overcome, a perilous journey or expedition completed, a complex mystery solved or a meaningful
+      insight gained, a powerful threat or notable foe defeated, vital support earned, or a crucial item or resource
+      acquired; it marks progress on that vow without a roll, and an attempt still under way is another move
   consequence_labels:
     momentum_change: momentum {n:+d}
     track_gain: '{track} +{n}'
@@ -47,6 +51,7 @@ ai_text:
     bond_tested: '{name}: the bond is tested, since the vow "{vow}" made to them was forsaken'
     obstacle: obstacle
     loyalty_test: loyalty_test
+    milestone: milestone
     focus_roll: '{action}, rolled again: {result}'
     focus_lost: '{action} goes badly; its benefit is lost'
     recommit: recommit {track}
@@ -61,7 +66,7 @@ ai_text:
     threat_danger: '  {name} (id:{id}) menace {filled}/{total}'
     threat_vow: ', the vow {vow} is sworn against it'
     no_npcs_nearby: no one nearby
-    no_roll: dialog (no roll)
+    no_roll: '{result} (no roll)'
     npc_appeared_event: '{npc_name} appeared'
     recap_fallback: ({player_name} recalls the recent events...)
     new_chapter_threads_template: 'New chapter. Open threads: {threads}'

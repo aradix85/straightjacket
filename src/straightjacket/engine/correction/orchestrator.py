@@ -11,7 +11,7 @@ from ..gamemaster.config import gm
 from ..gamemaster.facts import facts_of_this_place, overrule_facts_by_hit, settle_facts_by_miss
 from ..gamemaster.npc.activation import activate_npcs_for_prompt
 from ..gamemaster.npc.matching import present_in_narration
-from ..gamemaster.questions import answers
+from ..gamemaster.questions import answers, outcome_of
 from ..logging_util import log
 from ..models import (
     BrainResult,
@@ -19,7 +19,6 @@ from ..models import (
     NarrationEntry,
     NpcData,
     ResolvedFact,
-    RollResult,
     SceneSetup,
     TurnSnapshot,
 )
@@ -53,6 +52,7 @@ def _rewrite_prompt(
             scene_setup=scene_setup,
             activated_npcs=activated_npcs,
             mentioned_npcs=mentioned_npcs,
+            result=last_entry.result,
             oracle_answer=last_entry.oracle_answer,
             random_events=snap.random_events,
             threat_events=snap.threat_events,
@@ -105,7 +105,6 @@ def _update_state_error_logs(game: GameState, narration: str, intent: str) -> No
 def _maybe_queue_director(
     game: GameState,
     analysis: dict[str, Any],
-    roll: RollResult | None,
     narration: str,
     metadata: dict[str, Any],
 ) -> DirectorCall | None:
@@ -113,7 +112,7 @@ def _maybe_queue_director(
         return None
     director_reason = should_call_director(
         game,
-        roll_result=roll.result if roll else "dialog",
+        roll_result=game.narrative.session_log[-1].result,
         chaos_used=False,
         new_npcs_found=bool(metadata["new_npcs"]),
         revelation_landed=False,
@@ -148,7 +147,6 @@ def process_correction(
         log("[Correction] Complete: source=input_misread, turn replayed")
         return narration, burn_offer, director_ctx
 
-    roll = snap.roll
     apply_correction_ops(game, analysis["state_ops"])
     activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, snap.player_input)
     prompt, facts = _rewrite_prompt(game, snap, brain, scene_setup, activated_npcs, mentioned_npcs)
@@ -161,7 +159,7 @@ def process_correction(
         game,
         narration,
         brain,
-        roll,
+        outcome_of(game.narrative.session_log[-1].result),
         present_in_narration(
             game, {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}, brain.target_npc, narration
         ),
@@ -172,7 +170,7 @@ def process_correction(
         game, narration, (brain.player_intent or snap.player_input)[: eng().truncations.log_medium]
     )
 
-    director_ctx = _maybe_queue_director(game, analysis, roll, narration, metadata)
+    director_ctx = _maybe_queue_director(game, analysis, narration, metadata)
 
     log("[Correction] Complete: source=state_error, rewrite done")
     return narration, None, director_ctx

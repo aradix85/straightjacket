@@ -304,7 +304,7 @@ class TestSharedProgressAndLegacyHelper:
             make_progress_track(id="expedition_ruins", name="The ruins", track_type="expedition", rank="dangerous")
         )
         outcome = make_outcome(progress_marks=1)
-        brain = make_brain_result(move="exploration/undertake_an_expedition")
+        brain = make_brain_result(move="exploration/undertake_an_expedition", target_track="expedition_ruins")
         apply_progress_and_legacy(game, outcome, brain, None)
         assert game.progress_tracks[0].ticks == 0
         assert game.progress_tracks[1].ticks == 8

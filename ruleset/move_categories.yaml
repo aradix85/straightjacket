@@ -57,6 +57,7 @@ move_categories:
   - exploration/set_a_course
   - exploration/undertake_an_expedition
   - quest/fulfill_your_vow
+  - quest/reach_a_milestone
   - quest/swear_an_iron_vow
   - scene_challenge/face_danger
   - scene_challenge/finish_the_scene

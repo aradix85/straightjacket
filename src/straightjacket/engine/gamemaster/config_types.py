@@ -217,6 +217,7 @@ class MemoryTemplates:
 class SceneContextTemplates:
     template: str
     dialog: str
+    unrolled_move: str
 
 
 @dataclass

@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 
-from .gamemaster.moves import asks_the_oracle
 from .models import (
     BrainResult,
     ClockFillResult,
@@ -28,6 +27,7 @@ from .prompt_shared import (
     _pacing_block,
     _player_words_tag,
     _random_events_block,
+    _resolve_stance_category,
     _revelation_tag,
     _scene_enrichment,
     _scene_header,
@@ -46,6 +46,7 @@ def build_dialog_prompt(
     scene_setup: SceneSetup,
     activated_npcs: Sequence[NpcData],
     mentioned_npcs: Sequence[NpcData],
+    result: str,
     oracle_answer: str,
     random_events: Sequence[RandomEvent],
     threat_events: Sequence[ThreatEvent],
@@ -56,7 +57,8 @@ def build_dialog_prompt(
     revelation: Revelation | None,
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
-    move_cat = "social"
+    is_move = result == "unrolled_move"
+    move_cat = _resolve_stance_category(brain.move) if is_move else "social"
     npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=move_cat)
     npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=move_cat)
     agency = _npc_agency_block(npc_agency)
@@ -68,9 +70,9 @@ def build_dialog_prompt(
     director = _director_block(game)
     oracle_tag = "\n" + get_prompt("block_oracle_answer", answer=_xe(oracle_answer)) if oracle_answer else ""
 
-    is_oracle = asks_the_oracle(brain.move)
-    scene_type = "oracle" if is_oracle else "dialog"
-    if not is_oracle:
+    if is_move:
+        task = get_prompt("task_unrolled_move")
+    elif result == "dialog":
         task = get_prompt("task_dialog")
     elif oracle_answer:
         task = get_prompt("task_oracle")
@@ -79,7 +81,7 @@ def build_dialog_prompt(
 
     return get_prompt(
         "block_scene_dialog",
-        scene_type=scene_type,
+        scene_type=result,
         n=str(game.narrative.scene_count),
         header=_scene_header(game),
         intent=_xe(brain.player_intent),
@@ -103,7 +105,7 @@ def build_dialog_prompt(
         pacing=pacing,
         events=events_block,
         director=director,
-        direction=narrative_direction_block(game, "dialog"),
+        direction=narrative_direction_block(game, result if is_move else "dialog"),
         story=story_context_block(game),
         recent=recent_events_block(game),
         task=task,

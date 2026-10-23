@@ -34,6 +34,10 @@ def _slug(name: str) -> str:
     return re.sub(r"\W+", "_", name.lower()).strip("_")
 
 
+def _started_track_id(track_type: str, name: str) -> str:
+    return f"{track_type}_{_slug(name)}"
+
+
 def start_track(game: GameState, brain: BrainResult, result: str) -> None:
     track_type = rules().get_raw("track_creating_moves").get(brain.move)
     if not track_type:
@@ -56,7 +60,7 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
             return
         base_id = connection_track_id(brain.target_npc)
     else:
-        base_id = f"{track_type}_{_slug(brain.track_name)}"
+        base_id = _started_track_id(track_type, brain.track_name)
     if any(t.id == base_id and t.status == "active" for t in game.progress_tracks):
         log(f"[Track] {track_type} '{brain.track_name}' is already active; not created again")
         return
@@ -162,7 +166,12 @@ def apply_progress_and_legacy(
 ) -> None:
     if outcome.progress_marks > 0:
         track_category = rules().get_raw("progress_mark_categories")[brain.move]
-        track = find_progress_track(game, track_category, brain.target_track)
+        started = rules().get_raw("track_creating_moves").get(brain.move)
+        target = brain.target_track
+        if started and target is None:
+            assert brain.track_name
+            target = _started_track_id(started, brain.track_name)
+        track = find_progress_track(game, track_category, target)
         for _ in range(outcome.progress_marks):
             added = mark_progress(track)
             if added:

@@ -117,6 +117,9 @@ move_outcomes:
     weak_hit:
     - legacy_reward_lower quests
     miss: []
+  quest/reach_a_milestone:
+    no_roll:
+    - milestone
   connection/make_a_connection:
     strong_hit:
     - disposition_shift

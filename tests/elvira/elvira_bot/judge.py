@@ -10,6 +10,7 @@ from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.moves import get_moves, outcome_text
 
 from .ai_helpers import ELVIRA_ROLE, _p, bot_model, bot_provider
+from .coverage import unrolled_kind
 
 CRITERIA = ("result_integrity", "prompt_elements", "npc_voice", "player_agency", "restraint", "prose")
 
@@ -39,14 +40,15 @@ def consequences_in(narrator_prompt: str) -> list[str]:
     return [html.unescape(found.strip()) for found in _CONSEQUENCE.findall(narrator_prompt)]
 
 
-def _move_outcome(game: GameState, move_id: str, result: str | None) -> tuple[str, str]:
-    if not move_id or result is None:
+def _move_outcome(game: GameState, move_id: str, result: str) -> tuple[str, str]:
+    kind = unrolled_kind(result)
+    if kind == "dialog":
         return _p("judge_none_move"), _p("judge_none_move")
     move = get_moves(game.setting_id).get(move_id)
-    text = outcome_text(game.setting_id, move_id, result)
-    if move is None or not text:
+    text = outcome_text(game.setting_id, move_id, result) if kind is None else ""
+    if move is None:
         return move_id, _p("judge_none_move")
-    return move.name, text
+    return move.name, text or _p("judge_none_move")
 
 
 def judge_turn(
@@ -54,7 +56,7 @@ def judge_turn(
     game: GameState,
     action: str,
     narration: str,
-    result: str | None,
+    result: str,
     match: bool,
     previous: str,
     move_id: str,
@@ -67,7 +69,11 @@ def judge_turn(
         for n in game.npcs
         if any(m.scene == scene and m.type == "observation" for m in n.memory)
     ) or _p("bot_active_none_label")
-    outcome = _p("judge_result_dialog") if result is None else result + (_p("judge_match_suffix") if match else "")
+    kind = unrolled_kind(result)
+    if kind is None:
+        outcome = result + (_p("judge_match_suffix") if match else "")
+    else:
+        outcome = _p("judge_result_unrolled_move") if kind == "move_without_roll" else _p("judge_result_dialog")
     move_name, move_text = _move_outcome(game, move_id, result)
     user = _p(
         "judge_turn",

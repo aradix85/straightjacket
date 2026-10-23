@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from straightjacket.engine.gamemaster.clocks import open_complications
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.bond import bonded_tracks
 
@@ -12,6 +13,7 @@ TARGETS = (
     "result:STRONG_HIT",
     "match",
     "dialog",
+    "move_without_roll",
     "combat",
     "npc_introduced",
     "npc_died",
@@ -40,6 +42,8 @@ TARGETS = (
     "bond_tested",
     "threat_advanced",
     "vow_forsaken",
+    "milestone_reached",
+    "vow_fulfilled",
 )
 
 EVENT_COUNTS = (
@@ -51,6 +55,8 @@ EVENT_COUNTS = (
     ("bond_tested", "[Bond]", "tests the bond"),
     ("threat_advanced", "[Threat] Menace advance", ""),
     ("vow_forsaken", "[Track]", "(vow) → failed"),
+    ("milestone_reached", "[Move]", "quest/reach_a_milestone"),
+    ("vow_fulfilled", "[Track]", "(vow) → completed"),
 )
 
 STEERING = (
@@ -58,6 +64,12 @@ STEERING = (
     ("combat", "bot_turn_directive_attack"),
     ("location_change", "bot_turn_directive_travel"),
 )
+
+
+def unrolled_kind(result: str) -> str | None:
+    if result not in gm().outcomes.unrolled:
+        return None
+    return "move_without_roll" if result == "unrolled_move" else "dialog"
 
 
 @dataclass
@@ -79,9 +91,10 @@ class Coverage:
         if times > 0:
             self.counts[target] = self.counts.get(target, 0) + times
 
-    def observe_turn(self, before: WorldView, after: WorldView, result: str | None, match: bool, move: str) -> None:
-        if result is None:
-            self.hit("dialog")
+    def observe_turn(self, before: WorldView, after: WorldView, result: str, match: bool, move: str) -> None:
+        kind = unrolled_kind(result)
+        if kind is not None:
+            self.hit(kind)
         else:
             self.hit(f"result:{result}")
             if match:

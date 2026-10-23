@@ -42,6 +42,7 @@ _PLAIN_EFFECTS = frozenset(
         "clear_bond",
         "obstacle",
         "loyalty_test",
+        "milestone",
     }
 )
 _EFFECT_RE = re.compile(r"^(\w+)\s+([+-]?\d+)$")
@@ -202,6 +203,11 @@ def _apply_mark_progress_effect(
 ) -> None:
     result.progress_marks += effect.value
     result.consequences.append(consequence("mark_progress", n=effect.value))
+
+
+def _apply_milestone_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    result.progress_marks += 1
+    result.consequences.append(consequence("milestone"))
 
 
 def _apply_pay_the_price_effect(
@@ -371,6 +377,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "bond_request": _apply_told_effect,
     "obstacle": _apply_told_effect,
     "loyalty_test": _apply_told_effect,
+    "milestone": _apply_milestone_effect,
     "seal_bond": _apply_seal_bond_effect,
     "clear_bond": _apply_clear_bond_effect,
 }

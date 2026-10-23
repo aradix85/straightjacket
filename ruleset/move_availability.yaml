@@ -1,4 +1,5 @@
 unoffered_roll_types: [no_roll, special_track]
+offered_without_roll: [quest/reach_a_milestone]
 
 move_availability:
   adventure/face_danger:
@@ -87,6 +88,9 @@ move_availability:
   quest/swear_an_iron_vow:
     available: []
   quest/fulfill_your_vow:
+    available:
+    - active_track: vow
+  quest/reach_a_milestone:
     available:
     - active_track: vow
   recover/heal:

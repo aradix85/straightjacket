@@ -186,12 +186,16 @@ def _check_target_npc(game: GameState, result: BrainResult) -> None:
 
 
 def _check_target_track(game: GameState, result: BrainResult) -> None:
-    if result.target_track is None:
-        return
     category = track_category_of_move(game, result.move)
     if category is None:
         return
     wanted = rules().get_raw("track_types_by_category")[category]
+    if result.target_track is None:
+        if result.dialog_only or result.move in rules().get_raw("track_creating_moves"):
+            return
+        if len([t for t in active_tracks(game) if t.track_type == wanted]) > 1:
+            _refuse(f"move {result.move!r} works on one of several active {wanted} tracks, but names no target_track")
+        return
     track = next(t for t in game.progress_tracks if t.id == result.target_track)
     if track.track_type != wanted:
         _refuse(

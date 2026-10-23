@@ -248,6 +248,7 @@
 "history_action": '{label} ({result}): {intent}'
 "history_dialog": 'Dialog: {intent}'
 "history_oracle": 'Oracle: {intent}'
+"history_unrolled_move": 'Move without a roll: {intent}'
 "history_corrected": '[corrected] {intent}'
 "history_opening": 'Opening scene: {player} in {location}'
 "history_chapter_opening": 'Chapter {n} opening: {player} in {location}'

@@ -62,7 +62,7 @@ Save (web/handlers.py, persistence.py)
 Director (game/director_runner.py) → after the turn is returned, when the scene end called for it: NPC reflections; saved again
 ```
 
-Dialog turns skip the roll and the move's consequences, but resolve pending clock fills, NPC agency, a bond test a forsaken vow asks of the NPC they are aimed at, pending threat events, the dying clock, a full menace track, their follow-up moves, the crisis, and a revelation. A `##` correction of a misread input and a momentum burn play parts of this pipeline again from a snapshot, and a correction of the state edits it and narrates again (`docs/mechanics.md`, Shared outcome resolution).
+Dialog turns and moves without a roll, such as Reach a Milestone, skip the roll and a rolled move's consequences, a move without a roll applying its own effects instead (`docs/mechanics.md`, Moves without a roll), but resolve pending clock fills, NPC agency, a bond test a forsaken vow asks of the NPC they are aimed at, pending threat events, the dying clock, a full menace track, their follow-up moves, the crisis, and a revelation. A `##` correction of a misread input and a momentum burn play parts of this pipeline again from a snapshot, and a correction of the state edits it and narrates again (`docs/mechanics.md`, Shared outcome resolution).
 
 ## Code map
 

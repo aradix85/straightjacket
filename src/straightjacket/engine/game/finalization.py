@@ -82,13 +82,12 @@ def apply_post_narration(
     game: GameState,
     narration: str,
     brain: BrainResult,
-    roll: RollResult | None,
+    outcome: str,
     scene_present_ids: set[str],
     consequences: Sequence[Consequence],
 ) -> dict[str, Any]:
     cons_list = labels_of(list(consequences))
     present_names = [n.name for n in game.npcs if n.id in scene_present_ids]
-    outcome = answers().outcome(roll.result) if roll is not None else None
     game.world.current_scene_context = generate_scene_context(game, brain, outcome, present_names)
 
     apply_engine_memories(

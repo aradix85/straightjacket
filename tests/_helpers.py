@@ -363,6 +363,7 @@ def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("scene_setup", make_scene_setup())
     kwargs.setdefault("activated_npcs", [])
     kwargs.setdefault("mentioned_npcs", [])
+    kwargs.setdefault("result", "dialog")
     kwargs.setdefault("oracle_answer", "")
     kwargs.setdefault("random_events", [])
     kwargs.setdefault("threat_events", [])

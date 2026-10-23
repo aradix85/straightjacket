@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from tests._helpers import make_brain_result, make_game_state
 
 
@@ -74,3 +76,21 @@ def test_a_vow_sworn_again_after_completion_gets_unique_ids(load_engine: None) -
     ]
     thread_ids = [t.id for t in game.narrative.threads]
     assert len(thread_ids) == len(set(thread_ids))
+
+
+def test_a_second_journey_named_by_its_own_name_takes_the_progress(load_engine: None, monkeypatch: Any) -> None:
+    from straightjacket.engine.game import process_turn
+    from straightjacket.engine.ruleset.progress import filled_boxes
+    from tests._creation import TurnProvider, brain_answer, force_result, library_game
+
+    game = library_game()
+    force_result(monkeypatch, "STRONG_HIT")
+    for name in ("To the ridge", "To the coast"):
+        journey = brain_answer(
+            move="adventure/undertake_a_journey", stat="wits", location_change=None, track_name=name, target_track=None
+        )
+        process_turn(TurnProvider(journey), game, f"I set out: {name}", stream=None)
+
+    journeys = {t.name: t for t in game.progress_tracks if t.track_type == "journey"}
+    assert set(journeys) == {"To the ridge", "To the coast"}
+    assert filled_boxes(journeys["To the ridge"]) == filled_boxes(journeys["To the coast"]) > 0

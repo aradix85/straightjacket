@@ -160,6 +160,20 @@ def test_a_dialog_turn_lands_a_ready_revelation(load_engine: None, monkeypatch: 
     assert _revealed(game) == ["r1"]
 
 
+def test_a_move_without_a_roll_lands_a_ready_revelation(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    game = _game(_revelation("r1", 1, ""), scene=7)
+    milestone = brain_answer(
+        move="quest/reach_a_milestone", stat="none", location_change=None, target_track="vow_background"
+    )
+    provider = TurnProvider(milestone)
+
+    _play(monkeypatch, game, provider, "STRONG_HIT")
+
+    assert game.narrative.session_log[-1].result == "unrolled_move"
+    assert _tag("r1") in provider.prompts[-1]
+    assert _revealed(game) == ["r1"]
+
+
 def test_ready_revelations_land_one_turn_at_a_time_the_oldest_first(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:

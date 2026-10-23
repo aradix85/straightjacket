@@ -18,7 +18,7 @@ def available_moves(game: GameState) -> dict[str, Move]:
     return {
         key: move
         for key, move in get_moves(game.setting_id).items()
-        if move.roll_type not in rules().unoffered_roll_types
+        if (move.roll_type not in rules().unoffered_roll_types or key in rules().offered_without_roll)
         and _is_move_available(rules().move_availability[key], track_states, combat_pos)
     }
 

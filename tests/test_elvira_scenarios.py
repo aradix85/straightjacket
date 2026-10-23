@@ -135,7 +135,7 @@ def test_the_coverage_counts_what_the_engine_logs_for_bonds_threats_and_forsaken
     coverage = Coverage()
     before = world_view(game)
     seal_bond(game, game.npcs[0])
-    coverage.observe_turn(before, world_view(game), None, False, "dialog")
+    coverage.observe_turn(before, world_view(game), "dialog", False, "dialog")
     prepare_scenario(
         game,
         {
@@ -158,6 +158,56 @@ def test_the_coverage_counts_what_the_engine_logs_for_bonds_threats_and_forsaken
         logger.removeHandler(events)
     coverage.observe_events(events.lines)
     assert {"bond_sealed", "threat_advanced", "vow_forsaken", "bond_tested"} <= set(coverage.exercised())
+
+
+def test_the_coverage_counts_a_vow_played_to_its_fulfilment(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    import logging
+
+    from straightjacket.engine.game import process_turn
+    from straightjacket.engine.ruleset import make_move, rolls, tracks
+    from straightjacket.engine.ruleset.config import rules
+    from tests._creation import TurnProvider, brain_answer, force_result, library_game
+    from tests._helpers import emit_engine_log
+    from tests.elvira.elvira_bot.coverage import Coverage, world_view
+    from tests.elvira.elvira_bot.runner import _EventCapture, load_config
+    from tests.elvira.elvira_bot.scenarios import prepare_scenario
+
+    game = library_game()
+    spec = load_config(ELVIRA_CONFIG)["scenarios"]["vow_fulfilment"]
+    prepare_scenario(game, {"expect": spec["expect"], "vow_boxes": spec["vow_boxes"]})
+    vow = next(t for t in game.progress_tracks if t.id == "vow_background")
+    assert vow.ticks == spec["vow_boxes"] * rules().progress.ticks_per_box
+
+    force_result(monkeypatch, "STRONG_HIT")
+    monkeypatch.setattr(rolls, "_roll_challenge_dice", lambda: (1, 2))
+    emit_engine_log(monkeypatch, make_move, tracks)
+    events = _EventCapture(load_config(ELVIRA_CONFIG)["logging"]["event_prefixes"])
+    logger = logging.getLogger("rpg_engine")
+    coverage = Coverage()
+    milestone = brain_answer(move="quest/reach_a_milestone", stat="none", location_change=None, target_track=vow.id)
+    fulfil = brain_answer(move="quest/fulfill_your_vow", stat="none", location_change=None, target_track=vow.id)
+    logger.addHandler(events)
+    try:
+        for brain in (milestone, fulfil):
+            before = world_view(game)
+            process_turn(TurnProvider(brain), game, "The archive is whole again", stream=None)
+            coverage.observe_turn(before, world_view(game), game.narrative.session_log[-1].result, False, "")
+    finally:
+        logger.removeHandler(events)
+    coverage.observe_events(events.lines)
+    assert {"move_without_roll", "milestone_reached", "vow_fulfilled", "result:STRONG_HIT"} <= set(coverage.exercised())
+    assert "dialog" not in coverage.exercised()
+    coverage.observe_turn(world_view(game), world_view(game), "oracle", False, "")
+    assert "dialog" in coverage.exercised()
+
+
+def test_the_compact_record_of_a_turn_names_what_the_engine_logged(load_engine: None) -> None:
+    from tests.elvira.elvira_bot.models import EngineLogRecord
+
+    record = TurnRecord(engine_log=EngineLogRecord(move="quest/reach_a_milestone", result="unrolled_move"))
+    compact = record.to_compact_dict()
+    assert compact["result"] == "unrolled_move"
+    assert compact["move"] == "quest/reach_a_milestone"
 
 
 def test_every_configured_scenario_fixes_only_results_the_ruleset_rolls(load_engine: None) -> None:

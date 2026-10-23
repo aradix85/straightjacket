@@ -74,6 +74,7 @@ logging:
   - "[Threat]"
   - "[Track]"
   - "[Bond]"
+  - "[Move]"
 
 scenarios:
   near_death:
@@ -136,6 +137,12 @@ scenarios:
     bonded: true
     vow_to_companion: true
     threat_on_vow: {origin: pc_negative, menace: full}
+  vow_fulfilment:
+    turns: 6
+    directive: "bot_turn_directive_vow_end"
+    expect: ["milestone_reached", "vow_fulfilled"]
+    vow_boxes: 7
+    results: [STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT, STRONG_HIT]
   threat_advance:
     setting: classic
     turns: 6

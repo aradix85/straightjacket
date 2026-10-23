@@ -5,6 +5,7 @@ from ..director import should_call_director
 from ..gamemaster.chaos import update_chaos_factor
 from ..gamemaster.clocks import tick_autonomous_clocks
 from ..gamemaster.config import gm
+from ..gamemaster.moves import is_dialog_branch
 from ..gamemaster.npc.matching import find_npc, present_in_narration
 from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.questions import outcome_of
@@ -21,7 +22,6 @@ from ..models import (
     GameState,
     NarrationEntry,
     RandomEvent,
-    RollResult,
     SceneLogEntry,
     ThreatEvent,
 )
@@ -54,11 +54,10 @@ def _update_characters_list(game: GameState, metadata: dict[str, Any], scene_pre
 def invoked_threads(
     game: GameState,
     brain: BrainResult,
-    roll: RollResult | None,
     events: Sequence[RandomEvent],
     threat_events: Sequence[ThreatEvent],
 ) -> list[str]:
-    vow = vow_acted_on(game, brain.move, brain.target_track) if roll is not None else None
+    vow = None if is_dialog_branch(brain) else vow_acted_on(game, brain.move, brain.target_track)
     vow_ids: set[str] = {vow.id} if vow is not None else set()
     threats = {t.id: t for t in game.threats}
     threat_ids = {e.threat_id for e in threat_events} | {e.target_id for e in events if e.target_id in threats}
@@ -77,7 +76,6 @@ def finalize_scene(
     log_entry: SceneLogEntry,
     pacing_type: str,
     prompt_summary: str,
-    roll: RollResult | None = None,
     *,
     agency_clock_events: Sequence[ClockEvent],
     threat_events: Sequence[ThreatEvent],
@@ -91,7 +89,7 @@ def finalize_scene(
         game,
         narration,
         brain,
-        roll,
+        outcome_of(log_entry.result),
         scene_present_ids,
         consequences=log_entry.consequences,
     )
@@ -127,7 +125,7 @@ def finalize_scene(
 
     _update_characters_list(game, metadata, scene_present_ids)
     scene_events = [*ctx.pending_random_events, *filter(None, [ctx.scene_setup.interrupt_event])]
-    for thread_id in invoked_threads(game, brain, roll, scene_events, threat_events):
+    for thread_id in invoked_threads(game, brain, scene_events, threat_events):
         add_thread_weight(game, thread_id)
     consolidate_lists(game)
 

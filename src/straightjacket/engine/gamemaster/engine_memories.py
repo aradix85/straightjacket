@@ -5,28 +5,23 @@ from collections.abc import Sequence
 from ..engine_loader import eng
 from ..models import BrainResult, GameState, MemoryEntry, NpcData
 from .config import gm
-from .moves import is_dialog_memory
+from .moves import is_dialog_branch
 from .questions import answers
+
+
+def _memory_key(move: str, outcome: str) -> str:
+    return outcome if outcome in gm().outcomes.unrolled else f"{answers().action_kind(move)}_{outcome}"
 
 
 def derive_memory_emotion(move: str, outcome: str, disposition: str) -> str:
     memory_emotions = gm().memory_emotions
-    base_map = memory_emotions.base
-    suffix_map = memory_emotions.disposition_suffix
-
-    kind = answers().action_kind(move)
-    is_dialog = move == "dialog" or outcome == "dialog"
-    key = "dialog" if is_dialog else f"{kind}_{outcome}"
-
-    base = base_map[key]
-    suffix = suffix_map[disposition]
-    return base + suffix
+    return memory_emotions.base[_memory_key(move, outcome)] + memory_emotions.disposition_suffix[disposition]
 
 
 def generate_engine_memories(
     game: GameState,
     brain: BrainResult,
-    outcome: str | None,
+    outcome: str,
     activated_npc_ids: set[str],
     consequences: Sequence[str],
 ) -> list[tuple[NpcData, MemoryEntry]]:
@@ -37,13 +32,11 @@ def generate_engine_memories(
     scene = game.narrative.scene_count
 
     move = brain.move
-    is_dialog = is_dialog_memory(brain, roll_present=outcome is not None)
-    told_outcome = outcome or "dialog"
-    kind = answers().action_kind(move)
+    is_dialog = is_dialog_branch(brain)
+    told_outcome = "dialog" if is_dialog else outcome
     intent = brain.player_intent
 
-    result_key = "dialog" if is_dialog else f"{kind}_{told_outcome}"
-    result_text = result_text_map[result_key]
+    result_text = result_text_map[_memory_key(move, told_outcome)]
     move_verb = answers().action_phrase(move)
 
     _pd = eng().prompt_display

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from straightjacket.engine.gamemaster.engine_memories import generate_engine_memories
-from straightjacket.engine.gamemaster.moves import asks_the_oracle, is_dialog_branch, is_dialog_memory
+from straightjacket.engine.gamemaster.moves import asks_the_oracle, is_dialog_branch
 from straightjacket.engine.ruleset.answers import action_kind
 from straightjacket.engine.ruleset.config import rules
 from tests._helpers import make_brain_result
@@ -36,39 +38,26 @@ class TestIsDialogBranch:
         assert asks_the_oracle("dialog") is False
 
 
-class TestIsDialogMemory:
-    def test_dialog_branch_implies_dialog_memory(self) -> None:
-        brain = make_brain_result(move="ask_the_oracle")
-        assert is_dialog_memory(brain, roll_present=False) is True
-
-    def test_no_roll_means_dialog_memory_even_for_action_move(self) -> None:
-        brain = make_brain_result(move="adventure/face_danger", dialog_only=False)
-        assert is_dialog_memory(brain, roll_present=False) is True
-
-    def test_action_move_with_roll_is_not_dialog_memory(self) -> None:
-        brain = make_brain_result(move="combat/clash", dialog_only=False)
-        assert is_dialog_memory(brain, roll_present=True) is False
-
-
-class TestEngineMemoriesNoKeyError:
-    def test_ask_the_oracle_with_none_roll(self) -> None:
+class TestEngineMemoriesWithoutRoll:
+    @staticmethod
+    def _memory(brain: Any, outcome: str) -> Any:
         game = make_test_game()
-        brain = make_brain_result(move="ask_the_oracle", target_npc="npc_1")
-        memories = generate_engine_memories(game, brain, outcome=None, activated_npc_ids={"npc_1"}, consequences=())
+        memories = generate_engine_memories(game, brain, outcome=outcome, activated_npc_ids={"npc_1"}, consequences=())
         assert len(memories) == 1
-        assert memories[0][1].event
+        return memories[0][1]
 
-    def test_dialog_only_with_action_move_and_none_roll(self) -> None:
-        game = make_test_game()
-        brain = make_brain_result(move="combat/clash", dialog_only=True, target_npc="npc_1")
-        memories = generate_engine_memories(game, brain, outcome=None, activated_npc_ids={"npc_1"}, consequences=())
-        assert len(memories) == 1
+    def test_ask_the_oracle_is_remembered_as_a_dialog(self) -> None:
+        dialog = self._memory(make_brain_result(move="dialog", target_npc="npc_1"), "dialog")
+        oracle = self._memory(make_brain_result(move="ask_the_oracle", target_npc="npc_1"), "oracle")
+        assert oracle == dialog
 
-    def test_world_shaping_with_none_roll(self) -> None:
-        game = make_test_game()
-        brain = make_brain_result(move="world_shaping", dialog_only=True)
-        memories = generate_engine_memories(game, brain, outcome=None, activated_npc_ids={"npc_1"}, consequences=())
-        assert len(memories) == 1
+    def test_dialog_only_with_action_move_is_remembered_as_a_dialog(self) -> None:
+        dialog = self._memory(make_brain_result(move="dialog", target_npc="npc_1"), "dialog")
+        clash = self._memory(make_brain_result(move="combat/clash", dialog_only=True, target_npc="npc_1"), "dialog")
+        assert clash == dialog
+
+    def test_world_shaping_as_dialog(self) -> None:
+        self._memory(make_brain_result(move="world_shaping", dialog_only=True), "dialog")
 
 
 class TestMoveCategoriesCoverage:

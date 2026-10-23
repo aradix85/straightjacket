@@ -1,23 +1,9 @@
 from typing import Any
 
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import RandomEvent, RollResult, ThreatEvent
+from straightjacket.engine.models import RandomEvent, ThreatEvent
 from straightjacket.engine.ruleset.progress import new_track
 from tests._helpers import make_brain_result, make_game_state, make_random_event, make_thread, make_threat
-
-
-def _roll(move: str) -> RollResult:
-    return RollResult(
-        d1=0,
-        c1=4,
-        c2=9,
-        stat_name="",
-        stat_value=0,
-        action_score=3,
-        result="MISS",
-        move=move,
-        match=False,
-    )
 
 
 def _sworn_game() -> Any:
@@ -47,30 +33,35 @@ def _event(target_id: str) -> RandomEvent:
     )
 
 
-def _invoked(game: Any, brain: Any, roll: Any, events: list[Any], threat_events: list[Any]) -> list[str]:
+def _invoked(game: Any, brain: Any, events: list[Any], threat_events: list[Any]) -> list[str]:
     from straightjacket.engine.game.scene_finalization import invoked_threads
 
-    return invoked_threads(game, brain, roll, events, threat_events)
+    return invoked_threads(game, brain, events, threat_events)
 
 
 def test_a_roll_on_a_vow_invokes_the_thread_of_that_vow(load_engine: None) -> None:
     brain = make_brain_result(move="quest/fulfill_your_vow", target_track="vow_kira")
-    assert _invoked(_sworn_game(), brain, _roll(brain.move), [], []) == ["thread_kira"]
+    assert _invoked(_sworn_game(), brain, [], []) == ["thread_kira"]
 
 
 def test_a_move_that_touches_no_vow_invokes_no_thread(load_engine: None) -> None:
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
-    assert _invoked(_sworn_game(), brain, _roll(brain.move), [], []) == []
+    assert _invoked(_sworn_game(), brain, [], []) == []
 
 
-def test_a_turn_without_a_roll_invokes_no_thread_by_its_move(load_engine: None) -> None:
+def test_a_dialog_turn_invokes_no_thread_by_its_move(load_engine: None) -> None:
     brain = make_brain_result(move="quest/fulfill_your_vow", target_track="vow_kira", dialog_only=True)
-    assert _invoked(_sworn_game(), brain, None, [], []) == []
+    assert _invoked(_sworn_game(), brain, [], []) == []
+
+
+def test_a_milestone_invokes_the_thread_of_its_vow(load_engine: None) -> None:
+    brain = make_brain_result(move="quest/reach_a_milestone", stat="none", target_track="vow_bell")
+    assert _invoked(_sworn_game(), brain, [], []) == ["thread_bell"]
 
 
 def test_a_random_event_about_a_thread_invokes_it(load_engine: None) -> None:
     brain = make_brain_result(move="dialog")
-    assert _invoked(_sworn_game(), brain, None, [_event("thread_cult")], []) == ["thread_cult"]
+    assert _invoked(_sworn_game(), brain, [_event("thread_cult")], []) == ["thread_cult"]
 
 
 def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_engine: None) -> None:
@@ -82,8 +73,8 @@ def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_
         source="miss",
         development="",
     )
-    assert _invoked(_sworn_game(), brain, _roll(brain.move), [], [advanced]) == ["thread_bell"]
-    assert _invoked(_sworn_game(), brain, None, [_event("threat_tide")], []) == ["thread_bell"]
+    assert _invoked(_sworn_game(), brain, [], [advanced]) == ["thread_bell"]
+    assert _invoked(_sworn_game(), brain, [_event("threat_tide")], []) == ["thread_bell"]
 
 
 def test_thread_weight_stops_at_the_list_maximum(load_engine: None) -> None:
