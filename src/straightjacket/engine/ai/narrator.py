@@ -77,7 +77,7 @@ def call_opening_setup(provider: AIProvider, narration: str, game: GameState) ->
 
     prompt = get_prompt(
         "opening_setup_request",
-        narration=narration,
+        narration=_xe(narration),
         player_name=_xe(game.player_name),
         genre=_xa(game.setting_genre),
         tone=_xa(game.setting_tone),
@@ -142,7 +142,7 @@ def call_narrator_metadata(
     mechanical_ctx = "\n" + get_prompt(
         "metadata_engine_context",
         context=" | ".join(parts),
-        consequences=get_prompt("metadata_context_consequences", consequences=", ".join(consequences))
+        consequences=get_prompt("metadata_context_consequences", consequences=_xe(", ".join(consequences)))
         if consequences
         else "",
     )
@@ -155,7 +155,7 @@ def call_narrator_metadata(
 
     prompt = get_prompt(
         "narrator_metadata_request",
-        narration=narration,
+        narration=_xe(narration),
         player_name=_xe(game.player_name),
         known_npcs="\n".join(npc_refs) if npc_refs else _defaults["no_npcs"],
         location=_xe(game.world.current_location or _defaults["unknown_location"]),

@@ -237,20 +237,18 @@ def test_handle_create_player_invalid_name_is_reported_and_creates_nothing(
     assert list(tmp_path.iterdir()) == []
 
 
-def test_handle_save_invalid_name_keeps_the_previous_save_name(
-    load_engine: None, session: Session, fake_ws: _FakeWS, monkeypatch, tmp_path
+@pytest.mark.parametrize("name", ["NUL", "   ", ""])
+def test_a_save_under_an_unusable_name_writes_nothing(
+    session: Session, fake_ws: _FakeWS, users: Path, name: str
 ) -> None:
     from straightjacket.i18n import t
     from straightjacket.web.handlers import handle_save
 
-    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
-    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.player = "Alice"
-    session.save_name = "autosave"
-    _run(handle_save(session, fake_ws, {"name": "NUL"}))
+    _run(handle_save(session, fake_ws, {"name": name}))
     assert fake_ws.sent == [{"type": "error", "text": t("error.invalid_name")}]
-    assert session.save_name == "autosave"
+    assert list(users.rglob("*.json")) == []
 
 
 def test_handle_load_no_player_silent(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:
@@ -428,3 +426,81 @@ def test_handle_list_saves_no_player_silent(load_engine: None, session: Session,
     session.player = ""
     _run(handle_list_saves(session, fake_ws, {}))
     assert fake_ws.sent == []
+
+
+def _play_a_turn(session: Session, ws: _FakeWS, monkeypatch: pytest.MonkeyPatch, text: str) -> None:
+    from straightjacket.web import handlers
+    from tests._creation import TurnProvider, brain_answer, force_result
+
+    force_result(monkeypatch, "STRONG_HIT")
+    monkeypatch.setattr(handlers, "get_provider", lambda: TurnProvider(brain_answer(location_change=None)))
+    _run(handlers.handle_player_input(session, ws, {"text": text}))
+    assert ws.sent[-1] == {"type": "turn_complete"}
+
+
+def test_selecting_the_player_after_a_save_as_resumes_the_game_where_it_was_left(
+    session: Session, fake_ws: _FakeWS, users: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.persistence import load_game
+    from straightjacket.web.handlers import handle_save, handle_select_player
+    from tests._creation import library_game
+
+    session.player = "Kael"
+    session.take_game(library_game(), [])
+    _run(handle_save(session, fake_ws, {"name": "Before the vault"}))
+    _play_a_turn(session, fake_ws, monkeypatch, "I slip into the vault")
+    assert session.game is not None
+    played = session.game.to_dict()
+
+    _run(handle_select_player(session, fake_ws, {"name": "Kael"}))
+
+    named, _messages = load_game("Kael", "Before the vault")
+    assert named is not None
+    assert (named.narrative.scene_count, played["narrative"]["scene_count"]) == (1, 2)
+    assert session.game.to_dict() == played
+
+
+def test_play_after_loading_a_save_goes_to_the_autosave_and_leaves_that_save_as_it_was(
+    session: Session, fake_ws: _FakeWS, users: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.persistence import load_game
+    from straightjacket.web.handlers import handle_load, handle_save
+    from tests._creation import library_game
+
+    session.player = "Kael"
+    session.take_game(library_game(), [])
+    _run(handle_save(session, fake_ws, {"name": "Checkpoint"}))
+    _play_a_turn(session, fake_ws, monkeypatch, "I slip into the vault")
+    _run(handle_load(session, fake_ws, {"name": "Checkpoint"}))
+    _play_a_turn(session, fake_ws, monkeypatch, "I climb the shelves instead")
+
+    named, _messages = load_game("Kael", "Checkpoint")
+    resumed, messages = load_game("Kael", eng().persistence.default_save_name)
+    assert named is not None
+    assert resumed is not None
+    assert named.narrative.scene_count == 1
+    assert resumed.to_dict() == session.game.to_dict()
+    assert [m["content"] for m in messages if m["role"] == "user"] == ["I climb the shelves instead"]
+
+
+def test_a_correction_with_no_turn_to_correct_is_refused_outside_the_story(
+    session: Session, fake_ws: _FakeWS, users: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.i18n import t
+    from straightjacket.web import handlers
+    from tests._creation import TurnProvider, library_game
+
+    provider = TurnProvider()
+    monkeypatch.setattr(handlers, "get_provider", lambda: provider)
+    session.player = "Kael"
+    opening = [{"role": "assistant", "content": "The opening."}]
+    session.take_game(library_game(), list(opening))
+    assert session.game is not None
+    before = session.game.to_dict()
+
+    _run(handlers.handle_correction(session, fake_ws, {"text": "I meant the other door"}))
+
+    assert fake_ws.sent == [{"type": "error", "text": t("correction.no_snapshot")}]
+    assert (session.chat_messages, session.game.to_dict(), provider.calls) == (opening, before, [])
+    assert list(users.rglob("*.json")) == []

@@ -136,11 +136,11 @@ def story_context_block(game: GameState) -> str:
     elif bp.story_complete:
         endings_text = ", ".join(e.type for e in bp.possible_endings)
         ending_hint = "\n" + get_prompt(
-            "block_story_ending_exceeded", scene=str(game.narrative.scene_count), endings=endings_text
+            "block_story_ending_exceeded", scene=str(game.narrative.scene_count), endings=_xe(endings_text)
         )
     elif act.approaching_end:
         endings_text = ", ".join(e.type for e in bp.possible_endings)
-        ending_hint = "\n" + get_prompt("block_story_ending_approaching", endings=endings_text)
+        ending_hint = "\n" + get_prompt("block_story_ending_approaching", endings=_xe(endings_text))
 
     thematic = bp.thematic_thread
     thematic_attr = get_prompt("block_story_arc_thematic_attr", thematic=_xa(thematic)) if thematic else ""

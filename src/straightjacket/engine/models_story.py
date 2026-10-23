@@ -233,16 +233,14 @@ class CampaignState(SerializableMixin):
 
     def snapshot(self) -> dict[str, Any]:
         return {
-            "epilogue_dismissed": self.epilogue_dismissed,
+            "predecessors": [p.to_dict() for p in self.predecessors],
             "pending_succession": self.pending_succession,
             "xp": self.xp,
-            "xp_spent": self.xp_spent,
             "legacy": {name: track.to_dict() for name, track in self.legacy.items()},
         }
 
     def restore(self, snap: dict[str, Any]) -> None:
-        self.epilogue_dismissed = snap["epilogue_dismissed"]
+        self.predecessors = [PredecessorRecord.from_dict(p) for p in snap["predecessors"]]
         self.pending_succession = snap["pending_succession"]
         self.xp = snap["xp"]
-        self.xp_spent = snap["xp_spent"]
         self.legacy = {name: ProgressTrack.from_dict(track) for name, track in snap["legacy"].items()}

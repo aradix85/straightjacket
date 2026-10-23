@@ -139,7 +139,7 @@ def build_director_prompt(game: GameState, latest_narration: str) -> str:
     return get_prompt(
         "director_prompt",
         task=task,
-        narration=latest_narration[: eng().truncations.prompt_xlong],
+        narration=_xe(latest_narration[: eng().truncations.prompt_xlong]),
         story_arc=_build_story_arc_block(game),
         arc_notes="\n" + get_prompt("director_arc_notes", notes=_xe(notes)) if notes else "",
         reflections=reflection_section,

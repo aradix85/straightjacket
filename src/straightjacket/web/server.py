@@ -39,7 +39,7 @@ from .handlers import (
     handle_status_query,
     handle_threats_query,
     handle_tracks_query,
-    player_selected_message,
+    send_player_selected,
 )
 from .session import new_session
 
@@ -121,7 +121,7 @@ async def _send_initial_state(ws: WebSocket) -> None:
         await _send(ws, {"type": "retry_available", "text": orphan})
 
     if _session.player:
-        await _send(ws, player_selected_message(_session))
+        await send_player_selected(_session, ws)
 
 
 async def _dispatch_one_message(ws: WebSocket, data: dict[str, Any]) -> None:

@@ -5,13 +5,8 @@ from typing import Any
 
 from starlette.websockets import WebSocket
 
-from ..engine.engine_loader import eng
 from ..engine.game import BurnOffer
 from ..engine.models import GameState
-
-
-def _default_save_name() -> str:
-    return eng().persistence.default_save_name
 
 
 @dataclass(kw_only=True)
@@ -19,15 +14,18 @@ class Session:
     player: str
     game: GameState | None
     chat_messages: list[dict[str, Any]] = field(default_factory=list)
-    save_name: str
     processing: bool
     active_ws: WebSocket | None = field(repr=False)
     pending_burn: BurnOffer | None
 
+    def take_game(self, game: GameState, chat_messages: list[dict[str, Any]]) -> None:
+        self.game = game
+        self.chat_messages = chat_messages
+        self.pending_burn = None
+
     def clear_game(self) -> None:
         self.game = None
         self.chat_messages = []
-        self.save_name = _default_save_name()
         self.pending_burn = None
 
     def append_chat(self, role: str, content: str, **extra: Any) -> None:
@@ -56,7 +54,6 @@ def new_session() -> Session:
     return Session(
         player="",
         game=None,
-        save_name=_default_save_name(),
         processing=False,
         active_ws=None,
         pending_burn=None,

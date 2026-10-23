@@ -68,12 +68,15 @@ class WsClient:
         return json.loads(raw)
 
     async def recv_until(self, msg_type: str, timeout: float = 120) -> dict:
+        for i, buffered in enumerate(self._buffer):
+            if buffered.get("type") == msg_type:
+                return self._buffer.pop(i)
         deadline = asyncio.get_event_loop().time() + timeout
         while True:
             remaining = deadline - asyncio.get_event_loop().time()
             if remaining <= 0:
                 raise TimeoutError(f"Timed out waiting for {msg_type}")
-            msg = await self.recv(timeout=remaining)
+            msg = json.loads(await asyncio.wait_for(self.ws.recv(), timeout=remaining))
             if msg.get("type") == msg_type:
                 return msg
             self._buffer.append(msg)
@@ -294,7 +297,9 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
             total_turns += 1
             print(f"\n{SEPARATOR}\n  TURN {total_turns}/{max_chapters * max_turns}\n{SEPARATOR}")
 
-            is_correction = total_turns > 1 and total_turns % CORRECTION_TEST_INTERVAL == 0
+            is_correction = (
+                total_turns > 1 and total_turns % CORRECTION_TEST_INTERVAL == 0 and game.last_turn_snapshot is not None
+            )
 
             if is_correction:
                 narration, rec = await _play_correction(client, provider, game, total_turns, slog)
@@ -538,14 +543,16 @@ async def _handle_burn(
 
     await client.send({"type": "burn_momentum", "accept": should_burn})
     error = ""
-    if should_burn:
-        td = await client.collect_turn("turn_complete")
-        if td["error"]:
-            error = td["error"]
-            rec.burn_error = error
-            print(f"  [BURN] Failed: {error}")
-        elif td["replace_narration"]:
-            print("  [BURN] Re-narrated")
+    td = await client.collect_turn("turn_complete")
+    if td["error"]:
+        error = td["error"]
+        rec.burn_error = error
+        print(f"  [BURN] Failed: {error}")
+        await client.recv_until("burn_offer")
+        await client.send({"type": "burn_momentum", "accept": False})
+        await client.collect_turn("turn_complete")
+    elif td["replace_narration"]:
+        print("  [BURN] Re-narrated")
 
     return {"taken": should_burn, "error": error}
 

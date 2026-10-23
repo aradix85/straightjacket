@@ -232,13 +232,13 @@ class TestThreatOvercomeBonus:
 
 
 class TestCampaignSnapshot:
-    def test_snapshot_captures_xp(self, load_engine: None) -> None:
+    def test_restore_reverts_earned_experience_and_keeps_what_was_spent(self, load_engine: None) -> None:
         game = _game()
-        game.campaign.xp = 7
-        game.campaign.xp_spent = 2
+        game.campaign.xp, game.campaign.xp_spent = 7, 2
         snap = game.campaign.snapshot()
-        assert snap["xp"] == 7
-        assert snap["xp_spent"] == 2
+        game.campaign.xp, game.campaign.xp_spent = 9, 5
+        game.campaign.restore(snap)
+        assert (game.campaign.xp, game.campaign.xp_spent) == (7, 5)
 
     def test_restore_reverts_legacy_progress(self, load_engine: None) -> None:
         from straightjacket.engine.ruleset.legacy import mark_legacy

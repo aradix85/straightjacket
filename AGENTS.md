@@ -23,10 +23,11 @@ A sub-agent sees no conversation, so its task carries all it needs:
 
 1. That it reads AGENTS.md first and acts by it, then CONTRIBUTING.md, the ground every change stands on, and then what its kind of work names below.
 2. What the change or the work intends, and the user's choices it needs.
-3. The files the change touched, or where to look, so it does not search for them.
+3. The files the change touched, or where to look, so it does not search for them; for a check, the diff of those files itself, since a sub-agent starts without the session's context and gathering it is most of its time.
 4. The questions it answers: for a check, the seams where the writer knows the change can go wrong, each as a question; and always one open question, what else it finds wrong, since the writer's list shares the writer's blind spots.
-5. Its budget: about forty tool calls, after which it reports what it has and names what it left open. It tries a case in a script of its own only where reading cannot settle it.
-6. What it reports: findings only, each with file and line and a sentence on why, the most important first, under a stated length, and what it cannot settle marked as such. It edits, stages, and commits nothing.
+5. Its budget, scaled to its questions: about ten to twenty tool calls for one aimed question, after which it reports what it has and names what it left open. Calls that do not depend on each other, such as reading several files, it makes at once in one round, not one after the other. It tries a case in a script of its own only where reading cannot settle it. A change with many paths to walk gets more checkers side by side, one per area where it can go wrong, rather than one checker with a long list.
+6. What it reports: findings only, each with file and line and a sentence on why, the most important first, under a stated length, and what it cannot settle marked as such. It edits, stages, and commits nothing in the repository: the session, which holds the whole picture, makes every change (the user's choice).
+7. Its progress file, outside the repository in the session's scratchpad, named in the task: it appends each finding there as soon as it has it, and one line when it finishes a question, while its report still comes at the end. A sub-agent cannot message the session while it runs, and the session hears of it only when it ends, so the session follows each file with a monitor and sees how far every sub-agent is (the user's choice).
 
 ## Checking a release
 

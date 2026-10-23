@@ -84,3 +84,28 @@ class TestInvariants:
         game.npcs[0].disposition = "invalid"
         violations = assert_game_state(game, turn=1)
         assert any("disposition" in v for v in violations)
+
+
+def test_waiting_for_one_message_keeps_the_others_for_later_without_reading_them_again() -> None:
+    import asyncio
+    import json
+
+    from tests.elvira.elvira_bot.ws_runner import WsClient
+
+    class _Socket:
+        def __init__(self, *messages: dict[str, str]) -> None:
+            self.queue = [json.dumps(m) for m in messages]
+
+        async def recv(self) -> str:
+            if not self.queue:
+                await asyncio.sleep(3600)
+            return self.queue.pop(0)
+
+    async def play() -> list[str]:
+        client = WsClient("ws://unused")
+        client.ws = _Socket({"type": "game_over"}, {"type": "debug_state"}, {"type": "status"})
+        wanted = await client.recv_until("debug_state", timeout=1)
+        later = [await client.recv(timeout=1), await client.recv(timeout=1)]
+        return [wanted["type"], *(m["type"] for m in later)]
+
+    assert asyncio.run(play()) == ["debug_state", "game_over", "status"]

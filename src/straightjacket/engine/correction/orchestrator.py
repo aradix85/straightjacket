@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...i18n import t
 from ..ai.provider_base import AIProvider
 from ..director import should_call_director
 from ..engine_loader import eng
@@ -128,8 +127,7 @@ def process_correction(
 ) -> tuple[str, BurnOffer | None, DirectorCall | None]:
     snap = game.last_turn_snapshot
     if snap is None:
-        log("[Correction] No snapshot available — cannot correct", level="warning")
-        return t("correction.no_snapshot"), None, None
+        raise ValueError("No turn to correct: the game holds no snapshot of a played turn")
     brain, last_narration, scene_setup = snap.brain, snap.narration, snap.scene_setup
     if brain is None or last_narration is None or scene_setup is None:
         raise ValueError("The last turn's snapshot holds no Brain result, narration, or scene setup")

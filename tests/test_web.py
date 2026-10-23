@@ -80,7 +80,6 @@ class TestSession:
         s = new_session()
         s.game = make_game_state(player_name="Test")
         s.chat_messages = [{"role": "assistant", "content": "x"}]
-        s.save_name = "custom"
         s.pending_burn = BurnOffer(
             roll=RollResult(1, 1, 1, "wits", 2, 4, "MISS", "adventure/face_danger", match=True),
             new_result="WEAK_HIT",
@@ -96,7 +95,6 @@ class TestSession:
         s.clear_game()
         assert s.game is None
         assert s.chat_messages == []
-        assert s.save_name == "autosave"
         assert s.pending_burn is None
 
 
