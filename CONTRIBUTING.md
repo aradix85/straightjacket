@@ -116,6 +116,7 @@ python -m pytest tests/ -q --cov                         # unit and integration 
 - documentation drift:
   - in the md files of the root and `docs/`, roadmap.md and the CHANGELOG apart, every path named is the end of a file's path in the repository, so it may start at any folder that holds it, and every `file.py → symbol` reference names a function, class, or assignment in that file;
   - every package appears in the code map of ARCHITECTURE.md;
+  - in those files and roadmap.md, a reference to a section of another document, given as the file's name and the section's, or to a section of its own file as below or above, names a heading or a bold lead of that file, or a leading part of one such as "principle 6"; a register entry quoted by its title exists in `docs/divergences.md`; and a roadmap step the documents name as roadmap step N exists in the roadmap;
   - every entry in `docs/divergences.md` carries a status, and a status that names a roadmap step names one that exists; of the roadmap only the step headings are read;
   - the CHANGELOG's versions descend, its newest matching the `pyproject.toml` version, with a version header after every `---`; of the CHANGELOG only the version headers are read.
 

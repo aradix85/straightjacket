@@ -45,7 +45,7 @@ The roadmap stays short. A later step is a sketch: its aim, its substeps where t
 
 README.md and ORIGINS.md are background. For anything else a sub-agent reports what bears on the step. Then the session continues with NEXT STEP.
 
-**Sub-agents.** A session that hands work to a sub-agent does it by AGENTS.md (what a session hands off and keeps, what a task carries, and how a release is checked) and gives the sub-agent that file to read first (the user's choice).
+**Sub-agents.** A session that hands work to a sub-agent does it by AGENTS.md, which says what a session hands off and keeps, what a task carries, and how a release is checked, and gives the sub-agent that file to read first (the user's choice).
 
 **The design document** is not in the repository; README.md links it, and the user's repository `aradix85/narrative-rpg-engine` holds it as a pdf (version 2.4), which `pdftotext` reads. It is theory, and the engine is its practice, which may depart from it (the user's words).
 

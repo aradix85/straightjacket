@@ -1135,6 +1135,94 @@ def _check_doc_symbols_exist() -> tuple[str, list[Violation]]:
     return "DOC DRIFT: an md file names a symbol that does not exist", violations
 
 
+_PAREN_GROUP = re.compile(r"\(([^()]*)\)")
+_FILE_SECTION = re.compile(r"`?((?:docs/)?[A-Za-z]+\.md)`?, ([^`]+)$")
+_FILE_PAREN_SECTION = re.compile(r"\b([A-Z]+\.md) \(([^()`]+)\)")
+_SELF_SECTION = re.compile(r"^(.+) (?:below|above)$")
+_REGISTER_TITLE_REF = re.compile(r'register(?: entry)? "([^"]+)"|"([^"]+)" in `docs/divergences\.md`')
+_ROADMAP_STEP_REF = re.compile(r"\broadmap(?:'s)?,? (?:step )?(\d+[a-z]?)(?:\.(\w+))?")
+_HEADING = re.compile(r"^#+ (.+)$")
+_BOLD_LEAD = re.compile(r"^\s*(?:- |\d+\. )?\*\*([^*]+)\*\*")
+_STEP_SUFFIX = re.compile(r",? step \d+$")
+
+
+def _anchor(text: str) -> str:
+    return re.sub(r" \([^()]*\)$", "", text.strip().rstrip(".:")).lower()
+
+
+def _anchors(doc: Path) -> list[str]:
+    anchors: list[str] = []
+    for line in doc.read_text(encoding="utf-8").splitlines():
+        match = _HEADING.match(line) or _BOLD_LEAD.match(line)
+        if match:
+            anchors.append(_anchor(match.group(1)))
+    return anchors
+
+
+def _matches_anchor(anchors: list[str], section: str) -> bool:
+    return any(a == section or a.startswith(section + " ") for a in anchors)
+
+
+def _names_section(anchors: list[str], section: str) -> bool:
+    wanted = _anchor(_STEP_SUFFIX.sub("", section))
+    if _matches_anchor(anchors, wanted):
+        return True
+    parts = [part for part in wanted.split(", ") if not re.fullmatch(r"step \d+", part)]
+    return len(parts) > 1 and all(_matches_anchor(anchors, part) for part in parts)
+
+
+def _section_refs(line: str) -> Iterator[tuple[str | None, str]]:
+    for group in _PAREN_GROUP.findall(line):
+        for segment in group.split(";"):
+            segment = segment.strip()
+            if match := _FILE_SECTION.search(segment):
+                yield match.group(1), match.group(2)
+            elif match := _SELF_SECTION.match(segment):
+                yield None, match.group(1)
+    for match in _FILE_PAREN_SECTION.finditer(line):
+        yield match.group(1), match.group(2)
+
+
+def _roadmap_steps(roadmap: str) -> tuple[set[str], set[str]]:
+    done = set(re.findall(r"^- \*\*(\d+[a-z]?)\b", roadmap[roadmap.index("\n## DONE") :], re.M))
+    open_steps = set(re.findall(r"^### (\S+) — ", roadmap, re.M)) | set(re.findall(r"NEXT STEP — (\S+):", roadmap))
+    substeps = set(re.findall(r"\*\*(\d+[a-z]?\.\w+)\*\*", roadmap))
+    return open_steps | done, substeps | {f"{step}." for step in done}
+
+
+def _register_titles() -> set[str]:
+    text = (REPO_ROOT / "docs" / "divergences.md").read_text(encoding="utf-8")
+    return {_anchor(m.group(1)) for line in text.splitlines() if (m := re.match(r"^- \*\*([^*]+)\*\*", line))}
+
+
+def _check_doc_references_resolve() -> tuple[str, list[Violation]]:
+    roadmap_path = REPO_ROOT / "roadmap.md"
+    steps, substeps = _roadmap_steps(roadmap_path.read_text(encoding="utf-8"))
+    titles = _register_titles()
+    violations: list[Violation] = []
+    for doc in [*_doc_files(), roadmap_path]:
+        own = _anchors(doc)
+        for lineno, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
+            for target, section in _section_refs(line):
+                path = doc if target is None else REPO_ROOT / target
+                if not path.is_file():
+                    violations.append(Violation(_doc_name(doc), lineno, f"names {target}, which does not exist"))
+                elif not _names_section(own if target is None else _anchors(path), section):
+                    violations.append(Violation(_doc_name(doc), lineno, f"{path.name} has no section {section!r}"))
+            for match in _REGISTER_TITLE_REF.finditer(line):
+                title = match.group(1) or match.group(2)
+                if _anchor(title) not in titles:
+                    violations.append(Violation(_doc_name(doc), lineno, f"no register entry {title!r}"))
+            if doc == roadmap_path:
+                continue
+            for step, sub in _ROADMAP_STEP_REF.findall(line):
+                if step not in steps or (sub and not {f"{step}.{sub}", f"{step}."} & substeps):
+                    violations.append(
+                        Violation(_doc_name(doc), lineno, f"roadmap has no step {step}.{sub}".rstrip("."))
+                    )
+    return "DOC DRIFT: a reference to a section, register entry, or roadmap step that does not exist", violations
+
+
 _DIVERGENCE_ENTRY = re.compile(r"^(?:- )?\*\*[^*]+\*\*")
 _DIVERGENCE_STATUS = re.compile(r"Status: (?:Permanent|Open|Until step (\S+?))[.,;]")
 
@@ -1341,6 +1429,7 @@ _ALL_CHECKS = (
     _check_doc_paths_exist,
     _check_code_map_complete,
     _check_doc_symbols_exist,
+    _check_doc_references_resolve,
     _check_changelog_consistent,
     _check_divergences_have_a_status,
     _check_import_layers,

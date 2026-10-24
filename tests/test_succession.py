@@ -369,7 +369,7 @@ def test_a_successor_takes_up_a_fresh_character_in_the_same_world(aria: GameStat
     aria.progress_tracks.append(new_track(id="combat_raid", name="Raid", track_type="combat", rank="dangerous"))
     aria.world.combat_position = "bad_spot"
     aria.last_turn_snapshot = aria.snapshot()
-    old_clocks = {c.name for c in aria.world.clocks}
+    old_clocks = list(aria.world.clocks)
 
     assert _succeed(aria, _successor()) == OPENING_TEXT
 
@@ -377,7 +377,7 @@ def test_a_successor_takes_up_a_fresh_character_in_the_same_world(aria: GameStat
     assert aria.campaign.pending_succession is False
     assert (aria.impacts, aria.assets) == ([], [])
     assert aria.resources == starting_resources(aria.setting_id)
-    assert not old_clocks & {c.name for c in aria.world.clocks}
+    assert not [c for c in aria.world.clocks if any(c is old for old in old_clocks)]
     assert [t.id for t in aria.progress_tracks] == ["vow_background"]
     assert aria.world.combat_position == ""
     assert (aria.narrative.scene_count, aria.crisis_mode, aria.game_over) == (1, False, False)

@@ -48,7 +48,7 @@ The Brain turns the player's input into a move, a stat, a roll bonus, a target N
 - a move that marks, raises, or clears a connection for a target NPC without one (`needs_a_connection`);
 - a move that rolls with a meter or a connection's rank when its target has nothing to roll with. Such a move takes its value from the game state whatever stat the Brain names.
 
-**Stats.** A Datasworn action move answered with a stat it does not offer, or with `none`, and `world_shaping` answered with a way to roll, are asked again once with the move's stats named (`retry.brain_stat_retries`); a second wrong answer fails the turn, which rolls back. A move the engine makes without a roll, such as Reach a Milestone, is answered with the stat its line lists (`docs/ruleset.md`, Moves without a roll). `world_shaping` without a stat plays as dialog (`game/turn.py` → `_sanitize_brain_output`).
+**Stats.** A Datasworn action move answered with a stat it does not offer, or with `none`, and `world_shaping` answered with a way to roll, are asked again once with the move's stats named (`retry.brain_stat_retries`); a second wrong answer fails the turn, which rolls back. A move the engine makes without a roll, such as Reach a Milestone, has no way to roll, so its line in the prompt lists `ai_text.no_stat` as its stat (`docs/ruleset.md`, Stats), and whatever stat the Brain names for it is not asked again, since only an action roll's stat is checked (`ai/brain.py` → `_build_moves_block`, `_wrong_stat`). `world_shaping` without a stat plays as dialog (`game/turn.py` → `_sanitize_brain_output`).
 
 ## Model assignment
 

@@ -74,7 +74,7 @@ Datasworn is the spec for mechanical behaviour, not for the shape of the Python.
 A move named in `offered_without_roll` in `ruleset/move_availability.yaml` is offered by its availability rule like any other. A turn that names it makes it without dice (`ruleset/make_move.py` → `plays_without_roll`, `make_move_without_roll`):
 
 - Its `no_roll` effects apply, progress on its track included. There is no momentum burn, position, or effect.
-- The turn then goes on as a dialog turn does (`docs/gamemaster.md`, Replaying a turn; ARCHITECTURE.md, Turn pipeline).
+- The turn then goes on as a dialog turn does (ARCHITECTURE.md, Turn pipeline).
 - The narrator gets the consequences as `<consequence>` tags, under the scene type `unrolled_move` with the task `task_unrolled_move` in `prompts/tasks.yaml`.
 - For the game master the outcome is `unrolled_move`, one of `outcomes.unrolled` in `gamemaster/outcomes.yaml`: chaos stays, a revelation lands (`story_state.revelation_outcomes`), and the engine's memories and the scene context tell the move by its action phrase (`action_phrases` in `ruleset/answers.yaml`).
 - The NPCs in the prompt take their stance from the move's category, as in an action prompt; a dialog takes the social one.
