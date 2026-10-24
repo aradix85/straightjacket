@@ -16,7 +16,9 @@ cd straightjacket
 python run.py
 ```
 
-Unless it already runs in a virtual environment, it creates one in `venv` and installs the dependencies; it downloads any of the Datasworn, Mythic, and Adventure Crafter files that is missing from `data/` and starts the server at **http://localhost:8081**. Set the API key of every provider a cluster uses as an environment variable: each provider under `ai.providers` in `config.yaml` names its variable in `api_key_env`, and a provider no cluster uses needs no key. On startup the server checks that every configured model is offered by its provider and stops with a clear message if one is not.
+`run.py` creates a virtual environment in `venv` and installs the dependencies, unless it already runs in one. It downloads any of the Datasworn, Mythic, and Adventure Crafter files that is missing from `data/` and starts the server at **http://localhost:8081**.
+
+Set the API key of every provider a cluster uses as an environment variable: each provider under `ai.providers` in `config.yaml` names its variable in `api_key_env`, and a provider no cluster uses needs no key. On startup the server checks that every configured model is offered by its provider and stops with a clear message if one is not.
 
 ---
 
@@ -43,7 +45,10 @@ Text-in, text-out, and built for screen readers from the start by a blind develo
 - [ARCHITECTURE.md](ARCHITECTURE.md) — the core idea, turn pipeline, code map, state, configuration, interface
 - [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, project rules, code standards, testing
 - [AGENTS.md](AGENTS.md) — how sessions hand work to sub-agents, what every sub-agent is given, and how a release is checked
-- [docs/ai.md](docs/ai.md), [docs/mechanics.md](docs/mechanics.md), [docs/settings.md](docs/settings.md), [docs/divergences.md](docs/divergences.md), [docs/elvira.md](docs/elvira.md) — the AI layer, the game mechanics, settings, rulesets, and character creation, deliberate departures from the source rulebooks and the design document, and the test player Elvira
+- [docs/settings.md](docs/settings.md), [docs/gamemaster.md](docs/gamemaster.md), [docs/story.md](docs/story.md), [docs/ruleset.md](docs/ruleset.md) — the four layers: settings, rulesets, and character creation; the game master (scenes, chaos, fate, facts, generators, NPCs, clocks); the story (blueprint, revelations, chapters, succession); and the Ironsworn rules (moves, tracks, meters, impacts, legacy, assets, threats)
+- [docs/ai.md](docs/ai.md) — the AI roles, model assignment, routing, caching, streaming, and failures
+- [docs/divergences.md](docs/divergences.md) — deliberate departures from the source rulebooks and the design document
+- [docs/elvira.md](docs/elvira.md) — the test player Elvira
 - [ORIGINS.md](ORIGINS.md) — where the project comes from, and credits
 - [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model
 - [CHANGELOG.md](CHANGELOG.md) — release log since September 2026; earlier releases are in git history

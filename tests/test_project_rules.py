@@ -1036,7 +1036,15 @@ def _check_no_orphan_prompt_keys() -> tuple[str, list[Violation]]:
     return "orphan prompt key", violations
 
 
-_ROOT_DOC_FILES = ("README.md", "ARCHITECTURE.md", "CONTRIBUTING.md", "SECURITY.md", "ORIGINS.md", "AUDIT.md")
+_ROOT_DOC_FILES = (
+    "README.md",
+    "ARCHITECTURE.md",
+    "CONTRIBUTING.md",
+    "AGENTS.md",
+    "SECURITY.md",
+    "ORIGINS.md",
+    "AUDIT.md",
+)
 _DOC_PATH_PLACEHOLDERS = {
     "ai/provider_yourname.py",
 }

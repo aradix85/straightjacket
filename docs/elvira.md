@@ -14,20 +14,75 @@ python tests/elvira/elvira.py --ws --auto --turns 5      # through the WebSocket
 
 The API keys must be in the environment of the process that starts her: the game's provider key (`docs/ai.md`) and the key of the provider her own player and judge use. `tests/test_elvira_smoke.py` runs both modes against the mock provider in the normal test gate, so she cannot break unnoticed.
 
+She runs on the maintainer's laptop, where the API keys are. A session reads her report there through radix-mcp: the Markdown report, which is short, and of the session log and her console output only what the report points to, rather than the whole run (roadmap.md, Sessions with the user).
+
+## Two modes
+
+- **Direct mode** drives the engine and is the faster way to test engine changes. Only direct mode has the judge with its audit and revelation check, the record of each turn's engine events, the checks after a burn or a correction, the coverage steering, the load-back, succession, the injected failure, and the scenarios.
+- **WebSocket mode** (`--ws`) plays through the real server stack, which runs in her own process and so saves in her own users folder (Reports and folders), and also probes the status, tracks, threats, and recap messages. Her token meter stands in for the server's provider.
+
 ## Player and judge
 
-Her own player and her judge use the provider and model under `ai` in `tests/elvira/elvira_config.yaml` (Claude Haiku 5.5, the player without thinking and the judge at effort `low`), and log as the role `elvira`; her report prices only the game's calls. Because the judge stays on one model while the game's clusters change, it scores every game model alike. A judge tends to favour its own model family, and this one is a Claude model judging Claude narration, so its scores are compared only with runs it scored itself. It sees the player's action, the result, or for a turn without a roll whether it was a dialog or a move made without one, the previous narration, the player character's backstory, the descriptions of the NPCs the engine counts as in the scene (those with a memory of it), the rolled move's own text for the result, and the consequences the engine told the narrator to show, which her token meter reads from the narrator's prompt, so continuity and a cost the engine decided are not scored as invention and an unwelcome truth on a miss is not scored as a silver lining; its scores are read together with the narrations. When the narrator's prompt held a revelation of the story's blueprint, which her token meter reads from that prompt, the judge also sees it and answers whether the narration conveyed it.
+Her own player and her judge use the provider and model under `ai` in `tests/elvira/elvira_config.yaml` (Claude Haiku 5.5, the player without thinking and the judge at effort `low`), and log as the role `elvira`; her report prices only the game's calls.
+
+The judge stays on one model while the game's clusters change, so it scores every game model alike. A judge tends to favour its own model family, and this one is a Claude model judging Claude narration, so its scores are compared only with runs it scored itself, and read together with the narrations.
+
+What the judge sees, so that continuity and a cost the engine decided are not scored as invention, and an unwelcome truth on a miss not as a silver lining:
+
+- the player's action and the result, or for a turn without a roll whether it was a dialog or a move made without one;
+- the previous narration and the player character's backstory;
+- the descriptions of the NPCs the engine counts as in the scene (those with a memory of it);
+- the rolled move's own text for the result;
+- the consequences the engine told the narrator to show, which her token meter reads from the narrator's prompt;
+- a revelation of the story's blueprint, when the narrator's prompt held one, which her token meter also reads from that prompt; the judge then also answers whether the narration conveyed it.
 
 ## What she checks
 
-Each run picks its setting (classic, starforged, or sundered_isles) and its play style at random unless the config or the command line names one; `--matrix` plays every combination. Every turn she checks state invariants (including combat-track sync), leaked mechanics, NPC spatial consistency, and streaming (time to the first sentence, streamed text equal to the final text), and in direct mode the judge scores result integrity, prompt elements, NPC voice, player agency, restraint, and prose. Every eighth turn is a `##` correction instead of an action, which gets the leak and invariant checks. In direct mode she saves every `session.save_every_n_turns` turns and at the end, loads each such save back, and compares the whole state, and on game over she continues through succession. In direct mode, after a momentum burn and after a correction, she checks that only the turn's own narration and log entry changed, that the scene count stayed, and after a burn that the turn's location and the burned result hold. Once per run in direct mode (`session.inject_ai_failure_turn`) she makes the narrator unreachable for one turn and checks that the turn is rolled back to exactly the state before it; a real AI failure is rolled back the same way, reported as a problem, and play continues. A coverage tracker records which parts of the game a run touched, and in the second half of a run without a scenario it steers her towards dialog, a fight, or a change of place when a run has had none.
+Each run picks its setting (classic, starforged, or sundered_isles) and its play style at random, unless the config or the command line names one; `--matrix` plays every combination.
+
+**Every turn:** state invariants (including combat-track sync), leaked mechanics, NPC spatial consistency, and streaming (time to the first sentence, streamed text equal to the final text). In direct mode the judge scores result integrity, prompt elements, NPC voice, player agency, restraint, and prose.
+
+**Corrections:** every eighth turn is a `##` correction instead of an action, which gets the leak and invariant checks.
+
+**In direct mode also:**
+
+- She saves every `session.save_every_n_turns` turns and at the end, loads each save back, and compares the whole state.
+- On game over she continues through succession.
+- After a momentum burn and after a correction she checks that only the turn's own narration and log entry changed and the scene count stayed, and after a burn that the turn's location and the burned result hold.
+- Once per run (`session.inject_ai_failure_turn`) she makes the narrator unreachable for one turn and checks that the turn is rolled back to exactly the state before it. A real AI failure is rolled back the same way, reported as a problem, and play continues.
+- A coverage tracker records which parts of the game a run touched. In the second half of a run without a scenario it steers her towards dialog, a fight, or a change of place when the run has had none.
 
 ## Scenarios
 
-`--scenario` prepares a rare situation after character creation, in the setting it names where it names one, plays in direct mode only, and reports for each of its aims whether the run reached it; an aim it missed is a problem. A scenario names the directive of each turn in `directive`, the last one standing for the turns after it, and can fix the results of its first turns (`results`): while such a turn plays, every action and progress roll in it, follow-up and chained moves included, comes out as named, from dice drawn among those that give it, without a match unless no other dice give it (`tests/elvira/elvira_bot/fixed_results.py`); the engine has no switch for this, since Elvira replaces the scoring of `ruleset/rolls.py` for the turn. A scenario that dice cannot bring to its moment starts at it. The scenarios: `near_death` (health, spirit, and supply 0 and every roll a miss, so harm and stress go through Endure Harm and Endure Stress and mark impacts; the coverage counts follow-up moves and impacts marked), `succession` (the game over of the first character, so the successor's creation and opening play), `chapter_end` (epilogue and new chapter), `momentum_burn` (momentum at its max and misses, so a burn is offered and taken), `combat` (an open fight), `clock` (a clock one segment from full, and misses that tick it), `miss` (investigating turns that miss, no burns; the audit section of the report scores misses apart), `complication` (investigating turns that are weak hits, so Gather Information starts complication clocks; the coverage counts them and the ones headed off), `vow_fulfilment` (the first vow at seven of its ten boxes, turns that each tell of a step completed on it, and then turns that declare it fulfilled, so Reach a Milestone marks it without a roll and Fulfill Your Vow's strong hit fulfils it; the coverage counts milestones, moves without a roll, and fulfilled vows), and three in classic: `bond` (one NPC in play, strong hits, and turns that bind the character to them, so Forge a Bond seals a bond), `forsaken_bond` (a bond with the one NPC in play, the background vow made to them, and a threat on that vow at full menace, so the first turn forsakes the vow and a later dialog with them makes Test Your Bond), and `threat_advance` (a threat on the background vow and risky turns that miss, so Delve's Advance a Threat marks its menace). The coverage counts sealed bonds, bond tests, threat advances, and forsaken vows. The rolls on a move's own tables, such as the dying result of Endure Harm, stay random, so `near_death` aims at impacts, not at Face Death. The scenarios live in `tests/elvira/elvira_config.yaml` and their preparation in `tests/elvira/elvira_bot/scenarios.py`.
+`--scenario` prepares a rare situation after character creation, in the setting it names where it names one, and plays in direct mode only. The report says for each of its aims whether the run reached it; a missed aim is a problem. The scenarios live in `tests/elvira/elvira_config.yaml` and their preparation in `tests/elvira/elvira_bot/scenarios.py`.
+
+- **Directives.** A scenario names the directive of each turn in `directive`, the last one standing for the turns after it.
+- **Fixed results.** A scenario can fix the results of its first turns (`results`). While such a turn plays, every action and progress roll in it, follow-up and chained moves included, comes out as named, from dice drawn among those that give it, without a match unless no other dice give it (`tests/elvira/elvira_bot/fixed_results.py`). The engine has no switch for this: Elvira replaces the scoring of `ruleset/rolls.py` for the turn. The rolls on a move's own tables, such as the dying result of Endure Harm, stay random.
+- A scenario that dice cannot bring to its moment starts at it.
+
+The scenarios:
+
+- `near_death`: health, spirit, and supply 0 and every roll a miss, so harm and stress go through Endure Harm and Endure Stress and mark impacts. It aims at impacts, not at Face Death, since the dying result stays random. Coverage counts follow-up moves and impacts marked.
+- `succession`: the game over of the first character, so the successor's creation and opening play.
+- `chapter_end`: the epilogue and a new chapter.
+- `momentum_burn`: momentum at its max and misses, so a burn is offered and taken.
+- `combat`: an open fight.
+- `clock`: a clock one segment from full, and misses that tick it.
+- `miss`: investigating turns that miss, no burns; the audit section of the report scores misses apart.
+- `complication`: investigating turns that are weak hits, so Gather Information starts complication clocks. Coverage counts them and the ones headed off.
+- `vow_fulfilment`: the first vow at seven of its ten boxes, turns that each tell of a step completed on it, then turns that declare it fulfilled, so Reach a Milestone marks it without a roll and Fulfill Your Vow's strong hit fulfils it. Coverage counts milestones, moves without a roll, and fulfilled vows.
+- In classic:
+  - `bond`: one NPC in play, strong hits, and turns that bind the character to them, so Forge a Bond seals a bond.
+  - `forsaken_bond`: a bond with the one NPC in play, the background vow made to them, and a threat on that vow at full menace, so the first turn forsakes the vow and a later dialog with them makes Test Your Bond.
+  - `threat_advance`: a threat on the background vow and risky turns that miss, so Delve's Advance a Threat marks its menace.
+  - Coverage counts sealed bonds, bond tests, threat advances, and forsaken vows.
 
 ## Reports and folders
 
-She captures the engine log per turn: lines with the prefixes in `logging.event_prefixes` of her config become events, and every warning or error becomes a problem in the report, because a failed side call degrades by design and the game would otherwise play on silently. Each run writes a JSON session log and a Markdown report to `tests/elvira/runs/`: verdict first, then problems, a scenario's aims, coverage, audit, revelations (on how many turns one was put before the narrator, how often it came across, and in which scene each first did), streaming, engine events, speed, and estimated cost. The cost comes from the token use of the engine's calls, the opening and each chapter start included, which a meter around the provider in `tests/elvira/elvira_bot/tokens.py` counts; the calls of a turn that fails the run and of the closing epilogue are not counted. In `--ws` mode the meter stands in for the server's provider. She runs on the maintainer's laptop, where the API keys are, so a session reads her report there through radix-mcp: the Markdown report, which is short, and of the session log and her console output only what the report sends it to, rather than the whole run (roadmap.md, Sessions with the user).
+**Problems.** She captures the engine log per turn: lines with the prefixes in `logging.event_prefixes` of her config become events, and every warning or error becomes a problem in the report, because a failed side call degrades by design and the game would otherwise play on silently.
 
-She keeps her players in tests/elvira/users by setting `STRAIGHTJACKET_USERS_DIR` before the engine loads, unless it is already set; git ignores both folders. In `--ws` mode she plays through the real server stack, which runs in her own process and so saves in the same folder, and also probes the status, tracks, threats, and recap messages; the judge with its audit and revelation check, the record of each turn's engine events, the checks after a burn or a correction, the coverage steering, the load-back, succession, and the injected failure are direct mode's. Direct mode drives the engine and is the faster way to test engine changes. To try another game model or narration language, point `STRAIGHTJACKET_CONFIG` at a copy of `config.yaml` with other clusters or another `language` and give Elvira a config with its own `username`, so several runs can play side by side.
+**Output.** Each run writes a JSON session log and a Markdown report to `tests/elvira/runs/`: the verdict first, then problems, a scenario's aims, coverage, audit, revelations (on how many turns one was put before the narrator, how often it came across, and in which scene each first did), streaming, engine events, speed, and estimated cost.
+
+**Cost.** It comes from the token use of the engine's calls, the opening and each chapter start included, which a meter around the provider in `tests/elvira/elvira_bot/tokens.py` counts. The calls of a turn that fails the run and of the closing epilogue are not counted.
+
+**Folders.** She keeps her players in tests/elvira/users by setting `STRAIGHTJACKET_USERS_DIR` before the engine loads, unless it is already set; git ignores both folders. To try another game model or narration language, point `STRAIGHTJACKET_CONFIG` at a copy of `config.yaml` with other clusters or another `language`, and give Elvira a config with its own `username`, so several runs can play side by side.
