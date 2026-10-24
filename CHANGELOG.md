@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.24.2] — 2026-10-24
+
+Step 18, asset mechanics beyond adds, becomes NEXT STEP, ahead of 9w.1 to 9w.4, as the user ordered. Two sub-agents read what Datasworn carries for asset abilities. Structural are the moves an ability enhances, its trigger condition as prose, an automatic outcome (`method: strong_hit`, as on Fated), other things to roll with, asset moves, an asset's meters, boxes, and options, and Oathbreaker's `count_as_impact`. The add, every reroll, and every effect on a result are text only, so the engine encodes them per ability, as it does the moves' outcomes. Delve has no assets, and 14 assets enable no ability at the start. Neither Datasworn nor its Advance moves say which ability an upgrade enables. The user's choices: the vow abilities come first (Fated, Oathbreaker, Lore Hunter, Sorcerer), the engine decides rerolls by a fixed rule, and the player chooses which ability an upgrade enables and the starting ability where Datasworn enables none. roadmap.md holds the substeps, definition of done, and reference patterns.
+
+Quality gate: documentation only, 1864 tests. Save format unchanged.
+
 ## [2026.10.24.1] — 2026-10-24
 
 Step 9x, the user's choice: the documents are shorter to read and split by layer, without losing a fact, since every session reads them anew. `docs/mechanics.md` is split into `docs/ruleset.md` (moves, tracks, bonds, stats, meters, impacts, legacy, assets, threats), `docs/gamemaster.md` (the questions to the ruleset, replaying a turn, what a miss withholds, position and effect, NPCs, scenes and random events, fate, facts, generators, clocks), and `docs/story.md` (blueprint, revelations, acts, the Adventure Crafter's tables, chapters, succession), so a session reads only the layer its step touches; roadmap.md's Sessions with the user names the file per area. Every md file of the root and `docs/` is rewritten in short paragraphs and lists, the divergence register is grouped by source with the two long lists of fixed choices as sub-items, and the roadmap points to what other files hold instead of repeating it. CONTRIBUTING.md now says the documents stay short, and AGENTS.md joins the documentation-drift scans, which it was not read by. AUDIT.md's open item no longer names line counts, which drift. The CHANGELOG stays as history.

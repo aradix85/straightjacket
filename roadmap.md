@@ -130,9 +130,69 @@ README.md and ORIGINS.md are background. For anything else a sub-agent reports w
 
 ---
 
-## NEXT STEP — 9w: Elvira tests what the engine does
+## NEXT STEP — 18: Asset mechanics beyond adds
 
-At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026.10.23.2). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone, and set the order within it: 9w.0 (done), then steps 9x (done) and 18 (Next steps), then 9w.1 to 9w.4.
+Every character starts with paths and assets, and of their abilities only adds take effect, so the rest is lost from the first turn: a Fated path in the Elvira run after 9w.R did nothing. The user put 18 after 9x and before 9w.1 to 9w.4. It builds on the enabled abilities and the Brain's `bonus_id` (`ruleset/assets.py`, `ruleset/bonuses.py`; `docs/ruleset.md`, Assets).
+
+**What Datasworn carries** (read at the start of this step, 2026.10.24.2):
+
+- Delve has no assets (`assets` is empty). Classic has 78 assets with 234 abilities, Starforged 87 with 261, Sundered Isles 60 with 180; every asset has three abilities. Ability 0 is enabled by default, except on 14 assets with none enabled: the ten classic companions (cave lion, giant spider, hawk, horse, hound, kindred, mammoth, owl, raven, young wyvern), classic's paths Battle-Scarred, Blade-Bound, and Shadow-Kin, and Sundered Isles' longboat.
+- **Structural:** an ability's `enhance_moves` lists the moves it enhances (`enhances`, move ids, or null) with its trigger conditions, whose condition is prose (`text`). A condition's `method` is an automatic outcome where it names `strong_hit`, `weak_hit`, or `miss` (thirteen abilities, among them both Fated paths, Animal Kin, and Leader), and otherwise how its `roll_options` are picked (`player_choice`, `highest`). `roll_options` are other things to roll with (a stat, a condition meter, an asset's meter or option), not bonuses. `enhance_asset` changes the asset itself (six abilities). An ability's `moves` are asset moves of its own (classic 23, Starforged 12, Sundered Isles 14). An asset's `controls` are its meters and boxes (a companion's health with out of action, a starship's integrity with battered and cursed, classic's strength, wealth, and ritual meters); its `options` are fields the player fills in (a companion's name, a devotant's stat); Oathbreaker has `count_as_impact`.
+- **Text only:** the add itself, every reroll (classic 28 abilities, Starforged 61, Sundered Isles 39), and every effect on a result ("take +2 momentum", "on a strong hit, mark progress"). These the engine encodes per ability from its text, as it encodes the moves' outcomes in `ruleset/move_outcomes.yaml`.
+- **Upgrades:** Datasworn's Advance moves (`move:classic/quest/advance`, `move:starforged/legacy/advance`) give the cost but not which ability an upgrade enables; classic's companions say "If they don't have a starting ability, choose one". The books leave both to the player.
+
+**The user's choices** (2026.10.24.2): the vow abilities come first; the engine decides rerolls, by a fixed rule; the player chooses which ability an upgrade enables and the starting ability where Datasworn enables none.
+
+**18.1** The vow abilities, on the paths of Reach a Milestone, Swear an Iron Vow, Fulfill Your Vow, and Face Death:
+
+- Classic Fated: 0 (enabled), Face Death or Face Desolation while the epic background vow is unfulfilled takes an automatic strong hit (`method: strong_hit`), and the asset then counts as a debility until the next Reach a Milestone on the background vow; 1, Reach a Milestone on the background vow takes +2 momentum or +1 spirit; 2, every two boxes filled on the background vow take 1 experience, and Fulfill Your Vow on it may reroll any dice.
+- Starforged Fated: 0 (enabled), a box filled on the background vow also marks a tick on the quests legacy track, and Fulfill Your Vow on it takes an automatic strong hit; 1, the classic 0 with an impact; 2, a progress move on the background vow may reroll a challenge die showing 10, and a strong hit takes +2 momentum.
+- Oathbreaker, a classic path and a Starforged deed, counts as a debility or impact (`count_as_impact`). 0 (enabled): one time only, a vow sworn to redeem oneself (extreme or greater) is marked, which the Brain names as it names `target_threat`, and Reach a Milestone on it takes +2 momentum; in Starforged, forsaking that vow discards the asset and keeps the impact. 1: add +1 and take +1 momentum on a hit when Secure an Advantage or Compel reaffirms the marked vow. 2: Fulfill Your Vow on the marked vow with a hit raises a stat by +1 and discards the asset, at no cost.
+- Starforged Lore Hunter 0 (enabled): Swear an Iron Vow (formidable or greater) to recover knowledge or a relic rerolls any dice; Reach a Milestone on that quest takes +2 momentum; Fulfill Your Vow on it with a hit marks 2 ticks on the discoveries legacy track.
+- Sundered Isles Sorcerer 2: Swear an Iron Vow (extreme or greater) for a ritual rerolls any dice; Reach a Milestone on it takes +2 momentum; enacting the ritual to Fulfill Your Vow may reroll challenge dice, and then makes Face Desolation.
+
+What this needs: a vow an ability names (the background vow, `vow_background`, or a vow marked when it is sworn), an asset that counts as an impact, and the effects per ability id.
+
+**18.2** The pipeline for every ability: each ability's effects in yaml keyed by its Datasworn id, in the effect vocabulary of `ruleset/move_outcomes.yaml`, with the result it needs and the event it waits on (a move it enhances, a box filled on a vow); the Brain names the abilities whose condition its action meets, generalising `bonus_id`, and is offered only those whose `enhances` holds its move. Step 20 then fills the yaml per setting without Python.
+
+**18.3** Rerolls, decided by the engine (the user's choice): it rerolls the dice an ability allows when a reroll can better the result, a fixed choice with its register entry.
+
+**18.4** Upgrades and starting abilities, chosen by the player (the user's choice): `/advance upgrade <asset> <ability>`, and character creation asks the starting ability of an asset with none enabled. The register entry "Roll bonuses are chosen for the player, and only adds are modelled" loses its "in order".
+
+**18.5** An asset's own state on the game state: its meters and boxes (`controls`; a companion's and a vehicle's with step 19), its options, and what `enhance_asset` changes.
+
+### Definition of Done
+
+- Every effect of the abilities 18.1 names takes effect through the real path, each tested with real Datasworn ids as character creation stores them.
+- An ability's effects come from yaml through one pipeline, so step 20 adds assets without Python.
+- Rerolls, upgrades, and starting abilities follow the user's choices; the register entry "Roll bonuses are chosen for the player, and only adds are modelled" leaves, or keeps only what step 20 still adds.
+- An Elvira run where the narrator is told something new, with its cost named first.
+
+### Reference patterns
+
+- An add the Brain picks: `ruleset/bonuses.py` → `roll_bonuses`, `chosen_bonus`.
+- Effects from yaml: `ruleset/move_effects.py` → `parse_effects`, `apply_effects`.
+- A vow the Brain links: `target_threat`, `ruleset/tracks.py` → `start_track`, `ruleset/threats.py` → `vow_against`.
+- A move without a roll: `ruleset/make_move.py` → `make_move_without_roll`.
+- A legacy track a rule marks: `ruleset/legacy.py` → `mark_legacy`.
+- Tests through the real path: `tests/_creation.py` → `create_game`, a turn with `TurnProvider` and `force_result`.
+
+---
+
+## Next steps
+
+Sketches, in the order of work.
+
+Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
+
+**The Director's tools.** The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and a step that wants another decides whether it becomes a new tool or part of that one. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text.
+
+- A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`).
+- A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
+
+### 9w — Elvira tests what the engine does
+
+At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026.10.23.2). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone, and set the order within it: 9w.0 (done), then step 9x (done), then step 18 (NEXT STEP), then 9w.1 to 9w.4.
 
 **9w.1** Faults in Elvira herself.
 
@@ -156,35 +216,18 @@ At the user's request, Elvira is to test during a run everything the engine does
 
 **9w.4** WebSocket mode plays the real handlers: coverage, the judge, and the checks of direct mode, shared rather than copied; the handlers' rollback under an injected failure; loading, the save list, deleting a player, `/advance`, retiring, succession, story completion, a dismissed epilogue, and a reconnect; the probes after later states.
 
-### Definition of Done
+Definition of done:
 
 - Elvira's own faults are gone, and the project-rule scans read `tests/elvira` too.
 - Every mechanic the hit-lists name that a run can reach is counted, checked, or judged, and a scenario prepares what a random run seldom reaches; what the engine cannot reach yet is named with its step.
 - WebSocket mode records coverage and runs the checks of direct mode through shared code.
 - Elvira runs only where they make a real difference, with their cost named first.
 
-### Reference patterns
+Reference patterns:
 
 - A scenario: `tests/elvira/elvira_bot/scenarios.py` → `prepare_scenario`, its config in `tests/elvira/elvira_config.yaml`.
 - A coverage target from the log: `tests/elvira/elvira_bot/coverage.py` → `EVENT_COUNTS`.
 - What the narrator was told, read from its prompt: `tests/elvira/elvira_bot/judge.py` → `consequences_in`.
-
----
-
-## Next steps
-
-Sketches, in the order of work.
-
-Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
-
-**The Director's tools.** The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and a step that wants another decides whether it becomes a new tool or part of that one. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text.
-
-- A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`).
-- A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
-
-### 18 — Asset mechanics beyond adds
-
-First among the Next steps, before 9w.1 to 9w.4, the user's choice: every character starts with paths and assets, and of their abilities only adds take effect, so the rest is lost from the first turn (a Fated path in the Elvira run after 9w.R did nothing). Builds on the enabled abilities and the Brain's `bonus_id` (`ruleset/assets.py`, `ruleset/bonuses.py`): rerolls, extra effects on a hit, condition meters on assets, choosing which ability an upgrade enables, and the abilities that act when the character Reaches a Milestone (classic's and Starforged's Fated and Oathbreaker, Starforged's Lore Hunter, Sundered Isles' Sorcerer). Tests use real Datasworn assets with ids as character creation stores them.
 
 ### 9j — Rules conformance: classic and the Adventure Crafter
 
