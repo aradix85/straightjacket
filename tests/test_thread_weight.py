@@ -9,8 +9,8 @@ from tests._helpers import make_brain_result, make_game_state, make_random_event
 def _sworn_game() -> Any:
     game = make_game_state(setting_id="starforged")
     game.progress_tracks = [
-        new_track(id="vow_bell", name="Ring the bell", track_type="vow", rank="dangerous"),
-        new_track(id="vow_kira", name="Find Kira", track_type="vow", rank="formidable"),
+        new_track(track_id="vow_bell", name="Ring the bell", track_type="vow", rank="dangerous"),
+        new_track(track_id="vow_kira", name="Find Kira", track_type="vow", rank="formidable"),
     ]
     game.narrative.threads = [
         make_thread(

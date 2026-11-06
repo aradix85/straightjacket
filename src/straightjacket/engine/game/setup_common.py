@@ -27,7 +27,7 @@ def register_extracted_npcs(game: GameState, npc_dicts: list[dict[str, Any]]) ->
             log(f"[NPC] Extracted '{nd['name']}' is the known '{known.name}', not a new NPC")
             continue
         npc = new_npc(
-            id=next_npc_id(game),
+            npc_id=next_npc_id(game),
             name=nd["name"],
             disposition=nd["disposition"],
             status="active",
@@ -66,7 +66,7 @@ def seed_opening_memories(game: GameState, memory_updates: list[dict[str, Any]])
                 about_npc=None,
             )
         )
-        target.importance_accumulator = target.importance_accumulator + imp
+        target.importance_accumulator += imp
 
 
 def apply_opening_setup(game: GameState, data: dict[str, Any], *, label: str) -> None:

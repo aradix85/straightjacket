@@ -104,8 +104,9 @@ def test_waiting_for_one_message_keeps_the_others_for_later_without_reading_them
     async def play() -> list[str]:
         client = WsClient("ws://unused")
         client.ws = _Socket({"type": "game_over"}, {"type": "debug_state"}, {"type": "status"})
-        wanted = await client.recv_until("debug_state", timeout=1)
-        later = [await client.recv(timeout=1), await client.recv(timeout=1)]
+        async with asyncio.timeout(1):
+            wanted = await client.recv_until("debug_state")
+            later = [await client.recv(), await client.recv()]
         return [wanted["type"], *(m["type"] for m in later)]
 
     assert asyncio.run(play()) == ["debug_state", "game_over", "status"]

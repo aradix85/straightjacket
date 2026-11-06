@@ -160,8 +160,9 @@ class TestBuildCreationOptions:
             assert all(p["id"] and p["title"] for p in s["paths"])
 
 
+@pytest.mark.usefixtures("_setup")
 class TestWebSocket:
-    @pytest.fixture(autouse=True)
+    @pytest.fixture
     def _setup(self, load_engine: None) -> None:
         from straightjacket.web.server import _session
 
@@ -292,8 +293,9 @@ class TestWebSocket:
             ws.receive_json()
 
 
+@pytest.mark.usefixtures("_setup")
 class TestSuccessionWebSocket:
-    @pytest.fixture(autouse=True)
+    @pytest.fixture
     def _setup(self, load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         from straightjacket.web.server import _session
 

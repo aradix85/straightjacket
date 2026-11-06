@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .engine_loader import eng
 from .logging_util import log
 from .models_base import (
     ClockData,

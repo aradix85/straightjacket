@@ -50,7 +50,7 @@ def _op_npc_split(game: GameState, op_dict: dict[str, Any]) -> None:
         return
     new_name = op_dict["split_name"] or roll_oracle_name(game)
     split = new_npc(
-        id=next_npc_id(game),
+        npc_id=next_npc_id(game),
         name=new_name,
         disposition=existing.disposition,
         status=existing.status,

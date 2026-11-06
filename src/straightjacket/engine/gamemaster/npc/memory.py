@@ -1,4 +1,5 @@
 import re
+from operator import itemgetter
 
 from ...emotions_loader import importance_map, keyword_boosts
 from ...logging_util import log
@@ -78,7 +79,7 @@ def retrieve_memories(
         return w_recency * recency + w_importance * importance + w_relevance * relevance
 
     scored = [(m, _score_memory(m)) for m in memories]
-    scored.sort(key=lambda x: x[1], reverse=True)
+    scored.sort(key=itemgetter(1), reverse=True)
 
     result: list[MemoryEntry] = []
     reflection_included = False

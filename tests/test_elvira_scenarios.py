@@ -306,9 +306,9 @@ def test_a_missed_aim_is_a_problem() -> None:
 
 
 def _audited_turn(turn: int, result: str, integrity: int, overall: int, burned_to: str = "") -> TurnRecord:
-    verdict: dict[str, int | str] = {
-        c: 3 for c in ("prompt_elements", "npc_voice", "player_agency", "restraint", "prose")
-    }
+    verdict: dict[str, int | str] = dict.fromkeys(
+        ("prompt_elements", "npc_voice", "player_agency", "restraint", "prose"), 3
+    )
     verdict |= {"result_integrity": integrity, "overall": overall, "weakness": ""}
     return TurnRecord(
         turn=turn,

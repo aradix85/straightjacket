@@ -55,7 +55,7 @@ def parse_oracle_table(full_id: str, data: dict[str, Any]) -> OracleTable:
 
 
 class Setting:
-    def __init__(self, raw: dict[str, Any]):
+    def __init__(self, raw: dict[str, Any]) -> None:
         self.ruleset_id: str = raw["_id"] if raw["type"] == _RULESET_TYPE else raw["ruleset"]
         self._truths: dict[str, Any] = raw["truths"]
         self._oracles: dict[str, OracleTable] = {}

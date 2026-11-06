@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 import random
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from unittest import mock
 
@@ -27,7 +27,7 @@ def _pick(result: str, candidates: list[RollResult], rolled: str) -> RollResult:
 
 
 @contextmanager
-def fixed_result(result: str) -> Iterator[None]:
+def fixed_result(result: str) -> Generator[None]:
     check_results([result])
     score_action = rolls.score_action_roll
     score_progress = rolls.score_progress_roll

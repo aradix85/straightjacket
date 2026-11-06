@@ -15,8 +15,8 @@ from straightjacket.engine.ruleset.progress import ticks_per_mark
 from tests._helpers import fix_dice
 
 REPO = Path(__file__).resolve().parent.parent
-GAIN = re.compile(r"take \+(\d) momentum", re.I)
-LOSS = re.compile(r"(?:suffer|lose) -(\d) momentum", re.I)
+GAIN = re.compile(r"take \+(\d) momentum", re.IGNORECASE)
+LOSS = re.compile(r"(?:suffer|lose) -(\d) momentum", re.IGNORECASE)
 KNOWN_DIVERGENCES: set[tuple[str, str, str]] = set()
 MYTHIC_2E_EVENT_FOCUS = [
     (1, 5, "remote_event"),

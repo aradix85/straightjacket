@@ -1,48 +1,57 @@
 import sys
-import urllib.error
 import urllib.request
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent
 
 _DATASWORN_COMMIT = "c86923819213f1321170586c4543ceea70bc3d5c"
-_DATASWORN_BASE = f"https://raw.githubusercontent.com/rsek/datasworn/{_DATASWORN_COMMIT}/datasworn"
-_WORDMILL_BASE = "https://raw.githubusercontent.com/aradix85/wordmill-data/master"
+_DATASWORN_PATH = f"rsek/datasworn/{_DATASWORN_COMMIT}/datasworn"
+_WORDMILL_PATH = "aradix85/wordmill-data/master"
 _USER_AGENT = {"User-Agent": "Straightjacket-Data-Loader/1.0"}
+_HTTPS_ONLY = urllib.request.OpenerDirector()
+for _handler in (
+    urllib.request.ProxyHandler(),
+    urllib.request.HTTPSHandler(),
+    urllib.request.HTTPRedirectHandler(),
+    urllib.request.HTTPDefaultErrorHandler(),
+    urllib.request.HTTPErrorProcessor(),
+    urllib.request.UnknownHandler(),
+):
+    _HTTPS_ONLY.add_handler(_handler)
 
 SOURCES = {
     "classic": {
-        "url": f"{_DATASWORN_BASE}/classic/classic.json",
+        "path": f"{_DATASWORN_PATH}/classic/classic.json",
         "file": "classic.json",
         "license": "CC-BY-4.0",
         "group": "datasworn",
     },
     "delve": {
-        "url": f"{_DATASWORN_BASE}/delve/delve.json",
+        "path": f"{_DATASWORN_PATH}/delve/delve.json",
         "file": "delve.json",
         "license": "CC-BY-4.0",
         "group": "datasworn",
     },
     "starforged": {
-        "url": f"{_DATASWORN_BASE}/starforged/starforged.json",
+        "path": f"{_DATASWORN_PATH}/starforged/starforged.json",
         "file": "starforged.json",
         "license": "CC-BY-4.0",
         "group": "datasworn",
     },
     "sundered_isles": {
-        "url": f"{_DATASWORN_BASE}/sundered_isles/sundered_isles.json",
+        "path": f"{_DATASWORN_PATH}/sundered_isles/sundered_isles.json",
         "file": "sundered_isles.json",
         "license": "CC-BY-NC-SA-4.0",
         "group": "datasworn",
     },
     "mythic_gme_2e": {
-        "url": f"{_WORDMILL_BASE}/mythic_gme_2e.json",
+        "path": f"{_WORDMILL_PATH}/mythic_gme_2e.json",
         "file": "mythic_gme_2e.json",
         "license": "CC-BY-NC-4.0",
         "group": "mythic",
     },
     "adventure_crafter": {
-        "url": f"{_WORDMILL_BASE}/adventure_crafter.json",
+        "path": f"{_WORDMILL_PATH}/adventure_crafter.json",
         "file": "adventure_crafter.json",
         "license": "CC-BY-NC-4.0",
         "group": "mythic",
@@ -55,21 +64,21 @@ _GROUP_LABELS = {
 }
 
 
-def _fetch(url: str, timeout: int) -> bytes:
-    req = urllib.request.Request(url, headers=_USER_AGENT)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        data: bytes = resp.read()
+def _fetch(path: str, timeout: int) -> bytes:
+    request = urllib.request.Request(f"https://raw.githubusercontent.com/{path}", headers=_USER_AGENT)
+    with _HTTPS_ONLY.open(request, timeout=timeout) as response:
+        data: bytes = response.read()
     return data
 
 
-def _download(url: str, dest: Path) -> bool:
+def _download(path: str, dest: Path) -> bool:
     try:
-        print(f"  Downloading {url[:80]}...")
-        dest.write_bytes(_fetch(url, timeout=30))
-        return True
-    except (urllib.error.URLError, OSError) as e:
+        print(f"  Downloading {path[:80]}...")
+        dest.write_bytes(_fetch(path, timeout=30))
+    except OSError as e:
         print(f"  FAILED: {e}")
         return False
+    return True
 
 
 def main() -> None:
@@ -96,7 +105,7 @@ def main() -> None:
             continue
 
         print(f"  {source_id} ({source['license']}):")
-        if _download(source["url"], dest):
+        if _download(source["path"], dest):
             size_kb = dest.stat().st_size / 1024
             print(f"  OK ({size_kb:.0f}K)")
             ok += 1

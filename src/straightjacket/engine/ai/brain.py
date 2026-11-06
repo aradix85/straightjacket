@@ -199,7 +199,8 @@ def _check_target_track(game: GameState, result: BrainResult) -> None:
     track = next(t for t in game.progress_tracks if t.id == result.target_track)
     if track.track_type != wanted:
         _refuse(
-            f"move {result.move!r} works on a {wanted} track, but target_track {track.id!r} is a {track.track_type} track"
+            f"move {result.move!r} works on a {wanted} track, "
+            f"but target_track {track.id!r} is a {track.track_type} track"
         )
 
 
@@ -344,10 +345,14 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
             _refuse(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")
         retries_asked += 1
         log(f"[Brain] {result.move} rolls with {stats}, not stat {result.stat!r}; asking again", level="warning")
-        messages.append({"role": "assistant", "content": content})
-        messages.append(
-            {
-                "role": "user",
-                "content": get_prompt("brain_stat_retry", move=result.move, stats=", ".join(stats), stat=result.stat),
-            }
+        messages.extend(
+            (
+                {"role": "assistant", "content": content},
+                {
+                    "role": "user",
+                    "content": get_prompt(
+                        "brain_stat_retry", move=result.move, stats=", ".join(stats), stat=result.stat
+                    ),
+                },
+            )
         )

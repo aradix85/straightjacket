@@ -18,7 +18,7 @@ def load_yaml_dir(directory: Path, *, missing_dir_hint: str) -> dict[str, Any]:
         with path.open(encoding="utf-8") as f:
             data = yaml.safe_load(f)
         if not isinstance(data, dict):
-            raise ValueError(f"{path} is not a valid YAML dict")
+            raise TypeError(f"{path} is not a valid YAML dict")
         for key, value in data.items():
             if key in merged:
                 raise ValueError(f"Duplicate top-level key '{key}' in {path} — already defined in {origin[key]}")

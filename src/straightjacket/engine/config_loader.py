@@ -77,7 +77,7 @@ class AppConfig:
 
 def _check_keys(where: str, data: Any, keys: tuple[str, ...]) -> dict[str, Any]:
     if not isinstance(data, dict):
-        raise ValueError(f"config.yaml: {where} must be a mapping")
+        raise TypeError(f"config.yaml: {where} must be a mapping")
     unknown = sorted(set(data) - set(keys))
     if unknown:
         raise ValueError(f"config.yaml: {where} has unknown keys {unknown}")
@@ -173,7 +173,7 @@ def _load_config_file() -> dict[str, Any]:
     with _CONFIG_PATH.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
     if not isinstance(data, dict):
-        raise ValueError(f"Config file is not a valid YAML dict: {_CONFIG_PATH}")
+        raise TypeError(f"Config file is not a valid YAML dict: {_CONFIG_PATH}")
     log(f"[Config] Loaded {_CONFIG_PATH}")
     return data
 

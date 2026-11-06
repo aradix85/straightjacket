@@ -86,8 +86,7 @@ def call_correction_brain(
     try:
         response = create_with_retry(provider, spec)
         result: dict[str, Any] = json.loads(response.content)
-        log(f"[Correction] source={result['correction_source']} ops={len(result['state_ops'])}")
-        return result
+        summary = f"source={result['correction_source']} ops={len(result['state_ops'])}"
     except Exception as e:
         log(f"[Correction] Brain failed ({type(e).__name__}: {e}), falling back to no-op state_error", level="warning")
         return {
@@ -97,3 +96,5 @@ def call_correction_brain(
             "director_useful": False,
             "state_ops": [],
         }
+    log(f"[Correction] {summary}")
+    return result

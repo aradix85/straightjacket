@@ -32,7 +32,7 @@ def roll_action(stat_name: str, stat_value: int, move: str, held_momentum: int, 
 def keep_action_dice(
     earlier: RollResult, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
 ) -> RollResult:
-    d1 = earlier.d1 if earlier.d1 else random.randint(1, rules().dice.action_die)
+    d1 = earlier.d1 or random.randint(1, rules().dice.action_die)
     return score_action_roll(d1, earlier.c1, earlier.c2, stat_name, stat_value, move, held_momentum, adds)
 
 

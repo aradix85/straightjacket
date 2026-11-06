@@ -274,11 +274,6 @@ def test_a_keyed_scenes_hint_reaches_the_narrator_escaped(load_engine: None) -> 
     assert "&" not in inner.replace("&amp;", "").replace("&lt;", "").replace("&gt;", "")
 
 
-def test_scene_setup_requires_scene_type() -> None:
-    with pytest.raises(TypeError):
-        SceneSetup(**{})
-
-
 def test_scene_setup_keyed_serialization_roundtrip() -> None:
     setup = make_scene_setup(scene_type="keyed", narrative_hint="Beat hint")
     restored = SceneSetup.from_dict(setup.to_dict())

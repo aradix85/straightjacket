@@ -50,7 +50,7 @@ class _Scripted(ScriptedProvider):
         return outcome
 
 
-class _RateLimited(Exception):
+class _RateLimitedError(Exception):
     def __init__(self, retry_after: str) -> None:
         super().__init__("rate limited")
         self.status_code = 429
@@ -104,7 +104,9 @@ def test_a_persistent_refusal_raises_after_the_last_attempt(load_engine: None) -
 
 
 def test_retry_after_is_honoured_and_capped(load_engine: None, waits: list[float]) -> None:
-    provider = _Scripted(_RateLimited("7"), _RateLimited("600"), AIResponse(content="ok", stop_reason="complete"))
+    provider = _Scripted(
+        _RateLimitedError("7"), _RateLimitedError("600"), AIResponse(content="ok", stop_reason="complete")
+    )
     assert create_with_retry(provider, _spec()).content == "ok"
     assert waits == [7.0, 60.0]
 

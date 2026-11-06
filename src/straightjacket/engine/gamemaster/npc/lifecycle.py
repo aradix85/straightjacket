@@ -8,7 +8,7 @@ from .memory import consolidate_memory
 
 def new_npc(
     *,
-    id: str,
+    npc_id: str,
     name: str,
     disposition: str,
     status: str,
@@ -22,7 +22,7 @@ def new_npc(
     introduced: bool,
 ) -> NpcData:
     return NpcData(
-        id=id,
+        id=npc_id,
         name=name,
         disposition=disposition,
         status=status,
@@ -159,8 +159,7 @@ def _absorb_richer_duplicate_fields(original: NpcData, dup: NpcData) -> None:
         original.last_location = dup.last_location
     if dup.secrets:
         original.secrets.extend(s for s in dup.secrets if s not in original.secrets)
-    if dup.last_reflection_scene > original.last_reflection_scene:
-        original.last_reflection_scene = dup.last_reflection_scene
+    original.last_reflection_scene = max(original.last_reflection_scene, dup.last_reflection_scene)
     if dup.needs_reflection:
         original.needs_reflection = True
 
@@ -200,7 +199,7 @@ def _take_over_list_entry(game: GameState, original: NpcData, dup: NpcData) -> N
 
 def absorb_npc(game: GameState, original: NpcData, dup: NpcData) -> None:
     original.memory.extend(dup.memory)
-    original.importance_accumulator = original.importance_accumulator + dup.importance_accumulator
+    original.importance_accumulator += dup.importance_accumulator
 
     if _npc_richness(dup, game) > _npc_richness(original, game):
         _absorb_richer_duplicate_fields(original, dup)

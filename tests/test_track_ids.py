@@ -97,3 +97,31 @@ def test_a_second_journey_named_by_its_own_name_takes_the_progress(
     journeys = {t.name: t for t in game.progress_tracks if t.track_type == "journey"}
     assert set(journeys) == {"To the ridge", "To the coast"}
     assert filled_boxes(journeys["To the ridge"]) == filled_boxes(journeys["To the coast"]) > 0
+
+
+def test_a_vow_without_a_rank_from_the_brain_fails_the_turn(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.game import process_turn
+    from tests._creation import TurnProvider, brain_answer, force_result, library_game
+
+    force_result(monkeypatch, "STRONG_HIT")
+    brain = brain_answer(
+        move="quest/swear_an_iron_vow",
+        stat="heart",
+        location_change=None,
+        track_name="Find the lost ledger",
+        track_rank=None,
+    )
+    with pytest.raises(ValueError, match="named no track name or rank"):
+        process_turn(TurnProvider(brain), library_game(), "I swear to find the lost ledger", stream=None)
+
+
+def test_progress_on_a_new_track_without_a_name_from_the_brain_fails_the_turn(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.outcome_result import new_outcome
+    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
+
+    brain = make_brain_result(move="exploration/undertake_an_expedition", stat="wits")
+    brain.track_name = None
+    outcome = new_outcome()
+    outcome.progress_marks = 1
+    with pytest.raises(ValueError, match="marks progress on a new track"):
+        apply_progress_and_legacy(make_game_state(setting_id="starforged"), outcome, brain, None)

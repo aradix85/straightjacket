@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from .ai.provider_base import AICallSpec, AIProvider, create_with_retry
+from .ai.provider_base import AICallSpec, AIProvider, AIResponse, create_with_retry
 from .ai.schemas import get_director_output_schema
 from .config_loader import model_for_role, narration_language, sampling_params
 from .engine_loader import eng
@@ -151,6 +151,21 @@ def _no_guidance(error: Exception) -> dict[str, Any]:
     return {}
 
 
+def _parsed_guidance(answer: AIResponse) -> dict[str, Any]:
+    try:
+        guidance: dict[str, Any] = json.loads(answer.content)
+    except json.JSONDecodeError as e:
+        usage = answer.usage or {}
+        reasoning_tail = " ".join(answer.reasoning[-eng().truncations.log_xlong :].split())
+        raise ValueError(
+            f"{e}; the answer stopped as {answer.stop_reason} after {usage.get('output_tokens')} output tokens, "
+            f"{usage.get('reasoning_tokens')} of them reasoning, with {len(answer.content)} characters of JSON, "
+            f"which began: {answer.content[: eng().truncations.log_xlong]!r}, "
+            f"and {len(answer.reasoning)} of reasoning text, which ended: {reasoning_tail!r}"
+        ) from e
+    return guidance
+
+
 def call_director(provider: AIProvider, game: GameState, latest_narration: str) -> dict[str, Any]:
     log(f"[Director] Analyzing scene {game.narrative.scene_count}")
 
@@ -194,18 +209,7 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
         **params,
     )
     try:
-        answer = create_with_retry(provider, answer_spec)
-        try:
-            guidance: dict[str, Any] = json.loads(answer.content)
-        except json.JSONDecodeError as e:
-            usage = answer.usage or {}
-            reasoning_tail = " ".join(answer.reasoning[-eng().truncations.log_xlong :].split())
-            raise ValueError(
-                f"{e}; the answer stopped as {answer.stop_reason} after {usage.get('output_tokens')} output tokens, "
-                f"{usage.get('reasoning_tokens')} of them reasoning, with {len(answer.content)} characters of JSON, "
-                f"which began: {answer.content[: eng().truncations.log_xlong]!r}, "
-                f"and {len(answer.reasoning)} of reasoning text, which ended: {reasoning_tail!r}"
-            ) from e
+        guidance = _parsed_guidance(create_with_retry(provider, answer_spec))
     except Exception as e:
         return _no_guidance(e)
 
@@ -241,7 +245,8 @@ def _apply_profile_updates(npc: NpcData, ref: dict[str, Any]) -> None:
     updated_arc = ref["updated_arc"].strip()
     if updated_arc:
         log(
-            f"[Director] Arc updated for {npc.name}: '{npc.arc[: _trunc.log_short]}' → '{updated_arc[: _trunc.log_short]}'"
+            f"[Director] Arc updated for {npc.name}: "
+            f"'{npc.arc[: _trunc.log_short]}' → '{updated_arc[: _trunc.log_short]}'"
         )
         npc.arc = updated_arc
     updated_description = ref["updated_description"].strip()

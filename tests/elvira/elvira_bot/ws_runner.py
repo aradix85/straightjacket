@@ -62,39 +62,35 @@ class WsClient:
     async def send(self, msg: dict[str, Any]) -> None:
         await self.ws.send(json.dumps(msg))
 
-    async def recv(self, timeout: float = 120) -> dict[str, Any]:
+    async def recv(self) -> dict[str, Any]:
         if self._buffer:
             return self._buffer.pop(0)
-        raw = await asyncio.wait_for(self.ws.recv(), timeout=timeout)
-        msg: dict[str, Any] = json.loads(raw)
+        msg: dict[str, Any] = json.loads(await self.ws.recv())
         return msg
 
-    async def recv_until(self, msg_type: str, timeout: float = 120) -> dict[str, Any]:
+    async def recv_until(self, msg_type: str) -> dict[str, Any]:
         for i, buffered in enumerate(self._buffer):
             if buffered.get("type") == msg_type:
                 return self._buffer.pop(i)
-        deadline = asyncio.get_event_loop().time() + timeout
         while True:
-            remaining = deadline - asyncio.get_event_loop().time()
-            if remaining <= 0:
-                raise TimeoutError(f"Timed out waiting for {msg_type}")
-            msg: dict[str, Any] = json.loads(await asyncio.wait_for(self.ws.recv(), timeout=remaining))
+            msg: dict[str, Any] = json.loads(await self.ws.recv())
             if msg.get("type") == msg_type:
                 return msg
             self._buffer.append(msg)
 
-    async def drain(self, timeout: float = 2.0) -> list[dict[str, Any]]:
+    async def drain(self, quiet: float) -> list[dict[str, Any]]:
         msgs = list(self._buffer)
         self._buffer.clear()
         try:
             while True:
-                raw = await asyncio.wait_for(self.ws.recv(), timeout=timeout)
+                async with asyncio.timeout(quiet):
+                    raw = await self.ws.recv()
                 msgs.append(json.loads(raw))
         except TimeoutError:
             pass
         return msgs
 
-    async def collect_turn(self, until: str, timeout: float = 180) -> dict[str, Any]:
+    async def collect_turn(self, until: str) -> dict[str, Any]:
         result: dict[str, Any] = {
             "narration": None,
             "replace_narration": None,
@@ -108,13 +104,11 @@ class WsClient:
             "other": [],
         }
         started = time.monotonic()
-        deadline = asyncio.get_running_loop().time() + timeout
+        deadline = asyncio.get_running_loop().time() + _TURN_SECONDS
         while True:
-            remaining = deadline - asyncio.get_running_loop().time()
-            if remaining <= 0:
-                break
             try:
-                msg = await self.recv(timeout=remaining)
+                async with asyncio.timeout_at(deadline):
+                    msg = await self.recv()
             except TimeoutError:
                 break
             t = msg.get("type", "")
@@ -145,13 +139,15 @@ class WsClient:
 
     async def get_debug_state(self) -> GameState | None:
         await self.send({"type": "debug_state"})
-        msg = await self.recv_until("debug_state", timeout=10)
+        async with asyncio.timeout(10):
+            msg = await self.recv_until("debug_state")
         data = msg.get("data")
         if data is None:
             return None
         return GameState.from_dict(data)
 
 
+_TURN_SECONDS = 180
 _BACKGROUND_TASKS: set[asyncio.Task[None]] = set()
 
 
@@ -240,22 +236,24 @@ async def run_ws_session(
         print(f"[ERROR] Cannot connect to {url}: {e}")
         raise SystemExit(1) from e
 
-    await client.drain(timeout=3)
+    await client.drain(quiet=3)
 
     clean_before = session_cfg["clean_before_run"]
     await client.send({"type": "create_player", "name": username})
-    msg = await client.recv_until("player_selected", timeout=10)
+    async with asyncio.timeout(10):
+        msg = await client.recv_until("player_selected")
     print(f"[SETUP] Player: {username}, has_game: {msg.get('has_game')}")
 
     if clean_before and not game_cfg["load_existing"]:
         if msg.get("has_game"):
             await client.send({"type": "delete_save", "name": "autosave"})
-            await client.drain(timeout=2)
+            await client.drain(quiet=2)
         await client.send({"type": "delete_save", "name": save_out})
-        await client.drain(timeout=2)
+        await client.drain(quiet=2)
 
         await client.send({"type": "select_player", "name": username})
-        msg = await client.recv_until("player_selected", timeout=10)
+        async with asyncio.timeout(10):
+            msg = await client.recv_until("player_selected")
         print(f"[CLEAN] Deleted previous saves, has_game: {msg.get('has_game')}")
 
     if not msg.get("has_game"):
@@ -377,7 +375,7 @@ async def run_ws_session(
 
             if total_turns % save_every == 0:
                 await client.send({"type": "save", "name": save_out})
-                await client.drain(timeout=2)
+                await client.drain(quiet=2)
                 print(f"  [SAVE] Saved to '{save_out}'")
 
             if game.game_over:
@@ -417,7 +415,7 @@ async def run_ws_session(
     print_summary(slog, game)
 
     await client.send({"type": "save", "name": save_out})
-    await client.drain(timeout=2)
+    await client.drain(quiet=2)
 
     coverage.hit("burn_offered", burns_offered)
     coverage.hit("burn_taken", burns_taken)
@@ -552,7 +550,8 @@ async def _handle_burn(
         error = td["error"]
         rec.burn_error = error
         print(f"  [BURN] Failed: {error}")
-        await client.recv_until("burn_offer")
+        async with asyncio.timeout(120):
+            await client.recv_until("burn_offer")
         await client.send({"type": "burn_momentum", "accept": False})
         await client.collect_turn("turn_complete")
     elif td["replace_narration"]:
@@ -605,12 +604,14 @@ def _plain(fragment: str) -> str:
 async def _probe_queries(client: WsClient, slog: SessionLog) -> None:
     for query in ("status_query", "tracks_query", "threats_query"):
         await client.send({"type": query})
-        answer = await client.recv_until("status", timeout=30)
+        async with asyncio.timeout(30):
+            answer = await client.recv_until("status")
         if not str(answer.get("text", "")).strip():
             slog.query_issues.append(f"{query}: empty answer")
     await client.send({"type": "recap"})
     while True:
-        msg = await client.recv(timeout=180)
+        async with asyncio.timeout(180):
+            msg = await client.recv()
         if msg.get("type") == "recap":
             if not str(msg.get("text", "")).strip():
                 slog.query_issues.append("recap: empty answer")

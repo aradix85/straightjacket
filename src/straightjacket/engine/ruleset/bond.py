@@ -30,7 +30,9 @@ def connection_track(game: GameState, npc_id: str) -> ProgressTrack | None:
 def seal_bond(game: GameState, npc: NpcData) -> ProgressTrack:
     track = connection_track(game, npc.id)
     if track is None:
-        track = new_track(id=connection_track_id(npc.id), name=npc.name, track_type="connection", rank=ranks()[-1])
+        track = new_track(
+            track_id=connection_track_id(npc.id), name=npc.name, track_type="connection", rank=ranks()[-1]
+        )
         game.progress_tracks.append(track)
     track.status = "bonded"
     track.ticks = track.max_ticks

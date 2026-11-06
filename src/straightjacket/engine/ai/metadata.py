@@ -78,7 +78,7 @@ def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
         npc_id = next_npc_id(game)
 
         npc = new_npc(
-            id=npc_id,
+            npc_id=npc_id,
             name=name,
             disposition=gm().npc.default_new_npc_disposition,
             status="lore",

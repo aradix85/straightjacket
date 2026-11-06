@@ -69,7 +69,8 @@ def _cost_lines(slog: SessionLog, prices: dict[str, list[float]]) -> list[str]:
             f"- {label}: {usage['calls']} calls, {usage['input']} in, {usage['output']} out, about ${cost:.3f}"
         )
     lines.append(
-        f"- Total for the game: about ${total:.2f}. Input is counted at full price, so prompt caching makes the real cost lower."
+        f"- Total for the game: about ${total:.2f}. "
+        "Input is counted at full price, so prompt caching makes the real cost lower."
     )
     return lines
 

@@ -48,8 +48,8 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
     if brain.target_track is not None and brain.move in rules().get_raw("progress_mark_categories"):
         log(f"[Track] {brain.move} continues {brain.target_track}; no new {track_type} track")
         return
-    assert brain.track_name
-    assert brain.track_rank
+    if not brain.track_name or not brain.track_rank:
+        raise ValueError(f"{brain.move} starts a {track_type} track but the Brain named no track name or rank")
 
     if track_type == "connection":
         if brain.target_npc is None:
@@ -76,7 +76,7 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
 
 def _add_track(game: GameState, base_id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
     track_id = unique_id(base_id, {t.id for t in game.progress_tracks})
-    track = new_track(id=track_id, name=name, track_type=track_type, rank=rank)
+    track = new_track(track_id=track_id, name=name, track_type=track_type, rank=rank)
     game.progress_tracks.append(track)
     log(f"[Track] Created {track_type} track: {name} ({rank}), id={track_id}")
 
@@ -100,8 +100,8 @@ def _vow_thread(thread_id: str, vow: ProgressTrack, source: str) -> ThreadEntry:
 
 
 def swear_background_vow(game: GameState, vow_text: str, rank: str) -> None:
-    vow_rank = rank if rank else rules().creation.background_vow_default_rank
-    track = new_track(id="vow_background", name=vow_text, track_type="vow", rank=vow_rank)
+    vow_rank = rank or rules().creation.background_vow_default_rank
+    track = new_track(track_id="vow_background", name=vow_text, track_type="vow", rank=vow_rank)
     game.progress_tracks.append(track)
     game.narrative.threads.append(_vow_thread("thread_background_vow", track, "creation"))
     log(f"[Track] Background vow track: rank={vow_rank}, thread seeded")
@@ -169,7 +169,8 @@ def apply_progress_and_legacy(
         started = rules().get_raw("track_creating_moves").get(brain.move)
         target = brain.target_track
         if started and target is None:
-            assert brain.track_name
+            if not brain.track_name:
+                raise ValueError(f"{brain.move} marks progress on a new track but the Brain named no track")
             target = _started_track_id(started, brain.track_name)
         track = find_progress_track(game, track_category, target)
         for _ in range(outcome.progress_marks):

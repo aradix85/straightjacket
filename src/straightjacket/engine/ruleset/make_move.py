@@ -176,7 +176,8 @@ def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> 
         game, outcome.chained_move, roll.result, target_npc_id=brain.target_npc, aided_by=None, match=roll.match
     )
     log(
-        f"[Chain] {outcome.chained_move} ({label}={stat_value}, +{adds}): score {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}"
+        f"[Chain] {outcome.chained_move} ({label}={stat_value}, +{adds}): "
+        f"score {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}"
     )
     outcome.consequences.append(consequence("chained_move", move=move.name, result=roll.result))
     outcome.consequences.extend(chained.consequences)

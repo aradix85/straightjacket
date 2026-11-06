@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import random
 import re
-import xml.etree.ElementTree as ET
 from typing import Any
 
 import pytest
+from defusedxml.ElementTree import fromstring
 from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
@@ -32,7 +32,7 @@ def _narrator_prompt(monkeypatch: pytest.MonkeyPatch, result: str, brain: dict[s
 
 
 def _scene_block(prompt: str) -> str:
-    match = re.search(r"<scene\b.*</scene>", prompt, re.S)
+    match = re.search(r"<scene\b.*</scene>", prompt, re.DOTALL)
     assert match, prompt[:200]
     return match.group(0)
 
@@ -42,7 +42,7 @@ def test_action_scene_is_well_formed_xml_for_every_result(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
     prompt = _narrator_prompt(monkeypatch, result, brain_answer(player_intent="Take the ledger"))
-    assert ET.fromstring(_scene_block(prompt)).tag == "scene"
+    assert fromstring(_scene_block(prompt)).tag == "scene"
 
 
 def test_dialog_scene_is_well_formed_xml(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -55,7 +55,7 @@ def test_dialog_scene_is_well_formed_xml(load_engine: None, monkeypatch: pytest.
         location_change=None,
     )
     prompt = _narrator_prompt(monkeypatch, "MISS", brain)
-    assert ET.fromstring(_scene_block(prompt)).tag == "scene"
+    assert fromstring(_scene_block(prompt)).tag == "scene"
 
 
 def test_correction_analysis_escapes_player_text(load_engine: None) -> None:
@@ -73,7 +73,7 @@ def test_correction_analysis_escapes_player_text(load_engine: None) -> None:
     assert "</last_turn><result>" not in prompt
     assert "</current_state><x>" not in prompt
     assert "not &lt;that&gt; &amp; this" in prompt
-    assert [child.tag for child in ET.fromstring(f"<root>{prompt}</root>")] == ["last_turn", "current_state"]
+    assert [child.tag for child in fromstring(f"<root>{prompt}</root>")] == ["last_turn", "current_state"]
 
 
 def _voicing_request(game: GameState) -> tuple[str, BlueprintSeed]:

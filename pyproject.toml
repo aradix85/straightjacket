@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.06.0"
+version = "2026.11.06.1"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx2", "types-PyYAML", "radon", "ruff", "mypy"]
+test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx2", "types-PyYAML", "radon", "ruff==0.17.4", "mypy", "defusedxml", "types-defusedxml"]
 elvira = ["websockets>=13.0,<15"]
 
 [tool.ruff]
@@ -20,15 +20,62 @@ line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "SIM", "UP", "RUF", "PERF", "PT", "PTH", "DTZ"]
+preview = true
+select = ["ALL"]
 ignore = [
-    "E501",   # line length — handled by formatter, not linter
-    "E402",   # module-level import not at top — tests/conftest.py and tests/elvira/elvira.py set sys.path and the environment first
-    "SIM108", # ternary — readability over conciseness in game logic
-    "SIM401", # dict.get(k, fallback) — conflicts with the no-fallback rule on domain config
-    "PERF401", # manual list comprehension — loops with conditions stay loops when they read clearer
+    "D",                                          # docstrings are forbidden (CONTRIBUTING.md, Project rules)
+    "DOC",                                        # docstrings are forbidden
+    "missing-copyright-notice",                   # wants a comment header in every file; comments are forbidden
+    "missing-trailing-comma",                     # conflicts with ruff format
+    "single-line-implicit-string-concatenation",  # conflicts with ruff format
+    "if-else-block-instead-of-dict-get",          # wants dict.get with a fallback; domain config raises on a miss
+    "suspicious-non-cryptographic-random-usage",  # the dice use random, and the tests patch random
+    # taken up in later releases, one group at a time:
+    "ARG",
+    "EM",
+    "FBT",
+    "TC",
+    "any-type",
+    "compare-to-empty-string",
+    "complex-structure",
+    "global-statement",
+    "import-outside-top-level",
+    "import-private-name",
+    "literal-membership",
+    "non-empty-init-module",
+    "magic-value-comparison",
+    "module-import-not-at-top-of-file",
+    "no-self-use",
+    "print",
+    "private-member-access",
+    "raise-vanilla-args",
+    "relative-imports",
+    "too-many-arguments",
+    "too-many-boolean-expressions",
+    "too-many-branches",
+    "too-many-locals",
+    "too-many-positional-arguments",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-statements",
+    "used-dummy-variable",
 ]
-per-file-ignores = {"src/straightjacket/engine/game/__init__.py" = ["F401"], "src/straightjacket/engine/tools/__init__.py" = ["F401"], "src/straightjacket/engine/models.py" = ["F401"]}
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/test_*.py" = ["assert"]
+"tests/conftest.py" = ["assert"]
+"tests/_*.py" = ["assert"]
+"run.py" = [
+    "start-process-with-no-shell",
+    "subprocess-without-shell-equals-true",
+    "suspicious-subprocess-import",
+]
+"tests/test_config_loader.py" = ["suspicious-subprocess-import", "subprocess-without-shell-equals-true"]
+"tests/test_project_rules.py" = ["suspicious-subprocess-import", "subprocess-without-shell-equals-true"]
+"src/straightjacket/engine/ai/{brain,narrator,recap,blueprint_voicing,provider_base}.py" = ["blind-except"]
+"src/straightjacket/engine/{director,correction/analysis}.py" = ["blind-except"]
+"src/straightjacket/web/{handlers,server}.py" = ["blind-except"]
+"tests/elvira/elvira_bot/{runner,ws_runner,judge}.py" = ["blind-except"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["straightjacket"]
@@ -64,6 +111,7 @@ enable_error_code = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+usefixtures = ["_ruleset_answers", "_no_backoff_wait", "_reset_random"]
 asyncio_mode = "strict"
 
 [tool.coverage.run]

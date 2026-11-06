@@ -851,9 +851,6 @@ def _chapter_transition(
     print(f"\n{SEPARATOR}\n  STARTING CHAPTER {chapter_num + 1}\n{SEPARATOR}")
     try:
         narration = start_new_chapter(provider, game)
-        chat_messages = [{"role": "assistant", "content": narration}]
-        print(f"  [CHAPTER] Chapter {game.campaign.chapter_number} at {game.world.current_location}")
-        return game, narration, chat_messages, False
     except Exception as e:
         tb = traceback.format_exc()
         print(f"  [CHAPTER] Failed: {e}")
@@ -861,6 +858,9 @@ def _chapter_transition(
         slog.ended_reason = f"chapter_transition_error: {type(e).__name__}: {e}"
         slog.violations.append(f"CRASH in start_new_chapter: {tb[-500:]}")
         return game, "", chat_messages, True
+    chat_messages = [{"role": "assistant", "content": narration}]
+    print(f"  [CHAPTER] Chapter {game.campaign.chapter_number} at {game.world.current_location}")
+    return game, narration, chat_messages, False
 
 
 def _try_save(game: GameState, username: str, chat_messages: list[dict[str, Any]], save_out: str) -> None:

@@ -104,7 +104,8 @@ def make_due_bond_test(game: GameState, npc_id: str | None, rolled_move: str | N
         log(f"[Bond] {npc_id}: the forsaken vow '{forsaken[0].name}' asks no test of a bond now")
         return
     npc = find_npc(game, npc_id)
-    assert npc is not None
+    if npc is None:
+        raise ValueError(f"the bond track of {npc_id} names no NPC in the game")
     result.consequences.append(consequence("bond_tested", name=npc.name, vow=forsaken[0].name))
     log(f"[Bond] {npc.name}: the forsaken vow '{forsaken[0].name}' tests the bond")
     _make_follow_up(game, move_key, npc_id, result)

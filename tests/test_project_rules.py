@@ -602,7 +602,7 @@ def _check_no_hardcoded_model_names_in_engine() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
-        if rel in {"engine/config_loader.py"}:
+        if rel == "engine/config_loader.py":
             continue
         violations.extend(_scan_model_names(path, rel))
     for path in _iter_test_files():
@@ -805,16 +805,14 @@ def _check_no_warning_suppression() -> tuple[str, list[Violation]]:
 
 def _check_no_versioned_filenames() -> tuple[str, list[Violation]]:
     versioned = re.compile(r"_(v\d+|old|deprecated|new|backup|copy)\.py$")
-    violations: list[Violation] = []
-    for path in _iter_source_files():
-        if versioned.search(path.name):
-            violations.append(Violation(_rel(path), 0, path.name))
+    violations = [Violation(_rel(path), 0, path.name) for path in _iter_source_files() if versioned.search(path.name)]
     return "versioned filename suffix (edit in place, no _v2.py / _old.py)", violations
 
 
 def _check_ruff_format_clean() -> tuple[str, list[Violation]]:
     result = subprocess.run(
-        [sys.executable, "-m", "ruff", "format", "--check", str(SRC_ROOT), str(TESTS_ROOT)],
+        [sys.executable, "-m", "ruff", "format", "--check", str(REPO_ROOT)],
+        check=False,
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
@@ -856,7 +854,7 @@ def _collect_public_symbols() -> dict[tuple[str, Path], None]:
                 continue
             if node.name.startswith("_"):
                 continue
-            defs[(node.name, path)] = None
+            defs[node.name, path] = None
     return defs
 
 
@@ -1000,12 +998,16 @@ def _stale_file_entries() -> list[Violation]:
         path = TESTS_ROOT / rel
         if not path.exists() or not _scan_provider_sdk(path, rel):
             violations.append(Violation(rel, 0, "provider-import allowance for a test that imports no provider SDK"))
-    for rel in sorted(_CONFIG_BINDING_FILES):
-        if not (SRC_ROOT / rel).exists():
-            violations.append(Violation(rel, 0, "config binding file does not exist"))
-    for stem in sorted(_CORE_BASE):
-        if not (SRC_ROOT / "engine" / f"{stem}.py").exists():
-            violations.append(Violation(f"engine/{stem}.py", 0, "import-layer base file does not exist"))
+    violations.extend(
+        Violation(rel, 0, "config binding file does not exist")
+        for rel in sorted(_CONFIG_BINDING_FILES)
+        if not (SRC_ROOT / rel).exists()
+    )
+    violations.extend(
+        Violation(f"engine/{stem}.py", 0, "import-layer base file does not exist")
+        for stem in sorted(_CORE_BASE)
+        if not (SRC_ROOT / "engine" / f"{stem}.py").exists()
+    )
     return violations
 
 
@@ -1105,8 +1107,10 @@ def _check_doc_paths_exist() -> tuple[str, list[Violation]]:
                     continue
                 if not any(f == path or f.endswith("/" + path) for f in files):
                     violations.append(Violation(_doc_name(doc), lineno, f"`{path}` does not exist"))
-    for placeholder in sorted(_DOC_PATH_PLACEHOLDERS - used_placeholders):
-        violations.append(Violation("<placeholders>", 0, f"`{placeholder}` is no longer used in any md file"))
+    violations.extend(
+        Violation("<placeholders>", 0, f"`{placeholder}` is no longer used in any md file")
+        for placeholder in sorted(_DOC_PATH_PLACEHOLDERS - used_placeholders)
+    )
     return "DOC DRIFT: path named in an md file does not exist", violations
 
 
@@ -1125,11 +1129,14 @@ def _check_code_map_complete() -> tuple[str, list[Violation]]:
     existing = {
         path.parent.relative_to(SRC_ROOT).as_posix() for path in _iter_source_files() if path.parent != SRC_ROOT
     }
-    violations: list[Violation] = []
-    for package in sorted(existing - listed):
-        violations.append(Violation(package, 0, "package missing from the ARCHITECTURE.md code map"))
-    for package in sorted(listed - existing):
-        violations.append(Violation("ARCHITECTURE.md", 0, f"code map lists {package!r}, which is not a package"))
+    violations = [
+        Violation(package, 0, "package missing from the ARCHITECTURE.md code map")
+        for package in sorted(existing - listed)
+    ]
+    violations.extend(
+        Violation("ARCHITECTURE.md", 0, f"code map lists {package!r}, which is not a package")
+        for package in sorted(listed - existing)
+    )
     return "DOC DRIFT: ARCHITECTURE.md code map", violations
 
 
@@ -1191,8 +1198,8 @@ def _names_section(anchors: list[str], section: str) -> bool:
 
 def _section_refs(line: str) -> Iterator[tuple[str | None, str]]:
     for group in _PAREN_GROUP.findall(line):
-        for segment in group.split(";"):
-            segment = segment.strip()
+        for raw_segment in group.split(";"):
+            segment = raw_segment.strip()
             if match := _FILE_SECTION.search(segment):
                 yield match.group(1), match.group(2)
             elif match := _SELF_SECTION.match(segment):
@@ -1202,8 +1209,10 @@ def _section_refs(line: str) -> Iterator[tuple[str | None, str]]:
 
 
 def _roadmap_steps(roadmap: str) -> tuple[set[str], set[str]]:
-    done = set(re.findall(r"^- \*\*(\d+[a-z]?)\b", roadmap[roadmap.index("\n## DONE") :], re.M))
-    open_steps = set(re.findall(r"^### (\S+) — ", roadmap, re.M)) | set(re.findall(r"NEXT STEP — (\S+):", roadmap))
+    done = set(re.findall(r"^- \*\*(\d+[a-z]?)\b", roadmap[roadmap.index("\n## DONE") :], re.MULTILINE))
+    open_steps = set(re.findall(r"^### (\S+) — ", roadmap, re.MULTILINE)) | set(
+        re.findall(r"NEXT STEP — (\S+):", roadmap)
+    )
     substeps = set(re.findall(r"\*\*(\d+[a-z]?\.\w+)\*\*", roadmap))
     return open_steps | done, substeps | {f"{step}." for step in done}
 
@@ -1269,7 +1278,7 @@ def _check_divergences_have_a_status() -> tuple[str, list[Violation]]:
 def _check_changelog_consistent() -> tuple[str, list[Violation]]:
     lines = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8").splitlines()
     pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    project_version = re.search(r'^version = "([^"]+)"', pyproject, re.M)
+    project_version = re.search(r'^version = "([^"]+)"', pyproject, re.MULTILINE)
     violations: list[Violation] = []
     headers = [(i, m.group(1)) for i, line in enumerate(lines, 1) if (m := _CHANGELOG_HEADER.match(line))]
     if project_version is None or not headers or headers[0][1] != project_version.group(1):
@@ -1463,5 +1472,5 @@ def test_project_rules() -> None:
             failed.append((category, violations))
 
     if failed:
-        report = "\n\n".join(_format_report(cat, vs) for cat, vs in failed)
+        report = "\n\n".join(itertools.starmap(_format_report, failed))
         raise AssertionError("\n" + report)

@@ -7,7 +7,10 @@ from typing_extensions import override
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from tests._mocks import ScriptedProvider
 
-VERDICT = '{"result_integrity": 5, "prompt_elements": 5, "npc_voice": 5, "player_agency": 5, "restraint": 5, "prose": 5, "overall": 9, "weakness": "none", "revelation_conveyed": true}'
+VERDICT = (
+    '{"result_integrity": 5, "prompt_elements": 5, "npc_voice": 5,'
+    ' "player_agency": 5, "restraint": 5, "prose": 5, "overall": 9, "weakness": "none", "revelation_conveyed": true}'
+)
 
 
 def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, list[AICallSpec]]:
@@ -21,7 +24,7 @@ def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, li
             seen.append(spec)
             return AIResponse(content=VERDICT)
 
-    monkeypatch.setattr(judge, "bot_provider", lambda: Capture())
+    monkeypatch.setattr(judge, "bot_provider", Capture)
     monkeypatch.setattr(judge, "bot_model", lambda: "judge-model")
     return judge, seen
 

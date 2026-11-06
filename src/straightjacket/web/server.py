@@ -183,7 +183,7 @@ async def websocket_endpoint(ws: WebSocket) -> None:
             _session.active_ws = None
 
 
-async def homepage(_request: object) -> FileResponse:
+def homepage(_request: object) -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
 
 

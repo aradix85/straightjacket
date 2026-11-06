@@ -101,7 +101,6 @@ def _cluster(data: dict[str, Any]) -> dict[str, Any]:
             r"cluster 'classification' has unknown keys \['temprature'\]",
         ),
         (lambda data: _cluster(data).pop("provider"), "missing required fields"),
-        (lambda data: data["ai"]["clusters"].update(classification="qwen"), "must be a mapping"),
         (lambda data: _cluster(data).update(provider="elsewhere"), r"not defined under ai\.providers"),
         (lambda data: data["ai"]["role_cluster"].update(recap="creative"), r"not defined under ai\.clusters"),
         (
@@ -118,7 +117,6 @@ def _cluster(data: dict[str, Any]) -> dict[str, Any]:
         "unknown_top_key",
         "unknown_cluster_key",
         "missing_field",
-        "not_a_mapping",
         "unknown_provider",
         "unknown_cluster",
         "unknown_role",
@@ -134,11 +132,21 @@ def test_a_config_file_that_does_not_fit_stops_loading(
         read_config(data)
 
 
+def test_a_config_section_that_is_not_a_mapping_stops_loading(read_config: Callable[[dict[str, object]], None]) -> None:
+    data = _full_config_data()
+    data["ai"]["clusters"]["classification"] = "qwen"
+    with pytest.raises(TypeError, match="must be a mapping"):
+        read_config(data)
+
+
 def _users_dirs_in_a_fresh_process(env: dict[str, str]) -> list[str]:
     import subprocess
     import sys
 
-    code = "from straightjacket.engine import config_loader, user_management; print(config_loader.USERS_DIR); print(user_management.USERS_DIR)"
+    code = (
+        "from straightjacket.engine import config_loader, user_management; "
+        "print(config_loader.USERS_DIR); print(user_management.USERS_DIR)"
+    )
     out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True)
     return out.stdout.split()
 

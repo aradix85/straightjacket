@@ -4,7 +4,7 @@ How to change Straightjacket: the workflow, the rules every change keeps, the co
 
 ## Workflow
 
-1. `ruff check --fix src/ tests/` and `ruff format src/ tests/`: must be clean.
+1. `ruff check --fix .` and `ruff format .`: must be clean.
 2. `python -m pytest tests/ -q --cov`: every test passes, and total coverage stays at or above `fail_under` in `pyproject.toml` (`[tool.coverage.report]`). When the total stays past the next whole percent in every run, raise `fail_under` to it, since the random paths a run takes move the total by a few hundredths; never lower it.
 3. `mypy --config-file pyproject.toml`: must be clean over the paths its `files` names.
 4. **Read the whole diff back** before the commit, after every substep, and fix what it finds. A green suite does not replace this reading, since tests written beside the code share its blind spots. Look for:
@@ -89,7 +89,7 @@ An external structure is a Datasworn field absent from at least one of the four 
 
 ## Code standards
 
-Python 3.11+, dataclasses with type hints, f-strings, pathlib, snake_case, no mutable defaults, imports sorted at the top of the file, lines of at most 120 characters wherever the formatter can break them. `pyproject.toml` holds the full ruff and mypy configuration; the linter rules are the spec. mypy runs in strict mode with the further checks `[tool.mypy]` lists, over the tests and Elvira as well as `src/`: every function is typed, generics state their parameters, re-exports are explicit through `__all__`, an override carries `@override` (from `typing_extensions`, which Python 3.11 needs for it), and a value that arrives as `Any` from yaml or JSON gets its type where it enters typed code. A package without types of its own gets a stub in `stubs/`, as radon has.
+Python 3.11+, dataclasses with type hints, f-strings, pathlib, snake_case, no mutable defaults, imports sorted at the top of the file, lines of at most 120 characters. `pyproject.toml` holds the full ruff and mypy configuration; the linter rules are the spec. ruff selects every rule, the preview rules included, at the version pinned there and in `.pre-commit-config.yaml`, and ignores only what `[tool.ruff.lint]` and its per-file table list: the rules that clash with a project rule or with ruff format, each with its reason, the carve-outs, and the groups still to be taken up. mypy runs in strict mode with the further checks `[tool.mypy]` lists, over the tests and Elvira as well as `src/`: every function is typed, generics state their parameters, re-exports are explicit through `__all__`, an override carries `@override` (from `typing_extensions`, which Python 3.11 needs for it), and a value that arrives as `Any` from yaml or JSON gets its type where it enters typed code. A package without types of its own gets a stub in `stubs/`, as radon has.
 
 UI changes keep the page accessible: semantic HTML, ARIA live regions, heading structure, native form controls; no div-buttons and no spatial-only references.
 

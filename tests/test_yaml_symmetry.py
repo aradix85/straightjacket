@@ -18,7 +18,8 @@ class TestMoveCategoriesSymmetry:
         mapping_keys = set(gm().stance_move_buckets.mapping.keys())
         missing = cats - mapping_keys
         assert missing == set(), (
-            f"Categories defined in move_categories.yaml but missing from stance_move_buckets.mapping: {sorted(missing)}. "
+            "Categories defined in move_categories.yaml but missing from stance_move_buckets.mapping: "
+            f"{sorted(missing)}. "
             "Every move_category value must map to a stance bucket — otherwise NPC stance resolution KeyErrors."
         )
 
@@ -117,7 +118,8 @@ class TestMoveOutcomesCoverage:
         missing = sorted(action_roll_moves - set(outcomes.keys()))
         assert missing == [], (
             f"Action_roll moves without an entry in engine/move_outcomes.yaml: {missing}. "
-            "Every action_roll move must have outcomes defined per result, otherwise resolve_move_outcome crashes mid-turn."
+            "Every action_roll move must have outcomes defined per result, "
+            "otherwise resolve_move_outcome crashes mid-turn."
         )
 
     def test_no_orphan_outcome_entries(self) -> None:

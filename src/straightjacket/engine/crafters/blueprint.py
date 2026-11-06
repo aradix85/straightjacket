@@ -144,9 +144,7 @@ def materialize_blueprint(seed: BlueprintSeed, voicing: dict[str, Any]) -> Story
         raise ValueError(
             f"voicing returned {len(voicing_endings)} endings, expected {bp_cfg.possible_endings_per_blueprint}"
         )
-    possible_endings: list[PossibleEnding] = []
-    for v in voicing_endings:
-        possible_endings.append(PossibleEnding(type=v["type"], description=v["description"]))
+    possible_endings = [PossibleEnding(type=v["type"], description=v["description"]) for v in voicing_endings]
 
     return StoryBlueprint(
         central_conflict=voicing["central_conflict"],

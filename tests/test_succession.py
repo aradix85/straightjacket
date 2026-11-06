@@ -363,7 +363,7 @@ def test_a_successor_takes_up_a_fresh_character_in_the_same_world(aria: GameStat
     aria.resources.meters["spirit"] = 0
     aria.crisis_mode = True
     aria.threats = [make_threat(id="thr_1", name="Faction war")]
-    aria.progress_tracks.append(new_track(id="combat_raid", name="Raid", track_type="combat", rank="dangerous"))
+    aria.progress_tracks.append(new_track(track_id="combat_raid", name="Raid", track_type="combat", rank="dangerous"))
     aria.world.combat_position = "bad_spot"
     aria.last_turn_snapshot = aria.snapshot()
     old_clocks = list(aria.world.clocks)

@@ -30,7 +30,8 @@ from .setup_common import apply_opening_setup, record_opening
 
 def generate_epilogue(provider: AIProvider, game: GameState) -> str:
     log(
-        f"[Epilogue] Generating epilogue for {game.player_name} (chapter {game.campaign.chapter_number}, scene {game.narrative.scene_count})"
+        f"[Epilogue] Generating epilogue for {game.player_name} "
+        f"(chapter {game.campaign.chapter_number}, scene {game.narrative.scene_count})"
     )
 
     raw = call_narrator(provider, build_epilogue_prompt(game), game)

@@ -27,8 +27,7 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
             " ".join(npc.aliases),
         ]
 
-        for m in npc.memory[-_tf.memory_window :]:
-            parts.append(m.event)
+        parts.extend(m.event for m in npc.memory[-_tf.memory_window :])
         docs[npc_id] = _tokenize(" ".join(parts))
 
     query_tokens = _tokenize(query_text)
@@ -79,8 +78,7 @@ def _build_story_text(brain: BrainResult, game: GameState) -> str:
         game.world.current_scene_context,
         game.world.current_location,
     ]
-    for s in game.narrative.session_log[-_tf.session_window :]:
-        scan_parts.append(s.summary)
+    scan_parts.extend(s.summary for s in game.narrative.session_log[-_tf.session_window :])
     return " ".join(scan_parts)
 
 
@@ -137,7 +135,7 @@ def _cap_activated_overflow(
     non_target.sort(key=lambda n: answers().closeness(game, n.id), reverse=True)
     overflow = non_target[_max_activated - (1 if target_npc else 0) :]
     activated = [n for n in activated if n not in overflow]
-    mentioned = mentioned + overflow
+    mentioned = [*mentioned, *overflow]
     return activated, mentioned
 
 
@@ -186,7 +184,7 @@ def activate_npcs_for_prompt(
             mentioned.append(npc)
 
     activated, mentioned = _cap_activated_overflow(activated, mentioned, target_id, game)
-    mentioned = mentioned + _recursive_activation(activated, mentioned, game)
+    mentioned = [*mentioned, *_recursive_activation(activated, mentioned, game)]
 
     log(f"[NPC Activation] Activated: {[n.name for n in activated]}, Mentioned: {[n.name for n in mentioned]}")
 

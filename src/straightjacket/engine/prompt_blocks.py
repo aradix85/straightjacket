@@ -94,9 +94,13 @@ def narrative_direction_block(game: GameState, outcome: str) -> str:
         parts.append(get_prompt("narrative_direction_intensity_low"))
 
     entry = nd.by_outcome[outcome]
-    parts.append(get_prompt("narrative_direction_tempo_label", tempo=entry.tempo))
-    parts.append(get_prompt("narrative_direction_perspective_label", perspective=entry.perspective))
-    parts.append(get_prompt("narrative_direction_player_caused"))
+    parts.extend(
+        (
+            get_prompt("narrative_direction_tempo_label", tempo=entry.tempo),
+            get_prompt("narrative_direction_perspective_label", perspective=entry.perspective),
+            get_prompt("narrative_direction_player_caused"),
+        )
+    )
 
     hint = get_pacing_hint(game)
     if hint == "breather":

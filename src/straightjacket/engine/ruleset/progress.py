@@ -8,9 +8,9 @@ def ranks() -> list[str]:
     return list(rules().progress.ticks_per_mark)
 
 
-def new_track(*, id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
+def new_track(*, track_id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
     return ProgressTrack(
-        id=id,
+        id=track_id,
         name=name,
         track_type=track_type,
         rank=rank,

@@ -23,7 +23,7 @@ class _SilentLogging(types.ModuleType):
 sys.modules["straightjacket.engine.logging_util"] = _SilentLogging("straightjacket.engine.logging_util")
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def _ruleset_answers() -> None:
     from straightjacket.engine.gamemaster.questions import install_answers
     from straightjacket.engine.ruleset import answers
@@ -31,14 +31,14 @@ def _ruleset_answers() -> None:
     install_answers(answers)
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def _no_backoff_wait(monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.ai import provider_base
 
     monkeypatch.setattr(provider_base, "_time", types.SimpleNamespace(sleep=lambda _: None))
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def _reset_random() -> Iterator[None]:
     import random as _random
 

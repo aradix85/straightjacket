@@ -131,7 +131,7 @@ class TurnRecord:
 
         d = asdict(self)
 
-        return {k: v for k, v in d.items() if v is not None and v != "" and v != [] and v != {}}
+        return {k: v for k, v in d.items() if v is not None and v not in ("", [], {})}
 
     @property
     def has_issues(self) -> bool:

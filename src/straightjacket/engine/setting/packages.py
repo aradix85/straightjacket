@@ -235,7 +235,7 @@ class SettingPackage:
         data: Setting,
         parent: SettingPackage | None,
         yaml_path: str,
-    ):
+    ) -> None:
         self._config = config
         self._data = data
         self._parent = parent

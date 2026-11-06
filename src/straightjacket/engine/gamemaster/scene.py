@@ -32,12 +32,12 @@ def check_scene(game: GameState) -> SceneSetup:
         adj_str = ", ".join(adjustments)
         log(f"[Scene] Altered (roll={roll} ≤ CF{cf}, odd): {adj_str}")
         return SceneSetup(scene_type="altered", interrupt_event=None, narrative_hint="", adjustments=adjustments)
-    else:
-        event = generate_random_event(game, source="interrupt_scene")
-        log(
-            f"[Scene] Interrupt (roll={roll} ≤ CF{cf}, even): {event.focus} → {event.meaning_action} / {event.meaning_subject}"
-        )
-        return SceneSetup(scene_type="interrupt", interrupt_event=event, narrative_hint="")
+    event = generate_random_event(game, source="interrupt_scene")
+    log(
+        f"[Scene] Interrupt (roll={roll} ≤ CF{cf}, even): "
+        f"{event.focus} → {event.meaning_action} / {event.meaning_subject}"
+    )
+    return SceneSetup(scene_type="interrupt", interrupt_event=event, narrative_hint="")
 
 
 def _roll_adjustments() -> list[str]:

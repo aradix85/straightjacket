@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from operator import itemgetter
+
 from ..models import GameState
 from .bond import connection_track
 from .moves import PICK_METHODS, Move, TriggerCondition
@@ -23,7 +25,7 @@ def best_roll_option(game: GameState, move: Move) -> tuple[str, int]:
             pick = PICK_METHODS[condition.method] if condition.method in PICK_METHODS else PICK_METHODS["highest"]
             name = pick(values)
             picks.append((name, values[name]))
-    return max(picks, key=lambda p: p[1])
+    return max(picks, key=itemgetter(1))
 
 
 def roll_by_method(game: GameState, move: Move, method: str) -> tuple[str, int]:

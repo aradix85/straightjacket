@@ -105,7 +105,8 @@ def replay_turn(
     game.last_turn_snapshot = snap
     snap.player_input = player_message
     log(
-        f"[Turn] Replaying scene {game.narrative.scene_count + 1} | Player: {player_message[: eng().truncations.log_long]}"
+        f"[Turn] Replaying scene {game.narrative.scene_count + 1} "
+        f"| Player: {player_message[: eng().truncations.log_long]}"
     )
 
     narration, _roll, burn_offer, director_ctx = _play_turn(

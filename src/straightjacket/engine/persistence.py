@@ -43,7 +43,8 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
 
     chat_messages = data["chat_messages"]
     log(
-        f"[Load] Game loaded: {username}/{name} ({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
+        f"[Load] Game loaded: {username}/{name} "
+        f"({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
     )
     return game, chat_messages
 

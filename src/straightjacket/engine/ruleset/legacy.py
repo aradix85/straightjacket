@@ -27,7 +27,7 @@ def _earns_experience(setting_id: str, track_name: str) -> bool:
 
 def _legacy_track(name: str) -> ProgressTrack:
     return new_track(
-        id=f"legacy_{name}",
+        track_id=f"legacy_{name}",
         name=t(f"status.legacy_name_{name}"),
         track_type="legacy",
         rank=rules().legacy.starting_rank,

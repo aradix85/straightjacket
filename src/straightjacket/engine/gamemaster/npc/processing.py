@@ -65,7 +65,7 @@ def _create_stub_for_rejected_reveal(
     stub_desc = (d["description"] or "").strip() or world_addition.strip()
     npc_id = next_npc_id(game)
     stub = new_npc(
-        id=npc_id,
+        npc_id=npc_id,
         name=new_name,
         disposition=gm().npc.default_new_npc_disposition,
         status="active",
@@ -221,7 +221,7 @@ def _create_new_npc(game: GameState, nd: dict[str, Any]) -> NpcData:
     log(f"[NPC name] Oracle rolled '{oracle_name}' (AI: '{ai_name}')")
 
     npc = new_npc(
-        id=npc_id,
+        npc_id=npc_id,
         name=oracle_name,
         disposition=nd["disposition"],
         status="active",

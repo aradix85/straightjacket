@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, Self
 
 import anthropic
 import openai
@@ -390,7 +390,7 @@ class _FakeAnthropicStream:
         self.events = events
         self.final = final
 
-    def __enter__(self) -> _FakeAnthropicStream:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *exc: object) -> None:

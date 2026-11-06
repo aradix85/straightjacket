@@ -1,4 +1,5 @@
 import json
+from itertools import starmap
 from typing import Any
 
 from ..config_loader import model_for_role, narration_language, sampling_params
@@ -46,7 +47,7 @@ def _revelation_seed_line(n: int, act_seed: ActSeed) -> str:
 def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
     revelation_seeds = get_prompt(
         "blueprint_revelation_seeds",
-        lines="\n".join(_revelation_seed_line(i, act_seed) for i, act_seed in enumerate(seed.acts, start=1)),
+        lines="\n".join(starmap(_revelation_seed_line, enumerate(seed.acts, start=1))),
     )
 
     ending_seeds = ""
@@ -80,7 +81,7 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
         else "",
         acts=str(len(seed.acts)),
         endings=str(blueprint.possible_endings_per_blueprint),
-        act_lines="\n".join(_act_line(i, act_seed) for i, act_seed in enumerate(seed.acts, start=1)),
+        act_lines="\n".join(starmap(_act_line, enumerate(seed.acts, start=1))),
         revelation_seeds=revelation_seeds,
         ending_seeds=ending_seeds,
         campaign=campaign,
@@ -142,9 +143,11 @@ def call_blueprint_voicing(
             )
             return voicing
         log(f"[BlueprintVoicing] Wrong counts ({', '.join(mismatch)}), asking again")
-        messages.append({"role": "assistant", "content": content})
-        messages.append(
-            {"role": "user", "content": get_prompt("blueprint_voicing_count_retry", mismatch=", ".join(mismatch))}
+        messages.extend(
+            (
+                {"role": "assistant", "content": content},
+                {"role": "user", "content": get_prompt("blueprint_voicing_count_retry", mismatch=", ".join(mismatch))},
+            )
         )
     log(
         f"[BlueprintVoicing] Wrong counts despite its schema ({', '.join(mismatch)}), continuing without blueprint",

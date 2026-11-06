@@ -30,10 +30,11 @@ def call_narrator(
     stream: NarrationSink | None = None,
 ) -> str:
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars)")
-    messages = []
+    messages: list[dict[str, Any]] = []
     for entry in game.narrative.narration_history[-gm().pacing.max_narration_history :]:
-        messages.append({"role": "user", "content": entry.prompt_summary})
-        messages.append({"role": "assistant", "content": entry.narration})
+        messages.extend(
+            ({"role": "user", "content": entry.prompt_summary}, {"role": "assistant", "content": entry.narration})
+        )
     messages.append({"role": "user", "content": prompt})
 
     system, cached_prefix = get_narrator_system(game)
@@ -97,11 +98,12 @@ def call_opening_setup(provider: AIProvider, narration: str, game: GameState) ->
     )
     try:
         data: dict[str, Any] = json.loads(create_with_retry(provider, spec).content)
-        log(f"[OpeningSetup] Extracted: {len(data['npcs'])} NPCs, loc={data['location']}")
-        return data
+        summary = f"{len(data['npcs'])} NPCs, loc={data['location']}"
     except Exception as e:
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
         return _no_opening_setup()
+    log(f"[OpeningSetup] Extracted: {summary}")
+    return data
 
 
 def call_narrator_metadata(
@@ -174,17 +176,22 @@ def call_narrator_metadata(
         **sampling_params("narrator_metadata"),
     )
     try:
-        metadata: dict[str, Any] = json.loads(create_with_retry(provider, spec).content)
-        if not npc_ids and (metadata["npc_renames"] or metadata["npc_details"]):
-            raise ValueError("the metadata renames or details an NPC, but no NPC is known")
-        log(
-            f"[Metadata] Extracted: "
+        metadata = _checked_metadata(create_with_retry(provider, spec).content, npc_ids)
+        summary = (
             f"{len(metadata['new_npcs'])} new NPCs, "
             f"{len(metadata['npc_renames'])} renames, "
             f"{len(metadata['deceased_npcs'])} deceased, "
             f"{len(metadata['lore_npcs'])} lore"
         )
-        return metadata
     except Exception as e:
         log(f"[Metadata] Extraction failed: {e}", level="warning")
         return _no_narrator_metadata()
+    log(f"[Metadata] Extracted: {summary}")
+    return metadata
+
+
+def _checked_metadata(content: str, npc_ids: list[str]) -> dict[str, Any]:
+    metadata: dict[str, Any] = json.loads(content)
+    if not npc_ids and (metadata["npc_renames"] or metadata["npc_details"]):
+        raise ValueError("the metadata renames or details an NPC, but no NPC is known")
+    return metadata

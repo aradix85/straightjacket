@@ -278,7 +278,7 @@ def test_the_brain_rejects_a_progress_roll_on_a_track_of_another_kind(load_engin
 
     game = _game()
     game.progress_tracks.append(
-        new_track(id="expedition_ridge", name="Cross the ridge", track_type="expedition", rank="dangerous")
+        new_track(track_id="expedition_ridge", name="Cross the ridge", track_type="expedition", rank="dangerous")
     )
     content = json.dumps(_brain(move="quest/fulfill_your_vow", stat="none", target_track="expedition_ridge"))
     with pytest.raises(AIUnavailableError, match="works on a vow track"):

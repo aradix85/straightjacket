@@ -5,8 +5,10 @@ import pytest
 from straightjacket.engine import user_management
 from straightjacket.engine.user_management import InvalidNameError, create_user, list_users
 
+pytestmark = pytest.mark.usefixtures("users")
 
-@pytest.fixture(autouse=True)
+
+@pytest.fixture
 def users(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     monkeypatch.setattr(user_management, "USERS_DIR", tmp_path)
     return tmp_path

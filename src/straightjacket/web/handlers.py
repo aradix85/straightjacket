@@ -84,8 +84,10 @@ async def _send_what_stands(session: Session, ws: WebSocket) -> None:
         await _send_game_over(ws, session.game)
 
 
-def _autosave(session: Session, game: GameState) -> None:
-    save_game(game, session.player, session.chat_messages, eng().persistence.default_save_name)
+async def _autosave(session: Session, game: GameState) -> None:
+    await asyncio.to_thread(
+        save_game, game, session.player, list(session.chat_messages), eng().persistence.default_save_name
+    )
 
 
 def _narration_stream(ws: WebSocket, game: GameState) -> tuple[SentenceStream, list[Future[None]]]:
@@ -128,7 +130,7 @@ async def handle_select_player(session: Session, ws: WebSocket, msg: dict[str, A
         return
 
     try:
-        game, messages = load_game(name, eng().persistence.default_save_name)
+        game, messages = await asyncio.to_thread(load_game, name, eng().persistence.default_save_name)
     except IncompatibleSaveError as e:
         log(f"[Load] {e}", level="warning")
         await _send(ws, {"type": "error", "text": t("actions.save_incompatible")})
@@ -179,7 +181,7 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict[str, Any]
             return
 
         session.take_game(game, [{"role": "assistant", "content": narration}])
-        _autosave(session, game)
+        await _autosave(session, game)
         await _send(
             ws,
             {
@@ -289,11 +291,11 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
         )
 
         await _settle_turn_end(session, ws, game, burn_offer)
-        _autosave(session, game)
+        await _autosave(session, game)
 
         if director_ctx:
             await asyncio.to_thread(run_deferred_director, provider, game, director_ctx)
-            _autosave(session, game)
+            await _autosave(session, game)
         elif any(n.needs_reflection for n in game.npcs):
             reset_stale_reflection_flags(game)
 
@@ -339,11 +341,11 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]
         session.append_chat("user", f"## {text}")
         session.append_chat("assistant", narration)
         await _settle_turn_end(session, ws, game, burn_offer)
-        _autosave(session, game)
+        await _autosave(session, game)
 
         if director_ctx:
             await asyncio.to_thread(run_deferred_director, provider, game, director_ctx)
-            _autosave(session, game)
+            await _autosave(session, game)
         await _send(ws, {"type": "turn_complete"})
     finally:
         session.processing = False
@@ -353,7 +355,7 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, A
     if not session.game:
         return
 
-    accept = bool(msg.get("accept", False))
+    accept = bool(msg.get("accept"))
     burn = session.pending_burn
     session.pending_burn = None
     game = session.game
@@ -382,11 +384,11 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, A
 
         session.replace_last_assistant(narration)
         await _settle_turn_end(session, ws, game, None)
-        _autosave(session, game)
+        await _autosave(session, game)
 
         if director_ctx:
             await asyncio.to_thread(run_deferred_director, provider, game, director_ctx)
-            _autosave(session, game)
+            await _autosave(session, game)
         elif any(n.needs_reflection for n in game.npcs):
             reset_stale_reflection_flags(game)
 
@@ -410,7 +412,7 @@ async def handle_save(session: Session, ws: WebSocket, msg: dict[str, Any]) -> N
     if name is None:
         return
     try:
-        save_game(session.game, session.player, session.chat_messages, name)
+        await asyncio.to_thread(save_game, session.game, session.player, list(session.chat_messages), name)
     except InvalidNameError as e:
         log(f"[Save] {e}", level="warning")
         await _send(ws, {"type": "error", "text": t("error.invalid_name")})
@@ -424,7 +426,7 @@ async def handle_load(session: Session, ws: WebSocket, msg: dict[str, Any]) -> N
 
     name = _text(msg, "name") or eng().persistence.default_save_name
     try:
-        game, messages = load_game(session.player, name)
+        game, messages = await asyncio.to_thread(load_game, session.player, name)
     except IncompatibleSaveError as e:
         log(f"[Load] {e}", level="warning")
         await _send(ws, {"type": "error", "text": t("actions.save_incompatible")})
@@ -501,7 +503,7 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict[str, A
         await _send(ws, {"type": "status", "text": t(f"advance.{refusal}", asset=asset_id)})
         return
 
-    _autosave(session, session.game)
+    await _autosave(session, session.game)
     msg_key = "advance.upgraded" if kind == "upgrade" else "advance.acquired"
     await _send(ws, {"type": "status", "text": t(msg_key, asset=asset_id, cost=advance_cost(kind))})
 
@@ -518,7 +520,7 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict[s
             await _report_failure(ws, "epilogue", e)
             return
         session.append_chat("assistant", epilogue, epilogue=True)
-        _autosave(session, session.game)
+        await _autosave(session, session.game)
         await _send(ws, {"type": "epilogue", "text": highlight_dialog(epilogue)})
     finally:
         session.processing = False
@@ -528,7 +530,7 @@ async def handle_dismiss_epilogue(session: Session, _ws: WebSocket, _msg: dict[s
     if not session.game:
         return
     session.game.campaign.epilogue_dismissed = True
-    _autosave(session, session.game)
+    await _autosave(session, session.game)
 
 
 async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
@@ -546,7 +548,7 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict[str, An
             await _report_failure(ws, "new chapter", e)
             return
         session.take_game(game, [{"role": "assistant", "content": narration}])
-        _autosave(session, game)
+        await _autosave(session, game)
         await _send(
             ws,
             {
@@ -571,7 +573,7 @@ async def handle_retire(session: Session, ws: WebSocket, _msg: dict[str, Any]) -
         session.pending_burn = None
         game.end_reason = "retire"
         await asyncio.to_thread(prepare_succession, game)
-        _autosave(session, game)
+        await _autosave(session, game)
         await _send_game_over(ws, game)
     finally:
         session.processing = False
@@ -598,7 +600,7 @@ async def handle_start_succession(session: Session, ws: WebSocket, msg: dict[str
             await _report_failure(ws, "succession", e)
             return
         session.take_game(game, [{"role": "assistant", "content": narration}])
-        _autosave(session, game)
+        await _autosave(session, game)
         await _send(
             ws,
             {

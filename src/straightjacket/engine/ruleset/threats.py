@@ -101,7 +101,8 @@ def _roll_advance_a_threat(rule: AdvanceAThreatConfig, threat: ThreatData) -> tu
     if tens == units:
         told = f"{told} {rule.match}"
     log(
-        f"[Threat] {table.title} for '{threat.name}': {roll} → mark menace {marks} times{' (match)' if tens == units else ''}"
+        f"[Threat] {table.title} for '{threat.name}': "
+        f"{roll} → mark menace {marks} times{' (match)' if tens == units else ''}"
     )
     return marks, told
 

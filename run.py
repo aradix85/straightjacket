@@ -58,7 +58,7 @@ def _start() -> None:
 
     try:
         check_configured_models()
-    except (RuntimeError, ValueError) as e:
+    except (RuntimeError, TypeError, ValueError) as e:
         log(f"[Server] Startup check failed: {e}", level="error")
         print(f"\n  Startup check failed:\n{e}\n")
         sys.exit(1)

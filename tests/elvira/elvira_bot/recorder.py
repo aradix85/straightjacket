@@ -163,11 +163,12 @@ def _snapshot_director_guidance(game: GameState) -> dict[str, Any]:
             d["scene_summary"] = rs
 
     scene = game.narrative.scene_count
-    reflections = []
-    for n in game.npcs:
-        for m in n.memory:
-            if m.type == "reflection" and m.scene == scene:
-                reflections.append({"npc": n.name, "tone": m.tone_key or m.tone, "text": m.event[:120]})
+    reflections = [
+        {"npc": n.name, "tone": m.tone_key or m.tone, "text": m.event[:120]}
+        for n in game.npcs
+        for m in n.memory
+        if m.type == "reflection" and m.scene == scene
+    ]
     if reflections:
         d["reflections"] = reflections
     return d

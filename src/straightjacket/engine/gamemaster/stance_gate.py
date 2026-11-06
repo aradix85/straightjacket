@@ -63,7 +63,4 @@ def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: 
 
     gate = min(cfg.gate_max, max(cfg.gate_min, points))
 
-    cap = cfg.stance_caps[stance]
-    gate = min(gate, cap)
-
-    return gate
+    return min(gate, cfg.stance_caps[stance])
