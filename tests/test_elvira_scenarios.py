@@ -239,45 +239,41 @@ def test_each_turn_takes_its_own_fixed_result_and_later_turns_roll_freely() -> N
 def test_a_fixed_result_comes_out_of_every_action_roll_without_a_match(
     load_engine: None, result: str, stat_value: int
 ) -> None:
-    from straightjacket.engine.ruleset import make_move, move_outcome
+    from straightjacket.engine.ruleset import rolls
     from tests.elvira.elvira_bot.fixed_results import fixed_result
 
     with fixed_result(result):
-        rolled = [
-            roll("edge", stat_value, "adventure/face_danger", 2, 0)
-            for roll in (make_move.roll_action, move_outcome.roll_action)
-            for _ in range(20)
-        ]
+        rolled = [rolls.roll_action("edge", stat_value, "adventure/face_danger", 2, 0) for _ in range(40)]
     assert {r.result for r in rolled} == {result}
     assert not any(r.match for r in rolled)
 
 
 def test_a_fixed_result_comes_out_of_a_progress_roll(load_engine: None) -> None:
-    from straightjacket.engine.ruleset import make_move
+    from straightjacket.engine.ruleset import rolls
     from tests.elvira.elvira_bot.fixed_results import fixed_result
 
     with fixed_result("STRONG_HIT"):
-        roll = make_move.roll_progress("Find the archive", 10, "quest/fulfill_your_vow")
+        roll = rolls.roll_progress("Find the archive", 10, "quest/fulfill_your_vow")
     assert (roll.result, roll.match) == ("STRONG_HIT", False)
 
 
 def test_a_fixed_result_takes_a_match_only_when_no_other_dice_give_it(load_engine: None) -> None:
-    from straightjacket.engine.ruleset import make_move
+    from straightjacket.engine.ruleset import rolls
     from straightjacket.engine.ruleset.config import rules
     from tests.elvira.elvira_bot.fixed_results import fixed_result
 
     top = rules().dice.challenge_die
     with fixed_result("MISS"):
-        roll = make_move.roll_progress("Find the archive", rules().progress.boxes, "quest/fulfill_your_vow")
+        roll = rolls.roll_progress("Find the archive", rules().progress.boxes, "quest/fulfill_your_vow")
     assert (roll.result, roll.c1, roll.c2, roll.match) == ("MISS", top, top, True)
 
 
 def test_a_fixed_result_no_dice_can_give_is_refused(load_engine: None) -> None:
-    from straightjacket.engine.ruleset import make_move
+    from straightjacket.engine.ruleset import rolls
     from tests.elvira.elvira_bot.fixed_results import fixed_result
 
     with fixed_result("STRONG_HIT"), pytest.raises(ValueError, match="no dice give"):
-        make_move.roll_progress("Find the archive", 0, "quest/fulfill_your_vow")
+        rolls.roll_progress("Find the archive", 0, "quest/fulfill_your_vow")
 
 
 def test_the_dice_roll_freely_after_a_fixed_turn(load_engine: None) -> None:
@@ -310,7 +306,9 @@ def test_a_missed_aim_is_a_problem() -> None:
 
 
 def _audited_turn(turn: int, result: str, integrity: int, overall: int, burned_to: str = "") -> TurnRecord:
-    verdict = {c: 3 for c in ("prompt_elements", "npc_voice", "player_agency", "restraint", "prose")}
+    verdict: dict[str, int | str] = {
+        c: 3 for c in ("prompt_elements", "npc_voice", "player_agency", "restraint", "prose")
+    }
     verdict |= {"result_integrity": integrity, "overall": overall, "weakness": ""}
     return TurnRecord(
         turn=turn,

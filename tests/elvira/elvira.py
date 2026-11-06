@@ -1,10 +1,12 @@
 import argparse
 import asyncio
 import copy
+import io
 import logging
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent.parent
@@ -26,7 +28,7 @@ from tests.elvira.elvira_bot.runner import load_config, run_session, selectable_
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 
 
-def _scenario_cfg(bot_cfg: dict, name: str) -> dict:
+def _scenario_cfg(bot_cfg: dict[str, Any], name: str) -> dict[str, Any]:
     spec = bot_cfg["scenarios"][name]
     run_cfg = copy.deepcopy(bot_cfg)
     run_cfg["session"]["scenario"] = name
@@ -40,8 +42,9 @@ def _scenario_cfg(bot_cfg: dict, name: str) -> dict:
 
 
 def main() -> None:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description="Straightjacket — Elvira Test Player Bot")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Path to elvira_config.yaml")
     parser.add_argument("--auto", action="store_true", help="Override: enable full auto mode")

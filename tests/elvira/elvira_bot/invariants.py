@@ -100,7 +100,8 @@ def _check_npc(npc: NpcData, turn: int, violations: list[str]) -> None:
     check(isinstance(npc.memory, list), f"memory is {type(npc.memory).__name__}, not list")
     check(isinstance(npc.aliases, list), f"aliases is {type(npc.aliases).__name__}, not list")
 
-    for i, m in enumerate(npc.memory):
+    memory: list[object] = list(npc.memory)
+    for i, m in enumerate(memory):
         if isinstance(m, MemoryEntry):
             check(bool(m.event), f"memory[{i}] missing 'event'")
             check(bool(m.type), f"memory[{i}] missing 'type'")

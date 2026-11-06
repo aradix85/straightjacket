@@ -4,6 +4,7 @@ import dataclasses
 import random
 
 import pytest
+from typing_extensions import override
 
 from straightjacket.engine.crafters.character_traits import (
     CharacterTraits,
@@ -31,6 +32,16 @@ _SPECIAL_TRAIT_BOUNDARIES = [
     (93, "connected_to_existing_character"),
     (100, "connected_to_existing_character"),
 ]
+
+
+class StubRNG(random.Random):
+    def __init__(self, sequence: list[int]) -> None:
+        super().__init__()
+        self._seq = list(sequence)
+
+    @override
+    def randint(self, a: int, b: int) -> int:
+        return self._seq.pop(0)
 
 
 @pytest.mark.parametrize(("roll", "expected"), _SPECIAL_TRAIT_BOUNDARIES)
@@ -131,13 +142,6 @@ def test_roll_character_traits_descriptors_length_1_or_2() -> None:
 
 
 def test_roll_character_traits_dual_identity_uses_non_flag_range() -> None:
-    class StubRNG:
-        def __init__(self, sequence: list[int]) -> None:
-            self._seq = list(sequence)
-
-        def randint(self, a: int, b: int) -> int:
-            return self._seq.pop(0)
-
     rng = StubRNG([100, 5, 50, 75, 100])
     traits = roll_character_traits(rng)
     assert traits.special_trait == "connected_to_existing_character"
@@ -149,13 +153,6 @@ def test_roll_character_traits_dual_identity_uses_non_flag_range() -> None:
 
 
 def test_roll_character_traits_two_descriptors_uses_non_flag_range() -> None:
-    class StubRNG:
-        def __init__(self, sequence: list[int]) -> None:
-            self._seq = list(sequence)
-
-        def randint(self, a: int, b: int) -> int:
-            return self._seq.pop(0)
-
     rng = StubRNG([1, 100, 15, 22, 100])
     traits = roll_character_traits(rng)
     assert traits.special_trait == "individual"
@@ -167,13 +164,6 @@ def test_roll_character_traits_two_descriptors_uses_non_flag_range() -> None:
 
 
 def test_roll_character_traits_single_identity_path() -> None:
-    class StubRNG:
-        def __init__(self, sequence: list[int]) -> None:
-            self._seq = list(sequence)
-
-        def randint(self, a: int, b: int) -> int:
-            return self._seq.pop(0)
-
     rng = StubRNG([50, 99, 50])
     traits = roll_character_traits(rng)
     assert traits.identities == ["Spy"]
@@ -190,5 +180,6 @@ def test_roll_character_traits_deterministic_with_fixed_seed() -> None:
 
 def test_character_traits_is_frozen() -> None:
     traits = CharacterTraits(special_trait="individual", identities=["Hero"], descriptors=["Strong"])
-    with pytest.raises(dataclasses.FrozenInstanceError):
-        traits.special_trait = "object"
+    for field in dataclasses.fields(traits):
+        with pytest.raises(dataclasses.FrozenInstanceError):
+            setattr(traits, field.name, None)

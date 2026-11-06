@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.gamemaster.config import gm
-from tests._helpers import make_game_state
+from tests._helpers import known_asset, make_game_state
 
 
 @pytest.mark.parametrize(
@@ -16,7 +16,7 @@ from tests._helpers import make_game_state
         ({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1, "luck": 0}, "must be edge"),
     ],
 )
-def test_validate_stats_rejects_invalid(load_engine: None, stats: dict, error_match: str) -> None:
+def test_validate_stats_rejects_invalid(load_engine: None, stats: dict[str, int], error_match: str) -> None:
     from straightjacket.engine.ruleset.stats import validate_stats
 
     with pytest.raises(ValueError, match=error_match):
@@ -98,7 +98,7 @@ def test_a_background_vow_without_a_rank_takes_the_default_rank(load_engine: Non
         ("sundered_isles", {"has_ship_creation": True}),
     ],
 )
-def test_setting_creation_flow(setting: str, expected_flags: dict) -> None:
+def test_setting_creation_flow(setting: str, expected_flags: dict[str, bool]) -> None:
     from straightjacket.engine.setting.packages import load_package
 
     pkg = load_package(setting)
@@ -243,7 +243,9 @@ _VALID_PAYLOAD = {"player_name": "Kael", "truths": {}, "tone": "pulp"}
         ("starforged", {"player_name": ""}, "player_name'\\] is empty"),
     ],
 )
-def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
+def test_validate_creation_rejects_invalid(
+    load_engine: None, setting: str, payload: dict[str, object], error_match: str
+) -> None:
     from straightjacket.engine.game.game_start import validate_creation
     from straightjacket.engine.setting.packages import load_package
 
@@ -285,7 +287,9 @@ _CHARACTER = {
         ("starforged", {"stats": {"edge": 3}}, "Stats must be"),
     ],
 )
-def test_make_character_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
+def test_make_character_rejects_invalid(
+    load_engine: None, setting: str, payload: dict[str, object], error_match: str
+) -> None:
     from straightjacket.engine.ruleset.character import make_character
     from straightjacket.engine.setting.packages import load_package
 
@@ -301,7 +305,7 @@ def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None
     pkg = load_package("starforged")
     character = make_character({**_CHARACTER, "paths": ["ace", "explorer"], "background_vow_rank": "epic"}, pkg)
     own = load_ruleset("starforged").setting_file
-    names = [own.asset("path", pid)["name"] for pid in ("ace", "explorer")]
+    names = [known_asset(own, "path", pid)["name"] for pid in ("ace", "explorer")]
     assert character.concept == ", ".join(names)
     assert character.background_vow_rank == "epic"
 

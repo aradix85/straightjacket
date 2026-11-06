@@ -73,7 +73,8 @@ def get_persona(style: str) -> str:
     if key not in prompts:
         valid = sorted(k.removeprefix("style_") for k in prompts if k.startswith("style_"))
         raise KeyError(f"Unknown Elvira style '{style}'. Valid styles: {', '.join(valid)}")
-    return prompts[key]
+    persona: str = prompts[key]
+    return persona
 
 
 def ask_bot(system: str, user: str, max_tokens: int = 300) -> str:

@@ -1,8 +1,11 @@
 import json
 from typing import Any
 
+from typing_extensions import override
+
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from tests._helpers import make_game_state, make_npc
+from tests._mocks import ScriptedProvider
 
 
 def _minimal(schema: dict[str, Any]) -> Any:
@@ -25,10 +28,11 @@ def _minimal(schema: dict[str, Any]) -> Any:
     return ""
 
 
-class _Director:
+class _Director(ScriptedProvider):
     def __init__(self) -> None:
         self.schemas: list[dict[str, Any]] = []
 
+    @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         if spec.json_schema is None:
             return AIResponse(content="", usage={"input_tokens": 0, "output_tokens": 0})

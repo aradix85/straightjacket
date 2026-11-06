@@ -4,7 +4,11 @@ import inspect
 from types import SimpleNamespace
 from typing import Any
 
+import anthropic
+import openai
 import pytest
+from anthropic.resources.messages import Messages
+from openai.resources.chat.completions import Completions
 
 from straightjacket.engine.ai import provider_anthropic, provider_openai
 from straightjacket.engine.ai.provider_base import AICallSpec, ToolCall
@@ -84,7 +88,7 @@ def anthropic_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
         endpoint.init_args = kwargs
         return SimpleNamespace(messages=endpoint, models=SimpleNamespace(list=lambda: endpoint.models))
 
-    monkeypatch.setattr(provider_anthropic.anthropic, "Anthropic", fake_client)
+    monkeypatch.setattr(anthropic, "Anthropic", fake_client)
     return endpoint
 
 
@@ -101,7 +105,7 @@ def openai_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
 
         return SimpleNamespace(chat=SimpleNamespace(completions=endpoint), get=get)
 
-    monkeypatch.setattr(provider_openai.openai, "OpenAI", fake_client)
+    monkeypatch.setattr(openai, "OpenAI", fake_client)
     return endpoint
 
 
@@ -135,7 +139,7 @@ class TestAnthropicProvider:
         assert sent["extra_body"] == {"temperature": 0.5, "top_p": 0.9}
         assert not {"temperature", "top_p"} & set(sent)
         assert sent["output_config"] == {
-            "format": {"type": "json_schema", "schema": provider_anthropic.anthropic.transform_schema(schema)}
+            "format": {"type": "json_schema", "schema": anthropic.transform_schema(schema)}
         }
         assert sent["tools"] == [
             {
@@ -170,7 +174,9 @@ class TestAnthropicProvider:
         }
 
 
-def _openai_response(content: str | None, finish_reason: str, tool_calls: list | None) -> SimpleNamespace:
+def _openai_response(
+    content: str | None, finish_reason: str, tool_calls: list[SimpleNamespace] | None
+) -> SimpleNamespace:
     message = SimpleNamespace(content=content, tool_calls=tool_calls)
     return SimpleNamespace(
         choices=[SimpleNamespace(message=message, finish_reason=finish_reason)],
@@ -242,7 +248,7 @@ def test_anthropic_request_uses_only_parameters_the_installed_sdk_accepts(anthro
     anthropic_endpoint.response = _anthropic_reply()
     spec = _spec(temperature=0.5, top_p=0.9, json_schema={"title": "t", "type": "object"}, tools=[_tool()])
     _anthropic().create_message(spec)
-    accepted = _accepted(provider_anthropic.anthropic.resources.messages.Messages.create)
+    accepted = _accepted(Messages.create)
     assert set(anthropic_endpoint.calls[0]) <= accepted
 
 
@@ -256,7 +262,7 @@ def test_openai_request_uses_only_parameters_the_installed_sdk_accepts(openai_en
         tools=[_tool()],
     )
     _openai().create_message(spec)
-    accepted = _accepted(provider_openai.openai.resources.chat.completions.Completions.create)
+    accepted = _accepted(Completions.create)
     assert set(openai_endpoint.calls[0]) <= accepted
 
 
@@ -311,7 +317,7 @@ def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_e
         "effort": "low",
         "format": {
             "type": "json_schema",
-            "schema": provider_anthropic.anthropic.transform_schema({"title": "t", "type": "object"}),
+            "schema": anthropic.transform_schema({"title": "t", "type": "object"}),
         },
     }
     assert "cache_control" not in sent
@@ -415,7 +421,7 @@ def test_anthropic_stream_passes_only_text_deltas(anthropic_endpoint: _FakeEndpo
     result = _anthropic().stream_message(_spec(), received.append)
     assert received == ["The door ", "holds."]
     assert result.content == "The door holds."
-    accepted = _accepted(provider_anthropic.anthropic.resources.messages.Messages.stream)
+    accepted = _accepted(Messages.stream)
     assert set(anthropic_endpoint.calls[0]) <= accepted
 
 
@@ -433,9 +439,7 @@ def test_openai_stream_collects_text_finish_reason_and_usage(openai_endpoint: _F
     assert result.content == "Rain falls."
     assert result.usage == {"input_tokens": 3, "output_tokens": 2}
     assert openai_endpoint.calls[0]["stream"] is True
-    assert set(openai_endpoint.calls[0]) <= _accepted(
-        provider_openai.openai.resources.chat.completions.Completions.create
-    )
+    assert set(openai_endpoint.calls[0]) <= _accepted(Completions.create)
 
 
 def test_openai_usage_reports_cached_prompt_tokens(openai_endpoint: _FakeEndpoint) -> None:

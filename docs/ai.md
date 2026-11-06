@@ -76,7 +76,7 @@ Hosts cache the longest identical prefix of a prompt, so prompts put their fixed
 
 ## Provider adapters
 
-The `AIProvider` protocol has two implementations, `ai/provider_anthropic.py` and `ai/provider_openai.py` (any OpenAI-compatible endpoint); nothing else imports a provider SDK.
+The `AIProvider` protocol has two implementations, `ai/provider_anthropic.py` and `ai/provider_openai.py` (any OpenAI-compatible endpoint); nothing else in `src/` imports a provider SDK, and of the tests only `tests/test_providers.py`, which holds the adapters against the installed SDK.
 
 **Retries.** Both adapters create their SDK client with `max_retries=0` and the provider's `timeout_seconds`, so `ai/provider_base.py` → `create_with_retry` is the only retry layer. It retries a connection error, which the SDKs' timeout error is, and an HTTP status in `retry.retryable_http_codes`; it honours a `Retry-After` header, capped by `retry.max_retry_after_seconds` in `engine/retry.yaml`, and otherwise backs off exponentially.
 

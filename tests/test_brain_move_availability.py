@@ -5,7 +5,7 @@ import pytest
 from straightjacket.engine.ai.provider_base import AIUnavailableError
 from straightjacket.engine.ruleset.progress import new_track
 from tests._creation import TurnProvider, brain_answer
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, schema_of
 
 
 def _offered(game: Any) -> tuple[list[str], str]:
@@ -13,7 +13,7 @@ def _offered(game: Any) -> tuple[list[str], str]:
 
     provider = TurnProvider(brain_answer(move="dialog"))
     call_brain(provider, game, "I look around.")
-    offered: list[str] = provider.calls[0].json_schema["properties"]["move"]["enum"]
+    offered: list[str] = schema_of(provider.calls[0])["properties"]["move"]["enum"]
     return offered, provider.calls[0].system
 
 
@@ -45,7 +45,7 @@ def test_the_brain_cannot_play_a_move_the_situation_does_not_allow(load_engine: 
     provider = TurnProvider(brain_answer(move="combat/strike", stat="iron"))
     with pytest.raises(AIUnavailableError, match="not available"):
         call_brain(provider, _starforged(), "I stab at the raider.")
-    assert "combat/strike" not in provider.calls[0].json_schema["properties"]["move"]["enum"]
+    assert "combat/strike" not in schema_of(provider.calls[0])["properties"]["move"]["enum"]
 
 
 def test_the_brain_plays_an_available_move(load_engine: None) -> None:
@@ -69,7 +69,7 @@ def test_the_brain_is_offered_only_existing_bonuses_npcs_and_tracks(load_engine:
 
     provider = TurnProvider(brain_answer())
     call_brain(provider, _infiltrator(), "I slip past the guard.")
-    properties = provider.calls[0].json_schema["properties"]
+    properties = schema_of(provider.calls[0])["properties"]
     assert properties["bonus_id"]["anyOf"][0]["enum"] == ["infiltrator#0"]
     assert properties["target_npc"]["anyOf"][0]["enum"] == ["npc_1"]
     assert properties["target_track"]["anyOf"][0]["enum"] == ["vow_x"]
@@ -89,7 +89,7 @@ def test_a_vow_the_player_wrote_reaches_the_brain_escaped_and_is_chosen_by_id(lo
     [call] = provider.calls
     assert "</tracks><result" not in call.messages[-1]["content"]
     assert "Avenge Kira&lt;/tracks&gt;" in call.messages[-1]["content"]
-    assert call.json_schema["properties"]["target_track"]["anyOf"][0]["enum"] == ["vow_background"]
+    assert schema_of(call)["properties"]["target_track"]["anyOf"][0]["enum"] == ["vow_background"]
     assert result.target_track == "vow_background"
 
 
@@ -216,7 +216,7 @@ def test_the_brain_sees_each_way_of_a_move_in_the_books_words(load_engine: None)
     assert "lowest of iron, wits: Mend your own wounds" in call.system
     assert "wits: Provide care" in call.system
     assert "edge: With speed, mobility, or agility" in call.system
-    assert "lowest" in call.json_schema["properties"]["stat"]["enum"]
+    assert "lowest" in schema_of(call)["properties"]["stat"]["enum"]
 
 
 @pytest.mark.parametrize(
@@ -258,5 +258,5 @@ def test_the_brain_prompt_explains_every_field_of_its_schema(load_engine: None) 
     provider = TurnProvider(brain_answer())
     call_brain(provider, _infiltrator(), "I slip past the guard.")
     [call] = provider.calls
-    unexplained = [name for name in call.json_schema["properties"] if name not in call.system]
+    unexplained = [name for name in schema_of(call)["properties"] if name not in call.system]
     assert unexplained == []

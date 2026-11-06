@@ -9,11 +9,12 @@ from tests._helpers import fix_dice
 @pytest.fixture
 def dice(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
     from straightjacket.engine.game import turn
+    from straightjacket.engine.gamemaster.scene import check_scene
     from straightjacket.engine.ruleset import make_move
     from straightjacket.engine.ruleset.rolls import score_action_roll
 
     counts = {"rolls": 0, "scenes": 0, "scene_roll": 10}
-    real_scene = turn.check_scene
+    real_scene = check_scene
 
     def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> Any:
         counts["rolls"] += 1

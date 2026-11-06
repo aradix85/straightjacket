@@ -247,10 +247,9 @@ def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> No
 
 
 def _fixed_dice(monkeypatch: pytest.MonkeyPatch, *values: int) -> None:
-    from straightjacket.engine.ruleset import rolls
 
     sequence = list(values)
-    monkeypatch.setattr(rolls.random, "randint", lambda low, high: sequence.pop(0))
+    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda low, high: sequence.pop(0))
 
 
 def test_negative_momentum_cancels_a_matching_action_die(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:

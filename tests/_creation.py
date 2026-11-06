@@ -5,16 +5,18 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.models import GameState, RollResult
 from tests._helpers import make_scene_setup
+from tests._mocks import ScriptedProvider
 
 OPENING_TEXT = "The opening scene settles around you."
 STAT_ORDER = ("edge", "heart", "iron", "shadow", "wits")
 
 
-class OpeningProvider:
+class OpeningProvider(ScriptedProvider):
     def __init__(self, npcs: Sequence[tuple[str, str, str]], location: str) -> None:
         self.npcs = list(npcs)
         self.location = location
@@ -24,6 +26,7 @@ class OpeningProvider:
     def _json(payload: dict[str, Any]) -> AIResponse:
         return AIResponse(content=json.dumps(payload), usage={"input_tokens": 10, "output_tokens": 10})
 
+    @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         self.calls.append(spec)
         props = spec.json_schema["properties"] if spec.json_schema else {}
@@ -103,7 +106,7 @@ def correction_answer(**overrides: Any) -> dict[str, Any]:
     return correction
 
 
-class TurnProvider:
+class TurnProvider(ScriptedProvider):
     def __init__(self, *brains: dict[str, Any]) -> None:
         self.brains = list(brains)
         self.correction = correction_answer()
@@ -115,6 +118,7 @@ class TurnProvider:
     def _json(payload: dict[str, Any]) -> AIResponse:
         return AIResponse(content=json.dumps(payload), usage={"input_tokens": 10, "output_tokens": 10})
 
+    @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         self.calls.append(spec)
         props = spec.json_schema["properties"] if spec.json_schema else {}
@@ -141,11 +145,6 @@ class TurnProvider:
             self.narrations.append(text)
             self.prompts.append(str(spec.messages[-1]["content"]))
         return AIResponse(content=text, usage={"input_tokens": 10, "output_tokens": 10})
-
-    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
-        response = self.create_message(spec)
-        on_text(response.content)
-        return response
 
 
 def fixed_roll(result: str) -> Callable[[str, int, str, int, int], RollResult]:

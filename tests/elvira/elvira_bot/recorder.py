@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from straightjacket.engine.models import GameState, RollResult, labels_of
 from straightjacket.engine.story_state import get_current_act
 
@@ -146,11 +148,9 @@ def _snapshot_story_arc(game: GameState) -> StoryArcRecord | None:
     )
 
 
-def _snapshot_director_guidance(game: GameState) -> dict:
+def _snapshot_director_guidance(game: GameState) -> dict[str, Any]:
     dg = game.narrative.director_guidance
-    if not dg:
-        return {}
-    d: dict = {
+    d: dict[str, Any] = {
         "narrator_guidance": dg.narrator_guidance,
         "arc_notes": dg.arc_notes,
     }

@@ -1,15 +1,26 @@
+from __future__ import annotations
+
 import sys
 import types
+from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from tests._helpers import SettingsSet
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 
-_lm = types.ModuleType("straightjacket.engine.logging_util")
-_lm.log = lambda *a, **k: None
-sys.modules["straightjacket.engine.logging_util"] = _lm
+class _SilentLogging(types.ModuleType):
+    @staticmethod
+    def log(*_args: object, **_kwargs: object) -> None:
+        return None
+
+
+sys.modules["straightjacket.engine.logging_util"] = _SilentLogging("straightjacket.engine.logging_util")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -28,7 +39,7 @@ def _no_backoff_wait(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _reset_random() -> None:
+def _reset_random() -> Iterator[None]:
     import random as _random
 
     yield
@@ -36,7 +47,7 @@ def _reset_random() -> None:
 
 
 @pytest.fixture(scope="session")
-def _real_engine() -> tuple:
+def _real_engine() -> SettingsSet:
     from straightjacket.engine.crafters.config import crafter
     from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.config import gm
@@ -46,7 +57,7 @@ def _real_engine() -> tuple:
 
 
 @pytest.fixture
-def load_engine(_real_engine) -> None:
+def load_engine(_real_engine: SettingsSet) -> None:
     from tests._helpers import install_config
 
     install_config(_real_engine)

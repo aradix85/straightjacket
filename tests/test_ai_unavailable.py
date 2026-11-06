@@ -1,20 +1,12 @@
 import asyncio
-from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from tests._creation import TurnProvider, brain_answer, correction_answer, force_result, library_game
 from tests._helpers import make_game_state
-from tests._mocks import MockProvider
-
-
-class _FakeWS:
-    def __init__(self) -> None:
-        self.sent: list[dict[str, Any]] = []
-
-    async def send_json(self, msg: dict[str, Any]) -> None:
-        self.sent.append(msg)
+from tests._mocks import MockProvider, RecordingWebSocket
 
 
 def test_a_brain_failure_raises_instead_of_becoming_dialog(load_engine: None) -> None:
@@ -34,6 +26,7 @@ def test_an_empty_narration_raises(load_engine: None) -> None:
 
 
 class _NarratorDown(TurnProvider):
+    @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         if spec.json_schema is None:
             raise ConnectionError("narrator unreachable")
@@ -49,7 +42,7 @@ def test_a_failed_turn_is_rolled_back_and_reported(load_engine: None, monkeypatc
     before = game.to_dict()
     session = new_session()
     session.game = game
-    ws = _FakeWS()
+    ws = RecordingWebSocket()
 
     force_result(monkeypatch, "MISS")
     monkeypatch.setattr(handlers, "get_provider", lambda: _NarratorDown(brain_answer()))
@@ -93,6 +86,6 @@ def test_a_failed_state_correction_is_rolled_back_with_its_backstory(
     )
     monkeypatch.setattr(handlers, "get_provider", lambda: provider)
 
-    asyncio.run(handlers.handle_correction(session, _FakeWS(), {"text": "## I was raised by wolves"}))
+    asyncio.run(handlers.handle_correction(session, RecordingWebSocket(), {"text": "## I was raised by wolves"}))
 
     assert game.to_dict() == before

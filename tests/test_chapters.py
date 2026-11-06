@@ -1,7 +1,9 @@
 import pytest
+from typing_extensions import override
 
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import GameState
+from straightjacket.engine.models import GameState, TurnSnapshot
+from straightjacket.engine.models_story import StoryBlueprint
 from tests._creation import OPENING_TEXT, OpeningProvider, create_game
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_threat
 from tests._mocks import MockProvider
@@ -72,10 +74,12 @@ def test_a_new_chapter_restarts_what_belongs_to_one_chapter(load_engine: None) -
     assert game.narrative.scene_count == 1
     assert [e.result for e in game.narrative.session_log] == ["opening"]
     assert [e.narration for e in game.narrative.narration_history] == [OPENING_TEXT]
-    assert game.narrative.story_blueprint is not None
-    assert game.narrative.story_blueprint.central_conflict == "A buried record threatens the settlement"
+    blueprint: StoryBlueprint | None = game.narrative.story_blueprint
+    snapshot_after: TurnSnapshot | None = game.last_turn_snapshot
+    assert blueprint is not None
+    assert blueprint.central_conflict == "A buried record threatens the settlement"
     assert game.campaign.epilogue_dismissed is False
-    assert game.last_turn_snapshot is None
+    assert snapshot_after is None
 
 
 def test_a_new_chapter_drops_only_the_old_adventures_keyed_scenes(load_engine: None) -> None:
@@ -99,6 +103,7 @@ def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none(load_engine: None) 
     from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 
     class _NoVoicing(OpeningProvider):
+        @override
         def create_message(self, spec: AICallSpec) -> AIResponse:
             if spec.json_schema is not None and "central_conflict" in spec.json_schema["properties"]:
                 raise ConnectionError("voicing is down")

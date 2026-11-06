@@ -2,6 +2,7 @@ import asyncio
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.gamemaster.config import gm
@@ -11,6 +12,7 @@ from straightjacket.engine.models import (
 )
 from straightjacket.engine.ruleset.config import rules
 from tests._creation import OPENING_TEXT, TurnProvider, brain_answer, force_result, library_game
+from tests._mocks import RecordingWebSocket
 
 
 @pytest.fixture
@@ -122,14 +124,6 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(load_engine: None, 
     assert check_turn_replacement(before, game, narration, 2, "momentum burn", keeps_location=True) == []
 
 
-class _FakeWS:
-    def __init__(self) -> None:
-        self.sent: list[dict[str, Any]] = []
-
-    async def send_json(self, msg: dict[str, Any]) -> None:
-        self.sent.append(msg)
-
-
 def test_new_player_input_withdraws_a_pending_burn_offer(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -150,7 +144,7 @@ def test_new_player_input_withdraws_a_pending_burn_offer(
     monkeypatch.setattr(handlers, "process_turn", failing_turn)
     monkeypatch.setattr(handlers, "get_provider", lambda: None)
 
-    asyncio.run(handlers.handle_player_input(session, _FakeWS(), {"text": "I walk away"}))
+    asyncio.run(handlers.handle_player_input(session, RecordingWebSocket(), {"text": "I walk away"}))
 
     assert session.pending_burn is None
 
@@ -160,6 +154,7 @@ class _FlakyNarrator(TurnProvider):
         super().__init__(*brains)
         self.narrator_down = False
 
+    @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         if self.narrator_down and spec.log_role == "narrator":
             raise ConnectionError("narrator unreachable")
@@ -185,10 +180,10 @@ def _session(monkeypatch: pytest.MonkeyPatch, tmp_path: Any, provider: TurnProvi
     return session
 
 
-def _play(session: Any, text: str) -> _FakeWS:
+def _play(session: Any, text: str) -> RecordingWebSocket:
     from straightjacket.web import handlers
 
-    ws = _FakeWS()
+    ws = RecordingWebSocket()
     asyncio.run(handlers.handle_player_input(session, ws, {"text": text}))
     return ws
 
@@ -204,7 +199,7 @@ def _dying(session: Any) -> None:
 
 def _dying_on_a_miss(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Any, provider: TurnProvider
-) -> tuple[Any, _FakeWS, TurnProvider]:
+) -> tuple[Any, RecordingWebSocket, TurnProvider]:
     session = _session(monkeypatch, tmp_path, provider)
     _dying(session)
     ws = _play(session, "I press on")
@@ -216,7 +211,7 @@ _HEAL = brain_answer(move="adventure/heal", stat="wits", player_intent="I bind m
 _PRESS_ON = brain_answer(location_change=None)
 
 
-def _types(ws: _FakeWS) -> list[str]:
+def _types(ws: RecordingWebSocket) -> list[str]:
     return [m["type"] for m in ws.sent]
 
 
@@ -282,7 +277,7 @@ def test_a_failed_burn_is_rolled_back_and_offered_again(
     offer = session.pending_burn
     before = session.game.to_dict()
     provider.narrator_down = True
-    ws = _FakeWS()
+    ws = RecordingWebSocket()
 
     asyncio.run(handlers.handle_burn_momentum(session, ws, {"accept": True}))
 
@@ -299,13 +294,13 @@ def test_a_game_that_is_over_answers_input_and_corrections_with_what_stands(
     session, _ws, provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
     before, calls = session.game.to_dict(), len(provider.calls)
 
-    standing = _FakeWS()
+    standing = RecordingWebSocket()
     asyncio.run(handlers.handle_player_input(session, standing, {"text": "I stand up"}))
     asyncio.run(handlers.handle_correction(session, standing, {"text": "I meant to run"}))
     assert _types(standing) == ["burn_offer", "burn_offer"]
 
     asyncio.run(handlers.handle_burn_momentum(session, standing, {"accept": False}))
-    ended = _FakeWS()
+    ended = RecordingWebSocket()
     asyncio.run(handlers.handle_player_input(session, ended, {"text": "I stand up"}))
     asyncio.run(handlers.handle_correction(session, ended, {"text": "I meant to run"}))
     assert _types(ended) == ["game_over", "game_over"]
@@ -320,11 +315,11 @@ def test_a_reload_drops_a_standing_burn_and_shows_the_end_while_a_reconnect_offe
     session, _ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
     monkeypatch.setattr(server, "_session", session)
 
-    reconnected = _FakeWS()
+    reconnected = RecordingWebSocket()
     asyncio.run(server._send_initial_state(reconnected))
     assert _types(reconnected)[-2:] == ["player_selected", "burn_offer"]
 
-    reloaded = _FakeWS()
+    reloaded = RecordingWebSocket()
     asyncio.run(handlers.handle_select_player(session, reloaded, {"name": "Kael"}))
     assert _types(reloaded) == ["player_selected", "game_over"]
     assert session.pending_burn is None
@@ -341,7 +336,7 @@ def test_a_correction_that_replays_the_turn_into_death_prepares_the_succession_o
     _dying(session)
     _play(session, "I bind my wounds")
     assert not session.game.game_over
-    ws = _FakeWS()
+    ws = RecordingWebSocket()
 
     asyncio.run(handlers.handle_correction(session, ws, {"text": "I meant to press on"}))
 
@@ -366,7 +361,7 @@ def test_a_failed_correction_leaves_the_burn_offer_standing(
     offer = session.pending_burn
     assert offer is not None
     provider.narrator_down = True
-    ws = _FakeWS()
+    ws = RecordingWebSocket()
 
     asyncio.run(handlers.handle_correction(session, ws, {"text": "I meant to climb"}))
 
@@ -382,7 +377,7 @@ def test_retiring_withdraws_a_standing_burn_offer(
     session = _session(monkeypatch, tmp_path, TurnProvider(_PRESS_ON))
     _play(session, "I slip into the vault")
     assert session.pending_burn is not None
-    ws = _FakeWS()
+    ws = RecordingWebSocket()
 
     asyncio.run(handlers.handle_retire(session, ws, {}))
 
@@ -397,7 +392,7 @@ def test_what_the_player_chose_between_a_turn_and_its_burn_or_correction_stays(
     session = _session(monkeypatch, tmp_path, TurnProvider(_PRESS_ON))
     session.game.campaign.xp = 10
     _play(session, "I slip into the vault")
-    ws = _FakeWS()
+    ws = RecordingWebSocket()
     asyncio.run(handlers.handle_advance_asset(session, ws, {"kind": "new", "asset_id": "cave_lion"}))
     asyncio.run(handlers.handle_dismiss_epilogue(session, ws, {}))
 

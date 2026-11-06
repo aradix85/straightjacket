@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from types import SimpleNamespace
-from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from straightjacket.engine.ai import provider_base
 from straightjacket.engine.ai.provider_base import (
@@ -16,6 +16,7 @@ from straightjacket.engine.ai.provider_base import (
     stream_with_retry,
 )
 from straightjacket.engine.ai.sentence_stream import SentenceStream
+from tests._mocks import ScriptedProvider
 
 
 def _spec(max_retries: int = 2) -> AICallSpec:
@@ -35,11 +36,12 @@ def _spec(max_retries: int = 2) -> AICallSpec:
     )
 
 
-class _Scripted:
-    def __init__(self, *outcomes: Any) -> None:
+class _Scripted(ScriptedProvider):
+    def __init__(self, *outcomes: AIResponse | Exception) -> None:
         self.outcomes = list(outcomes)
         self.calls = 0
 
+    @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         self.calls += 1
         outcome = self.outcomes.pop(0)

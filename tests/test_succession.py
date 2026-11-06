@@ -11,7 +11,7 @@ from straightjacket.engine.game.succession import (
     start_succession_with_character,
 )
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import CampaignState, GameState, NpcData, ProgressTrack
+from straightjacket.engine.models import CampaignState, GameState, NpcData, ProgressTrack, TurnSnapshot
 from straightjacket.engine.ruleset.meters import starting_resources
 from straightjacket.engine.ruleset.progress import filled_boxes, new_track
 from straightjacket.engine.ruleset.succession import (
@@ -103,6 +103,7 @@ def test_run_inheritance_rolls_outcomes(
     dice_values: list[int],
     expected_result: str,
     expected_new_filled: int,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     g = make_game_state()
     g.campaign.legacy["quests"].ticks = ticks
@@ -117,12 +118,8 @@ def test_run_inheritance_rolls_outcomes(
         def randint(self, a: int, b: int) -> int:
             return next(self.values)
 
-    real = rolls_mod.random
-    rolls_mod.random = _Dice(dice_values)
-    try:
-        rolls = run_inheritance_rolls(g)
-    finally:
-        rolls_mod.random = real
+    monkeypatch.setattr(rolls_mod, "random", _Dice(dice_values))
+    rolls = run_inheritance_rolls(g)
     quests = next(r for r in rolls if r.track_name == "quests")
     assert quests.result == expected_result
     assert quests.new_filled_boxes == expected_new_filled
@@ -382,7 +379,8 @@ def test_a_successor_takes_up_a_fresh_character_in_the_same_world(aria: GameStat
     assert aria.world.combat_position == ""
     assert (aria.narrative.scene_count, aria.crisis_mode, aria.game_over) == (1, False, False)
     assert "thr_1" in [t.id for t in aria.threats]
-    assert aria.last_turn_snapshot is None
+    snapshot_after: TurnSnapshot | None = aria.last_turn_snapshot
+    assert snapshot_after is None
     assert [e.result for e in aria.narrative.session_log] == ["opening"]
 
 

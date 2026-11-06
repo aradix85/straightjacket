@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from tests._helpers import known_asset
+
 
 def test_path_and_asset_titles_are_the_datasworn_names(load_engine: None) -> None:
     from straightjacket.engine.ruleset.datasworn import load_ruleset
@@ -10,7 +12,8 @@ def test_path_and_asset_titles_are_the_datasworn_names(load_engine: None) -> Non
         assert {p["title"] for p in setting["paths"]} == {a["name"] for a in own.assets_of("path")}
         category_of = {own.assets[cat]["name"]: cat for cat in own.assets}
         assert all(
-            a["title"] == own.asset(category_of[a["category"]], a["id"])["name"] for a in setting["starting_assets"]
+            a["title"] == known_asset(own, category_of[a["category"]], a["id"])["name"]
+            for a in setting["starting_assets"]
         )
 
 

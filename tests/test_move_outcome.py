@@ -1,8 +1,11 @@
+from collections.abc import Callable
+
 import pytest
 
 from straightjacket.engine.models import GameState, Resources, labels_of
 from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effect, parse_effects
 from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
+from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from tests._helpers import make_game_state, record_price_tables
 
 
@@ -191,7 +194,9 @@ class TestResolveOutcome:
             ("quest/swear_an_iron_vow", "STRONG_HIT", lambda g, r: g.resources.meters["momentum"] == 4),
         ],
     )
-    def test_simple_outcomes(self, game: GameState, move: str, result_type: str, check_fn: object) -> None:
+    def test_simple_outcomes(
+        self, game: GameState, move: str, result_type: str, check_fn: Callable[[GameState, OutcomeResult], bool]
+    ) -> None:
         result = resolve_move_outcome(game, move, result_type, target_npc_id=None, aided_by=None, match=False)
         assert check_fn(game, result)
 

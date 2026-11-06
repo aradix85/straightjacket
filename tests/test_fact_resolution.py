@@ -484,7 +484,7 @@ def test_facts_survive_a_save_round_trip(load_engine: None) -> None:
     ids=["subject", "miss_settles"],
 )
 def test_fact_resolution_yaml_with_a_wrong_value_refuses_to_load(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, change: Callable[[dict[str, Any]], None], message: str
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, change: Callable[[dict[str, object]], None], message: str
 ) -> None:
     from straightjacket.engine.gamemaster import config as gamemaster_config
     from tests._helpers import change_config

@@ -2,10 +2,17 @@ from __future__ import annotations
 
 import dataclasses
 import types
-from typing import Any, TypeGuard, Union, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Any, Self, TypeVar, Union, get_args, get_origin, get_type_hints
+
+from typing_extensions import TypeIs
+
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
+
+_T = TypeVar("_T")
 
 
-def _is_dataclass_type(tp: Any) -> TypeGuard[type]:
+def _is_dataclass_type(tp: object) -> TypeIs[type[DataclassInstance]]:
     return isinstance(tp, type) and dataclasses.is_dataclass(tp)
 
 
@@ -54,7 +61,7 @@ def _serialize_value(val: Any) -> Any:
     return val
 
 
-def deserialize(cls: type, data: dict[str, Any]) -> Any:
+def deserialize(cls: type[_T], data: dict[str, Any]) -> _T:
     if not _is_dataclass_type(cls):
         raise TypeError(f"Expected dataclass type, got {cls}")
     if not isinstance(data, dict):
@@ -116,5 +123,5 @@ class SerializableMixin:
         return serialize(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Any:
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         return deserialize(cls, data)

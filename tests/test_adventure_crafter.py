@@ -70,7 +70,7 @@ def test_data_whose_themes_disagree_with_the_theme_die_refuses_to_load(
         load_ac_data()
 
 
-def test_assign_themes_returns_theme_slots_entries():
+def test_assign_themes_returns_theme_slots_entries() -> None:
     rng = random.Random(0)
     out = assign_themes(rng)
     assert len(out) == crafter().adventure_crafter.theme_slots
@@ -78,7 +78,7 @@ def test_assign_themes_returns_theme_slots_entries():
         assert theme in crafter().adventure_crafter.themes
 
 
-def test_assign_themes_deterministic_with_seed():
+def test_assign_themes_deterministic_with_seed() -> None:
     a = assign_themes(random.Random(123))
     b = assign_themes(random.Random(123))
     assert a == b
@@ -89,7 +89,7 @@ def test_assign_themes_deterministic_with_seed():
 
 @pytest.mark.parametrize("theme", ["action", "tension", "mystery", "social", "personal"])
 @pytest.mark.parametrize(("roll", "expected_special"), _SPECIAL_BOUNDARIES)
-def test_plot_point_lookup_at_boundaries(theme: str, roll: int, expected_special: str | None):
+def test_plot_point_lookup_at_boundaries(theme: str, roll: int, expected_special: str | None) -> None:
     result = lookup_plot_point(theme, roll)
     assert isinstance(result, PlotPointResult)
     assert result.special_range == expected_special
@@ -102,19 +102,19 @@ def test_plot_point_lookup_at_boundaries(theme: str, roll: int, expected_special
 
 
 @pytest.mark.parametrize("theme", ["action", "tension", "mystery", "social", "personal"])
-def test_plot_point_lookup_covers_full_d100(theme: str):
+def test_plot_point_lookup_covers_full_d100(theme: str) -> None:
     for roll in range(1, 101):
         result = lookup_plot_point(theme, roll)
         assert result.name
 
 
-def test_plot_point_lookup_unknown_theme_raises():
+def test_plot_point_lookup_unknown_theme_raises() -> None:
     with pytest.raises(LookupError, match="covers theme='horror'"):
         lookup_plot_point("horror", 50)
 
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 101, 200])
-def test_plot_point_lookup_out_of_range_roll_raises(bad_roll: int):
+def test_plot_point_lookup_out_of_range_roll_raises(bad_roll: int) -> None:
     with pytest.raises(LookupError, match="covers"):
         lookup_plot_point("action", bad_roll)
 
@@ -138,23 +138,23 @@ def test_plot_point_lookup_out_of_range_roll_raises(bad_roll: int):
         (100, "Plotline Combo"),
     ],
 )
-def test_meta_lookup_at_boundaries(roll: int, expected_name: str):
+def test_meta_lookup_at_boundaries(roll: int, expected_name: str) -> None:
     assert lookup_meta_plot_point(roll) == expected_name
 
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 101, 200])
-def test_meta_lookup_out_of_range_roll_raises(bad_roll: int):
+def test_meta_lookup_out_of_range_roll_raises(bad_roll: int) -> None:
     with pytest.raises(LookupError, match="covers"):
         lookup_meta_plot_point(bad_roll)
 
 
-def test_every_meta_roll_dispatches_to_a_handler():
+def test_every_meta_roll_dispatches_to_a_handler() -> None:
     narrative = make_narrative()
     for roll in range(1, 101):
         dispatch_meta(roll, narrative, None)
 
 
-def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch):
+def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_lookup(_roll: int) -> str:
         return "Plot Twist"
 
@@ -167,7 +167,7 @@ def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch):
         dispatch_meta(50, narrative, None)
 
 
-def test_lookup_theme_priority_constant_for_first_three_buckets():
+def test_lookup_theme_priority_constant_for_first_three_buckets() -> None:
     alt = ThemeAlternation(next_is_4=True)
     assert lookup_theme_priority(1, alt) == 1
     assert lookup_theme_priority(4, alt) == 1
@@ -177,7 +177,7 @@ def test_lookup_theme_priority_constant_for_first_three_buckets():
     assert lookup_theme_priority(9, alt) == 3
 
 
-def test_lookup_theme_priority_alternates_on_ten():
+def test_lookup_theme_priority_alternates_on_ten() -> None:
     alt = ThemeAlternation(next_is_4=True)
     first = lookup_theme_priority(10, alt)
     second = lookup_theme_priority(10, alt)
@@ -189,12 +189,12 @@ def test_lookup_theme_priority_alternates_on_ten():
 
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 11, 100])
-def test_lookup_theme_priority_out_of_range_raises(bad_roll: int):
+def test_lookup_theme_priority_out_of_range_raises(bad_roll: int) -> None:
     with pytest.raises(LookupError, match="covers"):
         lookup_theme_priority(bad_roll, ThemeAlternation(next_is_4=True))
 
 
-def test_lookup_characters_template_resolves_full_d100():
+def test_lookup_characters_template_resolves_full_d100() -> None:
     seen = set()
     for roll in range(1, 101):
         result = lookup_characters_template(roll)
@@ -203,7 +203,7 @@ def test_lookup_characters_template_resolves_full_d100():
     assert seen == {"new_character", "choose_most_logical"}
 
 
-def test_lookup_plotlines_template_resolves_full_d100():
+def test_lookup_plotlines_template_resolves_full_d100() -> None:
     seen = set()
     for roll in range(1, 101):
         result = lookup_plotlines_template(roll)
@@ -212,21 +212,21 @@ def test_lookup_plotlines_template_resolves_full_d100():
     assert seen == {"new_plotline", "choose_most_logical"}
 
 
-def test_plotlines_template_weighted_toward_choose_most_logical():
+def test_plotlines_template_weighted_toward_choose_most_logical() -> None:
     counts = {"choose_most_logical": 0, "new_plotline": 0}
     for roll in range(1, 101):
         counts[lookup_plotlines_template(roll)] += 1
     assert counts["choose_most_logical"] > counts["new_plotline"]
 
 
-def test_characters_template_weighted_toward_new_character():
+def test_characters_template_weighted_toward_new_character() -> None:
     counts = {"new_character": 0, "choose_most_logical": 0}
     for roll in range(1, 101):
         counts[lookup_characters_template(roll)] += 1
     assert counts["new_character"] > counts["choose_most_logical"]
 
 
-def test_roll_turning_point_produces_two_to_five_plot_points():
+def test_roll_turning_point_produces_two_to_five_plot_points() -> None:
     narrative = make_narrative()
     rng = random.Random(7)
     themes = ["action", "tension", "mystery", "social", "personal"]
@@ -239,14 +239,14 @@ def test_roll_turning_point_produces_two_to_five_plot_points():
             assert hit.theme in themes
 
 
-def test_roll_turning_point_themes_length_must_match_theme_slots():
+def test_roll_turning_point_themes_length_must_match_theme_slots() -> None:
     narrative = make_narrative()
     rng = random.Random(0)
     with pytest.raises(ValueError, match="theme_slots"):
         roll_turning_point(rng, ["action", "tension"], narrative)
 
 
-def test_roll_turning_point_creates_plotline_on_empty_list():
+def test_roll_turning_point_creates_plotline_on_empty_list() -> None:
     narrative = make_narrative()
     rng = random.Random(1)
     themes = ["action", "tension", "mystery", "social", "personal"]
@@ -256,14 +256,14 @@ def test_roll_turning_point_creates_plotline_on_empty_list():
     assert narrative.plotlines_list[0].turning_point_count == 1
 
 
-def test_a_turning_point_names_its_plotline_and_what_it_does_to_it():
+def test_a_turning_point_names_its_plotline_and_what_it_does_to_it() -> None:
     narrative = make_narrative()
     themes = ["action", "tension", "mystery", "social", "personal"]
     tp = roll_turning_point(random.Random(1), themes, narrative)
     assert (tp.plotline, tp.opens_plotline, tp.concludes_plotline) == (narrative.plotlines_list[0].name, True, False)
 
 
-def test_roll_turning_point_reuses_advancing_plotline():
+def test_roll_turning_point_reuses_advancing_plotline() -> None:
     narrative = make_narrative()
     _plotline(narrative, "First")
     rng = random.Random(0)
@@ -274,7 +274,7 @@ def test_roll_turning_point_reuses_advancing_plotline():
         assert narrative.plotlines_list[0].turning_point_count == 1
 
 
-def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeypatch):
+def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeypatch: pytest.MonkeyPatch) -> None:
     narrative = make_narrative()
     _plotline(narrative, "First")
     rng = random.Random(0)
@@ -293,7 +293,7 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
     assert (tp.plotline, tp.opens_plotline, tp.concludes_plotline) == ("First", False, True)
 
 
-def test_meta_character_exits_marks_active_character_exited():
+def test_meta_character_exits_marks_active_character_exited() -> None:
 
     narrative = make_narrative()
     char = _present(narrative, "Alice")
@@ -301,7 +301,7 @@ def test_meta_character_exits_marks_active_character_exited():
     assert char.ac_status == "exited"
 
 
-def test_meta_character_returns_marks_exited_character_returned():
+def test_meta_character_returns_marks_exited_character_returned() -> None:
 
     narrative = make_narrative()
     char = _present(narrative, "Alice")
@@ -310,7 +310,7 @@ def test_meta_character_returns_marks_exited_character_returned():
     assert char.ac_status == "returned"
 
 
-def test_meta_character_returns_creates_new_when_no_exited():
+def test_meta_character_returns_creates_new_when_no_exited() -> None:
 
     narrative = make_narrative()
     _meta("Character Returns", narrative)
@@ -318,7 +318,7 @@ def test_meta_character_returns_creates_new_when_no_exited():
     assert narrative.characters_list[0].ac_status == "returned"
 
 
-def test_meta_character_steps_up_increases_weight():
+def test_meta_character_steps_up_increases_weight() -> None:
 
     narrative = make_narrative()
     char = _present(narrative, "Alice")
@@ -328,7 +328,7 @@ def test_meta_character_steps_up_increases_weight():
     assert char.weight == expected
 
 
-def test_meta_character_steps_down_decreases_weight_to_floor():
+def test_meta_character_steps_down_decreases_weight_to_floor() -> None:
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
@@ -341,7 +341,7 @@ def test_meta_character_steps_down_decreases_weight_to_floor():
     assert char.weight == cfg.weight_floor
 
 
-def test_meta_character_downgrade_marks_status_and_decreases_weight():
+def test_meta_character_downgrade_marks_status_and_decreases_weight() -> None:
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
@@ -352,7 +352,7 @@ def test_meta_character_downgrade_marks_status_and_decreases_weight():
     assert char.weight == max(cfg.weight_floor, 5 + cfg.weight_delta_downgrade)
 
 
-def test_meta_character_upgrade_marks_status_and_increases_weight():
+def test_meta_character_upgrade_marks_status_and_increases_weight() -> None:
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
@@ -363,7 +363,7 @@ def test_meta_character_upgrade_marks_status_and_increases_weight():
     assert char.weight == initial + cfg.weight_delta_upgrade
 
 
-def test_meta_plotline_combo_merges_two_advancing_plotlines():
+def test_meta_plotline_combo_merges_two_advancing_plotlines() -> None:
 
     narrative = make_narrative()
     a = _plotline(narrative, "First")
@@ -374,7 +374,7 @@ def test_meta_plotline_combo_merges_two_advancing_plotlines():
     assert statuses.count("advancement") == 1
 
 
-def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
+def test_meta_plotline_combo_skips_when_fewer_than_two_advancing() -> None:
 
     narrative = make_narrative()
     only = _plotline(narrative, "Only one")
@@ -382,7 +382,7 @@ def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
     assert only.status == "advancement"
 
 
-def test_meta_plotline_combo_excludes_active_plotline_id():
+def test_meta_plotline_combo_excludes_active_plotline_id() -> None:
 
     narrative = make_narrative()
     active = _plotline(narrative, "Active")
@@ -391,7 +391,7 @@ def test_meta_plotline_combo_excludes_active_plotline_id():
     assert active.status == "advancement"
 
 
-def test_narrative_state_snapshot_restore_round_trips_plotlines_list():
+def test_narrative_state_snapshot_restore_round_trips_plotlines_list() -> None:
     narrative = make_narrative()
     _plotline(narrative, "Original")
     snap = narrative.snapshot()
@@ -405,7 +405,7 @@ def test_narrative_state_snapshot_restore_round_trips_plotlines_list():
     assert len(data["plot_points"]) == 186
 
 
-def test_plot_points_round_trip_special_entries():
+def test_plot_points_round_trip_special_entries() -> None:
     data = load_ac_data()
     by_name = {entry["name"]: entry for entry in data["plot_points"]}
     sr = crafter().adventure_crafter.special_ranges

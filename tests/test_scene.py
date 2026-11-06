@@ -1,6 +1,7 @@
 import pytest
 
-from straightjacket.engine.gamemaster.scene import SceneSetup, adjustment_descriptions, check_scene
+from straightjacket.engine.gamemaster.scene import adjustment_descriptions, check_scene
+from straightjacket.engine.models_base import SceneSetup
 from tests._helpers import fix_dice, make_game_state, make_random_event, make_scene_setup
 
 

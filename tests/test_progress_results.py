@@ -3,7 +3,7 @@ import dataclasses
 import pytest
 
 from straightjacket.engine.game.action_resolution import resolve_action_phase
-from straightjacket.engine.models import GameState, ProgressTrack, RollResult, labels_of
+from straightjacket.engine.models import Consequence, GameState, ProgressTrack, RollResult, labels_of
 from straightjacket.engine.ruleset.consequences import generate_consequence_sentences
 from straightjacket.engine.ruleset.make_move import RollOutcome
 from straightjacket.engine.ruleset.moves import get_moves
@@ -27,7 +27,7 @@ def _roll(move: str, result: str, match: bool = False) -> RollResult:
     )
 
 
-def _play(setting_id: str, move: str, track: ProgressTrack, result: str) -> tuple[GameState, list[str]]:
+def _play(setting_id: str, move: str, track: ProgressTrack, result: str) -> tuple[GameState, list[Consequence]]:
     game = make_game_state(player_name="Hero", setting_id=setting_id)
     game.progress_tracks.append(track)
     if track.track_type == "combat":

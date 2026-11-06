@@ -1,7 +1,9 @@
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, ToolCall
 from straightjacket.engine.game import DirectorCall
 from straightjacket.engine.models import GameState
 from tests._helpers import (
@@ -13,6 +15,7 @@ from tests._helpers import (
     make_npc_reflection,
     make_scene_log_entry,
 )
+from tests._mocks import ScriptedProvider
 
 
 def _game() -> GameState:
@@ -51,18 +54,18 @@ def test_empty_guidance_resets_reflection_flags_and_keeps_the_accumulator(load_e
     assert game.npcs[0].needs_reflection is True
     before = game.npcs[0].importance_accumulator
     apply_director_guidance(game, {})
-    assert game.npcs[0].needs_reflection is False
+    reflects_after: bool = game.npcs[0].needs_reflection
+    assert reflects_after is False
     assert game.npcs[0].importance_accumulator == before
 
 
-class _SequencedDirectorProvider:
+class _SequencedDirectorProvider(ScriptedProvider):
     def __init__(self, *final_answers: str) -> None:
         self._answers = list(final_answers)
         self.final_calls = 0
 
-    def create_message(self, spec: Any) -> Any:
-        from straightjacket.engine.ai.provider_base import AIResponse
-
+    @override
+    def create_message(self, spec: AICallSpec) -> AIResponse:
         if spec.json_schema is None:
             return AIResponse(content="", usage={"input_tokens": 1, "output_tokens": 1})
         self.final_calls += 1
@@ -91,14 +94,13 @@ def test_director_reports_why_its_final_answer_broke_off(load_engine: None, monk
     assert warning.rstrip().endswith("Let me reconsider.'), continuing without guidance")
 
 
-class _ToolCallingDirectorProvider:
+class _ToolCallingDirectorProvider(ScriptedProvider):
     def __init__(self, tool_name: str) -> None:
         self.tool_name = tool_name
         self.specs: list[Any] = []
 
-    def create_message(self, spec: Any) -> Any:
-        from straightjacket.engine.ai.provider_base import AIResponse, ToolCall
-
+    @override
+    def create_message(self, spec: AICallSpec) -> AIResponse:
         self.specs.append(spec)
         if spec.json_schema is None:
             return AIResponse(

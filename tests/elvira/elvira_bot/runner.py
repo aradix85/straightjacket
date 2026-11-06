@@ -9,9 +9,10 @@ import traceback
 from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yaml
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
@@ -72,12 +73,13 @@ SEPARATOR = "=" * 62
 CORRECTION_TEST_INTERVAL = 8
 
 
-def load_config(path: Path) -> dict:
+def load_config(path: Path) -> dict[str, Any]:
     if not path.exists():
         print(f"[ERROR] Config not found: {path}")
         raise SystemExit(1)
     with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        config: dict[str, Any] = yaml.safe_load(f)
+    return config
 
 
 def selectable_settings() -> list[str]:
@@ -88,7 +90,7 @@ def _role_label(role: str) -> str:
     return f"{role}={provider_for_role(role)}/{model_for_role(role)}"
 
 
-def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
+def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
     auto_mode = auto_override or bot_cfg["auto_mode"]
     username = bot_cfg["username"]
     game_cfg = bot_cfg["game"]
@@ -292,7 +294,9 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
     slog.total_turns = total_turns
     slog.ended_reason = (
-        slog.ended_reason if slog.ended_reason != "unknown" else (ch_rec.ended_reason if slog.chapters else "complete")
+        slog.ended_reason
+        if slog.ended_reason != "unknown"
+        else (slog.chapters[-1].ended_reason if slog.chapters else "complete")
     )
     slog.character = {"name": game.player_name, "concept": game.character_concept, "setting": game.setting_id}
     slog.quality_summary = _aggregate_quality_stats(slog)
@@ -332,8 +336,8 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
 
 def _setup_game(
-    provider: AIProvider, username: str, game_cfg: dict, auto_mode: bool, slog: SessionLog
-) -> tuple[GameState, str, list[dict]]:
+    provider: AIProvider, username: str, game_cfg: dict[str, Any], auto_mode: bool, slog: SessionLog
+) -> tuple[GameState, str, list[dict[str, Any]]]:
     if not auto_mode and game_cfg["load_existing"]:
         save_name = game_cfg["save_name"]
         game, chat_messages = load_game(username, save_name)
@@ -377,7 +381,7 @@ def _play_turn(
     prev_npcs: list[NpcSnapshot] | None,
     coverage: Coverage,
     events: _EventCapture,
-    judge_cfg: dict | None,
+    judge_cfg: dict[str, Any] | None,
     prev_action: str = "",
     inject_failure: bool = False,
     directive_key: str | None = None,
@@ -518,12 +522,12 @@ def _check_turn(
         rec.violations = violations
 
 
-def _scenario_spec(bot_cfg: dict) -> tuple[str, dict | None]:
+def _scenario_spec(bot_cfg: dict[str, Any]) -> tuple[str, dict[str, Any] | None]:
     name = bot_cfg["session"]["scenario"]
     return name, (bot_cfg["scenarios"][name] if name else None)
 
 
-def _setting_of(game_cfg: dict, scenario: dict | None) -> str:
+def _setting_of(game_cfg: dict[str, Any], scenario: dict[str, Any] | None) -> str:
     if scenario is not None and "setting" in scenario:
         return str(scenario["setting"])
     return str(game_cfg["setting_id"]) or _random.choice(selectable_settings())
@@ -534,7 +538,7 @@ def _log_stem(base: Path, setting_id: str, style: str, scenario_name: str, times
     return base.with_stem("_".join(parts))
 
 
-def _apply_scenario(game: GameState, name: str, spec: dict | None, slog: SessionLog) -> None:
+def _apply_scenario(game: GameState, name: str, spec: dict[str, Any] | None, slog: SessionLog) -> None:
     if spec is None:
         return
     notes = prepare_scenario(game, spec)
@@ -542,7 +546,7 @@ def _apply_scenario(game: GameState, name: str, spec: dict | None, slog: Session
     print(f"  [SCENARIO] {name}: {'; '.join(notes) or 'nothing to prepare'}")
 
 
-def _directive(spec: dict | None, coverage: Coverage, turn: int, max_turns: int) -> str | None:
+def _directive(spec: dict[str, Any] | None, coverage: Coverage, turn: int, max_turns: int) -> str | None:
     if spec is not None and "directive" in spec:
         directives: list[str] = spec["directive"]
         return directives[min(turn, len(directives)) - 1]
@@ -564,7 +568,7 @@ def _restore(game: GameState, snapshot: TurnSnapshot, last_snapshot: TurnSnapsho
 
 def _check_rollback(
     game: GameState,
-    before_state: dict,
+    before_state: dict[str, Any],
     turn: int,
     error: AIUnavailableError,
     injected: bool,
@@ -602,7 +606,7 @@ def _record_stream(
             slog.stream_issues.append(f"Turn {rec.turn}: streamed text differs from the final narration")
 
 
-def _print_audit(verdict: dict) -> None:
+def _print_audit(verdict: dict[str, Any]) -> None:
     if "overall" in verdict:
         print(f"  [AUDIT] {verdict['overall']}/10: {verdict['weakness']}")
     else:
@@ -616,6 +620,7 @@ class _EventCapture(logging.Handler):
         self.lines: list[str] = []
         self.warnings: list[str] = []
 
+    @override
     def emit(self, record: logging.LogRecord) -> None:
         message = record.getMessage()
         if message.startswith(self.prefixes):
@@ -629,7 +634,12 @@ def _norm(text: str) -> str:
 
 
 def _save_and_verify(
-    game: GameState, username: str, chat_messages: list[dict], save_out: str, slog: SessionLog, coverage: Coverage
+    game: GameState,
+    username: str,
+    chat_messages: list[dict[str, Any]],
+    save_out: str,
+    slog: SessionLog,
+    coverage: Coverage,
 ) -> None:
     _try_save(game, username, chat_messages, save_out)
     try:
@@ -652,7 +662,7 @@ def _save_and_verify(
 
 
 def _play_succession(
-    provider: AIProvider, game: GameState, game_cfg: dict, slog: SessionLog, coverage: Coverage
+    provider: AIProvider, game: GameState, game_cfg: dict[str, Any], slog: SessionLog, coverage: Coverage
 ) -> tuple[GameState, str]:
     coverage.hit("game_over")
     try:
@@ -766,7 +776,7 @@ def _handle_burn(
     rec: TurnRecord,
     turn: int,
     slog: SessionLog,
-) -> tuple[str, dict | None]:
+) -> tuple[str, DirectorCall | None]:
     should_burn = False
     if burn_setting == "always":
         should_burn = True
@@ -811,14 +821,14 @@ def _handle_burn(
 def _chapter_transition(
     provider: AIProvider,
     game: GameState,
-    chat_messages: list[dict],
+    chat_messages: list[dict[str, Any]],
     username: str,
     save_out: str,
     chapter_num: int,
     chapter_idx: int,
     max_chapters: int,
     slog: SessionLog,
-) -> tuple[GameState, str, list[dict], bool]:
+) -> tuple[GameState, str, list[dict[str, Any]], bool]:
     print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE — Chapter {chapter_num}\n{SEPARATOR}")
     try:
         epilogue = generate_epilogue(provider, game)
@@ -853,7 +863,7 @@ def _chapter_transition(
         return game, "", chat_messages, True
 
 
-def _try_save(game: GameState, username: str, chat_messages: list[dict], save_out: str) -> None:
+def _try_save(game: GameState, username: str, chat_messages: list[dict[str, Any]], save_out: str) -> None:
     try:
         save_game(game, username, chat_messages, save_out)
         print(f"  [SAVE] Saved to '{save_out}'")
@@ -872,7 +882,7 @@ def _log_story_blueprint(game: GameState, slog: SessionLog) -> None:
     }
 
 
-def _aggregate_quality_stats(slog: SessionLog) -> dict:
+def _aggregate_quality_stats(slog: SessionLog) -> dict[str, Any]:
     quality_counts: dict[str, int] = {}
     for issue in slog.narration_quality_issues:
         parts = issue.split(": ", 1)
@@ -888,7 +898,7 @@ def _aggregate_quality_stats(slog: SessionLog) -> dict:
     }
 
 
-def aggregate_token_stats(slog: SessionLog) -> dict:
+def aggregate_token_stats(slog: SessionLog) -> dict[str, Any]:
     by_role: dict[str, dict[str, int]] = {}
     total_input = 0
     total_output = 0

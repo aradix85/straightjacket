@@ -4,8 +4,9 @@ import pytest
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene, evaluate_keyed_scenes
-from straightjacket.engine.gamemaster.scene import SceneSetup, check_scene
+from straightjacket.engine.gamemaster.scene import check_scene
 from straightjacket.engine.models import GameState, KeyedScene
+from straightjacket.engine.models_base import SceneSetup
 from tests._helpers import (
     dialog_prompt,
     fix_dice,
@@ -21,11 +22,11 @@ from tests._helpers import (
 )
 
 
-def _seed_game(**world_kwargs) -> GameState:
+def _seed_game(**world_kwargs: object) -> GameState:
     return make_game_state(world=make_world_state(**world_kwargs))
 
 
-def _ks(**kwargs) -> KeyedScene:
+def _ks(**kwargs: object) -> KeyedScene:
     kwargs.setdefault("id", "ks_test")
     kwargs.setdefault("trigger_type", "scene_count")
     kwargs.setdefault("trigger_value", "1")
@@ -34,7 +35,7 @@ def _ks(**kwargs) -> KeyedScene:
     return make_keyed_scene(**kwargs)
 
 
-def test_keyed_scene_unknown_trigger_type_raises():
+def test_keyed_scene_unknown_trigger_type_raises() -> None:
     with pytest.raises(ValueError, match="Unknown KeyedScene trigger_type"):
         add_keyed_scene(
             make_game_state().narrative,
@@ -46,12 +47,12 @@ def test_keyed_scene_unknown_trigger_type_raises():
         )
 
 
-def test_keyed_scene_each_registered_trigger_constructs():
+def test_keyed_scene_each_registered_trigger_constructs() -> None:
     for trigger_name in gm().keyed_scenes.triggers:
         _ks(id=f"ks_{trigger_name}", trigger_type=trigger_name, trigger_value="x:1")
 
 
-def test_clock_fills_fires_when_threshold_met():
+def test_clock_fills_fires_when_threshold_met() -> None:
     game = _seed_game()
     game.world.clocks.append(make_clock(name="The Reckoning", filled=4, segments=6))
     game.narrative.keyed_scenes.append(_ks(trigger_type="clock_fills", trigger_value="The Reckoning:4"))
@@ -60,21 +61,21 @@ def test_clock_fills_fires_when_threshold_met():
     assert matched.id == "ks_test"
 
 
-def test_clock_fills_does_not_fire_below_threshold():
+def test_clock_fills_does_not_fire_below_threshold() -> None:
     game = _seed_game()
     game.world.clocks.append(make_clock(name="The Reckoning", filled=2, segments=6))
     game.narrative.keyed_scenes.append(_ks(trigger_type="clock_fills", trigger_value="The Reckoning:4"))
     assert evaluate_keyed_scenes(game) is None
 
 
-def test_clock_fills_unknown_clock_name_does_not_fire():
+def test_clock_fills_unknown_clock_name_does_not_fire() -> None:
     game = _seed_game()
     game.world.clocks.append(make_clock(name="Other Clock", filled=10, segments=6))
     game.narrative.keyed_scenes.append(_ks(trigger_type="clock_fills", trigger_value="Missing Clock:1"))
     assert evaluate_keyed_scenes(game) is None
 
 
-def test_threat_menace_phase_fires_at_filled_boxes():
+def test_threat_menace_phase_fires_at_filled_boxes() -> None:
     game = _seed_game()
     threat = make_threat(name="The Cult", menace_ticks=20)
     game.threats.append(threat)
@@ -82,7 +83,7 @@ def test_threat_menace_phase_fires_at_filled_boxes():
     assert evaluate_keyed_scenes(game) is not None
 
 
-def test_threat_menace_phase_below_threshold_does_not_fire():
+def test_threat_menace_phase_below_threshold_does_not_fire() -> None:
     game = _seed_game()
     threat = make_threat(name="The Cult", menace_ticks=12)
     game.threats.append(threat)
@@ -90,7 +91,7 @@ def test_threat_menace_phase_below_threshold_does_not_fire():
     assert evaluate_keyed_scenes(game) is None
 
 
-def test_bond_threshold_fires_when_connection_track_meets_filled_boxes():
+def test_bond_threshold_fires_when_connection_track_meets_filled_boxes() -> None:
     game = _seed_game()
     npc = make_npc(id="npc_1", name="Kira")
     game.npcs.append(npc)
@@ -111,7 +112,7 @@ def test_bond_threshold_fires_when_connection_track_meets_filled_boxes():
     assert evaluate_keyed_scenes(game) is not None
 
 
-def test_bond_threshold_below_threshold_does_not_fire():
+def test_bond_threshold_below_threshold_does_not_fire() -> None:
     game = _seed_game()
     npc = make_npc(id="npc_1", name="Kira")
     game.npcs.append(npc)
@@ -131,54 +132,54 @@ def test_bond_threshold_below_threshold_does_not_fire():
     assert evaluate_keyed_scenes(game) is None
 
 
-def test_bond_threshold_unknown_npc_raises():
+def test_bond_threshold_unknown_npc_raises() -> None:
     game = _seed_game()
     game.narrative.keyed_scenes.append(_ks(trigger_type="bond_threshold", trigger_value="npc_ghost:1"))
     with pytest.raises(KeyError, match="bond_threshold trigger references unknown npc_id"):
         evaluate_keyed_scenes(game)
 
 
-def test_chaos_extreme_max_fires_at_chaos_max():
+def test_chaos_extreme_max_fires_at_chaos_max() -> None:
     game = _seed_game(chaos_factor=gm().chaos.max)
     game.narrative.keyed_scenes.append(_ks(trigger_type="chaos_extreme", trigger_value="max"))
     assert evaluate_keyed_scenes(game) is not None
 
 
-def test_chaos_extreme_min_fires_at_chaos_min():
+def test_chaos_extreme_min_fires_at_chaos_min() -> None:
     game = _seed_game(chaos_factor=gm().chaos.min)
     game.narrative.keyed_scenes.append(_ks(trigger_type="chaos_extreme", trigger_value="min"))
     assert evaluate_keyed_scenes(game) is not None
 
 
-def test_chaos_extreme_does_not_fire_in_middle():
+def test_chaos_extreme_does_not_fire_in_middle() -> None:
     mid = (gm().chaos.min + gm().chaos.max) // 2
     game = _seed_game(chaos_factor=mid)
     game.narrative.keyed_scenes.append(_ks(trigger_type="chaos_extreme", trigger_value="max"))
     assert evaluate_keyed_scenes(game) is None
 
 
-def test_chaos_extreme_invalid_value_raises():
+def test_chaos_extreme_invalid_value_raises() -> None:
     game = _seed_game(chaos_factor=5)
     game.narrative.keyed_scenes.append(_ks(trigger_type="chaos_extreme", trigger_value="middle"))
     with pytest.raises(ValueError, match="chaos_extreme trigger_value must be"):
         evaluate_keyed_scenes(game)
 
 
-def test_scene_count_fires_at_threshold():
+def test_scene_count_fires_at_threshold() -> None:
     game = _seed_game()
     game.narrative.scene_count = 10
     game.narrative.keyed_scenes.append(_ks(trigger_type="scene_count", trigger_value="10"))
     assert evaluate_keyed_scenes(game) is not None
 
 
-def test_scene_count_below_threshold_does_not_fire():
+def test_scene_count_below_threshold_does_not_fire() -> None:
     game = _seed_game()
     game.narrative.scene_count = 5
     game.narrative.keyed_scenes.append(_ks(trigger_type="scene_count", trigger_value="10"))
     assert evaluate_keyed_scenes(game) is None
 
 
-def test_priority_ordering_higher_wins():
+def test_priority_ordering_higher_wins() -> None:
     game = _seed_game()
     game.narrative.scene_count = 20
     game.narrative.keyed_scenes.append(_ks(id="ks_low", trigger_type="scene_count", trigger_value="10", priority=1))
@@ -188,7 +189,7 @@ def test_priority_ordering_higher_wins():
     assert matched.id == "ks_high"
 
 
-def test_priority_tie_resolves_by_insertion_order():
+def test_priority_tie_resolves_by_insertion_order() -> None:
     game = _seed_game()
     game.narrative.scene_count = 20
     game.narrative.keyed_scenes.append(_ks(id="ks_first", trigger_type="scene_count", trigger_value="10", priority=3))
@@ -198,7 +199,7 @@ def test_priority_tie_resolves_by_insertion_order():
     assert matched.id == "ks_first"
 
 
-def test_check_scene_consumes_matched_keyed_scene(monkeypatch: pytest.MonkeyPatch):
+def test_check_scene_consumes_matched_keyed_scene(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _seed_game(chaos_factor=5)
     game.narrative.scene_count = 10
     game.narrative.keyed_scenes.append(_ks(id="ks_consume", trigger_type="scene_count", trigger_value="10"))
@@ -209,7 +210,7 @@ def test_check_scene_consumes_matched_keyed_scene(monkeypatch: pytest.MonkeyPatc
     assert all(k.id != "ks_consume" for k in game.narrative.keyed_scenes)
 
 
-def test_check_scene_keyed_priority_overrides_interrupt(monkeypatch: pytest.MonkeyPatch):
+def test_check_scene_keyed_priority_overrides_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _seed_game(chaos_factor=9)
     game.narrative.scene_count = 10
     game.narrative.keyed_scenes.append(_ks(trigger_type="scene_count", trigger_value="10"))
@@ -218,7 +219,7 @@ def test_check_scene_keyed_priority_overrides_interrupt(monkeypatch: pytest.Monk
     assert setup.scene_type == "keyed"
 
 
-def test_check_scene_no_match_falls_through_to_chaos(monkeypatch: pytest.MonkeyPatch):
+def test_check_scene_no_match_falls_through_to_chaos(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _seed_game(chaos_factor=5)
     game.narrative.scene_count = 1
     game.narrative.keyed_scenes.append(_ks(trigger_type="scene_count", trigger_value="10"))
@@ -227,14 +228,14 @@ def test_check_scene_no_match_falls_through_to_chaos(monkeypatch: pytest.MonkeyP
     assert setup.scene_type == "expected"
 
 
-def test_check_scene_no_keyed_scenes_uses_chaos(monkeypatch: pytest.MonkeyPatch):
+def test_check_scene_no_keyed_scenes_uses_chaos(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _seed_game(chaos_factor=5)
     fix_dice(monkeypatch, 8)
     setup = check_scene(game)
     assert setup.scene_type == "expected"
 
 
-def test_narrative_state_snapshot_restores_keyed_scenes():
+def test_narrative_state_snapshot_restores_keyed_scenes() -> None:
     nar = make_narrative()
     nar.keyed_scenes.append(_ks(id="ks_a"))
     nar.keyed_scenes.append(_ks(id="ks_b"))
@@ -246,7 +247,7 @@ def test_narrative_state_snapshot_restores_keyed_scenes():
     assert sorted(k.id for k in nar.keyed_scenes) == ["ks_a", "ks_b"]
 
 
-def test_keyed_scene_serialization_roundtrip():
+def test_keyed_scene_serialization_roundtrip() -> None:
     original = _ks(id="ks_rt", trigger_type="clock_fills", trigger_value="x:3", priority=7)
     restored = KeyedScene.from_dict(original.to_dict())
     assert restored.id == "ks_rt"
@@ -273,12 +274,12 @@ def test_a_keyed_scenes_hint_reaches_the_narrator_escaped(load_engine: None) -> 
     assert "&" not in inner.replace("&amp;", "").replace("&lt;", "").replace("&gt;", "")
 
 
-def test_scene_setup_requires_scene_type():
+def test_scene_setup_requires_scene_type() -> None:
     with pytest.raises(TypeError):
-        SceneSetup()
+        SceneSetup(**{})
 
 
-def test_scene_setup_keyed_serialization_roundtrip():
+def test_scene_setup_keyed_serialization_roundtrip() -> None:
     setup = make_scene_setup(scene_type="keyed", narrative_hint="Beat hint")
     restored = SceneSetup.from_dict(setup.to_dict())
     assert restored.scene_type == "keyed"

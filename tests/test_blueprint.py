@@ -1,4 +1,5 @@
 import random
+from typing import Any
 
 import pytest
 
@@ -14,7 +15,7 @@ from straightjacket.engine.gamemaster.keyed_scenes import has_keyed_scene_from
 from tests._helpers import make_game_state
 
 
-def _voicing(act_count: int, revelations: int | None = None, endings: int = 3) -> dict:
+def _voicing(act_count: int, revelations: int | None = None, endings: int = 3) -> dict[str, Any]:
     return {
         "central_conflict": "The relic is contested",
         "antagonist_force": "The cult",
@@ -156,8 +157,9 @@ def test_blueprint_seed_is_frozen_dataclass(load_engine: None) -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     assert isinstance(seed, BlueprintSeed)
-    with pytest.raises(dataclasses.FrozenInstanceError):
-        seed.themes = []
+    for field in dataclasses.fields(seed):
+        with pytest.raises(dataclasses.FrozenInstanceError):
+            setattr(seed, field.name, None)
 
 
 def test_call_story_architect_no_longer_in_src() -> None:

@@ -29,7 +29,7 @@ from tests._helpers import (
 )
 
 
-def _seed_game(**world_kwargs) -> GameState:
+def _seed_game(**world_kwargs: object) -> GameState:
     return make_game_state(world=make_world_state(**world_kwargs))
 
 
@@ -53,23 +53,23 @@ def _seed_bond(
     game.progress_tracks.append(_bond_track(npc_id, filled_boxes))
 
 
-def _ks_pattern(trigger_type: str, trigger_value: str, **kwargs) -> KeyedScene:
+def _ks_pattern(trigger_type: str, trigger_value: str, **kwargs: object) -> KeyedScene:
     kwargs.setdefault("id", "ks_test")
     kwargs.setdefault("priority", 5)
     kwargs.setdefault("narrative_hint", "test hint")
     return make_keyed_scene(trigger_type=trigger_type, trigger_value=trigger_value, **kwargs)
 
 
-def test_bond_threshold_any_pattern_validates():
+def test_bond_threshold_any_pattern_validates() -> None:
     make_keyed_scene(id="ks", trigger_type="bond_threshold", trigger_value="any:5")
 
 
-def test_bond_threshold_disposition_pattern_validates_for_each_disposition():
+def test_bond_threshold_disposition_pattern_validates_for_each_disposition() -> None:
     for disp in gm().enums.dispositions:
         make_keyed_scene(id=f"ks_{disp}", trigger_type="bond_threshold", trigger_value=f"disposition_{disp}:4")
 
 
-def test_bond_threshold_unknown_disposition_raises():
+def test_bond_threshold_unknown_disposition_raises() -> None:
     with pytest.raises(ValueError, match="unknown disposition"):
         add_keyed_scene(
             make_game_state().narrative,
@@ -81,7 +81,7 @@ def test_bond_threshold_unknown_disposition_raises():
         )
 
 
-def test_bond_threshold_malformed_trigger_value_raises():
+def test_bond_threshold_malformed_trigger_value_raises() -> None:
     with pytest.raises(ValueError, match="trigger_value must be"):
         add_keyed_scene(
             make_game_state().narrative,
@@ -93,7 +93,7 @@ def test_bond_threshold_malformed_trigger_value_raises():
         )
 
 
-def test_bond_threshold_non_integer_threshold_raises():
+def test_bond_threshold_non_integer_threshold_raises() -> None:
     with pytest.raises(ValueError, match="must be an integer"):
         add_keyed_scene(
             make_game_state().narrative,
@@ -105,7 +105,7 @@ def test_bond_threshold_non_integer_threshold_raises():
         )
 
 
-def test_threat_menace_phase_any_pattern_validates():
+def test_threat_menace_phase_any_pattern_validates() -> None:
     add_keyed_scene(
         make_game_state().narrative,
         trigger_type="threat_menace_phase",
@@ -116,7 +116,7 @@ def test_threat_menace_phase_any_pattern_validates():
     )
 
 
-def test_clock_fills_any_pattern_validates():
+def test_clock_fills_any_pattern_validates() -> None:
     add_keyed_scene(
         make_game_state().narrative,
         trigger_type="clock_fills",
@@ -127,7 +127,7 @@ def test_clock_fills_any_pattern_validates():
     )
 
 
-def test_bond_threshold_any_fires_when_some_npc_meets_threshold():
+def test_bond_threshold_any_fires_when_some_npc_meets_threshold() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_a", filled_boxes=2)
     _seed_bond(game, "npc_b", filled_boxes=6)
@@ -138,7 +138,7 @@ def test_bond_threshold_any_fires_when_some_npc_meets_threshold():
     assert fired.bound_entity_id == "npc_b"
 
 
-def test_bond_threshold_any_does_not_fire_when_no_npc_meets_threshold():
+def test_bond_threshold_any_does_not_fire_when_no_npc_meets_threshold() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_a", filled_boxes=2)
     _seed_bond(game, "npc_b", filled_boxes=3)
@@ -146,7 +146,7 @@ def test_bond_threshold_any_does_not_fire_when_no_npc_meets_threshold():
     assert evaluate_keyed_scenes(game) is None
 
 
-def test_bond_threshold_any_picks_highest_bond():
+def test_bond_threshold_any_picks_highest_bond() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_low", filled_boxes=5)
     _seed_bond(game, "npc_mid", filled_boxes=6)
@@ -154,10 +154,11 @@ def test_bond_threshold_any_picks_highest_bond():
     scene = _ks_pattern("bond_threshold", "any:5", id="ks_a")
     game.narrative.keyed_scenes.append(scene)
     fired = evaluate_keyed_scenes(game)
+    assert fired is not None
     assert fired.bound_entity_id == "npc_high"
 
 
-def test_bond_threshold_any_excludes_already_bound_npcs():
+def test_bond_threshold_any_excludes_already_bound_npcs() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_a", filled_boxes=8)
     _seed_bond(game, "npc_b", filled_boxes=6)
@@ -174,7 +175,7 @@ def test_bond_threshold_any_excludes_already_bound_npcs():
     assert fired.bound_entity_id == "npc_b"
 
 
-def test_bond_threshold_disposition_filter_only_matches_npcs_with_that_disposition():
+def test_bond_threshold_disposition_filter_only_matches_npcs_with_that_disposition() -> None:
     game = _seed_game()
     _seed_bond(game, "friend", filled_boxes=8, disposition="friendly")
     _seed_bond(game, "neutral_one", filled_boxes=9, disposition="neutral")
@@ -185,14 +186,14 @@ def test_bond_threshold_disposition_filter_only_matches_npcs_with_that_dispositi
     assert fired.bound_entity_id == "friend"
 
 
-def test_bond_threshold_disposition_filter_does_not_fire_without_matching_disposition():
+def test_bond_threshold_disposition_filter_does_not_fire_without_matching_disposition() -> None:
     game = _seed_game()
     _seed_bond(game, "neutral_one", filled_boxes=9, disposition="neutral")
     game.narrative.keyed_scenes.append(_ks_pattern("bond_threshold", "disposition_friendly:5", id="ks_a"))
     assert evaluate_keyed_scenes(game) is None
 
 
-def test_bond_threshold_concrete_id_still_works():
+def test_bond_threshold_concrete_id_still_works() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_kira", filled_boxes=7)
     scene = _ks_pattern("bond_threshold", "npc_kira:5", id="ks_a")
@@ -202,7 +203,7 @@ def test_bond_threshold_concrete_id_still_works():
     assert fired.bound_entity_id == "npc_kira"
 
 
-def test_threat_menace_phase_any_fires_when_some_threat_meets_threshold():
+def test_threat_menace_phase_any_fires_when_some_threat_meets_threshold() -> None:
     game = _seed_game()
     weak = make_threat(id="t_weak", name="Weak Threat")
     strong = make_threat(id="t_strong", name="Strong Threat")
@@ -216,7 +217,7 @@ def test_threat_menace_phase_any_fires_when_some_threat_meets_threshold():
     assert fired.bound_entity_id == "t_strong"
 
 
-def test_threat_menace_phase_any_picks_highest_menace():
+def test_threat_menace_phase_any_picks_highest_menace() -> None:
     game = _seed_game()
     a = make_threat(id="t_a", name="A")
     a.menace_ticks = 12
@@ -228,10 +229,11 @@ def test_threat_menace_phase_any_picks_highest_menace():
     scene = _ks_pattern("threat_menace_phase", "any:3", id="ks_a")
     game.narrative.keyed_scenes.append(scene)
     fired = evaluate_keyed_scenes(game)
+    assert fired is not None
     assert fired.bound_entity_id == "t_b"
 
 
-def test_clock_fills_any_fires_when_some_clock_meets_threshold():
+def test_clock_fills_any_fires_when_some_clock_meets_threshold() -> None:
     game = _seed_game()
     game.world.clocks.append(make_clock(name="Slow Clock", segments=6, filled=1))
     game.world.clocks.append(make_clock(name="Fast Clock", segments=6, filled=4))
@@ -242,7 +244,7 @@ def test_clock_fills_any_fires_when_some_clock_meets_threshold():
     assert fired.bound_entity_id == "clock:Fast Clock"
 
 
-def test_clock_fills_any_picks_highest_filled():
+def test_clock_fills_any_picks_highest_filled() -> None:
     game = _seed_game()
     game.world.clocks.append(make_clock(name="A", segments=6, filled=3))
     game.world.clocks.append(make_clock(name="B", segments=6, filled=5))
@@ -250,6 +252,7 @@ def test_clock_fills_any_picks_highest_filled():
     scene = _ks_pattern("clock_fills", "any:3", id="ks_a")
     game.narrative.keyed_scenes.append(scene)
     fired = evaluate_keyed_scenes(game)
+    assert fired is not None
     assert fired.bound_entity_id == "clock:B"
 
 
@@ -262,7 +265,7 @@ def _turning_point_with_plot_points(*plot_point_names: str) -> TurningPoint:
     )
 
 
-def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point():
+def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point() -> None:
     narrative = make_narrative()
     tp = _turning_point_with_plot_points("Betrayal!")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
@@ -273,14 +276,14 @@ def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point():
     assert scene.source == "ac:Betrayal!"
 
 
-def test_ac_spawner_skips_unmapped_plot_points():
+def test_ac_spawner_skips_unmapped_plot_points() -> None:
     narrative = make_narrative()
     tp = _turning_point_with_plot_points("A Common Social Gathering", "Dense Urban Setting")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert narrative.keyed_scenes == []
 
 
-def test_ac_spawner_dedups_same_plot_point_within_chapter():
+def test_ac_spawner_dedups_same_plot_point_within_chapter() -> None:
     narrative = make_narrative()
     tp1 = _turning_point_with_plot_points("Betrayal!")
     tp2 = _turning_point_with_plot_points("Betrayal!")
@@ -289,7 +292,7 @@ def test_ac_spawner_dedups_same_plot_point_within_chapter():
     assert len(narrative.keyed_scenes) == 1
 
 
-def test_ac_spawner_respects_max_keyed_scenes_per_chapter_cap():
+def test_ac_spawner_respects_max_keyed_scenes_per_chapter_cap() -> None:
     narrative = make_narrative()
     cap = crafter().adventure_crafter.max_keyed_scenes_per_chapter
     mappable_names = list(crafter().adventure_crafter.keyed_scene_mapping.keys())
@@ -300,7 +303,7 @@ def test_ac_spawner_respects_max_keyed_scenes_per_chapter_cap():
     assert len(narrative.keyed_scenes) == cap
 
 
-def test_ac_spawner_assigns_unique_ids():
+def test_ac_spawner_assigns_unique_ids() -> None:
     narrative = make_narrative()
     tp = _turning_point_with_plot_points("Betrayal!", "Liar!", "Hidden Agenda")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
@@ -308,7 +311,7 @@ def test_ac_spawner_assigns_unique_ids():
     assert len(ids) == len(narrative.keyed_scenes)
 
 
-def test_ac_spawner_skips_special_range_plot_points():
+def test_ac_spawner_skips_special_range_plot_points() -> None:
     narrative = make_narrative()
     tp = TurningPoint(
         plot_points=[PlotPointHit(theme="action", name="Conclusion", special_range="conclusion")],
@@ -320,7 +323,7 @@ def test_ac_spawner_skips_special_range_plot_points():
     assert narrative.keyed_scenes == []
 
 
-def test_random_event_spawner_creates_concrete_bond_keyed_scene_for_npc_focus():
+def test_random_event_spawner_creates_concrete_bond_keyed_scene_for_npc_focus() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_kira", filled_boxes=0, name="Kira")
     event = make_random_event(focus="npc_action", target="Kira", target_id="npc_kira")
@@ -332,14 +335,14 @@ def test_random_event_spawner_creates_concrete_bond_keyed_scene_for_npc_focus():
     assert scene.source == "random_event:npc_action:npc_kira"
 
 
-def test_random_event_spawner_skips_a_bond_scene_for_a_character_without_npc_record():
+def test_random_event_spawner_skips_a_bond_scene_for_a_character_without_npc_record() -> None:
     game = _seed_game()
     event = make_random_event(focus="npc_action", target="The ferryman", target_id="char_1")
     spawn_keyed_scene_from_random_event(game, event)
     assert game.narrative.keyed_scenes == []
 
 
-def test_random_event_spawner_creates_concrete_threat_keyed_scene_for_pc_negative():
+def test_random_event_spawner_creates_concrete_threat_keyed_scene_for_pc_negative() -> None:
     game = _seed_game()
     threat = make_threat(id="t_pirates", name="The Pirates")
     game.threats.append(threat)
@@ -351,21 +354,21 @@ def test_random_event_spawner_creates_concrete_threat_keyed_scene_for_pc_negativ
     assert scene.trigger_value == "The Pirates:3"
 
 
-def test_random_event_spawner_skips_focus_without_mapping():
+def test_random_event_spawner_skips_focus_without_mapping() -> None:
     game = _seed_game()
     event = make_random_event(focus="remote_event", target="", target_id="")
     spawn_keyed_scene_from_random_event(game, event)
     assert game.narrative.keyed_scenes == []
 
 
-def test_random_event_spawner_skips_event_without_target_id():
+def test_random_event_spawner_skips_event_without_target_id() -> None:
     game = _seed_game()
     event = make_random_event(focus="npc_action", target="", target_id="")
     spawn_keyed_scene_from_random_event(game, event)
     assert game.narrative.keyed_scenes == []
 
 
-def test_random_event_spawner_dedups_same_focus_target_pair():
+def test_random_event_spawner_dedups_same_focus_target_pair() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_kira", filled_boxes=0, name="Kira")
     event_one = make_random_event(focus="npc_action", target="Kira", target_id="npc_kira")
@@ -375,7 +378,7 @@ def test_random_event_spawner_dedups_same_focus_target_pair():
     assert len(game.narrative.keyed_scenes) == 1
 
 
-def test_generate_random_event_invokes_spawner():
+def test_generate_random_event_invokes_spawner() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_kira", filled_boxes=0, name="Kira")
     game.narrative.characters_list.append(
@@ -387,7 +390,7 @@ def test_generate_random_event_invokes_spawner():
     assert len(game.narrative.keyed_scenes) >= pre_count
 
 
-def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock():
+def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock() -> None:
     narrative = make_narrative()
     clock = make_clock(
         name="The Storm Approaches",
@@ -406,7 +409,7 @@ def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock():
         assert ks.source.startswith("clock:The Storm Approaches:")
 
 
-def test_clock_spawner_progress_clock_only_emits_full():
+def test_clock_spawner_progress_clock_only_emits_full() -> None:
     narrative = make_narrative()
     clock = make_clock(
         name="The Bridge",
@@ -422,7 +425,7 @@ def test_clock_spawner_progress_clock_only_emits_full():
     assert scene.trigger_value == "The Bridge:8"
 
 
-def test_clock_spawner_renders_clock_name_into_narrative_hint():
+def test_clock_spawner_renders_clock_name_into_narrative_hint() -> None:
     narrative = make_narrative()
     clock = make_clock(
         name="De Hertog onthult zijn plan",
@@ -438,7 +441,7 @@ def test_clock_spawner_renders_clock_name_into_narrative_hint():
         assert "De Hertog onthult zijn plan" in ks.narrative_hint
 
 
-def test_clock_spawner_dedups_same_clock_threshold_on_repeat_calls():
+def test_clock_spawner_dedups_same_clock_threshold_on_repeat_calls() -> None:
     narrative = make_narrative()
     clock = make_clock(
         name="Repeat Clock",
@@ -454,7 +457,7 @@ def test_clock_spawner_dedups_same_clock_threshold_on_repeat_calls():
     assert len(narrative.keyed_scenes) == 2
 
 
-def test_ac_spawned_pattern_scene_fires_when_state_meets_pattern():
+def test_ac_spawned_pattern_scene_fires_when_state_meets_pattern() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_a", filled_boxes=8, name="Alice")
     tp = _turning_point_with_plot_points("Betrayal!")
@@ -465,7 +468,7 @@ def test_ac_spawned_pattern_scene_fires_when_state_meets_pattern():
     assert fired.source == "ac:Betrayal!"
 
 
-def test_clock_spawned_scene_fires_when_clock_fills():
+def test_clock_spawned_scene_fires_when_clock_fills() -> None:
     game = _seed_game()
     clock = make_clock(
         name="Doom",

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from typing_extensions import override
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import labels_of
@@ -355,6 +356,7 @@ class _ScriptedRng(random.Random):
         super().__init__(0)
         self.values = list(values)
 
+    @override
     def randint(self, low: int, high: int) -> int:
         return self.values.pop(0)
 
@@ -396,10 +398,9 @@ def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
 
 
 def _price_dice(monkeypatch: pytest.MonkeyPatch, *dice: int) -> None:
-    from straightjacket.engine.setting import loader
 
     rolls = list(dice)
-    monkeypatch.setattr(loader.random, "randint", lambda low, high: rolls.pop(0))
+    monkeypatch.setattr("straightjacket.engine.setting.loader.random.randint", lambda low, high: rolls.pop(0))
 
 
 @pytest.mark.parametrize("setting", ["starforged", "classic"])
@@ -585,7 +586,6 @@ def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
 ) -> None:
     from straightjacket.engine.game.finalization import resolve_action_consequences
     from straightjacket.engine.models import RollResult
-    from straightjacket.engine.ruleset import rolls
     from tests._helpers import make_brain_result, make_game_state, make_npc, make_progress_track
 
     game = make_game_state(setting_id="starforged")
@@ -596,12 +596,11 @@ def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
         )
     )
     dice = [6, 1, 2]
-    monkeypatch.setattr(rolls.random, "randint", lambda low, high: dice.pop(0))
+    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda low, high: dice.pop(0))
     roll = RollResult(4, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
     brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
     action = resolve_action_consequences(game, brain, roll, "risky")
     assert any(c.startswith("follow-up move") and c.endswith("STRONG_HIT") for c in labels_of(action.consequences))
-    assert action.outcome is not None
     assert action.outcome.legacy_fixed_ticks == 2
 
 

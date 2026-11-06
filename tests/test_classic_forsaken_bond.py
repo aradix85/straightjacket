@@ -78,7 +78,8 @@ def test_a_vow_sworn_with_a_bonds_aid_tests_the_bond_once_when_they_next_meet(
     labels, prompt = _meet_mira(game, monkeypatch, "WEAK_HIT")
     assert labels == [TESTED, "follow-up move Test Your Bond: WEAK_HIT", "loyalty_test"]
     assert "loyalty_test" not in prompt
-    assert vow.vowed_to is None
+    vowed_to_after: str | None = vow.vowed_to
+    assert vowed_to_after is None
     assert TESTED not in _meet_mira(game, monkeypatch, "WEAK_HIT")[0]
 
 
@@ -174,4 +175,5 @@ def test_starforged_asks_no_bond_test_for_a_forsaken_vow(load_engine: None) -> N
     _forsake(game, vow)
     outcome = new_outcome()
     make_due_bond_test(game, game.npcs[0].id, "dialog", outcome)
-    assert (outcome.consequences, vow.vowed_to) == ([], None)
+    vowed_to_after: str | None = vow.vowed_to
+    assert (outcome.consequences, vowed_to_after) == ([], None)

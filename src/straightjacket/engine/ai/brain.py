@@ -315,7 +315,8 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
     model = model_for_role("brain")
     params = sampling_params("brain")
     messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
-    for _attempt in range(eng().retry.brain_stat_retries + 1):
+    retries_asked = 0
+    while True:
         spec = AICallSpec(
             model=model,
             system=system,
@@ -339,6 +340,9 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
                 + (f", target_threat={result.target_threat}" if result.target_threat else "")
             )
             return result
+        if retries_asked >= eng().retry.brain_stat_retries:
+            _refuse(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")
+        retries_asked += 1
         log(f"[Brain] {result.move} rolls with {stats}, not stat {result.stat!r}; asking again", level="warning")
         messages.append({"role": "assistant", "content": content})
         messages.append(
@@ -347,4 +351,3 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
                 "content": get_prompt("brain_stat_retry", move=result.move, stats=", ".join(stats), stat=result.stat),
             }
         )
-    _refuse(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")

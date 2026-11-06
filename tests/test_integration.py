@@ -2,6 +2,7 @@ import pytest
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import labels_of
+from straightjacket.engine.models_story import StoryBlueprint
 from straightjacket.engine.ruleset.progress import menace_per_mark, ticks_per_mark
 from tests._creation import TurnProvider, brain_answer, fixed_roll, force_result, library_game
 from tests._helpers import (
@@ -98,8 +99,9 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
     )
 
     assert game.narrative.scene_count == 2
-    assert game.narrative.story_blueprint is not None
-    assert game.narrative.story_blueprint.triggered_transitions == ["act_0"]
+    blueprint: StoryBlueprint | None = game.narrative.story_blueprint
+    assert blueprint is not None
+    assert blueprint.triggered_transitions == ["act_0"]
     assert get_current_act(game).act_number == 2
 
 
@@ -182,9 +184,8 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
     from tests._helpers import make_threat
 
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
-    from straightjacket.engine.ruleset import threats as threats_module
 
-    monkeypatch.setattr(threats_module.random, "random", lambda: 0.0)
+    monkeypatch.setattr("straightjacket.engine.ruleset.threats.random.random", lambda: 0.0)
     game = library_game()
     [vow] = [t for t in game.progress_tracks if t.track_type == "vow"]
     threat = make_threat(id="t_king", name="The Hollow King", linked_vow_id=vow.id, rank="dangerous")
@@ -625,7 +626,7 @@ def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
 def test_every_correction_op_the_analysis_is_offered_is_applied_above(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
 
-    assert sorted(op["op"] for op in _UNAPPLICABLE_OPS) == sorted(eng().correction.ops)
+    assert sorted(str(op["op"]) for op in _UNAPPLICABLE_OPS) == sorted(eng().correction.ops)
 
 
 def test_description_match_catches_identity_reveal(load_engine: None) -> None:

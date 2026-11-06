@@ -11,6 +11,7 @@ from tests._helpers import (
     make_thread,
     make_threat,
     make_world_state,
+    schema_of,
 )
 
 
@@ -164,7 +165,7 @@ class TestAdvancesReachTheNarrator:
     ) -> None:
         from straightjacket.engine.ruleset import threats
 
-        monkeypatch.setattr(threats.random, "random", lambda: 0.0)
+        monkeypatch.setattr("straightjacket.engine.ruleset.threats.random.random", lambda: 0.0)
         game = _game_with_threat()
         threats.tick_autonomous_threats(game)
         [event] = game.world.pending_threat_events
@@ -387,7 +388,7 @@ class TestAVowSwornAgainstAThreat:
         message = call.messages[-1]["content"]
         assert "The Beast Awakens (id:threat_beast) menace 0/10, the vow Hunt the beast is sworn against it" in message
         assert "The Hollow Choir (id:threat_ac_1) menace 0/10" in message
-        assert call.json_schema["properties"]["target_threat"]["anyOf"][0]["enum"] == ["threat_ac_1"]
+        assert schema_of(call)["properties"]["target_threat"]["anyOf"][0]["enum"] == ["threat_ac_1"]
         assert result.target_threat == "threat_ac_1"
 
 

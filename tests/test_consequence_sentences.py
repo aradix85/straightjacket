@@ -121,7 +121,7 @@ def test_generate_sentences_from_consequences() -> None:
         [consequence("track_loss", track="health", n=2), consequence("momentum_change", n=-3)], [], _game(), _brain()
     )
     assert len(sentences) == 2
-    assert all(isinstance(s, str) and len(s) > 0 for s in sentences)
+    assert all(len(s) > 0 for s in sentences)
 
 
 def test_generate_sentences_with_clock_events() -> None:

@@ -179,7 +179,7 @@ def test_a_failed_load_back_is_reported_not_raised(
 ) -> None:
     runner = _mock_direct_runner(monkeypatch, tmp_path)
 
-    def broken_load(username: str, name: str) -> tuple[object, list]:
+    def broken_load(username: str, name: str) -> tuple[object, list[object]]:
         raise RuntimeError("UNIQUE constraint failed: threads.id")
 
     monkeypatch.setattr(runner, "load_game", broken_load)

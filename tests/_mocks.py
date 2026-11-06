@@ -1,22 +1,41 @@
 from __future__ import annotations
 
+import json
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
+from starlette.types import Message
+from starlette.websockets import WebSocket, WebSocketState
+from typing_extensions import override
+
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.models import GameState
 
 
-class MockProvider:
-    def __init__(self, response_content: str = "", fail: bool = False) -> None:
-        self._content = response_content
-        self._fail = fail
-        self.calls: list = []
+class RecordingWebSocket(WebSocket):
+    def __init__(self) -> None:
+        super().__init__({"type": "websocket"}, self._client_leaves, self._record)
+        self.sent: list[dict[str, Any]] = []
+        self.client_state = WebSocketState.CONNECTED
+        self.application_state = WebSocketState.CONNECTED
 
-    def create_message(self, spec: AICallSpec) -> AIResponse:
-        self.calls.append({"system": spec.system, "json_schema": spec.json_schema, "messages": spec.messages})
-        if self._fail:
-            raise ConnectionError("mock fail")
-        return AIResponse(content=self._content, usage={"input_tokens": 10, "output_tokens": 10})
+    async def _client_leaves(self) -> Message:
+        return {"type": "websocket.disconnect", "code": 1000}
+
+    async def _record(self, message: Message) -> None:
+        self.sent.append(json.loads(message["text"]))
+
+
+class DroppedWebSocket(RecordingWebSocket):
+    @override
+    async def _record(self, message: Message) -> None:
+        raise OSError
+
+
+class ScriptedProvider(ABC):
+    @abstractmethod
+    def create_message(self, spec: AICallSpec) -> AIResponse: ...
 
     def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
         response = self.create_message(spec)
@@ -24,7 +43,21 @@ class MockProvider:
         return response
 
 
-def make_test_game() -> Any:
+class MockProvider(ScriptedProvider):
+    def __init__(self, response_content: str = "", fail: bool = False) -> None:
+        self._content = response_content
+        self._fail = fail
+        self.calls: list[dict[str, Any]] = []
+
+    @override
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        self.calls.append({"system": spec.system, "json_schema": spec.json_schema, "messages": spec.messages})
+        if self._fail:
+            raise ConnectionError("mock fail")
+        return AIResponse(content=self._content, usage={"input_tokens": 10, "output_tokens": 10})
+
+
+def make_test_game() -> GameState:
     from tests._helpers import make_game_state, make_npc
 
     g = make_game_state(

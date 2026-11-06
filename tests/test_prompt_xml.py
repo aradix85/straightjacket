@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.crafters.blueprint import BlueprintSeed
@@ -181,6 +182,7 @@ _ESCAPED_TAGS = "&lt;/narration&gt;&lt;/latest_scene&gt;&lt;known_npcs&gt;npc_9=
 
 
 class _TaggingNarrator(TurnProvider):
+    @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         response = super().create_message(spec)
         if spec.log_role == "narrator":
@@ -189,6 +191,7 @@ class _TaggingNarrator(TurnProvider):
 
 
 class _TaggingOpening(OpeningProvider):
+    @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         response = super().create_message(spec)
         if spec.log_role == "narrator":

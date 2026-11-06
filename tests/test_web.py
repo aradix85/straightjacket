@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 from straightjacket.engine.engine_loader import eng
@@ -93,9 +94,11 @@ class TestSession:
             resume_snapshot=make_game_state().snapshot(),
         )
         s.clear_game()
-        assert s.game is None
+        game_after: GameState | None = s.game
+        offer_after: BurnOffer | None = s.pending_burn
+        assert game_after is None
         assert s.chat_messages == []
-        assert s.pending_burn is None
+        assert offer_after is None
 
 
 class TestHighlightDialog:
@@ -171,14 +174,12 @@ class TestWebSocket:
         self.session = _session
 
     @pytest.fixture
-    def client(self) -> Any:
-        from starlette.testclient import TestClient
-
+    def client(self) -> TestClient:
         from straightjacket.web.server import app
 
         return TestClient(app)
 
-    def test_full_connection_flow(self, client: Any) -> None:
+    def test_full_connection_flow(self, client: TestClient) -> None:
         with client.websocket_connect("/ws") as ws:
             msg = ws.receive_json()
             assert msg["type"] == "ui_strings"
@@ -218,7 +219,7 @@ class TestWebSocket:
             assert msg["type"] == "players_list"
             assert "ws_flow" not in msg["players"]
 
-    def test_reconnect_resends_player_state(self, client: Any) -> None:
+    def test_reconnect_resends_player_state(self, client: TestClient) -> None:
         with client.websocket_connect("/ws") as ws1:
             ws1.receive_json()
             ws1.receive_json()
@@ -236,7 +237,7 @@ class TestWebSocket:
             ws2.receive_json()
 
     def test_an_unexpected_handler_error_is_reported_and_the_connection_stays(
-        self, client: Any, monkeypatch: pytest.MonkeyPatch
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         from straightjacket.i18n import t
         from straightjacket.web import handlers
@@ -267,7 +268,7 @@ class TestWebSocket:
         ],
     )
     def test_a_page_from_this_machine_or_from_the_address_it_reaches_connects(
-        self, client: Any, origin: str | None, host: str
+        self, client: TestClient, origin: str | None, host: str
     ) -> None:
         headers = {"host": host, **({"origin": origin} if origin else {})}
         with client.websocket_connect("/ws", headers=headers) as ws:
@@ -283,7 +284,7 @@ class TestWebSocket:
             ("http://[::1", "localhost:8081"),
         ],
     )
-    def test_a_page_from_anywhere_else_is_refused(self, client: Any, origin: str, host: str) -> None:
+    def test_a_page_from_anywhere_else_is_refused(self, client: TestClient, origin: str, host: str) -> None:
         with (
             pytest.raises(WebSocketDisconnect),
             client.websocket_connect("/ws", headers={"host": host, "origin": origin}) as ws,
@@ -312,9 +313,7 @@ class TestSuccessionWebSocket:
         self.session = _session
 
     @pytest.fixture
-    def client(self) -> Any:
-        from starlette.testclient import TestClient
-
+    def client(self) -> TestClient:
         from straightjacket.web.server import app
 
         return TestClient(app)
@@ -339,7 +338,7 @@ class TestSuccessionWebSocket:
         ws.receive_json()
         ws.receive_json()
 
-    def test_retire_without_game_no_op(self, client: Any) -> None:
+    def test_retire_without_game_no_op(self, client: TestClient) -> None:
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
             ws.send_json({"type": "retire"})
@@ -347,7 +346,7 @@ class TestSuccessionWebSocket:
             assert self.session.game is None
             assert self.session.processing is False
 
-    def test_retire_with_game_prepares_succession(self, client: Any) -> None:
+    def test_retire_with_game_prepares_succession(self, client: TestClient) -> None:
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
@@ -368,7 +367,7 @@ class TestSuccessionWebSocket:
             assert self.session.game.campaign.pending_succession is True
             assert self.session.game.game_over is True
 
-    def test_retire_twice_rejected(self, client: Any) -> None:
+    def test_retire_twice_rejected(self, client: TestClient) -> None:
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
@@ -382,14 +381,14 @@ class TestSuccessionWebSocket:
             assert msg["type"] == "error"
             assert "already" in msg["text"].lower() or "pending" in msg["text"].lower()
 
-    def test_request_succession_creation_without_game(self, client: Any) -> None:
+    def test_request_succession_creation_without_game(self, client: TestClient) -> None:
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
             ws.send_json({"type": "request_succession_creation"})
             msg = ws.receive_json()
             assert msg["type"] == "error"
 
-    def test_request_succession_creation_without_pending(self, client: Any) -> None:
+    def test_request_succession_creation_without_pending(self, client: TestClient) -> None:
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
@@ -399,7 +398,7 @@ class TestSuccessionWebSocket:
             msg = ws.receive_json()
             assert msg["type"] == "error"
 
-    def test_request_succession_creation_succeeds_after_retire(self, client: Any) -> None:
+    def test_request_succession_creation_succeeds_after_retire(self, client: TestClient) -> None:
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
@@ -414,7 +413,7 @@ class TestSuccessionWebSocket:
             assert "creation_options" in msg
             assert msg["current_setting_id"] == "starforged"
 
-    def test_start_succession_without_pending(self, client: Any) -> None:
+    def test_start_succession_without_pending(self, client: TestClient) -> None:
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
@@ -424,7 +423,7 @@ class TestSuccessionWebSocket:
             msg = ws.receive_json()
             assert msg["type"] == "error"
 
-    def test_start_succession_malformed_creation_data(self, client: Any) -> None:
+    def test_start_succession_malformed_creation_data(self, client: TestClient) -> None:
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)

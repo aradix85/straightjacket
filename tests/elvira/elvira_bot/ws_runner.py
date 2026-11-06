@@ -10,6 +10,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from unittest import mock
 
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
@@ -46,10 +47,10 @@ CORRECTION_TEST_INTERVAL = 8
 
 
 class WsClient:
-    def __init__(self, url: str):
+    def __init__(self, url: str) -> None:
         self.url = url
         self.ws: Any = None
-        self._buffer: list[dict] = []
+        self._buffer: list[dict[str, Any]] = []
 
     async def connect(self) -> None:
         self.ws = await websockets.connect(self.url)
@@ -58,16 +59,17 @@ class WsClient:
         if self.ws:
             await self.ws.close()
 
-    async def send(self, msg: dict) -> None:
+    async def send(self, msg: dict[str, Any]) -> None:
         await self.ws.send(json.dumps(msg))
 
-    async def recv(self, timeout: float = 120) -> dict:
+    async def recv(self, timeout: float = 120) -> dict[str, Any]:
         if self._buffer:
             return self._buffer.pop(0)
         raw = await asyncio.wait_for(self.ws.recv(), timeout=timeout)
-        return json.loads(raw)
+        msg: dict[str, Any] = json.loads(raw)
+        return msg
 
-    async def recv_until(self, msg_type: str, timeout: float = 120) -> dict:
+    async def recv_until(self, msg_type: str, timeout: float = 120) -> dict[str, Any]:
         for i, buffered in enumerate(self._buffer):
             if buffered.get("type") == msg_type:
                 return self._buffer.pop(i)
@@ -76,12 +78,12 @@ class WsClient:
             remaining = deadline - asyncio.get_event_loop().time()
             if remaining <= 0:
                 raise TimeoutError(f"Timed out waiting for {msg_type}")
-            msg = json.loads(await asyncio.wait_for(self.ws.recv(), timeout=remaining))
+            msg: dict[str, Any] = json.loads(await asyncio.wait_for(self.ws.recv(), timeout=remaining))
             if msg.get("type") == msg_type:
                 return msg
             self._buffer.append(msg)
 
-    async def drain(self, timeout: float = 2.0) -> list[dict]:
+    async def drain(self, timeout: float = 2.0) -> list[dict[str, Any]]:
         msgs = list(self._buffer)
         self._buffer.clear()
         try:
@@ -150,7 +152,7 @@ class WsClient:
         return GameState.from_dict(data)
 
 
-_BACKGROUND_TASKS: set[asyncio.Task] = set()
+_BACKGROUND_TASKS: set[asyncio.Task[None]] = set()
 
 
 async def _start_server(port: int) -> Any:
@@ -173,7 +175,9 @@ async def _start_server(port: int) -> Any:
     raise RuntimeError(f"Server failed to start on port {port} within 5s")
 
 
-async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
+async def run_ws_session(
+    bot_cfg: dict[str, Any], auto_override: bool = False, turns_override: int | None = None
+) -> SessionLog:
     auto_mode = auto_override or bot_cfg["auto_mode"]
     username = bot_cfg["username"]
     game_cfg = bot_cfg["game"]
@@ -201,7 +205,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     check_configured_models()
     configure_bot(bot_cfg["ai"])
     provider = TokenMeter(get_provider())
-    handlers.get_provider = lambda: provider
+    mock.patch.object(handlers, "get_provider", return_value=provider).start()
     persona = get_persona(style)
 
     port = bot_cfg.get("ws_port", cfg().server.port)
@@ -406,7 +410,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
 
     slog.total_turns = total_turns
     if slog.ended_reason == "unknown":
-        slog.ended_reason = ch_rec.ended_reason if slog.chapters else "complete"
+        slog.ended_reason = slog.chapters[-1].ended_reason if slog.chapters else "complete"
     slog.burn_stats = {"offered": burns_offered, "taken": burns_taken, "failed": burns_failed}
     slog.token_summary = aggregate_token_stats(slog)
 
@@ -450,7 +454,7 @@ async def _play_turn(
     style: str,
     burn_setting: str,
     print_full: bool,
-) -> tuple[str, TurnRecord, dict | None]:
+) -> tuple[str, TurnRecord, dict[str, Any] | None]:
     context = build_turn_context(game, narration, turn)
     try:
         action = ask_bot(persona, context, max_tokens=500)
@@ -519,11 +523,11 @@ async def _handle_burn(
     client: WsClient,
     provider: AIProvider,
     game: GameState,
-    burn_offer: dict,
+    burn_offer: dict[str, Any],
     burn_setting: str,
     style: str,
     rec: TurnRecord,
-) -> dict:
+) -> dict[str, Any]:
     current = burn_offer["current"]
     upgrade = burn_offer["upgrade"]
     cost = burn_offer["cost"]

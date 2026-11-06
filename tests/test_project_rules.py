@@ -6,11 +6,16 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
+from typing_extensions import override
+
+if TYPE_CHECKING:
+    from radon.visitors import Class, Function
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = REPO_ROOT / "src" / "straightjacket"
@@ -57,6 +62,7 @@ class Violation:
     line: int
     snippet: str
 
+    @override
     def __str__(self) -> str:
         return f"  {self.file}:{self.line}  {self.snippet}"
 
@@ -193,12 +199,12 @@ def _is_neutral_default(node: ast.expr) -> bool:
     return bool(isinstance(node, ast.Set) and not node.elts)
 
 
-def _run_scan_src_and_tests(scan_fn, *args) -> list[Violation]:
+def _run_scan_src_and_tests(scan_fn: Callable[[Path, str], list[Violation]]) -> list[Violation]:
     violations: list[Violation] = []
     for path in _iter_source_files():
-        violations.extend(scan_fn(path, _rel(path), *args))
+        violations.extend(scan_fn(path, _rel(path)))
     for path in _iter_test_files():
-        violations.extend(scan_fn(path, _rel_test(path), *args))
+        violations.extend(scan_fn(path, _rel_test(path)))
     return violations
 
 
@@ -370,13 +376,12 @@ def _scan_broad_except(path: Path, rel: str, carve_out: set[str]) -> list[Violat
     for node in ast.walk(tree):
         lineno = getattr(node, "lineno", 0)
         snippet = lines[lineno - 1].strip() if 0 < lineno <= len(lines) else ""
-        if isinstance(node, ast.ExceptHandler) and node.type is None:
-            violations.append(Violation(rel, lineno, f"bare except: {snippet}"))
-        elif rel in carve_out:
-            continue
-        elif isinstance(node, ast.ExceptHandler) and _catches_broad(node.type):
-            violations.append(Violation(rel, lineno, f"broad except outside carve-out: {snippet}"))
-        elif isinstance(node, ast.Call) and _is_broad_suppress(node):
+        if isinstance(node, ast.ExceptHandler):
+            if node.type is None:
+                violations.append(Violation(rel, lineno, f"bare except: {snippet}"))
+            elif rel not in carve_out and _catches_broad(node.type):
+                violations.append(Violation(rel, lineno, f"broad except outside carve-out: {snippet}"))
+        elif rel not in carve_out and isinstance(node, ast.Call) and _is_broad_suppress(node):
             violations.append(Violation(rel, lineno, f"broad suppress() outside carve-out: {snippet}"))
     return violations
 
@@ -550,6 +555,10 @@ _PROVIDER_IMPORT_ALLOWED = {
     "engine/ai/provider_openai.py",
 }
 
+_PROVIDER_IMPORT_ALLOWED_TESTS = {
+    "test_providers.py",
+}
+
 _FORBIDDEN_SDK_MODULES = ("anthropic", "openai")
 
 
@@ -561,7 +570,10 @@ def _check_no_direct_provider_sdk_imports() -> tuple[str, list[Violation]]:
             continue
         violations.extend(_scan_provider_sdk(path, rel))
     for path in _iter_test_files():
-        violations.extend(_scan_provider_sdk(path, _rel_test(path)))
+        rel = _rel_test(path)
+        if rel in _PROVIDER_IMPORT_ALLOWED_TESTS:
+            continue
+        violations.extend(_scan_provider_sdk(path, rel))
     return "DIRECT PROVIDER SDK IMPORT outside adapter", violations
 
 
@@ -636,7 +648,9 @@ def _check_no_function_exceeds_complexity_ceiling() -> tuple[str, list[Violation
     return f"CYCLOMATIC COMPLEXITY above {_COMPLEXITY_CEILING} (decompose into sub-functions)", violations
 
 
-def _scan_complexity(path: Path, rel: str, cc_visit, whitelist: set[tuple[str, str]]) -> list[Violation]:
+def _scan_complexity(
+    path: Path, rel: str, cc_visit: Callable[[str], list[Function | Class]], whitelist: set[tuple[str, str]]
+) -> list[Violation]:
     violations: list[Violation] = []
     try:
         text, _, _, _ = _load(path)
@@ -982,6 +996,10 @@ def _stale_file_entries() -> list[Violation]:
         path = SRC_ROOT / rel
         if not path.exists() or not _scan_provider_sdk(path, rel):
             violations.append(Violation(rel, 0, "provider-import allowance for a file that imports no provider SDK"))
+    for rel in sorted(_PROVIDER_IMPORT_ALLOWED_TESTS):
+        path = TESTS_ROOT / rel
+        if not path.exists() or not _scan_provider_sdk(path, rel):
+            violations.append(Violation(rel, 0, "provider-import allowance for a test that imports no provider SDK"))
     for rel in sorted(_CONFIG_BINDING_FILES):
         if not (SRC_ROOT / rel).exists():
             violations.append(Violation(rel, 0, "config binding file does not exist"))
@@ -1392,7 +1410,7 @@ def _check_ai_calls_route_by_their_role() -> tuple[str, list[Violation]]:
             ):
                 violations.append(
                     Violation(
-                        _rel(path), node.lineno, f"model_for_role('{model.args[0].value}') with log_role '{role.value}'"
+                        _rel(path), node.lineno, f"model_for_role({model.args[0].value!r}) with log_role {role.value!r}"
                     )
                 )
     return (

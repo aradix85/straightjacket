@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -73,7 +74,7 @@ class EngineLogRecord:
     result: str = ""
     scene_type: str = "expected"
     consequences: list[str] = field(default_factory=list)
-    clock_events: list[dict] = field(default_factory=list)
+    clock_events: list[dict[str, Any]] = field(default_factory=list)
     position: str = ""
     effect: str = ""
 
@@ -102,7 +103,7 @@ class TurnRecord:
     burn_error: str = ""
     director_ran: bool = False
     director_error: str = ""
-    director_guidance: dict = field(default_factory=dict)
+    director_guidance: dict[str, Any] = field(default_factory=dict[str, Any])
     state_after: StateSnapshot = field(default_factory=StateSnapshot)
     npcs: list[NpcSnapshot] = field(default_factory=list)
     clocks: list[ClockSnapshot] = field(default_factory=list)
@@ -111,7 +112,7 @@ class TurnRecord:
     violations: list[str] = field(default_factory=list)
     narration_quality: list[str] = field(default_factory=list)
     spatial_issues: list[str] = field(default_factory=list)
-    token_usage: list[dict] = field(default_factory=list)
+    token_usage: list[dict[str, Any]] = field(default_factory=list)
     is_correction: bool = False
     error: str = ""
     rolled_back: bool = False
@@ -120,12 +121,12 @@ class TurnRecord:
     stream_sentences: int = 0
     stream_complete: bool | None = None
     stream_matches: bool | None = None
-    judge: dict = field(default_factory=dict)
+    judge: dict[str, Any] = field(default_factory=dict[str, Any])
     revelation: str = ""
     engine_events: list[str] = field(default_factory=list)
     engine_warnings: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         from dataclasses import asdict
 
         d = asdict(self)
@@ -143,8 +144,8 @@ class TurnRecord:
             or self.director_error
         )
 
-    def to_compact_dict(self) -> dict:
-        d: dict = {"turn": self.turn, "scene": self.scene}
+    def to_compact_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {"turn": self.turn, "scene": self.scene}
         if self.engine_log is not None:
             d["result"] = self.engine_log.result
             d["move"] = self.engine_log.move
@@ -207,41 +208,41 @@ class ChapterRecord:
 
 @dataclass
 class SessionLog:
-    config: dict = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict[str, Any])
     style: str = ""
     engine_version: str = ""
-    character: dict = field(default_factory=dict)
-    story_blueprint: dict = field(default_factory=dict)
+    character: dict[str, Any] = field(default_factory=dict[str, Any])
+    story_blueprint: dict[str, Any] = field(default_factory=dict[str, Any])
     chapters: list[ChapterRecord] = field(default_factory=list)
     turns: list[TurnRecord] = field(default_factory=list)
     violations: list[str] = field(default_factory=list)
     narration_quality_issues: list[str] = field(default_factory=list)
     spatial_issues: list[str] = field(default_factory=list)
     chapter_continuity_issues: list[str] = field(default_factory=list)
-    quality_summary: dict = field(default_factory=dict)
-    token_summary: dict = field(default_factory=dict)
-    correction_tests: list[dict] = field(default_factory=list)
-    burn_stats: dict = field(default_factory=dict)
+    quality_summary: dict[str, Any] = field(default_factory=dict[str, Any])
+    token_summary: dict[str, Any] = field(default_factory=dict[str, Any])
+    correction_tests: list[dict[str, Any]] = field(default_factory=list)
+    burn_stats: dict[str, Any] = field(default_factory=dict[str, Any])
     ended_reason: str = "unknown"
     total_turns: int = 0
-    coverage: dict = field(default_factory=dict)
+    coverage: dict[str, Any] = field(default_factory=dict[str, Any])
     save_roundtrip_issues: list[str] = field(default_factory=list)
     stream_issues: list[str] = field(default_factory=list)
-    succession: dict = field(default_factory=dict)
+    succession: dict[str, Any] = field(default_factory=dict[str, Any])
     query_issues: list[str] = field(default_factory=list)
     rollback_issues: list[str] = field(default_factory=list)
-    scenario: dict = field(default_factory=dict)
+    scenario: dict[str, Any] = field(default_factory=dict[str, Any])
     engine_warnings: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         from dataclasses import asdict
 
         d = asdict(self)
-        d["turns"] = [t.to_dict() if isinstance(t, TurnRecord) else t for t in self.turns]
+        d["turns"] = [t.to_dict() for t in self.turns]
         return d
 
-    def to_diagnostic_dict(self) -> dict:
-        d: dict = {
+    def to_diagnostic_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
             "engine_version": self.engine_version,
             "style": self.style,
             "character": self.character,
@@ -261,7 +262,7 @@ class SessionLog:
                 "acts": [f"{a.get('phase', '?')}: {a.get('title', '?')}" for a in bp.get("acts", [])],
             }
 
-        d["turns"] = [t.to_compact_dict() if isinstance(t, TurnRecord) else t for t in self.turns]
+        d["turns"] = [t.to_compact_dict() for t in self.turns]
 
         if self.quality_summary:
             d["quality_summary"] = self.quality_summary
@@ -271,7 +272,7 @@ class SessionLog:
 
         if self.turns:
             last = self.turns[-1]
-            if isinstance(last, TurnRecord) and last.npcs:
+            if last.npcs:
                 d["final_npcs"] = [
                     {
                         "name": n.name,

@@ -6,7 +6,7 @@ How to change Straightjacket: the workflow, the rules every change keeps, the co
 
 1. `ruff check --fix src/ tests/` and `ruff format src/ tests/`: must be clean.
 2. `python -m pytest tests/ -q --cov`: every test passes, and total coverage stays at or above `fail_under` in `pyproject.toml` (`[tool.coverage.report]`). When the total stays past the next whole percent in every run, raise `fail_under` to it, since the random paths a run takes move the total by a few hundredths; never lower it.
-3. `mypy src/ --config-file pyproject.toml`: must be clean.
+3. `mypy --config-file pyproject.toml`: must be clean over the paths its `files` names.
 4. **Read the whole diff back** before the commit, after every substep, and fix what it finds. A green suite does not replace this reading, since tests written beside the code share its blind spots. Look for:
    - no new default or parameter for tests, no broad except, no guard against a state that cannot occur, no dead branch or symbol, nothing that copies what already exists, nothing illogical or unclear;
    - every caller and every document the change touches updated, and for every fix a test that fails without it.
@@ -89,7 +89,7 @@ An external structure is a Datasworn field absent from at least one of the four 
 
 ## Code standards
 
-Python 3.11+, dataclasses with type hints, f-strings, pathlib, snake_case, no mutable defaults, imports sorted at the top of the file, lines of at most 120 characters wherever the formatter can break them. `pyproject.toml` holds the full ruff and mypy configuration; the linter rules are the spec. mypy runs in strict mode: every function is typed, generics state their parameters, re-exports are explicit through `__all__`, and a value that arrives as `Any` from yaml or JSON gets its type where it enters typed code.
+Python 3.11+, dataclasses with type hints, f-strings, pathlib, snake_case, no mutable defaults, imports sorted at the top of the file, lines of at most 120 characters wherever the formatter can break them. `pyproject.toml` holds the full ruff and mypy configuration; the linter rules are the spec. mypy runs in strict mode with the further checks `[tool.mypy]` lists, over the tests and Elvira as well as `src/`: every function is typed, generics state their parameters, re-exports are explicit through `__all__`, an override carries `@override` (from `typing_extensions`, which Python 3.11 needs for it), and a value that arrives as `Any` from yaml or JSON gets its type where it enters typed code. A package without types of its own gets a stub in `stubs/`, as radon has.
 
 UI changes keep the page accessible: semantic HTML, ARIA live regions, heading structure, native form controls; no div-buttons and no spatial-only references.
 
@@ -103,12 +103,13 @@ python -m pytest tests/ -q --cov                         # unit and integration 
 
 - A test that plays a turn, a correction, a momentum burn, or a chapter transition builds its game through the real character creation with `create_game` in `tests/_creation.py`, because hand-built states have hidden real faults. Hand-built states (`tests/_helpers.py`) serve unit tests of single functions.
 - `tests/test_rules_conformance.py` pins the rules checked against the source rulebooks (`docs/divergences.md`).
+- Test doubles are the real types they stand in for, so mypy checks them as it checks the code: `tests/_mocks.py` holds `ScriptedProvider`, the base of a scripted AI provider whose stream replays its answer, and `RecordingWebSocket`, a Starlette WebSocket that records what a handler sends.
 
 **Project rules.** `tests/test_project_rules.py` is one test that runs all AST and regex scans; run it before starting work to see the current state. Besides the rules above it covers:
 
 - orphans: public symbols, top-level keys in the yaml of `engine/` and the layers' folders, and keys in `prompts/*.yaml`; carve-out and whitelist entries that no longer carve anything out;
 - skip and xfail; `ruff format --check`; `# noqa`, `# type: ignore`, and `# pragma: no cover`;
-- the import layers; imports of `game`, `tools`, and `correction` through their `__init__.py`; a provider SDK imported outside its adapter;
+- the import layers; imports of `game`, `tools`, and `correction` through their `__init__.py`; a provider SDK imported outside its adapter (`docs/ai.md`, Provider adapters);
 - AI calls that route by their own role; a model name written in code;
 - a function's cyclomatic complexity of at most 20;
 - `.setdefault`, a fallback to `get_raw`, `x or []`, and an optional collection parameter defaulting to `None`;

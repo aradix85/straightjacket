@@ -6,7 +6,7 @@ from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, Turni
 from straightjacket.engine.crafters.turning_point_spawns import spawn_clocks_for_turning_point
 from straightjacket.engine.gamemaster.clocks import resolve_clock_fill
 from straightjacket.engine.gamemaster.random_events import spawn_clock_from_random_event
-from straightjacket.engine.models import KeyedScene, RandomEvent
+from straightjacket.engine.models import RandomEvent
 from tests._helpers import make_clock, make_game_state, make_keyed_scene, make_progress_track
 
 
@@ -127,7 +127,7 @@ def test_spawned_clock_attaches_keyed_scenes(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     spawn_clock_from_random_event(g, _re("pc_negative"))
 
-    assert any(isinstance(ks, KeyedScene) and ks.source.startswith("clock:") for ks in g.narrative.keyed_scenes)
+    assert any(ks.source.startswith("clock:") for ks in g.narrative.keyed_scenes)
 
 
 def test_fill_handler_emits_tag_when_no_keyed_scene_attached(load_engine: None) -> None:

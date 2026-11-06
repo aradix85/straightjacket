@@ -7,10 +7,44 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AICallSpec
+    from straightjacket.engine.crafters.config import CrafterSettings
+    from straightjacket.engine.engine_config import EngineSettings
+    from straightjacket.engine.gamemaster.config import GameMasterSettings
+    from straightjacket.engine.models import (
+        BrainResult,
+        ChapterSummary,
+        CharacterListEntry,
+        ClockData,
+        Consequence,
+        GameState,
+        InheritanceRollResult,
+        KeyedScene,
+        MemoryEntry,
+        NarrativeState,
+        NpcData,
+        PlotlineEntry,
+        PredecessorRecord,
+        ProgressTrack,
+        RandomEvent,
+        SceneLogEntry,
+        SceneSetup,
+        ThreadEntry,
+        ThreatData,
+        WorldState,
+    )
+    from straightjacket.engine.models_story import PossibleEnding, Revelation, StoryAct, StoryBlueprint
+    from straightjacket.engine.ruleset.config import RulesetSettings
+    from straightjacket.engine.ruleset.datasworn import RulesFile
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+
+    SettingsSet = tuple[EngineSettings, GameMasterSettings, CrafterSettings, RulesetSettings]
 
 
 def change_config(
@@ -43,7 +77,7 @@ def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     rolled: list[str] = []
     real = move_effects.roll_oracle_result
 
-    def recording(table: Any) -> tuple[list[str], str]:
+    def recording(table: Any) -> tuple[list[str], Consequence]:
         rolled.append(table.title)
         return real(table)
 
@@ -54,13 +88,15 @@ def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 def emit_engine_log(monkeypatch: pytest.MonkeyPatch, *modules: ModuleType) -> None:
     def log(msg: str, level: str = "info") -> None:
         logger = logging.getLogger("rpg_engine")
-        logger.handle(logger.makeRecord(logger.name, logging.getLevelName(level.upper()), "", 0, msg, None, None))
+        logger.handle(
+            logger.makeRecord(logger.name, logging.getLevelNamesMapping()[level.upper()], "", 0, msg, (), None)
+        )
 
     for module in modules:
         monkeypatch.setattr(module, "log", log)
 
 
-def make_game_state(**kwargs: Any) -> Any:
+def make_game_state(**kwargs: Any) -> GameState:
     from straightjacket.engine.gamemaster.world import new_world
     from straightjacket.engine.models import GameState, PlayerPreferences
     from straightjacket.engine.ruleset.legacy import new_campaign
@@ -83,7 +119,7 @@ def make_game_state(**kwargs: Any) -> Any:
     return GameState(**kwargs)
 
 
-def make_narrative(**kwargs: Any) -> Any:
+def make_narrative(**kwargs: Any) -> NarrativeState:
     from straightjacket.engine.director import new_guidance
     from straightjacket.engine.models import NarrativeState
 
@@ -93,7 +129,7 @@ def make_narrative(**kwargs: Any) -> Any:
     return NarrativeState(**kwargs)
 
 
-def make_thread(**kwargs: Any) -> Any:
+def make_thread(**kwargs: Any) -> ThreadEntry:
     from straightjacket.engine.models import ThreadEntry
 
     kwargs.setdefault("thread_type", "vow")
@@ -104,7 +140,7 @@ def make_thread(**kwargs: Any) -> Any:
     return ThreadEntry(**kwargs)
 
 
-def make_character_entry(**kwargs: Any) -> Any:
+def make_character_entry(**kwargs: Any) -> CharacterListEntry:
     from straightjacket.engine.models import CharacterListEntry
 
     kwargs.setdefault("entry_type", "npc")
@@ -114,7 +150,7 @@ def make_character_entry(**kwargs: Any) -> Any:
     return CharacterListEntry(**kwargs)
 
 
-def make_plotline(**kwargs: Any) -> Any:
+def make_plotline(**kwargs: Any) -> PlotlineEntry:
     from straightjacket.engine.models import PlotlineEntry
 
     kwargs.setdefault("status", "advancement")
@@ -122,7 +158,7 @@ def make_plotline(**kwargs: Any) -> Any:
     return PlotlineEntry(**kwargs)
 
 
-def make_keyed_scene(**kwargs: Any) -> Any:
+def make_keyed_scene(**kwargs: Any) -> KeyedScene:
     from straightjacket.engine.models import KeyedScene
 
     kwargs.setdefault("id", "ks_1")
@@ -133,7 +169,7 @@ def make_keyed_scene(**kwargs: Any) -> Any:
     return KeyedScene(**kwargs)
 
 
-def make_npc(**kwargs: Any) -> Any:
+def make_npc(**kwargs: Any) -> NpcData:
     from straightjacket.engine.models import NpcData
 
     kwargs.setdefault("disposition", "neutral")
@@ -149,7 +185,7 @@ def make_npc(**kwargs: Any) -> Any:
     return NpcData(**kwargs)
 
 
-def make_clock(**kwargs: Any) -> Any:
+def make_clock(**kwargs: Any) -> ClockData:
     from straightjacket.engine.models import ClockData
 
     kwargs.setdefault("clock_type", "threat")
@@ -164,7 +200,7 @@ def make_clock(**kwargs: Any) -> Any:
     return ClockData(**kwargs)
 
 
-def make_progress_track(**kwargs: Any) -> Any:
+def make_progress_track(**kwargs: Any) -> ProgressTrack:
     from straightjacket.engine.models import ProgressTrack
 
     kwargs.setdefault("id", "track_test")
@@ -180,7 +216,7 @@ def make_progress_track(**kwargs: Any) -> Any:
     return ProgressTrack(**kwargs)
 
 
-def make_threat(**kwargs: Any) -> Any:
+def make_threat(**kwargs: Any) -> ThreatData:
     from straightjacket.engine.models import ThreatData
 
     kwargs.setdefault("id", "threat_test")
@@ -196,7 +232,7 @@ def make_threat(**kwargs: Any) -> Any:
     return ThreatData(**kwargs)
 
 
-def make_memory(**kwargs: Any) -> Any:
+def make_memory(**kwargs: Any) -> MemoryEntry:
     from straightjacket.engine.models import MemoryEntry
 
     kwargs.setdefault("scene", 1)
@@ -210,7 +246,7 @@ def make_memory(**kwargs: Any) -> Any:
     return MemoryEntry(**kwargs)
 
 
-def make_random_event(**kwargs: Any) -> Any:
+def make_random_event(**kwargs: Any) -> RandomEvent:
     from straightjacket.engine.models import RandomEvent
 
     kwargs.setdefault("focus", "npc_action")
@@ -222,13 +258,13 @@ def make_random_event(**kwargs: Any) -> Any:
     return RandomEvent(**kwargs)
 
 
-def make_outcome(**kwargs: Any) -> Any:
+def make_outcome(**kwargs: Any) -> OutcomeResult:
     from straightjacket.engine.ruleset.outcome_result import new_outcome
 
     return dataclasses.replace(new_outcome(), **kwargs)
 
 
-def make_brain_result(**kwargs: Any) -> Any:
+def make_brain_result(**kwargs: Any) -> BrainResult:
     from straightjacket.engine.models import BrainResult
 
     kwargs.setdefault("move", "dialog")
@@ -243,7 +279,7 @@ def make_brain_result(**kwargs: Any) -> Any:
     return BrainResult(**kwargs)
 
 
-def make_world_state(**kwargs: Any) -> Any:
+def make_world_state(**kwargs: Any) -> WorldState:
     from straightjacket.engine.models import WorldState
 
     kwargs.setdefault("chaos_factor", 5)
@@ -254,7 +290,7 @@ def make_world_state(**kwargs: Any) -> Any:
     return WorldState(**kwargs)
 
 
-def make_scene_setup(**kwargs: Any) -> Any:
+def make_scene_setup(**kwargs: Any) -> SceneSetup:
     from straightjacket.engine.models import SceneSetup
 
     kwargs.setdefault("scene_type", "expected")
@@ -263,7 +299,7 @@ def make_scene_setup(**kwargs: Any) -> Any:
     return SceneSetup(**kwargs)
 
 
-def make_scene_log_entry(**kwargs: Any) -> Any:
+def make_scene_log_entry(**kwargs: Any) -> SceneLogEntry:
     from straightjacket.engine.models import SceneLogEntry
 
     kwargs.setdefault("scene", 1)
@@ -276,7 +312,7 @@ def make_scene_log_entry(**kwargs: Any) -> Any:
     return SceneLogEntry(**kwargs)
 
 
-def make_chapter_summary(**kwargs: Any) -> Any:
+def make_chapter_summary(**kwargs: Any) -> ChapterSummary:
     from straightjacket.engine.models import ChapterSummary
 
     kwargs.setdefault("chapter", 1)
@@ -286,7 +322,7 @@ def make_chapter_summary(**kwargs: Any) -> Any:
     return ChapterSummary(**kwargs)
 
 
-def make_inheritance_roll(**kwargs: Any) -> Any:
+def make_inheritance_roll(**kwargs: Any) -> InheritanceRollResult:
     from straightjacket.engine.models import InheritanceRollResult
 
     kwargs.setdefault("track_name", "quests")
@@ -295,7 +331,7 @@ def make_inheritance_roll(**kwargs: Any) -> Any:
     return InheritanceRollResult(**kwargs)
 
 
-def make_predecessor(**kwargs: Any) -> Any:
+def make_predecessor(**kwargs: Any) -> PredecessorRecord:
     from straightjacket.engine.models import PredecessorRecord
 
     kwargs.setdefault("player_name", "Aria")
@@ -311,7 +347,7 @@ def make_predecessor(**kwargs: Any) -> Any:
     return PredecessorRecord(**kwargs)
 
 
-def make_npc_reflection(**kwargs: Any) -> dict:
+def make_npc_reflection(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("npc_id", "npc_1")
     kwargs.setdefault("reflection", "Reflection text.")
     kwargs.setdefault("tone", "")
@@ -325,18 +361,18 @@ def make_npc_reflection(**kwargs: Any) -> dict:
     return kwargs
 
 
-def keyed_reflections(*refs: dict) -> dict:
+def keyed_reflections(*refs: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {ref["npc_id"]: {k: v for k, v in ref.items() if k != "npc_id"} for ref in refs}
 
 
-def make_npc_detail(**kwargs: Any) -> dict:
+def make_npc_detail(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("npc_id", "npc_1")
     kwargs.setdefault("full_name", None)
     kwargs.setdefault("description", None)
     return kwargs
 
 
-def make_npc_rename(**kwargs: Any) -> dict:
+def make_npc_rename(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("npc_id", "npc_1")
     kwargs.setdefault("new_name", "")
     return kwargs
@@ -381,7 +417,7 @@ def dialog_prompt(game: Any, **kwargs: Any) -> str:
     return build_dialog_prompt(game, make_brain_result(), **dialog_prompt_kwargs(**kwargs))
 
 
-def make_director_guidance(**kwargs: Any) -> dict:
+def make_director_guidance(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("scene_summary", "")
     kwargs.setdefault("narrator_guidance", "")
     kwargs.setdefault("npc_guidance", {})
@@ -390,7 +426,7 @@ def make_director_guidance(**kwargs: Any) -> dict:
     return kwargs
 
 
-def make_act(**kwargs: Any) -> Any:
+def make_act(**kwargs: Any) -> StoryAct:
     from straightjacket.engine.models_story import StoryAct
 
     kwargs.setdefault("phase", "setup")
@@ -402,7 +438,7 @@ def make_act(**kwargs: Any) -> Any:
     return StoryAct(**kwargs)
 
 
-def make_revelation(**kwargs: Any) -> Any:
+def make_revelation(**kwargs: Any) -> Revelation:
     from straightjacket.engine.models_story import Revelation
 
     kwargs.setdefault("id", "r1")
@@ -413,7 +449,7 @@ def make_revelation(**kwargs: Any) -> Any:
     return Revelation(**kwargs)
 
 
-def make_ending(**kwargs: Any) -> Any:
+def make_ending(**kwargs: Any) -> PossibleEnding:
     from straightjacket.engine.models_story import PossibleEnding
 
     kwargs.setdefault("type", "")
@@ -421,7 +457,7 @@ def make_ending(**kwargs: Any) -> Any:
     return PossibleEnding(**kwargs)
 
 
-def make_blueprint(**kwargs: Any) -> Any:
+def make_blueprint(**kwargs: Any) -> StoryBlueprint:
     from straightjacket.engine.models_story import StoryBlueprint
 
     kwargs.setdefault("central_conflict", "")
@@ -431,10 +467,21 @@ def make_blueprint(**kwargs: Any) -> Any:
     return StoryBlueprint(**kwargs)
 
 
-def install_config(settings: tuple) -> None:
+def install_config(settings: SettingsSet) -> None:
     from straightjacket.engine import engine_loader
     from straightjacket.engine.crafters import config as crafters_config
     from straightjacket.engine.gamemaster import config as gamemaster_config
     from straightjacket.engine.ruleset import config as ruleset_config
 
     engine_loader._eng, gamemaster_config._gm, crafters_config._crafter, ruleset_config._rules = settings
+
+
+def schema_of(spec: AICallSpec) -> dict[str, Any]:
+    assert spec.json_schema is not None
+    return spec.json_schema
+
+
+def known_asset(setting_file: RulesFile, category: str, asset_id: str) -> dict[str, Any]:
+    found = setting_file.asset(category, asset_id)
+    assert found is not None
+    return found

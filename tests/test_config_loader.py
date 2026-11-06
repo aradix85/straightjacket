@@ -126,7 +126,7 @@ def _cluster(data: dict[str, Any]) -> dict[str, Any]:
     ],
 )
 def test_a_config_file_that_does_not_fit_stops_loading(
-    read_config: Callable[[dict[str, Any]], None], change: Callable[[dict[str, Any]], object], message: str
+    read_config: Callable[[dict[str, object]], None], change: Callable[[dict[str, object]], object], message: str
 ) -> None:
     data = _full_config_data()
     change(data)

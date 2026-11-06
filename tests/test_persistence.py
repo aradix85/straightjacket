@@ -89,14 +89,16 @@ def test_delete_save(save_dir: Any) -> None:
 
 
 def test_deleting_a_save_that_does_not_exist_changes_nothing(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import delete_save, get_save_dir
+    from straightjacket.engine.persistence import delete_save
+    from straightjacket.engine.user_management import get_save_dir
 
     delete_save("nobody", "nope")
     assert not (get_save_dir("nobody") / "nope.json").exists()
 
 
 def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import get_save_dir, save_game
+    from straightjacket.engine.persistence import save_game
+    from straightjacket.engine.user_management import get_save_dir
 
     msgs = [{"role": "assistant", "content": "Narration.", "epilogue": True}]
     save_game(_game(), "tester", msgs, "keys")
@@ -106,7 +108,8 @@ def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
 
 
 def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import get_save_dir, list_saves_with_info, save_game
+    from straightjacket.engine.persistence import list_saves_with_info, save_game
+    from straightjacket.engine.user_management import get_save_dir
 
     save_game(_game(), "mixed", [], "good_save")
     save_root = get_save_dir("mixed")

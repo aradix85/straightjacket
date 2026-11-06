@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
+from typing_extensions import override
 
 from straightjacket.engine.ai.metadata import apply_narrator_metadata
 from straightjacket.engine.crafters.config import crafter
@@ -17,7 +19,9 @@ from tests._helpers import (
     make_memory,
     make_npc,
     make_npc_reflection,
+    schema_of,
 )
+from tests._mocks import ScriptedProvider
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -157,7 +161,7 @@ def test_an_npc_the_engine_named_is_matched_only_by_its_own_label(load_engine: N
     assert len(game.npcs) == count
 
 
-def _detail(npc_id: str, full_name: str) -> dict:
+def _detail(npc_id: str, full_name: str) -> dict[str, Any]:
     return {
         "npc_renames": [],
         "new_npcs": [],
@@ -202,11 +206,12 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(lo
             }
         )
 
-    class Scripted:
+    class Scripted(ScriptedProvider):
         def __init__(self, *replies: str) -> None:
             self.replies = list(replies)
             self.specs: list[AICallSpec] = []
 
+        @override
         def create_message(self, spec: AICallSpec) -> AIResponse:
             self.specs.append(spec)
             return AIResponse(content=self.replies.pop(0) if len(self.replies) > 1 else self.replies[0])
@@ -215,7 +220,7 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(lo
     result = call_blueprint_voicing(good, game, seed)
     assert result is not None
     assert len(good.specs) == 1
-    props = good.specs[0].json_schema["properties"]
+    props = schema_of(good.specs[0])["properties"]
     for key, count in (
         ("acts", len(seed.acts)),
         ("revelations", len(seed.acts)),

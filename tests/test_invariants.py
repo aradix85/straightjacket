@@ -1,13 +1,7 @@
-import sys as _sys
-from pathlib import Path as _Path
-
 from straightjacket.engine.models import GameState
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_scene_log_entry
-
-_sys.path.insert(0, str(_Path(__file__).resolve().parent / "elvira"))
-
-from elvira_bot.invariants import assert_game_state
-from elvira_bot.quality_checks import check_narration_quality
+from tests.elvira.elvira_bot.invariants import assert_game_state
+from tests.elvira.elvira_bot.quality_checks import check_narration_quality
 
 
 def _clean_game() -> GameState:

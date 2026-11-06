@@ -4,7 +4,7 @@ import pytest
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import GameState, Resources, RollResult, labels_of
-from tests._helpers import make_clock, make_game_state, make_npc
+from tests._helpers import make_clock, make_game_state, make_npc, schema_of
 
 WEAK_HIT_MOVES = [
     ("starforged", "adventure/gather_information"),
@@ -157,7 +157,7 @@ def test_the_brain_sees_open_complications_and_may_aim_at_one(load_engine: None)
     [call] = provider.calls
     assert "<dangers>\n  A beacon calls the raiders 1/4\n</dangers>" in call.messages[-1]["content"]
     assert "Old danger" not in call.messages[-1]["content"]
-    assert call.json_schema["properties"]["target_clock"]["anyOf"][0]["enum"] == ["A beacon calls the raiders"]
+    assert schema_of(call)["properties"]["target_clock"]["anyOf"][0]["enum"] == ["A beacon calls the raiders"]
     assert result.target_clock == "A beacon calls the raiders"
 
 

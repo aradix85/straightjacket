@@ -5,15 +5,7 @@ import pytest
 
 from straightjacket.web.session import new_session
 from tests._helpers import make_act, make_blueprint, make_game_state
-from tests._mocks import MockProvider
-
-
-class _FakeWS:
-    def __init__(self) -> None:
-        self.sent: list[dict[str, Any]] = []
-
-    async def send_json(self, msg: dict[str, Any]) -> None:
-        self.sent.append(msg)
+from tests._mocks import MockProvider, RecordingWebSocket
 
 
 def test_a_failed_chapter_opening_leaves_the_game_as_it_was(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -29,7 +21,7 @@ def test_a_failed_chapter_opening_leaves_the_game_as_it_was(load_engine: None, m
     session = new_session()
     session.game = make_game_state(player_name="Aria", setting_id="starforged")
     before = session.game.to_dict()
-    ws = _FakeWS()
+    ws = RecordingWebSocket()
 
     asyncio.run(handlers.handle_new_chapter(session, ws, {}))
 
@@ -51,7 +43,7 @@ def test_a_fault_outside_the_ai_calls_is_not_swallowed_by_the_handler(
     session.game = make_game_state(player_name="Aria", setting_id="starforged")
 
     with pytest.raises(KeyError, match="broken succession"):
-        asyncio.run(handlers.handle_retire(session, _FakeWS(), {}))
+        asyncio.run(handlers.handle_retire(session, RecordingWebSocket(), {}))
     assert session.processing is False
 
 

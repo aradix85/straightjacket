@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.10.24.3"
+version = "2026.11.06.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -8,6 +8,7 @@ dependencies = [
     "pyyaml>=6.0,<7",
     "anthropic>=1.8,<2",
     "openai>=3.19,<4",
+    "typing-extensions>=4.10,<5",
 ]
 
 [project.optional-dependencies]
@@ -34,21 +35,32 @@ known-first-party = ["straightjacket"]
 
 [tool.mypy]
 python_version = "3.11"
-mypy_path = ["src"]
+mypy_path = ["src", "stubs"]
+files = ["src", "tests", "run.py", "data/data.py"]
+explicit_package_bases = true
 strict = true
 ignore_missing_imports = false
-exclude = ["data/"]
-# NOTE: install types-PyYAML for mypy: pip install types-PyYAML
-
-[[tool.mypy.overrides]]
-# Protocol method with ... body — mypy can't prove the return type
-module = "straightjacket.engine.ai.provider_base"
-disable_error_code = ["return"]
-
-[[tool.mypy.overrides]]
-# websockets has no type stubs
-module = "websockets"
-ignore_missing_imports = true
+warn_unreachable = true
+strict_bytes = true
+strict_equality_for_none = true
+local_partial_types = true
+disallow_any_unimported = true
+disallow_any_decorated = true
+enable_error_code = [
+    "possibly-undefined",
+    "redundant-expr",
+    "truthy-bool",
+    "truthy-iterable",
+    "ignore-without-code",
+    "unused-awaitable",
+    "redundant-self",
+    "unused-ignore",
+    "explicit-override",
+    "unimported-reveal",
+    "mutable-override",
+    "exhaustive-match",
+    "deprecated",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

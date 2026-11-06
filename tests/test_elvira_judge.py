@@ -1,18 +1,23 @@
+from types import ModuleType
 from typing import Any
 
 import pytest
+from typing_extensions import override
+
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from tests._mocks import ScriptedProvider
 
 VERDICT = '{"result_integrity": 5, "prompt_elements": 5, "npc_voice": 5, "player_agency": 5, "restraint": 5, "prose": 5, "overall": 9, "weakness": "none", "revelation_conveyed": true}'
 
 
-def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[Any, list[Any]]:
-    from straightjacket.engine.ai.provider_base import AIResponse
+def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, list[AICallSpec]]:
     from tests.elvira.elvira_bot import judge
 
-    seen: list[Any] = []
+    seen: list[AICallSpec] = []
 
-    class Capture:
-        def create_message(self, spec: Any) -> AIResponse:
+    class Capture(ScriptedProvider):
+        @override
+        def create_message(self, spec: AICallSpec) -> AIResponse:
             seen.append(spec)
             return AIResponse(content=VERDICT)
 

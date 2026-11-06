@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
+import pytest
 
+from straightjacket.engine.models import GameState
 from tests._helpers import make_brain_result, make_game_state
 
 
-def _swear(game: object, name: str) -> None:
+def _swear(game: GameState, name: str) -> None:
     from straightjacket.engine.ruleset.tracks import start_track
 
     brain = make_brain_result(move="quest/swear_an_iron_vow", stat="heart")
@@ -14,7 +15,7 @@ def _swear(game: object, name: str) -> None:
     start_track(game, brain, "MISS")
 
 
-def _connect(game: object, target: str | None, result: str) -> None:
+def _connect(game: GameState, target: str | None, result: str) -> None:
     from straightjacket.engine.ruleset.tracks import start_track
 
     brain = make_brain_result(move="connection/make_a_connection", stat="heart", target_npc=target)
@@ -78,7 +79,9 @@ def test_a_vow_sworn_again_after_completion_gets_unique_ids(load_engine: None) -
     assert len(thread_ids) == len(set(thread_ids))
 
 
-def test_a_second_journey_named_by_its_own_name_takes_the_progress(load_engine: None, monkeypatch: Any) -> None:
+def test_a_second_journey_named_by_its_own_name_takes_the_progress(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from straightjacket.engine.game import process_turn
     from straightjacket.engine.ruleset.progress import filled_boxes
     from tests._creation import TurnProvider, brain_answer, force_result, library_game

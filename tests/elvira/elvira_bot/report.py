@@ -4,6 +4,7 @@ import re
 import statistics
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 from straightjacket.engine.config_loader import model_for_role
 
@@ -168,7 +169,7 @@ def _event_lines(slog: SessionLog) -> list[str]:
     return lines
 
 
-def _scenario_lines(scenario: dict) -> list[str]:
+def _scenario_lines(scenario: dict[str, Any]) -> list[str]:
     return [
         f"{scenario['name']}.",
         f"Prepared: {'; '.join(scenario['prepared']) or 'nothing'}.",

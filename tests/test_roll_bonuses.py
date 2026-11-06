@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import pytest
 
+from straightjacket.engine.models import GameState
 from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
 
-def _game_with(*assets: str) -> object:
+def _game_with(*assets: str) -> GameState:
     game = make_game_state(setting_id="starforged")
     game.assets = list(assets)
     return game
@@ -62,7 +63,6 @@ def test_a_bonus_not_on_offer_raises(load_engine: None) -> None:
 def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, dice: list[int], momentum_after: int
 ) -> None:
-    from straightjacket.engine.ruleset import rolls
     from straightjacket.engine.ruleset.make_move import roll_move
 
     game = _game_with()
@@ -71,7 +71,7 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     )
     game.resources.meters["momentum"] = 2
     sequence = list(dice)
-    monkeypatch.setattr(rolls.random, "randint", lambda low, high: sequence.pop(0))
+    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda low, high: sequence.pop(0))
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     brain.bonus_id = "connection:npc_1"
     game.last_turn_snapshot = game.snapshot()

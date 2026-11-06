@@ -9,7 +9,7 @@ from straightjacket.engine.gamemaster.moves import asks_the_oracle, is_dialog_br
 from straightjacket.engine.ruleset.answers import action_kind
 from straightjacket.engine.ruleset.config import rules
 from tests._helpers import make_brain_result
-from tests._mocks import make_test_game
+from tests._mocks import MockProvider, make_test_game
 
 
 class TestIsDialogBranch:
@@ -85,7 +85,7 @@ class TestProcessTurnGuard:
         game.end_reason = "death"
 
         with pytest.raises(RuntimeError, match="game_over=True"):
-            process_turn(provider=None, game=game, player_message="anything", stream=None)
+            process_turn(provider=MockProvider(), game=game, player_message="anything", stream=None)
 
     def test_does_not_raise_when_game_active(self) -> None:
         game = make_test_game()
@@ -113,7 +113,6 @@ class TestExecuteRollStatNoneRejected:
         game.last_turn_snapshot = game.snapshot()
 
         outcome = roll_move(game, brain, None)
-        assert outcome.roll is not None
         assert outcome.roll.stat_name == "wits"
 
 

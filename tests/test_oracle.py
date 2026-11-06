@@ -1,6 +1,5 @@
 import pytest
 
-from straightjacket.engine.setting import loader
 from straightjacket.engine.setting.loader import load_setting
 from straightjacket.engine.setting.packages import list_packages
 
@@ -64,7 +63,12 @@ def test_a_table_rolls_over_the_rows_it_holds(monkeypatch: pytest.MonkeyPatch) -
     table = load_setting("sundered_isles").oracle("overland/region_landmarks/highlands")
     assert table is not None
     ranges: list[tuple[int, int]] = []
-    monkeypatch.setattr(loader.random, "randint", lambda low, high: ranges.append((low, high)) or high)
+
+    def highest(low: int, high: int) -> int:
+        ranges.append((low, high))
+        return high
+
+    monkeypatch.setattr("straightjacket.engine.setting.loader.random.randint", highest)
     assert table.roll() is table.rows[-1]
     assert ranges == [(1, 50)]
 

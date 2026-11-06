@@ -65,10 +65,11 @@ def _play(monkeypatch: pytest.MonkeyPatch, game: GameState, provider: TurnProvid
 
 
 def _director_reasons(monkeypatch: pytest.MonkeyPatch) -> list[tuple[bool, str | None]]:
+    from straightjacket.engine.director import should_call_director
     from straightjacket.engine.game import scene_finalization
 
     reasons: list[tuple[bool, str | None]] = []
-    real = scene_finalization.should_call_director
+    real = should_call_director
 
     def _spy(game: GameState, **triggers: Any) -> str | None:
         reason = real(game, **triggers)

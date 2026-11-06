@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.models import GameState
+from straightjacket.engine.models import GameState, TurnSnapshot
 from tests._creation import TurnProvider, brain_answer, correction_answer, force_result, library_game
 from tests._helpers import make_random_event, make_scene_setup
 
@@ -59,8 +59,9 @@ def test_correction_input_misread_full_flow(load_engine: None, monkeypatch: pyte
     assert len(narration) > 10
     assert len(game.narrative.narration_history) == history_len_before
     assert game.narrative.narration_history[-1].narration == narration
-    assert game.last_turn_snapshot is not None
-    assert game.last_turn_snapshot.player_input == "I talk to Mira instead"
+    snapshot_after: TurnSnapshot | None = game.last_turn_snapshot
+    assert snapshot_after is not None
+    assert snapshot_after.player_input == "I talk to Mira instead"
 
 
 def test_correction_to_dialog_does_not_roll_even_with_a_stat(

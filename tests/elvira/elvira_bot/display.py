@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.bond import get_npc_bond
 
@@ -19,7 +21,7 @@ def print_state(game: GameState) -> None:
     print(f"  [STATE] {meters} chaos:{game.world.chaos_factor} scene:{game.narrative.scene_count}")
 
 
-def final_state_dict(game: GameState) -> dict:
+def final_state_dict(game: GameState) -> dict[str, Any]:
     return {
         "character": game.player_name,
         "chapter": game.campaign.chapter_number,

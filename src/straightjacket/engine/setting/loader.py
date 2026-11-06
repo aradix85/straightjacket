@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from typing_extensions import override
+
 from ..config_loader import PROJECT_ROOT
 from ..logging_util import log
 
@@ -18,6 +20,7 @@ class OracleRow:
     text: str
     oracle_rolls: list[Any] | None
 
+    @override
     def __str__(self) -> str:
         return self.text
 

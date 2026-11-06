@@ -160,10 +160,14 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
     ]
     game.narrative.story_blueprint = bp
 
-    triggers = {"roll_result": "dialog", "chaos_used": False, "new_npcs_found": False, "revelation_landed": False}
-    assert should_call_director(game, **triggers) == "phase:climax"
+    def ask() -> str | None:
+        return should_call_director(
+            game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_landed=False
+        )
+
+    assert ask() == "phase:climax"
     assert bp.triggered_director_phases == ["climax"]
-    assert should_call_director(game, **triggers) != "phase:climax"
+    assert ask() != "phase:climax"
 
 
 def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:
