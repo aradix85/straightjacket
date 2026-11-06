@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.ruleset.answers import action_kind
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.moves import get_moves
+from straightjacket.engine.setting.packages import list_packages
 
 
 def _all_categories() -> set[str]:
@@ -84,10 +87,6 @@ class TestMoveCategoriesSymmetry:
 
 class TestEveryMoveResolvesEndToEnd:
     def test_every_move_has_a_kind_with_a_stance_bucket_and_a_position_baseline(self) -> None:
-        from straightjacket.engine.ruleset.answers import action_kind
-        from straightjacket.engine.ruleset.moves import get_moves
-        from straightjacket.engine.setting.packages import list_packages
-
         all_moves: set[str] = set()
         for sid in list_packages():
             all_moves.update(get_moves(sid).keys())
@@ -102,9 +101,6 @@ class TestEveryMoveResolvesEndToEnd:
 
 class TestMoveOutcomesCoverage:
     def test_every_action_roll_move_has_outcome_config(self) -> None:
-        from straightjacket.engine.ruleset.moves import get_moves
-        from straightjacket.engine.setting.packages import list_packages
-
         action_roll_moves: set[str] = set()
         for sid in list_packages():
             for move_id, move in get_moves(sid).items():
@@ -123,9 +119,6 @@ class TestMoveOutcomesCoverage:
         )
 
     def test_no_orphan_outcome_entries(self) -> None:
-        from straightjacket.engine.ruleset.moves import get_moves
-        from straightjacket.engine.setting.packages import list_packages
-
         all_known_moves: set[str] = set()
         for sid in list_packages():
             all_known_moves.update(get_moves(sid).keys())

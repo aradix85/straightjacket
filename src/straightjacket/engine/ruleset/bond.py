@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from ..logging_util import log
-from ..models import GameState, NpcData, ProgressTrack
-from .config import rules
-from .progress import filled_boxes, new_track, ranks
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.progress import filled_boxes, new_track, ranks
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, NpcData, ProgressTrack
 
 
 def connection_track_id(npc_id: str) -> str:

@@ -2,18 +2,18 @@ import json
 import random
 from collections.abc import Iterable, Sequence
 
-from .engine_loader import eng
-from .gamemaster.config import gm
-from .gamemaster.generation import current_place
-from .gamemaster.npc.matching import find_npc
-from .gamemaster.npc.memory import retrieve_memories
-from .gamemaster.pacing import get_pacing_hint
-from .gamemaster.questions import answers
-from .gamemaster.scene import adjustment_descriptions
-from .gamemaster.stance_gate import compute_npc_gate, resolve_npc_stance
-from .gamemaster.world import locations_match
-from .logging_util import log
-from .models import (
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.generation import current_place
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.gamemaster.npc.memory import retrieve_memories
+from straightjacket.engine.gamemaster.pacing import get_pacing_hint
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.gamemaster.scene import adjustment_descriptions
+from straightjacket.engine.gamemaster.stance_gate import compute_npc_gate, resolve_npc_stance
+from straightjacket.engine.gamemaster.world import locations_match
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import (
     BrainResult,
     ClockFillResult,
     GameState,
@@ -25,11 +25,11 @@ from .models import (
     SceneSetup,
     ThreatEvent,
 )
-from .prompt_blocks import character_tag, world_tag
-from .prompt_loader import get_prompt
-from .ruleset.impacts import get_impacts
-from .xml_utils import xa as _xa
-from .xml_utils import xe as _xe
+from straightjacket.engine.prompt_blocks import character_tag, world_tag
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.impacts import get_impacts
+from straightjacket.engine.xml_utils import xa as _xa
+from straightjacket.engine.xml_utils import xe as _xe
 
 
 def creativity_seed() -> str:

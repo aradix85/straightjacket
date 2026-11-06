@@ -1,3 +1,4 @@
+from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
@@ -5,6 +6,9 @@ import pytest
 
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.mythic_data import load_mythic
+from straightjacket.engine.ruleset import config as ruleset_config
+from tests._helpers import change_config
 
 
 def test_miss_clock_ticks_cover_every_position(load_engine: None) -> None:
@@ -12,8 +16,6 @@ def test_miss_clock_ticks_cover_every_position(load_engine: None) -> None:
 
 
 def test_npc_status_groups_name_only_known_statuses(load_engine: None) -> None:
-    from dataclasses import fields
-
     groups = gm().npc_status_groups
     known = set(gm().enums.npc_statuses)
     for group in fields(groups):
@@ -21,8 +23,6 @@ def test_npc_status_groups_name_only_known_statuses(load_engine: None) -> None:
 
 
 def test_dice_sizes_cover_the_tables_they_roll(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.mythic_data import load_mythic
-
     dice = gm().mythic_dice
     mythic = load_mythic()
     assert max(row["max"] for row in mythic["event_focus"]) == dice.event_focus_die
@@ -34,9 +34,6 @@ def test_dice_sizes_cover_the_tables_they_roll(load_engine: None) -> None:
 def test_a_move_gate_on_a_track_type_that_does_not_exist_is_refused(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, gate: str
 ) -> None:
-    from straightjacket.engine.ruleset import config as ruleset_config
-    from tests._helpers import change_config
-
     def gate_on_a_missing_type(section: dict[str, Any]) -> None:
         section["adventure/reach_your_destination"]["available"] = [{gate: "has_journey"}]
 

@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..models import GameState
-from ..setting.packages import SettingPackage
-from .config import rules
-from .datasworn import RulesFile, load_ruleset
-from .progress import ranks
-from .stats import stat_descriptions, validate_stats
-from .tracks import swear_background_vow
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.progress import ranks
+from straightjacket.engine.ruleset.stats import stat_descriptions, validate_stats
+from straightjacket.engine.ruleset.tracks import swear_background_vow
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.datasworn import RulesFile
+    from straightjacket.engine.setting.packages import SettingPackage
 
 
 @dataclass(frozen=True)

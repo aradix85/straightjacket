@@ -1,7 +1,7 @@
-from ..ai.provider_base import AIProvider
-from ..director import apply_director_guidance, call_director
-from ..models import GameState
-from .turn_types import DirectorCall
+from straightjacket.engine.ai.provider_base import AIProvider
+from straightjacket.engine.director import apply_director_guidance, call_director
+from straightjacket.engine.game.turn_types import DirectorCall
+from straightjacket.engine.models import GameState
 
 
 def run_deferred_director(provider: AIProvider, game: GameState, director_call: DirectorCall) -> None:

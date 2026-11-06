@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import dataclasses
 import random
+from typing import TYPE_CHECKING
 
-from ..logging_util import log
-from ..models import GameState, RollResult
-from .config import rules
-from .meters import momentum
-from .outcome_result import move_outcome_config
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import RollResult
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.meters import momentum
+from straightjacket.engine.ruleset.outcome_result import move_outcome_config
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def _roll_challenge_dice() -> tuple[int, int]:

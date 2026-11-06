@@ -6,7 +6,26 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.ai.brain import call_brain
+from straightjacket.engine.ai.provider_base import AIUnavailableError
+from straightjacket.engine.ai.schemas import get_brain_output_schema
+from straightjacket.engine.correction import process_correction
+from straightjacket.engine.correction.ops import apply_correction_ops
+from straightjacket.engine.game import process_momentum_burn, process_turn, turn
+from straightjacket.engine.game.chapters import start_new_chapter
+from straightjacket.engine.game.succession import prepare_succession, start_succession_with_character
+from straightjacket.engine.gamemaster import config as gamemaster_config
+from straightjacket.engine.gamemaster import facts, fate, scene
 from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.facts import (
+    clear_facts_settled_by_hit,
+    fact_odds,
+    overrule_facts_by_hit,
+    remember_facts,
+    resolve_fact,
+)
+from straightjacket.engine.gamemaster.random_events import drain_pending_events
+from straightjacket.engine.gamemaster.world import update_location
 from straightjacket.engine.models import (
     FactRequest,
     FateResult,
@@ -14,14 +33,14 @@ from straightjacket.engine.models import (
     ResolvedFact,
     SceneSetup,
 )
+from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.ruleset.progress import new_track
-from tests._creation import TurnProvider, brain_answer, create_game, force_result
-from tests._helpers import fix_dice
+from tests._creation import OpeningProvider, TurnProvider, brain_answer, create_game, creation_data, force_result
+from tests._helpers import change_config, fix_dice
+from tests._mocks import MockProvider
 
 
 def _chart_rolls(monkeypatch: pytest.MonkeyPatch, roll: int) -> None:
-    from straightjacket.engine.gamemaster import fate
-
     original = fate.resolve_fate_chart
 
     def chart(odds: str, chaos_factor: int) -> FateResult:
@@ -56,8 +75,6 @@ def _fate(answer: str) -> FateResult:
 
 @pytest.fixture
 def counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
-    from straightjacket.engine.gamemaster import facts
-
     calls: list[str] = []
 
     def _resolve(game: Any, odds: str) -> FateResult:
@@ -69,8 +86,6 @@ def counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
 
 def test_odds_follow_base_score_and_npc_disposition(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.facts import fact_odds
-
     game = _game()
     assert fact_odds(game, FactRequest(fact_type="locked", about="here")) == "fifty_fifty"
     assert fact_odds(game, FactRequest(fact_type="occupied", about="here")) == "unlikely"
@@ -79,15 +94,11 @@ def test_odds_follow_base_score_and_npc_disposition(load_engine: None) -> None:
 
 
 def test_an_unknown_fact_type_raises(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.facts import fact_odds
-
     with pytest.raises(KeyError):
         fact_odds(_game(), FactRequest(fact_type="haunted", about="here"))
 
 
 def test_a_resolved_fact_is_stored_and_reused(load_engine: None, counted_fate: list[str]) -> None:
-    from straightjacket.engine.gamemaster.facts import resolve_fact
-
     game = _game()
     first = resolve_fact(game, FactRequest(fact_type="alert", about="npc_2"))
     second = resolve_fact(game, FactRequest(fact_type="alert", about="npc_2"))
@@ -100,8 +111,6 @@ def test_a_resolved_fact_is_stored_and_reused(load_engine: None, counted_fate: l
 
 
 def test_a_fixed_seed_gives_the_same_answer(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.facts import resolve_fact
-
     answers = []
     for _ in range(2):
         game = _game()
@@ -111,8 +120,6 @@ def test_a_fixed_seed_gives_the_same_answer(load_engine: None) -> None:
 
 
 def test_moving_clears_the_facts_and_staying_keeps_them(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import update_location
-
     game = _game()
     game.world.facts = [_fact("locked")]
     update_location(game, "the abandoned library")
@@ -122,9 +129,6 @@ def test_moving_clears_the_facts_and_staying_keeps_them(load_engine: None) -> No
 
 
 def test_a_chapter_start_clears_the_facts(load_engine: None) -> None:
-    from straightjacket.engine.game.chapters import start_new_chapter
-    from tests._creation import OpeningProvider
-
     game = _game()
     game.world.facts = [_fact("locked")]
     start_new_chapter(OpeningProvider([], "Ring Dock"), game)
@@ -132,9 +136,6 @@ def test_a_chapter_start_clears_the_facts(load_engine: None) -> None:
 
 
 def test_a_succession_clears_the_facts(load_engine: None) -> None:
-    from straightjacket.engine.game.succession import prepare_succession, start_succession_with_character
-    from tests._creation import OpeningProvider, creation_data
-
     game = _game()
     game.world.facts = [_fact("locked")]
     game.end_reason = "death"
@@ -145,8 +146,6 @@ def test_a_succession_clears_the_facts(load_engine: None) -> None:
 
 
 def test_a_location_correction_clears_the_facts(load_engine: None) -> None:
-    from straightjacket.engine.correction.ops import apply_correction_ops
-
     game = _game()
     game.world.facts = [_fact("locked")]
     apply_correction_ops(game, [{"op": "location_edit", "value": "Abandoned Library"}])
@@ -156,8 +155,6 @@ def test_a_location_correction_clears_the_facts(load_engine: None) -> None:
 
 
 def test_a_hit_clears_only_the_types_that_say_so(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.facts import clear_facts_settled_by_hit
-
     game = _game()
     locked, alert = _fact("locked"), _fact("alert", about="npc_2")
     game.world.facts = [locked, alert]
@@ -169,8 +166,6 @@ def test_a_hit_clears_only_the_types_that_say_so(load_engine: None) -> None:
 
 
 def test_a_hit_does_not_settle_a_no(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.facts import clear_facts_settled_by_hit
-
     game = _game()
     nothing_useful = _fact("useful", answer="no")
     game.world.facts = [nothing_useful]
@@ -180,8 +175,6 @@ def test_a_hit_does_not_settle_a_no(load_engine: None) -> None:
 
 @pytest.mark.parametrize("answer", ["no", "exceptional_no"])
 def test_a_hit_overrules_what_a_search_miss_would_settle(load_engine: None, answer: str) -> None:
-    from straightjacket.engine.gamemaster.facts import overrule_facts_by_hit
-
     game = _game()
     nothing_useful, open_door = _fact("useful", answer=answer), _fact("locked", answer="no")
     game.world.facts = [nothing_useful, open_door]
@@ -191,8 +184,6 @@ def test_a_hit_overrules_what_a_search_miss_would_settle(load_engine: None, answ
 
 @pytest.mark.parametrize(("answer", "outcome"), [("no", "failure"), ("yes", "success")])
 def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, outcome: str) -> None:
-    from straightjacket.engine.gamemaster.facts import overrule_facts_by_hit
-
     game = _game()
     useful = _fact("useful", answer=answer)
     game.world.facts = [useful]
@@ -201,8 +192,6 @@ def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, outcom
 
 
 def test_remembered_facts_come_back_only_at_their_own_place(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.facts import remember_facts
-
     game = _game()
     here, elsewhere = _fact("locked"), _fact("useful", location="Harbor Market")
     remember_facts(game, [here, elsewhere])
@@ -210,9 +199,6 @@ def test_remembered_facts_come_back_only_at_their_own_place(load_engine: None) -
 
 
 def test_the_odds_of_every_fact_type_are_read_for_its_subject(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.facts import fact_odds
-    from straightjacket.engine.models import FactRequest
-
     game = _game()
     cfg = gm().fact_resolution
     scale = [entry["odds"] for entry in gm().fate.likelihood_rules.score_to_odds]
@@ -222,9 +208,6 @@ def test_the_odds_of_every_fact_type_are_read_for_its_subject(load_engine: None)
 
 
 def test_a_doublet_queues_a_random_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.gamemaster.facts import resolve_fact
-    from straightjacket.engine.gamemaster.random_events import drain_pending_events
-
     _chart_rolls(monkeypatch, 55)
     drain_pending_events()
     resolve_fact(_game(), FactRequest(fact_type="locked", about="here"))
@@ -233,8 +216,6 @@ def test_a_doublet_queues_a_random_event(load_engine: None, monkeypatch: pytest.
 
 
 def test_the_brain_schema_offers_only_known_types_and_subjects(load_engine: None) -> None:
-    from straightjacket.engine.ai.schemas import get_brain_output_schema
-
     facts = get_brain_output_schema(["adventure/face_danger"], [], [], ["npc_1"], [], [], [])["properties"][
         "undetermined_facts"
     ]
@@ -262,20 +243,12 @@ def _brain(**overrides: Any) -> dict[str, Any]:
 
 
 def test_the_brain_rejects_a_fact_about_an_unknown_npc(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
-    from tests._mocks import MockProvider
-
     content = json.dumps(_brain(undetermined_facts=[{"fact_type": "alert", "about": "npc_9"}]))
     with pytest.raises(AIUnavailableError, match="cannot be about"):
         call_brain(MockProvider(response_content=content), _game(), "I slip past the guard")
 
 
 def test_the_brain_rejects_a_progress_roll_on_a_track_of_another_kind(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
-    from tests._mocks import MockProvider
-
     game = _game()
     game.progress_tracks.append(
         new_track(track_id="expedition_ridge", name="Cross the ridge", track_type="expedition", rank="dangerous")
@@ -286,9 +259,6 @@ def test_the_brain_rejects_a_progress_roll_on_a_track_of_another_kind(load_engin
 
 
 def test_the_brain_prompt_lists_the_fact_types(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-    from tests._mocks import MockProvider
-
     provider = MockProvider(response_content=json.dumps(_brain()))
     call_brain(provider, _game(), "I force the vault door")
     system = provider.calls[0]["system"]
@@ -297,9 +267,6 @@ def test_the_brain_prompt_lists_the_fact_types(load_engine: None) -> None:
 
 
 def _force(monkeypatch: pytest.MonkeyPatch, result: str, scene_roll: int = 10) -> None:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.gamemaster import scene
-
     force_result(monkeypatch, result)
 
     def _scene_with_fixed_roll(game: GameState) -> SceneSetup:
@@ -312,8 +279,6 @@ def _force(monkeypatch: pytest.MonkeyPatch, result: str, scene_roll: int = 10) -
 def test_the_turn_resolves_facts_at_the_place_it_moves_to(
     load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_turn
-
     _force(monkeypatch, "MISS")
     provider = TurnProvider(_brain(location_change={"name": "Archive Vault", "kind": "location"}))
     game = _game()
@@ -328,8 +293,6 @@ def test_the_turn_resolves_facts_at_the_place_it_moves_to(
 def test_a_hit_clears_the_fact_but_the_narrator_still_gets_it(
     load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_turn
-
     _force(monkeypatch, "STRONG_HIT")
     provider = TurnProvider(_brain())
     game = _game()
@@ -340,8 +303,6 @@ def test_a_hit_clears_the_fact_but_the_narrator_still_gets_it(
 
 
 def test_a_doublet_event_reaches_the_same_turn(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.game import process_turn
-
     _force(monkeypatch, "MISS")
     _chart_rolls(monkeypatch, 55)
     provider = TurnProvider(_brain())
@@ -353,8 +314,6 @@ def test_a_doublet_event_reaches_the_same_turn(load_engine: None, monkeypatch: p
 def test_an_interrupt_event_is_shown_once(
     load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_turn
-
     _force(monkeypatch, "MISS", scene_roll=2)
     provider = TurnProvider(_brain(undetermined_facts=[]))
     process_turn(provider, _game(), "I force the vault door", stream=None)
@@ -367,9 +326,6 @@ def test_an_interrupt_event_is_shown_once(
 def test_an_oracle_question_covered_by_a_fact_skips_the_oracle_roll(
     load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_turn, turn
-    from straightjacket.engine.prompt_loader import get_prompt
-
     _force(monkeypatch, "MISS")
 
     def _no_oracle(game: Any) -> str:
@@ -394,8 +350,6 @@ def test_an_oracle_question_covered_by_a_fact_skips_the_oracle_roll(
 def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
     load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_momentum_burn, process_turn
-
     _force(monkeypatch, "MISS")
     provider = TurnProvider(_brain())
     game = _game()
@@ -411,8 +365,6 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
 
 
 def _nothing_useful_search(monkeypatch: pytest.MonkeyPatch, result: str) -> TurnProvider:
-    from straightjacket.engine.gamemaster import facts
-
     monkeypatch.setattr(facts, "resolve_fate", lambda game, odds: _fate("no"))
     _force(monkeypatch, result)
     return TurnProvider(
@@ -424,8 +376,6 @@ def _nothing_useful_search(monkeypatch: pytest.MonkeyPatch, result: str) -> Turn
 def test_a_search_that_hits_is_not_told_that_nothing_useful_is_here(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
-    from straightjacket.engine.game import process_turn
-
     provider = _nothing_useful_search(monkeypatch, result)
     game = _game()
     _n, _r, _o, _d = process_turn(provider, game, "I search the shelves", stream=None)
@@ -436,8 +386,6 @@ def test_a_search_that_hits_is_not_told_that_nothing_useful_is_here(
 
 
 def test_a_burn_to_a_hit_overrules_nothing_useful(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.game import process_momentum_burn, process_turn
-
     provider = _nothing_useful_search(monkeypatch, "MISS")
     game = _game()
     _n, _r, offer, _d = process_turn(provider, game, "I search the shelves", stream=None)
@@ -452,9 +400,6 @@ def test_a_burn_to_a_hit_overrules_nothing_useful(load_engine: None, monkeypatch
 def test_a_correction_reuses_the_facts_of_the_turn(
     load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.game import process_turn
-
     _force(monkeypatch, "MISS")
     provider = TurnProvider(_brain())
     game = _game()
@@ -486,9 +431,6 @@ def test_facts_survive_a_save_round_trip(load_engine: None) -> None:
 def test_fact_resolution_yaml_with_a_wrong_value_refuses_to_load(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, change: Callable[[dict[str, object]], None], message: str
 ) -> None:
-    from straightjacket.engine.gamemaster import config as gamemaster_config
-    from tests._helpers import change_config
-
     change_config(monkeypatch, tmp_path, gamemaster_config, "_gm", "fact_resolution", change)
     with pytest.raises(ValueError, match=message):
         gamemaster_config.gm()
@@ -498,9 +440,6 @@ def test_fact_resolution_yaml_with_a_wrong_value_refuses_to_load(
 def test_a_target_that_is_not_present_leaves_the_scene(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, answer: str, target: str | None
 ) -> None:
-    from straightjacket.engine.game import process_turn
-    from straightjacket.engine.gamemaster import facts
-
     monkeypatch.setattr(facts, "resolve_fate", lambda game, odds: _fate(answer))
     _force(monkeypatch, "WEAK_HIT")
     provider = TurnProvider(

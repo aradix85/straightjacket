@@ -4,10 +4,12 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.game.turn import process_turn
 from straightjacket.engine.gamemaster.engine_memories import generate_engine_memories
 from straightjacket.engine.gamemaster.moves import asks_the_oracle, is_dialog_branch
 from straightjacket.engine.ruleset.answers import action_kind
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.make_move import roll_move
 from tests._helpers import make_brain_result
 from tests._mocks import MockProvider, make_test_game
 
@@ -79,8 +81,6 @@ class TestMoveCategoriesCoverage:
 
 class TestProcessTurnGuard:
     def test_raises_when_game_over(self) -> None:
-        from straightjacket.engine.game.turn import process_turn
-
         game = make_test_game()
         game.end_reason = "death"
 
@@ -94,8 +94,6 @@ class TestProcessTurnGuard:
 
 class TestExecuteRollStatNoneRejected:
     def test_action_roll_with_stat_none_raises(self) -> None:
-        from straightjacket.engine.ruleset.make_move import roll_move
-
         game = make_test_game()
         game.setting_id = "classic"
         brain = make_brain_result(move="adventure/face_danger", stat="none", dialog_only=False)
@@ -105,8 +103,6 @@ class TestExecuteRollStatNoneRejected:
             roll_move(game, brain, None)
 
     def test_action_roll_with_real_stat_succeeds(self) -> None:
-        from straightjacket.engine.ruleset.make_move import roll_move
-
         game = make_test_game()
         game.setting_id = "classic"
         brain = make_brain_result(move="adventure/face_danger", stat="wits", dialog_only=False)

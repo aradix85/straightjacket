@@ -1,14 +1,14 @@
-from .config_loader import narration_language
-from .engine_loader import eng
-from .format_utils import describe_by_threshold
-from .gamemaster.pacing import get_pacing_hint
-from .models import GameState
-from .prompt_loader import get_prompt, get_prompt_prefix
-from .ruleset.answers import results_by_outcome
-from .setting.packages import load_package
-from .story_state import get_current_act
-from .xml_utils import xa as _xa
-from .xml_utils import xe as _xe
+from straightjacket.engine.config_loader import narration_language
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.format_utils import describe_by_threshold
+from straightjacket.engine.gamemaster.pacing import get_pacing_hint
+from straightjacket.engine.models import GameState
+from straightjacket.engine.prompt_loader import get_prompt, get_prompt_prefix
+from straightjacket.engine.ruleset.answers import results_by_outcome
+from straightjacket.engine.setting.packages import load_package
+from straightjacket.engine.story_state import get_current_act
+from straightjacket.engine.xml_utils import xa as _xa
+from straightjacket.engine.xml_utils import xe as _xe
 
 
 def world_tag(game: GameState) -> str:

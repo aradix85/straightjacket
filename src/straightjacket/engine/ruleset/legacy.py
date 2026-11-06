@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ...i18n import t
-from ..logging_util import log
-from ..models import CampaignState, GameState, ProgressTrack, ThreatData
-from .assets import asset_data, enable_next_ability, enabled_abilities
-from .config import rules
-from .datasworn import load_ruleset
-from .progress import filled_boxes, new_track, ranks
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import CampaignState
+from straightjacket.engine.ruleset.assets import asset_data, enable_next_ability, enabled_abilities
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.progress import filled_boxes, new_track, ranks
+from straightjacket.i18n import t
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, ProgressTrack, ThreatData
 
 
 def _legacy_tracks(setting_id: str) -> dict[str, dict[str, Any]]:

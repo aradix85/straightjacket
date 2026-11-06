@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from ..models import GameState, NpcData
-from .config import gm
-from .config_types import StanceMatrixEntry
-from .questions import answers
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.questions import answers
+
+if TYPE_CHECKING:
+    from straightjacket.engine.gamemaster.config_types import StanceMatrixEntry
+    from straightjacket.engine.models import GameState, NpcData
 
 
 def resolve_npc_stance(

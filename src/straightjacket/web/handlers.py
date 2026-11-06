@@ -5,15 +5,15 @@ from typing import Any
 
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from ..engine.ai.api_client import get_provider
-from ..engine.ai.provider_base import AIUnavailableError
-from ..engine.ai.recap import call_recap
-from ..engine.ai.sentence_stream import SentenceStream
-from ..engine.config_loader import cfg
-from ..engine.correction import process_correction
-from ..engine.director import reset_stale_reflection_flags
-from ..engine.engine_loader import eng
-from ..engine.game import (
+from straightjacket.engine.ai.api_client import get_provider
+from straightjacket.engine.ai.provider_base import AIUnavailableError
+from straightjacket.engine.ai.recap import call_recap
+from straightjacket.engine.ai.sentence_stream import SentenceStream
+from straightjacket.engine.config_loader import cfg
+from straightjacket.engine.correction import process_correction
+from straightjacket.engine.director import reset_stale_reflection_flags
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.game import (
     BurnOffer,
     generate_epilogue,
     prepare_succession,
@@ -24,13 +24,19 @@ from ..engine.game import (
     start_new_game,
     start_succession_with_character,
 )
-from ..engine.logging_util import log
-from ..engine.models import GameState, TurnSnapshot
-from ..engine.persistence import IncompatibleSaveError, delete_save, list_saves_with_info, load_game, save_game
-from ..engine.ruleset.legacy import advance_asset, advance_cost
-from ..engine.user_management import InvalidNameError, create_user, delete_user, list_users
-from ..i18n import t
-from .serializers import (
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, TurnSnapshot
+from straightjacket.engine.persistence import (
+    IncompatibleSaveError,
+    delete_save,
+    list_saves_with_info,
+    load_game,
+    save_game,
+)
+from straightjacket.engine.ruleset.legacy import advance_asset, advance_cost
+from straightjacket.engine.user_management import InvalidNameError, create_user, delete_user, list_users
+from straightjacket.i18n import t
+from straightjacket.web.serializers import (
     build_creation_options,
     build_narrative_status,
     build_succession_summary,
@@ -38,7 +44,7 @@ from .serializers import (
     build_tracks_status,
     highlight_dialog,
 )
-from .session import Session
+from straightjacket.web.session import Session
 
 
 async def _send(ws: WebSocket, msg: dict[str, Any]) -> None:

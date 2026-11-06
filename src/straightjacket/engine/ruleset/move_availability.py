@@ -1,15 +1,22 @@
 from __future__ import annotations
 
-from ..models import GameState
-from .config import rules
-from .config_types import (
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.config_types import (
     ActiveTrackCondition,
     BondedTrackCondition,
-    MoveAvailabilityCondition,
-    MoveAvailabilityRule,
     NoActiveTrackCondition,
 )
-from .moves import Move, get_moves
+from straightjacket.engine.ruleset.moves import get_moves
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.config_types import (
+        MoveAvailabilityCondition,
+        MoveAvailabilityRule,
+    )
+    from straightjacket.engine.ruleset.moves import Move
 
 
 def available_moves(game: GameState) -> dict[str, Move]:

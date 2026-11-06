@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from ..ai.provider_base import AIProvider, NarrationSink
-from ..models import (
+from straightjacket.engine.ai.provider_base import AIProvider, NarrationSink
+from straightjacket.engine.models import (
     BrainResult,
     ClockEvent,
     ClockFillResult,
@@ -16,7 +16,7 @@ from ..models import (
     ThreatEvent,
     TurnSnapshot,
 )
-from ..ruleset.moves import Move
+from straightjacket.engine.ruleset.moves import Move
 
 
 @dataclass

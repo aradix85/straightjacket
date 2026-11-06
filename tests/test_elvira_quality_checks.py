@@ -1,10 +1,9 @@
 from tests._helpers import make_game_state, make_npc
+from tests.elvira.elvira_bot.quality_checks import check_npc_spatial_consistency
+from tests.elvira.elvira_bot.recorder import record_turn
 
 
 def _seen_moving(old: str, new: str) -> list[str]:
-    from tests.elvira.elvira_bot.quality_checks import check_npc_spatial_consistency
-    from tests.elvira.elvira_bot.recorder import record_turn
-
     game = make_game_state()
     npc = make_npc(id="npc_1", name="Saffi", status="active", last_location=old)
     game.npcs = [npc]

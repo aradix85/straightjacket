@@ -1,7 +1,11 @@
+import json
 from typing import Any
 
+from straightjacket.engine.ai.metadata import apply_narrator_metadata, process_deceased_npcs
+from straightjacket.engine.ai.narrator import call_narrator_metadata
 from straightjacket.engine.models import GameState
-from tests._helpers import make_game_state, make_memory, make_npc
+from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc
+from tests._mocks import MockProvider
 
 
 def _game() -> GameState:
@@ -24,8 +28,6 @@ def _game() -> GameState:
 
 
 def _apply(game: GameState, present: set[str], **reported: list[dict[str, Any]]) -> None:
-    from straightjacket.engine.ai.metadata import apply_narrator_metadata
-
     metadata: dict[str, Any] = {
         "new_npcs": [],
         "npc_renames": [],
@@ -63,8 +65,6 @@ def test_a_reported_death_of_an_unknown_npc_changes_nothing(load_engine: None) -
 
 
 def test_an_openings_reported_death_needs_no_presence(load_engine: None) -> None:
-    from straightjacket.engine.ai.metadata import process_deceased_npcs
-
     game = _game()
     process_deceased_npcs(game, [{"npc_id": "npc_1"}, {"npc_id": "nobody"}])
     assert [n.status for n in game.npcs] == ["deceased", "active"]
@@ -88,12 +88,6 @@ def test_a_lore_figure_that_is_known_or_nameless_adds_no_npc(load_engine: None) 
 
 
 def test_a_rename_when_no_npc_is_known_fails_the_extraction_only(load_engine: None) -> None:
-    import json
-
-    from straightjacket.engine.ai.narrator import call_narrator_metadata
-    from tests._helpers import make_brain_result
-    from tests._mocks import MockProvider
-
     game = make_game_state(player_name="Hero")
     reply = {
         "new_npcs": [{"name": "Orla", "description": "a ferrywoman", "disposition": "neutral"}],

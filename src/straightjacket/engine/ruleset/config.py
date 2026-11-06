@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..config_binding import RawSections, build_strict, reject_unknown
-from ..config_loader import PROJECT_ROOT
-from ..logging_util import log
-from ..yaml_merge import load_yaml_dir
-from .config_types import (
+from straightjacket.engine.config_binding import RawSections, build_strict, reject_unknown
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.ruleset.config_types import (
     ActiveTrackCondition,
     AdvanceAThreatConfig,
     AdvanceMarks,
@@ -25,7 +24,6 @@ from .config_types import (
     LegacyConfig,
     MetersConfig,
     MomentumConfig,
-    MoveAvailabilityCondition,
     MoveAvailabilityRule,
     NoActiveTrackCondition,
     NpcCarryoverEntry,
@@ -42,6 +40,12 @@ from .config_types import (
     ThreatConfig,
     ThreatCreationMappingEntry,
 )
+from straightjacket.engine.yaml_merge import load_yaml_dir
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ruleset.config_types import (
+        MoveAvailabilityCondition,
+    )
 
 _CONFIG_DIR = PROJECT_ROOT / "ruleset"
 

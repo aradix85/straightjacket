@@ -2,27 +2,27 @@ import random as _random_module
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from ..ai.blueprint_voicing import call_blueprint_voicing
-from ..ai.metadata import process_deceased_npcs
-from ..ai.narrator import call_narrator, call_opening_setup
-from ..ai.provider_base import AIProvider
-from ..crafters.blueprint import assemble_blueprint_seed_from_ac, materialize_blueprint
-from ..director import new_guidance
-from ..gamemaster.clocks import start_opening_clock
-from ..gamemaster.config import gm
-from ..gamemaster.random_events import add_character
-from ..gamemaster.world import new_world
-from ..logging_util import log
-from ..models import GameState, NarrativeState, PlayerPreferences
-from ..parser import parse_narrator_response
-from ..prompt_boundary import build_new_game_prompt
-from ..prompt_loader import get_prompt
-from ..ruleset.character import Character, give_character, make_character
-from ..ruleset.config import rules
-from ..ruleset.legacy import new_campaign
-from ..ruleset.meters import starting_resources
-from ..setting.packages import SettingPackage, load_package
-from .setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
+from straightjacket.engine.ai.metadata import process_deceased_npcs
+from straightjacket.engine.ai.narrator import call_narrator, call_opening_setup
+from straightjacket.engine.ai.provider_base import AIProvider
+from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac, materialize_blueprint
+from straightjacket.engine.director import new_guidance
+from straightjacket.engine.game.setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.gamemaster.clocks import start_opening_clock
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.random_events import add_character
+from straightjacket.engine.gamemaster.world import new_world
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, NarrativeState, PlayerPreferences
+from straightjacket.engine.parser import parse_narrator_response
+from straightjacket.engine.prompt_boundary import build_new_game_prompt
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.character import Character, give_character, make_character
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.legacy import new_campaign
+from straightjacket.engine.ruleset.meters import starting_resources
+from straightjacket.engine.setting.packages import SettingPackage, load_package
 
 
 def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> None:

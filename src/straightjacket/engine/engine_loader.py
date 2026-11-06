@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-from .config_loader import PROJECT_ROOT
-from .engine_config import EngineSettings, parse_engine_yaml
-from .logging_util import log
-from .yaml_merge import load_yaml_dir
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.engine_config import parse_engine_yaml
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.yaml_merge import load_yaml_dir
+
+if TYPE_CHECKING:
+    from straightjacket.engine.engine_config import EngineSettings
 
 _CONFIG_DIR = PROJECT_ROOT / "engine"
 

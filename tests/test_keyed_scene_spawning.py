@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -14,7 +15,6 @@ from straightjacket.engine.gamemaster.keyed_scenes import (
     evaluate_keyed_scenes,
 )
 from straightjacket.engine.gamemaster.random_events import generate_random_event, spawn_keyed_scene_from_random_event
-from straightjacket.engine.models import GameState, KeyedScene, ProgressTrack
 from tests._helpers import (
     make_character_entry,
     make_clock,
@@ -27,6 +27,9 @@ from tests._helpers import (
     make_threat,
     make_world_state,
 )
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, KeyedScene, ProgressTrack
 
 
 def _seed_game(**world_kwargs: object) -> GameState:

@@ -1,9 +1,9 @@
 import re
 from collections.abc import Callable
 
-from ..engine_loader import eng
-from ..parser import clean_sentence
-from .provider_base import decode_literal_unicode_escapes
+from straightjacket.engine.ai.provider_base import decode_literal_unicode_escapes
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.parser import clean_sentence
 
 
 class SentenceStream:

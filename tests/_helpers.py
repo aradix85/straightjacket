@@ -4,42 +4,59 @@ import dataclasses
 import logging
 import random
 import shutil
-from collections.abc import Callable
-from pathlib import Path
-from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
-import pytest
 import yaml
 
+from straightjacket.engine import engine_loader
+from straightjacket.engine.crafters import config as crafters_config
+from straightjacket.engine.director import new_guidance
+from straightjacket.engine.gamemaster import config as gamemaster_config
+from straightjacket.engine.gamemaster.world import new_world
+from straightjacket.engine.models import (
+    BrainResult,
+    ChapterSummary,
+    CharacterListEntry,
+    ClockData,
+    GameState,
+    InheritanceRollResult,
+    KeyedScene,
+    MemoryEntry,
+    NarrativeState,
+    NpcData,
+    PlayerPreferences,
+    PlotlineEntry,
+    PredecessorRecord,
+    ProgressTrack,
+    RandomEvent,
+    SceneLogEntry,
+    SceneSetup,
+    ThreadEntry,
+    ThreatData,
+    WorldState,
+)
+from straightjacket.engine.models_story import PossibleEnding, Revelation, StoryAct, StoryBlueprint
+from straightjacket.engine.prompt_dialog import build_dialog_prompt
+from straightjacket.engine.ruleset import config as ruleset_config
+from straightjacket.engine.ruleset import move_effects
+from straightjacket.engine.ruleset.legacy import new_campaign
+from straightjacket.engine.ruleset.meters import starting_resources
+from straightjacket.engine.ruleset.outcome_result import new_outcome
+
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+    from types import ModuleType
+
+    import pytest
+
     from straightjacket.engine.ai.provider_base import AICallSpec
     from straightjacket.engine.crafters.config import CrafterSettings
     from straightjacket.engine.engine_config import EngineSettings
     from straightjacket.engine.gamemaster.config import GameMasterSettings
     from straightjacket.engine.models import (
-        BrainResult,
-        ChapterSummary,
-        CharacterListEntry,
-        ClockData,
         Consequence,
-        GameState,
-        InheritanceRollResult,
-        KeyedScene,
-        MemoryEntry,
-        NarrativeState,
-        NpcData,
-        PlotlineEntry,
-        PredecessorRecord,
-        ProgressTrack,
-        RandomEvent,
-        SceneLogEntry,
-        SceneSetup,
-        ThreadEntry,
-        ThreatData,
-        WorldState,
     )
-    from straightjacket.engine.models_story import PossibleEnding, Revelation, StoryAct, StoryBlueprint
     from straightjacket.engine.ruleset.config import RulesetSettings
     from straightjacket.engine.ruleset.datasworn import RulesFile
     from straightjacket.engine.ruleset.outcome_result import OutcomeResult
@@ -72,8 +89,6 @@ def fix_dice(monkeypatch: pytest.MonkeyPatch, *rolls: int) -> None:
 
 
 def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
-    from straightjacket.engine.ruleset import move_effects
-
     rolled: list[str] = []
     real = move_effects.roll_oracle_result
 
@@ -97,11 +112,6 @@ def emit_engine_log(monkeypatch: pytest.MonkeyPatch, *modules: ModuleType) -> No
 
 
 def make_game_state(**kwargs: Any) -> GameState:
-    from straightjacket.engine.gamemaster.world import new_world
-    from straightjacket.engine.models import GameState, PlayerPreferences
-    from straightjacket.engine.ruleset.legacy import new_campaign
-    from straightjacket.engine.ruleset.meters import starting_resources
-
     kwargs.setdefault("setting_id", "starforged")
     for name in ("player_name", "character_concept", "pronouns", "background_vow", "setting_genre"):
         kwargs.setdefault(name, "")
@@ -120,9 +130,6 @@ def make_game_state(**kwargs: Any) -> GameState:
 
 
 def make_narrative(**kwargs: Any) -> NarrativeState:
-    from straightjacket.engine.director import new_guidance
-    from straightjacket.engine.models import NarrativeState
-
     kwargs.setdefault("scene_count", 0)
     kwargs.setdefault("story_blueprint", None)
     kwargs.setdefault("director_guidance", new_guidance())
@@ -130,8 +137,6 @@ def make_narrative(**kwargs: Any) -> NarrativeState:
 
 
 def make_thread(**kwargs: Any) -> ThreadEntry:
-    from straightjacket.engine.models import ThreadEntry
-
     kwargs.setdefault("thread_type", "vow")
     kwargs.setdefault("source", "creation")
     kwargs.setdefault("weight", 1)
@@ -141,8 +146,6 @@ def make_thread(**kwargs: Any) -> ThreadEntry:
 
 
 def make_character_entry(**kwargs: Any) -> CharacterListEntry:
-    from straightjacket.engine.models import CharacterListEntry
-
     kwargs.setdefault("entry_type", "npc")
     kwargs.setdefault("weight", 1)
     kwargs.setdefault("active", True)
@@ -151,16 +154,12 @@ def make_character_entry(**kwargs: Any) -> CharacterListEntry:
 
 
 def make_plotline(**kwargs: Any) -> PlotlineEntry:
-    from straightjacket.engine.models import PlotlineEntry
-
     kwargs.setdefault("status", "advancement")
     kwargs.setdefault("turning_point_count", 0)
     return PlotlineEntry(**kwargs)
 
 
 def make_keyed_scene(**kwargs: Any) -> KeyedScene:
-    from straightjacket.engine.models import KeyedScene
-
     kwargs.setdefault("id", "ks_1")
     kwargs.setdefault("priority", 1)
     kwargs.setdefault("narrative_hint", "")
@@ -170,8 +169,6 @@ def make_keyed_scene(**kwargs: Any) -> KeyedScene:
 
 
 def make_npc(**kwargs: Any) -> NpcData:
-    from straightjacket.engine.models import NpcData
-
     kwargs.setdefault("disposition", "neutral")
     kwargs.setdefault("status", "active")
     kwargs.setdefault("name_rolled", False)
@@ -186,8 +183,6 @@ def make_npc(**kwargs: Any) -> NpcData:
 
 
 def make_clock(**kwargs: Any) -> ClockData:
-    from straightjacket.engine.models import ClockData
-
     kwargs.setdefault("clock_type", "threat")
     kwargs.setdefault("segments", 6)
     kwargs.setdefault("trigger_description", "")
@@ -201,8 +196,6 @@ def make_clock(**kwargs: Any) -> ClockData:
 
 
 def make_progress_track(**kwargs: Any) -> ProgressTrack:
-    from straightjacket.engine.models import ProgressTrack
-
     kwargs.setdefault("id", "track_test")
     kwargs.setdefault("name", "Test Track")
     kwargs.setdefault("track_type", "vow")
@@ -217,8 +210,6 @@ def make_progress_track(**kwargs: Any) -> ProgressTrack:
 
 
 def make_threat(**kwargs: Any) -> ThreatData:
-    from straightjacket.engine.models import ThreatData
-
     kwargs.setdefault("id", "threat_test")
     kwargs.setdefault("name", "Test Threat")
     kwargs.setdefault("category", "scheming_leader")
@@ -233,8 +224,6 @@ def make_threat(**kwargs: Any) -> ThreatData:
 
 
 def make_memory(**kwargs: Any) -> MemoryEntry:
-    from straightjacket.engine.models import MemoryEntry
-
     kwargs.setdefault("scene", 1)
     kwargs.setdefault("event", "")
     kwargs.setdefault("emotional_weight", "neutral")
@@ -247,8 +236,6 @@ def make_memory(**kwargs: Any) -> MemoryEntry:
 
 
 def make_random_event(**kwargs: Any) -> RandomEvent:
-    from straightjacket.engine.models import RandomEvent
-
     kwargs.setdefault("focus", "npc_action")
     kwargs.setdefault("meaning_action", "Act")
     kwargs.setdefault("meaning_subject", "Thing")
@@ -259,14 +246,10 @@ def make_random_event(**kwargs: Any) -> RandomEvent:
 
 
 def make_outcome(**kwargs: Any) -> OutcomeResult:
-    from straightjacket.engine.ruleset.outcome_result import new_outcome
-
     return dataclasses.replace(new_outcome(), **kwargs)
 
 
 def make_brain_result(**kwargs: Any) -> BrainResult:
-    from straightjacket.engine.models import BrainResult
-
     kwargs.setdefault("move", "dialog")
     kwargs.setdefault("stat", "none")
     kwargs.setdefault("approach", "")
@@ -280,8 +263,6 @@ def make_brain_result(**kwargs: Any) -> BrainResult:
 
 
 def make_world_state(**kwargs: Any) -> WorldState:
-    from straightjacket.engine.models import WorldState
-
     kwargs.setdefault("chaos_factor", 5)
     kwargs.setdefault("current_location", "")
     kwargs.setdefault("current_scene_context", "")
@@ -291,8 +272,6 @@ def make_world_state(**kwargs: Any) -> WorldState:
 
 
 def make_scene_setup(**kwargs: Any) -> SceneSetup:
-    from straightjacket.engine.models import SceneSetup
-
     kwargs.setdefault("scene_type", "expected")
     kwargs.setdefault("interrupt_event", None)
     kwargs.setdefault("narrative_hint", "")
@@ -300,8 +279,6 @@ def make_scene_setup(**kwargs: Any) -> SceneSetup:
 
 
 def make_scene_log_entry(**kwargs: Any) -> SceneLogEntry:
-    from straightjacket.engine.models import SceneLogEntry
-
     kwargs.setdefault("scene", 1)
     kwargs.setdefault("scene_type", "expected")
     kwargs.setdefault("summary", "")
@@ -313,8 +290,6 @@ def make_scene_log_entry(**kwargs: Any) -> SceneLogEntry:
 
 
 def make_chapter_summary(**kwargs: Any) -> ChapterSummary:
-    from straightjacket.engine.models import ChapterSummary
-
     kwargs.setdefault("chapter", 1)
     kwargs.setdefault("title", "")
     kwargs.setdefault("summary", "")
@@ -323,8 +298,6 @@ def make_chapter_summary(**kwargs: Any) -> ChapterSummary:
 
 
 def make_inheritance_roll(**kwargs: Any) -> InheritanceRollResult:
-    from straightjacket.engine.models import InheritanceRollResult
-
     kwargs.setdefault("track_name", "quests")
     kwargs.setdefault("result", "MISS")
     kwargs.setdefault("new_filled_boxes", 0)
@@ -332,8 +305,6 @@ def make_inheritance_roll(**kwargs: Any) -> InheritanceRollResult:
 
 
 def make_predecessor(**kwargs: Any) -> PredecessorRecord:
-    from straightjacket.engine.models import PredecessorRecord
-
     kwargs.setdefault("player_name", "Aria")
     kwargs.setdefault("pronouns", "she/her")
     kwargs.setdefault("character_concept", "")
@@ -412,8 +383,6 @@ def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
 
 
 def dialog_prompt(game: Any, **kwargs: Any) -> str:
-    from straightjacket.engine.prompt_dialog import build_dialog_prompt
-
     return build_dialog_prompt(game, make_brain_result(), **dialog_prompt_kwargs(**kwargs))
 
 
@@ -427,8 +396,6 @@ def make_director_guidance(**kwargs: Any) -> dict[str, Any]:
 
 
 def make_act(**kwargs: Any) -> StoryAct:
-    from straightjacket.engine.models_story import StoryAct
-
     kwargs.setdefault("phase", "setup")
     kwargs.setdefault("title", "")
     kwargs.setdefault("goal", "")
@@ -439,8 +406,6 @@ def make_act(**kwargs: Any) -> StoryAct:
 
 
 def make_revelation(**kwargs: Any) -> Revelation:
-    from straightjacket.engine.models_story import Revelation
-
     kwargs.setdefault("id", "r1")
     kwargs.setdefault("content", "")
     kwargs.setdefault("act_number", 1)
@@ -450,16 +415,12 @@ def make_revelation(**kwargs: Any) -> Revelation:
 
 
 def make_ending(**kwargs: Any) -> PossibleEnding:
-    from straightjacket.engine.models_story import PossibleEnding
-
     kwargs.setdefault("type", "")
     kwargs.setdefault("description", "")
     return PossibleEnding(**kwargs)
 
 
 def make_blueprint(**kwargs: Any) -> StoryBlueprint:
-    from straightjacket.engine.models_story import StoryBlueprint
-
     kwargs.setdefault("central_conflict", "")
     kwargs.setdefault("antagonist_force", "")
     kwargs.setdefault("thematic_thread", "")
@@ -468,11 +429,6 @@ def make_blueprint(**kwargs: Any) -> StoryBlueprint:
 
 
 def install_config(settings: SettingsSet) -> None:
-    from straightjacket.engine import engine_loader
-    from straightjacket.engine.crafters import config as crafters_config
-    from straightjacket.engine.gamemaster import config as gamemaster_config
-    from straightjacket.engine.ruleset import config as ruleset_config
-
     engine_loader._eng, gamemaster_config._gm, crafters_config._crafter, ruleset_config._rules = settings
 
 

@@ -2,6 +2,7 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.gamemaster import fate
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.fate import (
     resolve_fate,
@@ -89,8 +90,6 @@ def test_a_fate_check_doublet_within_the_chaos_factor_brings_a_random_event(
 def test_resolve_fate_asks_the_configured_method_with_the_games_chaos_factor(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.gamemaster import fate
-
     game = make_game_state()
     game.world.chaos_factor = 7
     asked: list[tuple[str, str, int]] = []

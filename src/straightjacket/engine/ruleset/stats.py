@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .config import rules
-from .datasworn import load_ruleset
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
 
 _cache: dict[str, dict[str, str]] = {}
 

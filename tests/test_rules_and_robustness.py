@@ -1,17 +1,22 @@
 from __future__ import annotations
 
+import json
+import random
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
 from typing_extensions import override
 
+from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
 from straightjacket.engine.ai.metadata import apply_narrator_metadata
+from straightjacket.engine.ai.provider_base import AIResponse
+from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.director import apply_director_guidance
-from straightjacket.engine.models import GameState, NpcData
 from straightjacket.engine.ruleset.meters import reset_momentum
+from tests._creation import library_game
 from tests._helpers import (
     keyed_reflections,
     make_director_guidance,
@@ -22,6 +27,10 @@ from tests._helpers import (
     schema_of,
 )
 from tests._mocks import ScriptedProvider
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AICallSpec
+    from straightjacket.engine.models import GameState, NpcData
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -182,14 +191,6 @@ def test_a_name_revealed_for_an_unnamed_figure_is_taken(load_engine: None) -> No
 
 
 def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(load_engine: None) -> None:
-    import json
-    import random
-
-    from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
-    from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-    from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
-    from tests._creation import library_game
-
     game = library_game()
     seed = assemble_blueprint_seed_from_ac(random.Random(1), game)
     blueprint = crafter().adventure_crafter.blueprint

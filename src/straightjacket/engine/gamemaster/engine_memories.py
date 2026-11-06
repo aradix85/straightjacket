@@ -1,12 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
-from ..engine_loader import eng
-from ..models import BrainResult, GameState, MemoryEntry, NpcData
-from .config import gm
-from .moves import is_dialog_branch
-from .questions import answers
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.moves import is_dialog_branch
+from straightjacket.engine.gamemaster.npc.memory import score_importance
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.models import MemoryEntry
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from straightjacket.engine.models import BrainResult, GameState, NpcData
 
 
 def _memory_key(move: str, outcome: str) -> str:
@@ -25,8 +31,6 @@ def generate_engine_memories(
     activated_npc_ids: set[str],
     consequences: Sequence[str],
 ) -> list[tuple[NpcData, MemoryEntry]]:
-    from .npc.memory import score_importance
-
     templates = gm().memory_templates
     result_text_map = gm().get_raw("memory_result_text")
     scene = game.narrative.scene_count

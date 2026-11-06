@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.director import build_director_prompt
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState
 from straightjacket.engine.tools import execute_tool_call, get_tools, handler, registry
@@ -70,8 +71,6 @@ def test_query_game_state_returns_threads_clocks_and_npcs_at_once() -> None:
 
 
 def test_query_game_state_shows_the_memories_the_reflection_block_shows(load_engine: None) -> None:
-    from straightjacket.engine.director import build_director_prompt
-
     game = _game_with_data()
     kira = game.npcs[0]
     kira.memory.append(make_memory(scene=4, event="Doubts the player", importance=6, type="reflection"))

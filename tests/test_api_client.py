@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
@@ -11,6 +9,10 @@ import yaml
 from straightjacket.engine import config_loader
 from straightjacket.engine.ai import api_client
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 class _FakeAdapter:

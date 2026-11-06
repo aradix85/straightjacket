@@ -1,4 +1,5 @@
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.suffer import start_dying_clock
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_scene_log_entry
 from tests.elvira.elvira_bot.invariants import assert_game_state
 from tests.elvira.elvira_bot.quality_checks import check_narration_quality
@@ -147,8 +148,6 @@ def test_catches_invalid_clock_type(load_engine: None) -> None:
 
 
 def test_a_dying_clock_is_a_valid_clock(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.suffer import start_dying_clock
-
     game = _clean_game()
     game.resources.meters["health"] = 0
     game.crisis_mode = True

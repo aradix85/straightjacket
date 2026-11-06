@@ -3,24 +3,24 @@ import asyncio
 import pytest
 from typing_extensions import override
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.ai.brain import call_brain
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, AIUnavailableError
+from straightjacket.engine.game import process_turn
+from straightjacket.engine.game.finalization import narrate_scene
+from straightjacket.i18n import t
+from straightjacket.web import handlers
+from straightjacket.web.session import new_session
 from tests._creation import TurnProvider, brain_answer, correction_answer, force_result, library_game
 from tests._helpers import make_game_state
 from tests._mocks import MockProvider, RecordingWebSocket
 
 
 def test_a_brain_failure_raises_instead_of_becoming_dialog(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
-
     with pytest.raises(AIUnavailableError, match="brain"):
         call_brain(MockProvider(fail=True), make_game_state(setting_id="starforged"), "I look around")
 
 
 def test_an_empty_narration_raises(load_engine: None) -> None:
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
-    from straightjacket.engine.game.finalization import narrate_scene
-
     with pytest.raises(AIUnavailableError, match="empty narration"):
         narrate_scene(MockProvider(response_content=""), make_game_state(setting_id="starforged"), "<scene/>")
 
@@ -34,10 +34,6 @@ class _NarratorDown(TurnProvider):
 
 
 def test_a_failed_turn_is_rolled_back_and_reported(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.i18n import t
-    from straightjacket.web import handlers
-    from straightjacket.web.session import new_session
-
     game = library_game()
     before = game.to_dict()
     session = new_session()
@@ -58,10 +54,6 @@ def test_a_failed_turn_is_rolled_back_and_reported(load_engine: None, monkeypatc
 def test_a_failed_state_correction_is_rolled_back_with_its_backstory(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_turn
-    from straightjacket.web import handlers
-    from straightjacket.web.session import new_session
-
     game = library_game()
     force_result(monkeypatch, "MISS")
     process_turn(TurnProvider(brain_answer()), game, "I leap the gorge", None)

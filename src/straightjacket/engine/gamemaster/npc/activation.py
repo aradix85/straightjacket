@@ -1,11 +1,11 @@
 import math
 
-from ...logging_util import log
-from ...models import BrainResult, GameState, NpcData
-from ..config import gm
-from ..questions import answers
-from .lifecycle import reactivate_npc
-from .matching import find_npc, named_in, proper_name_words, stands_in
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.lifecycle import reactivate_npc
+from straightjacket.engine.gamemaster.npc.matching import find_npc, named_in, proper_name_words, stands_in
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import BrainResult, GameState, NpcData
 
 
 def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:

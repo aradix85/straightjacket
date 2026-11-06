@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from ..engine_loader import eng
-from ..logging_util import log
-from ..models import GameState
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState
 
 Tool = Callable[[GameState], dict[str, Any]]
 

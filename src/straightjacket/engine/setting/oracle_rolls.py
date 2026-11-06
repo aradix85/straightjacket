@@ -4,10 +4,9 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from .loader import OracleRow, OracleTable
-
 if TYPE_CHECKING:
-    from .packages import SettingPackage
+    from straightjacket.engine.setting.loader import OracleRow, OracleTable
+    from straightjacket.engine.setting.packages import SettingPackage
 
 LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 PLACEHOLDER_PATTERN = re.compile(r"\{(\w+)\}")

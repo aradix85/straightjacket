@@ -1,10 +1,10 @@
 import re
 from operator import itemgetter
 
-from ...emotions_loader import importance_map, keyword_boosts
-from ...logging_util import log
-from ...models import MemoryEntry, NpcData
-from ..config import gm
+from straightjacket.engine.emotions_loader import importance_map, keyword_boosts
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import MemoryEntry, NpcData
 
 
 def score_importance(emotional_weight: str, event_text: str) -> int:

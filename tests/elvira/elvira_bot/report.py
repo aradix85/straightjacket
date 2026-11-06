@@ -3,14 +3,16 @@ from __future__ import annotations
 import re
 import statistics
 from collections import Counter
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from straightjacket.engine.config_loader import model_for_role
+from tests.elvira.elvira_bot.judge import CRITERIA
 
-from .coverage import Coverage
-from .judge import CRITERIA
-from .models import SessionLog, TurnRecord
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from tests.elvira.elvira_bot.coverage import Coverage
+    from tests.elvira.elvira_bot.models import SessionLog, TurnRecord
 
 
 def _warning_problems(slog: SessionLog) -> list[str]:

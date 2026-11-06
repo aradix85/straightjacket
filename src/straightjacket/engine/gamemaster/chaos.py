@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from ..logging_util import log
-from ..models import GameState, WorldState
-from .config import gm
-from .npc.matching import find_npc
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.logging_util import log
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, WorldState
 
 
 def tick_chaos(world: WorldState, direction: int) -> None:

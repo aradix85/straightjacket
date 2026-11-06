@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from straightjacket.engine.models import GameState, NpcData, ProgressTrack
 from straightjacket.engine.ruleset.bond import seal_bond
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.meters import max_momentum
 from straightjacket.engine.ruleset.progress import new_track
 from straightjacket.engine.ruleset.threats import add_threat
+from tests.elvira.elvira_bot.coverage import TARGETS
+from tests.elvira.elvira_bot.fixed_results import check_results
 
-from .coverage import TARGETS
-from .fixed_results import check_results
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, NpcData, ProgressTrack
 
 
 def check_expectations(spec: dict[str, Any]) -> None:

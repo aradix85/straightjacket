@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from ..config_loader import PROJECT_ROOT
-from ..logging_util import log
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.logging_util import log
 
 _MYTHIC_DATA_PATH = PROJECT_ROOT / "data" / "mythic_gme_2e.json"
 

@@ -1,12 +1,18 @@
 from __future__ import annotations
 
-from ..gamemaster.clocks import new_clock
-from ..logging_util import log
-from ..models import ClockData, GameState, consequence
-from .config import rules
-from .impacts import apply_impact, impact_consequence
-from .meters import adjust_momentum, lose
-from .outcome_result import OutcomeResult, move_outcome_config
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.gamemaster.clocks import new_clock
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import consequence
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.impacts import apply_impact, impact_consequence
+from straightjacket.engine.ruleset.meters import adjust_momentum, lose
+from straightjacket.engine.ruleset.outcome_result import move_outcome_config
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import ClockData, GameState
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
 def suffer(game: GameState, meter: str, amount: int, result: OutcomeResult) -> None:

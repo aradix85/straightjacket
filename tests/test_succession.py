@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import random
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
+import straightjacket.engine.ruleset.rolls as rolls_mod
 from straightjacket.engine.game.succession import (
     END_REASONS,
     prepare_succession,
     start_succession_with_character,
 )
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import CampaignState, GameState, NpcData, ProgressTrack, TurnSnapshot
+from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
+from straightjacket.engine.models import CampaignState
+from straightjacket.engine.ruleset.bond import get_npc_bond, seal_bond
 from straightjacket.engine.ruleset.meters import starting_resources
+from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 from straightjacket.engine.ruleset.progress import filled_boxes, new_track
 from straightjacket.engine.ruleset.succession import (
     apply_npc_carryover,
@@ -21,6 +25,7 @@ from straightjacket.engine.ruleset.succession import (
     seed_successor_legacy,
     threads_for_successor,
 )
+from straightjacket.web.serializers import build_succession_summary
 from tests._creation import (
     OPENING_TEXT,
     OpeningProvider,
@@ -39,6 +44,9 @@ from tests._helpers import (
     make_thread,
     make_threat,
 )
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, NpcData, ProgressTrack, TurnSnapshot
 
 
 @pytest.fixture
@@ -108,8 +116,6 @@ def test_run_inheritance_rolls_outcomes(
     g = make_game_state()
     g.campaign.legacy["quests"].ticks = ticks
     random.seed(0)
-
-    import straightjacket.engine.ruleset.rolls as rolls_mod
 
     class _Dice:
         def __init__(self, values: list[int]) -> None:
@@ -231,8 +237,6 @@ def test_carryover_keeps_only_the_connections_of_every_track_it_is_given(aria: G
 
 
 def test_a_classic_successor_keeps_the_people_but_not_the_bonds(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.bond import get_npc_bond, seal_bond
-
     game = library_game()
     mira = game.npcs[0]
     seal_bond(game, mira)
@@ -263,8 +267,6 @@ def test_filter_drops_creation_threads_regardless_of_type() -> None:
 
 
 def test_a_successor_starts_without_the_old_adventures_and_clocks_keyed_scenes(aria: GameState) -> None:
-    from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
-
     aria.narrative.keyed_scenes = []
     for source in ("ac:Old Plot Point", "clock:The flood rises:2", "random_event:pc_negative:npc_1"):
         add_keyed_scene(
@@ -320,8 +322,6 @@ def test_prepare_succession_archives_the_recorded_reason(aria: GameState) -> Non
     ],
 )
 def test_a_miss_at_the_threshold_records_why_the_game_ended(load_engine: None, move: str, reason: str) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-
     g = make_game_state(setting_id="classic" if move.startswith("suffer/") else "starforged")
     g.resources.meters["health"], g.resources.meters["spirit"] = 0, 0
     resolve_move_outcome(g, move, "MISS", target_npc_id=None, aided_by=None, match=False)
@@ -424,8 +424,6 @@ def test_start_succession_pending_without_predecessor_raises(aria: GameState) ->
 
 
 def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
-    from straightjacket.web.serializers import build_succession_summary
-
     record = make_predecessor(
         player_name="Aria",
         end_reason="death",

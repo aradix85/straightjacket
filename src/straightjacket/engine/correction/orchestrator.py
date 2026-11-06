@@ -1,33 +1,38 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..ai.provider_base import AIProvider
-from ..director import should_call_director
-from ..engine_loader import eng
-from ..game import BurnOffer, DirectorCall, apply_post_narration, narrate_scene, replay_turn
-from ..gamemaster.config import gm
-from ..gamemaster.facts import facts_of_this_place, overrule_facts_by_hit, settle_facts_by_miss
-from ..gamemaster.npc.activation import activate_npcs_for_prompt
-from ..gamemaster.npc.matching import present_in_narration
-from ..gamemaster.questions import answers, outcome_of
-from ..logging_util import log
-from ..models import (
-    BrainResult,
-    GameState,
+from straightjacket.engine.correction.analysis import call_correction_brain
+from straightjacket.engine.correction.ops import apply_correction_ops
+from straightjacket.engine.director import should_call_director
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.game import DirectorCall, apply_post_narration, narrate_scene, replay_turn
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.facts import facts_of_this_place, overrule_facts_by_hit, settle_facts_by_miss
+from straightjacket.engine.gamemaster.npc.activation import activate_npcs_for_prompt
+from straightjacket.engine.gamemaster.npc.matching import present_in_narration
+from straightjacket.engine.gamemaster.questions import answers, outcome_of
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import (
     NarrationEntry,
-    NpcData,
-    ResolvedFact,
-    SceneSetup,
-    TurnSnapshot,
 )
-from ..prompt_action import build_action_prompt
-from ..prompt_dialog import build_dialog_prompt
-from ..prompt_loader import get_prompt
-from ..ruleset.consequences import consequence_texts, generate_consequence_sentences
-from ..xml_utils import xe as _xe
-from .analysis import call_correction_brain
-from .ops import apply_correction_ops
+from straightjacket.engine.prompt_action import build_action_prompt
+from straightjacket.engine.prompt_dialog import build_dialog_prompt
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.consequences import consequence_texts, generate_consequence_sentences
+from straightjacket.engine.xml_utils import xe as _xe
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AIProvider
+    from straightjacket.engine.game import BurnOffer
+    from straightjacket.engine.models import (
+        BrainResult,
+        GameState,
+        NpcData,
+        ResolvedFact,
+        SceneSetup,
+        TurnSnapshot,
+    )
 
 
 def _rewrite_prompt(

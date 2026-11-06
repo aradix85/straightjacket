@@ -1,7 +1,7 @@
 import pytest
 
 from straightjacket.engine.setting.loader import load_setting
-from straightjacket.engine.setting.packages import list_packages
+from straightjacket.engine.setting.packages import list_packages, load_package
 
 
 def test_all_settings_load_oracles() -> None:
@@ -79,15 +79,11 @@ def test_oracle_unknown_path_returns_none() -> None:
 
 
 def test_an_oracle_path_missing_from_the_setting_chain_raises() -> None:
-    from straightjacket.engine.setting.packages import load_package
-
     with pytest.raises(KeyError, match="nonexistent/path"):
         load_package("sundered_isles").oracle_table("nonexistent/path")
 
 
 def test_an_oracle_table_comes_from_the_parent_setting() -> None:
-    from straightjacket.engine.setting.packages import load_package
-
     path = "launching_your_campaign/character/backstory"
     sundered = load_package("sundered_isles")
     assert sundered.data.oracle(path) is None

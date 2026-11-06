@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import json
-import random
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..config_loader import PROJECT_ROOT
-from ..ids import next_id
-from ..logging_util import log
-from ..models_story import NarrativeState, PlotlineEntry
-from .config import PlotPointRanges, crafter
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.ids import next_id
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models_story import PlotlineEntry
+
+if TYPE_CHECKING:
+    import random
+
+    from straightjacket.engine.crafters.config import PlotPointRanges
+    from straightjacket.engine.models_story import NarrativeState
 
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
 _PLOTLINE_ID_PREFIX = "ac_plot_"

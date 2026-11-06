@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from .logging_util import log
+from straightjacket.engine.logging_util import log
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 

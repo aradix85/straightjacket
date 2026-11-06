@@ -1,12 +1,12 @@
 from collections.abc import Sequence
 
-from ..logging_util import log
-from ..models import BrainResult, FactRequest, GameState, GeneratedEntity, PlaceRecord, ResolvedFact
-from ..setting.oracle_rolls import roll_generator_tables
-from ..setting.packages import load_package
-from .config import gm
-from .facts import resolve_fact
-from .world import locations_match
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.facts import resolve_fact
+from straightjacket.engine.gamemaster.world import locations_match
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import BrainResult, FactRequest, GameState, GeneratedEntity, PlaceRecord, ResolvedFact
+from straightjacket.engine.setting.oracle_rolls import roll_generator_tables
+from straightjacket.engine.setting.packages import load_package
 
 _FACT_CATEGORY = "fact"
 

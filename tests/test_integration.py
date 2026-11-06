@@ -1,19 +1,39 @@
 import pytest
 
+from straightjacket.engine.correction import ops
+from straightjacket.engine.correction.analysis import call_correction_brain
+from straightjacket.engine.correction.ops import apply_correction_ops
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.game import turn
+from straightjacket.engine.game.turn import process_turn
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import labels_of
-from straightjacket.engine.models_story import StoryBlueprint
+from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
+from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
+from straightjacket.engine.gamemaster.scene import check_scene
+from straightjacket.engine.models import RollResult, labels_of
+from straightjacket.engine.models_story import StoryAct, StoryBlueprint
+from straightjacket.engine.prompt_action import build_action_prompt
+from straightjacket.engine.prompt_blocks import get_narrator_system
+from straightjacket.engine.prompt_dialog import build_dialog_prompt
+from straightjacket.engine.ruleset import move_outcome
+from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 from straightjacket.engine.ruleset.progress import menace_per_mark, ticks_per_mark
-from tests._creation import TurnProvider, brain_answer, fixed_roll, force_result, library_game
+from straightjacket.engine.ruleset.rolls import can_burn_momentum
+from straightjacket.engine.ruleset.suffer import start_dying_clock
+from straightjacket.engine.story_state import get_current_act
+from tests._creation import TurnProvider, brain_answer, create_game, fixed_roll, force_result, library_game
 from tests._helpers import (
     action_prompt_kwargs,
     dialog_prompt_kwargs,
     fix_dice,
+    make_blueprint,
     make_brain_result,
     make_clock,
     make_memory,
     make_npc,
     make_scene_setup,
+    make_threat,
+    record_price_tables,
 )
 
 _SEARCH = brain_answer(player_intent="I search the room for clues", location_change=None)
@@ -28,8 +48,6 @@ _TALK = brain_answer(
 
 
 def test_turn_action_produces_narration(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import process_turn
-
     provider = TurnProvider(_SEARCH)
     game = library_game()
     initial_scene = game.narrative.scene_count
@@ -60,8 +78,6 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
 
 
 def test_an_npc_the_narration_leaves_out_was_not_in_the_scene(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import process_turn
-
     game = library_game()
     mira = game.npcs[0]
     game.world.current_scene_context = "conversation at Abandoned Library with Mira"
@@ -73,11 +89,6 @@ def test_an_npc_the_narration_leaves_out_was_not_in_the_scene(load_engine: None)
 
 
 def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import process_turn
-    from straightjacket.engine.models_story import StoryAct
-    from straightjacket.engine.story_state import get_current_act
-    from tests._helpers import make_blueprint
-
     game = library_game()
     game.narrative.story_blueprint = make_blueprint(
         central_conflict="x",
@@ -106,8 +117,6 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
 
 
 def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import process_turn
-
     journey = brain_answer(move="adventure/undertake_a_journey", location_change=None)
     provider = TurnProvider(
         {**journey, "track_name": "To the ridge"},
@@ -128,9 +137,6 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: Non
 def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_develops_by_rank(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
-    from straightjacket.engine.game.turn import process_turn
-    from tests._creation import create_game
-
     game = create_game(
         "starforged",
         location="Drift Station",
@@ -165,8 +171,6 @@ def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_devel
 
 
 def test_turn_dialog_skips_roll(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import process_turn
-
     provider = TurnProvider(_TALK)
     game = library_game()
     narration, roll, _burn_info, _director_ctx = process_turn(provider, game, "I talk to Mira", stream=None)
@@ -180,9 +184,6 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
 def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_is_told(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import turn
-    from tests._helpers import make_threat
-
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
 
     monkeypatch.setattr("straightjacket.engine.ruleset.threats.random.random", lambda: 0.0)
@@ -204,9 +205,6 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
 def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.ruleset import move_outcome
-
     force_result(monkeypatch, "WEAK_HIT")
     monkeypatch.setattr(move_outcome, "roll_action", fixed_roll("MISS"))
     game = library_game()
@@ -223,10 +221,6 @@ def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
 def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.ruleset import move_outcome
-    from straightjacket.engine.ruleset.suffer import start_dying_clock
-
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
     monkeypatch.setattr(move_outcome, "roll_action", fixed_roll("MISS"))
     game = library_game()
@@ -245,9 +239,6 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
 
 
 def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import record_price_tables
-
     rolled = record_price_tables(monkeypatch)
     game = library_game()
 
@@ -258,8 +249,6 @@ def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytes
 
 
 def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.gamemaster.scene import check_scene
-
     game = library_game()
     game.world.chaos_factor = 9
 
@@ -272,8 +261,6 @@ def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.
 
 
 def test_dialog_prompt_contains_world_and_character(load_engine: None) -> None:
-    from straightjacket.engine.prompt_dialog import build_dialog_prompt
-
     game = library_game()
     brain = make_brain_result(
         move="dialog",
@@ -289,9 +276,6 @@ def test_dialog_prompt_contains_world_and_character(load_engine: None) -> None:
 
 
 def test_action_prompt_contains_result_and_position(load_engine: None) -> None:
-    from straightjacket.engine.models import RollResult
-    from straightjacket.engine.prompt_action import build_action_prompt
-
     game = library_game()
     brain = make_brain_result(
         move="adventure/face_danger",
@@ -329,8 +313,6 @@ def test_action_prompt_contains_result_and_position(load_engine: None) -> None:
 
 
 def test_narrator_system_prompt_includes_constraints(load_engine: None) -> None:
-    from straightjacket.engine.prompt_blocks import get_narrator_system
-
     game = library_game()
     game.preferences.content_lines = "no spiders"
 
@@ -345,8 +327,6 @@ def test_narrator_system_prompt_includes_constraints(load_engine: None) -> None:
 
 
 def test_correction_brain_parses_response(load_engine: None) -> None:
-    from straightjacket.engine.correction.analysis import call_correction_brain
-
     provider = TurnProvider()
     game = library_game()
 
@@ -363,9 +343,6 @@ def test_correction_brain_parses_response(load_engine: None) -> None:
 
 
 def test_momentum_burn_upgrades_result() -> None:
-    from straightjacket.engine.models import RollResult
-    from straightjacket.engine.ruleset.rolls import can_burn_momentum
-
     game = library_game()
     game.resources.meters["momentum"] = 7
 
@@ -401,9 +378,6 @@ def test_momentum_burn_upgrades_result() -> None:
 
 
 def test_story_completion_triggers() -> None:
-    from straightjacket.engine.models import StoryBlueprint
-    from straightjacket.engine.story_state import get_current_act
-
     game = library_game()
     game.narrative.story_blueprint = StoryBlueprint.from_dict(
         {
@@ -452,8 +426,6 @@ def test_story_completion_triggers() -> None:
 
 
 def test_correction_state_ops_npc_edit(load_engine: None) -> None:
-    from straightjacket.engine.correction.ops import apply_correction_ops
-
     game = library_game()
     original_name = game.npcs[0].name
 
@@ -477,8 +449,6 @@ def test_correction_state_ops_npc_edit(load_engine: None) -> None:
 
 
 def test_correction_state_ops_npc_rename(load_engine: None) -> None:
-    from straightjacket.engine.correction.ops import apply_correction_ops
-
     game = library_game()
 
     apply_correction_ops(
@@ -500,8 +470,6 @@ def test_correction_state_ops_npc_rename(load_engine: None) -> None:
 
 
 def test_correction_state_ops_location_edit(load_engine: None) -> None:
-    from straightjacket.engine.correction.ops import apply_correction_ops
-
     game = library_game()
 
     apply_correction_ops(
@@ -522,8 +490,6 @@ def test_correction_state_ops_location_edit(load_engine: None) -> None:
 
 
 def test_correction_state_ops_npc_split(load_engine: None) -> None:
-    from straightjacket.engine.correction.ops import apply_correction_ops
-
     game = library_game()
     count_before = len(game.npcs)
 
@@ -562,8 +528,6 @@ def _op(op: str, **fields: object) -> dict[str, object]:
 def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import ops
-
     warnings: list[str] = []
     monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     game = library_game()
@@ -573,8 +537,6 @@ def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
 
 
 def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole(load_engine: None) -> None:
-    from straightjacket.engine.correction.ops import apply_correction_ops
-
     game = library_game()
     game.npcs[0].description = "A tall woman who guards the totem of the dead king"
     apply_correction_ops(game, [_op("npc_edit", npc_id="npc_1", fields={"status": "deceased"})])
@@ -585,8 +547,6 @@ def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole(load_e
 def test_a_split_without_a_name_rolls_one_and_numbers_the_npc(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import ops
-
     monkeypatch.setattr(ops, "roll_oracle_name", lambda game: "Bren Hollow")
     game = library_game()
     game.npcs[0].last_location = "Abandoned Library"
@@ -611,8 +571,6 @@ _UNAPPLICABLE_OPS = [
 def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, op: dict[str, object]
 ) -> None:
-    from straightjacket.engine.correction import ops
-
     warnings: list[str] = []
     monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     game = library_game()
@@ -624,14 +582,10 @@ def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
 
 
 def test_every_correction_op_the_analysis_is_offered_is_applied_above(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
-
     assert sorted(str(op["op"]) for op in _UNAPPLICABLE_OPS) == sorted(eng().correction.ops)
 
 
 def test_description_match_catches_identity_reveal(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
-
     game = library_game()
 
     match = description_match_existing_npc(
@@ -644,16 +598,12 @@ def test_description_match_catches_identity_reveal(load_engine: None) -> None:
 
 
 def test_description_match_rejects_short_descriptions(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
-
     game = library_game()
     match = description_match_existing_npc(game, "Short", "stranger")
     assert match is None
 
 
 def test_merge_npc_identity_updates_clock_owner(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
-
     game = library_game()
     game.world.clocks = [
         make_clock(name="Mira's scheme", clock_type="scheme", owner_kind="npc", owner_id="Mira"),
@@ -664,8 +614,6 @@ def test_merge_npc_identity_updates_clock_owner(load_engine: None) -> None:
 
 
 def test_correction_state_ops_npc_merge(load_engine: None) -> None:
-    from straightjacket.engine.correction.ops import apply_correction_ops
-
     game = library_game()
     source = make_npc(
         id="npc_3",
@@ -683,8 +631,6 @@ def test_correction_state_ops_npc_merge(load_engine: None) -> None:
 
 
 def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import process_turn
-
     provider = TurnProvider(_TALK)
     game = library_game()
     for npc in game.npcs:

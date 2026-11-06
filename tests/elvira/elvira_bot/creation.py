@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import random as _random
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.stats import stat_descriptions, validate_stats
-from straightjacket.engine.setting.packages import SettingPackage, load_package
+from straightjacket.engine.setting.packages import load_package
+
+if TYPE_CHECKING:
+    from straightjacket.engine.setting.packages import SettingPackage
 
 
 def roll_character(setting_id: str, game_cfg: dict[str, Any]) -> dict[str, Any]:

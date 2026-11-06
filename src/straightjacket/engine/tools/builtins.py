@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..gamemaster.config import gm
-from ..gamemaster.npc.memory import recent_observations
-from ..models import GameState, NpcData
-from ..ruleset.bond import get_npc_bond
-from .registry import register
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.memory import recent_observations
+from straightjacket.engine.ruleset.bond import get_npc_bond
+from straightjacket.engine.tools.registry import register
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, NpcData
 
 
 def _npc_state(game: GameState, npc: NpcData) -> dict[str, Any]:

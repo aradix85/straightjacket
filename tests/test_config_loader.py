@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -140,9 +143,6 @@ def test_a_config_section_that_is_not_a_mapping_stops_loading(read_config: Calla
 
 
 def _users_dirs_in_a_fresh_process(env: dict[str, str]) -> list[str]:
-    import subprocess
-    import sys
-
     code = (
         "from straightjacket.engine import config_loader, user_management; "
         "print(config_loader.USERS_DIR); print(user_management.USERS_DIR)"
@@ -152,8 +152,6 @@ def _users_dirs_in_a_fresh_process(env: dict[str, str]) -> list[str]:
 
 
 def test_the_users_folder_follows_the_environment(tmp_path: Path) -> None:
-    import os
-
     players = tmp_path / "elsewhere" / "players"
     env = {**os.environ, "STRAIGHTJACKET_USERS_DIR": str(players)}
     assert _users_dirs_in_a_fresh_process(env) == [str(players), str(players)]
@@ -161,8 +159,6 @@ def test_the_users_folder_follows_the_environment(tmp_path: Path) -> None:
 
 
 def test_the_users_folder_defaults_to_the_project() -> None:
-    import os
-
     env = {key: value for key, value in os.environ.items() if key != "STRAIGHTJACKET_USERS_DIR"}
     expected = str(config_loader.PROJECT_ROOT / "users")
     assert _users_dirs_in_a_fresh_process(env) == [expected, expected]

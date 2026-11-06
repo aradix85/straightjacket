@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-from ..logging_util import log
-from ..models import BrainResult, GameState, WorldState
-from .config import gm
-from .questions import answers
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import WorldState
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import BrainResult, GameState
 
 
 def locations_match(loc_a: str, loc_b: str) -> bool:

@@ -1,18 +1,20 @@
+import copy
 from typing import Any
 
 import pytest
 
+from straightjacket.engine.correction import process_correction
+from straightjacket.engine.game import process_momentum_burn, process_turn, turn
+from straightjacket.engine.gamemaster.scene import check_scene
+from straightjacket.engine.ruleset import make_move
+from straightjacket.engine.ruleset.rolls import score_action_roll
 from tests._creation import TurnProvider, brain_answer, library_game
 from tests._helpers import fix_dice
+from tests.elvira.elvira_bot.invariants import check_turn_replacement
 
 
 @pytest.fixture
 def dice(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.gamemaster.scene import check_scene
-    from straightjacket.engine.ruleset import make_move
-    from straightjacket.engine.ruleset.rolls import score_action_roll
-
     counts = {"rolls": 0, "scenes": 0, "scene_roll": 10}
     real_scene = check_scene
 
@@ -31,11 +33,6 @@ def dice(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
 
 
 def _turn_then_correct(provider: TurnProvider) -> tuple[Any, Any, str, Any]:
-    import copy
-
-    from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.game import process_turn
-
     game = library_game()
     _n, _r, _o, _d = process_turn(provider, game, "I slip into the vault", stream=None)
     before = copy.deepcopy(game)
@@ -84,11 +81,6 @@ def test_a_corrected_miss_can_offer_a_burn(load_engine: None, dice: dict[str, in
 
 
 def test_elvira_accepts_a_replayed_turn_and_a_burn(load_engine: None, dice: dict[str, int]) -> None:
-    import copy
-
-    from straightjacket.engine.game import process_momentum_burn
-    from tests.elvira.elvira_bot.invariants import check_turn_replacement
-
     before, game, narration, offer = _turn_then_correct(TurnProvider(brain_answer(), brain_answer(stat="iron")))
     assert check_turn_replacement(before, game, narration, 1, "correction", keeps_location=False) == []
 

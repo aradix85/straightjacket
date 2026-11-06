@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import random as _random
-
-import pytest
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint
 from straightjacket.engine.crafters.turning_point_spawns import spawn_dangers_for_turning_point
@@ -10,7 +9,10 @@ from straightjacket.engine.gamemaster.random_events import spawn_danger_from_ran
 from straightjacket.engine.gamemaster.scene import check_scene
 from straightjacket.engine.models import RandomEvent
 from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes
-from tests._helpers import make_game_state, make_keyed_scene, make_threat
+from tests._helpers import fix_dice, make_game_state, make_keyed_scene, make_threat
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
@@ -139,8 +141,6 @@ def test_ac_threat_uses_datasworn_cascade_on_delve(load_engine: None) -> None:
 def test_a_delve_threat_takes_the_category_its_cascade_rolled(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from tests._helpers import fix_dice
-
     fix_dice(monkeypatch, 45, 1)
     g = make_game_state(player_name="Hero", setting_id="delve")
     spawn_dangers_for_turning_point(g, _tp(["A New Enemy"]))
@@ -148,8 +148,6 @@ def test_a_delve_threat_takes_the_category_its_cascade_rolled(
 
 
 def test_a_cascade_row_that_rolls_twice_gives_both_results(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from tests._helpers import fix_dice
-
     fix_dice(monkeypatch, 95, 5, 65, 1)
     g = make_game_state(player_name="Hero", setting_id="delve")
     spawn_dangers_for_turning_point(g, _tp(["A New Enemy"]))

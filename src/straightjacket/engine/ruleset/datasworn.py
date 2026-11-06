@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from ..logging_util import log
-from ..setting.loader import read_datasworn
-from ..setting.packages import load_package
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.setting.loader import read_datasworn
+from straightjacket.engine.setting.packages import load_package
 
 
 @dataclass(frozen=True)

@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from ..engine_loader import eng
-from ..models import BrainResult, GameState
-from .config import gm
-from .moves import is_dialog_branch
-from .questions import answers
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.moves import is_dialog_branch
+from straightjacket.engine.gamemaster.questions import answers
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import BrainResult, GameState
 
 
 def generate_scene_context(

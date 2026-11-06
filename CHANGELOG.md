@@ -8,6 +8,17 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.06.2] — 2026-11-06
+
+Imports at their strictest, the third step of the user's request. Every import stands at the top of its file and is absolute (`ban-relative-imports = "all"`), and an import used only in annotations stands under `TYPE_CHECKING`, in ruff's strict mode, with `SerializableMixin` declared as read at runtime, since `deserialize` resolves the models' annotations.
+
+- The user's choices: the two provider adapters are imported at the top of `ai/api_client.py`, so both SDKs load at start where they loaded only once configured; the ruleset's answers are installed when the server starts (`web/server.py` → `_lifespan`) and when Elvira starts a direct session, no longer when the game package is imported (`docs/gamemaster.md`, Questions to the ruleset), tested for both; Elvira's script keeps its path setup ahead of its imports, the one file allowed so.
+- `run.py` keeps its imports inside the function that runs once the virtual environment exists, since the system Python that first starts it has none of the dependencies; it is the one other file allowed so.
+- The three imports kept inside functions to break a cycle are at the top; no cycle remains. With ruff holding every import to the top, the project-rule scan of inline imports, its whitelist, and CONTRIBUTING.md's exception for an inline import are gone, as is the import-layer scans' reading of relative imports.
+- In the tests, the 1167 imports inside test functions are at the top of their files. `tests/conftest.py` no longer swaps `logging_util` out of `sys.modules` ahead of every import, but gives the `rpg_engine` logger a null handler, and pytest puts `src/` on the path; a test that patched `api_client.get_provider` patches it where Elvira's WebSocket runner holds it; the server's one session is `active_session`, which the tests reset, no longer a private name they import.
+
+Quality gate: 1866 tests, coverage 96.16%, mypy clean on 263 files, ruff clean on every rule outside the ignores. Save format unchanged. The Elvira run follows, since she now installs the answers herself.
+
 ## [2026.11.06.1] — 2026-11-06
 
 ruff at its strictest, the second step of the user's request: ruff is pinned at 0.17.4 in the test extra and the pre-commit hook (which pinned 0.15.12), runs its preview rules, and selects every rule. `[tool.ruff.lint]` ignores, each with its reason, only the rules that clash with a project rule or with ruff format (docstrings, the copyright comment, two formatter clashes, `dict.get` with a fallback, the dice's `random`), plus the groups later releases take up one at a time; selectors are rule names, as preview asks. Assert is allowed only in tests, a broad except only in the AI-call carve-out files, and starting a process in `run.py`, and, pending the user's choice, in the two tests that run ruff and a fresh interpreter. Of the old ignores the long lines are split, the ternaries and loops follow ruff, and the per-file ignores of unused imports are gone, which hid the dead import of `eng` in `models.py`; `dict.get` with a fallback stays ignored, and imports after setup code join the later groups. An import after setup code in Elvira's script, and `game/__init__.py` installing the ruleset's answers, wait with the inline imports for a decision of the user.

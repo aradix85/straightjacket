@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from straightjacket.engine.models import GameState, RollResult, labels_of
+from straightjacket.engine.models import labels_of
 from straightjacket.engine.story_state import get_current_act
-
-from .models import (
+from tests.elvira.elvira_bot.models import (
     BrainRecord,
     ClockSnapshot,
     EngineLogRecord,
@@ -15,6 +14,9 @@ from .models import (
     StoryArcRecord,
     TurnRecord,
 )
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, RollResult
 
 
 def record_turn(

@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.06.1"
+version = "2026.11.06.2"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -34,22 +34,16 @@ ignore = [
     "ARG",
     "EM",
     "FBT",
-    "TC",
     "any-type",
     "compare-to-empty-string",
     "complex-structure",
     "global-statement",
-    "import-outside-top-level",
-    "import-private-name",
     "literal-membership",
-    "non-empty-init-module",
     "magic-value-comparison",
-    "module-import-not-at-top-of-file",
     "no-self-use",
     "print",
     "private-member-access",
     "raise-vanilla-args",
-    "relative-imports",
     "too-many-arguments",
     "too-many-boolean-expressions",
     "too-many-branches",
@@ -65,7 +59,9 @@ ignore = [
 "tests/**/test_*.py" = ["assert"]
 "tests/conftest.py" = ["assert"]
 "tests/_*.py" = ["assert"]
+"tests/elvira/elvira.py" = ["module-import-not-at-top-of-file"]
 "run.py" = [
+    "import-outside-top-level",
     "start-process-with-no-shell",
     "subprocess-without-shell-equals-true",
     "suspicious-subprocess-import",
@@ -76,6 +72,13 @@ ignore = [
 "src/straightjacket/engine/{director,correction/analysis}.py" = ["blind-except"]
 "src/straightjacket/web/{handlers,server}.py" = ["blind-except"]
 "tests/elvira/elvira_bot/{runner,ws_runner,judge}.py" = ["blind-except"]
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true
+runtime-evaluated-base-classes = ["straightjacket.engine.serialization.SerializableMixin"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.isort]
 known-first-party = ["straightjacket"]
@@ -111,6 +114,7 @@ enable_error_code = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 usefixtures = ["_ruleset_answers", "_no_backoff_wait", "_reset_random"]
 asyncio_mode = "strict"
 

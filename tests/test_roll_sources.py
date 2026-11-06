@@ -2,7 +2,12 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.game import process_turn
+from straightjacket.engine.ruleset.make_move import roll_move
+from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.ruleset.progress import new_track
+from straightjacket.engine.ruleset.roll_sources import roll_source_without_stat
+from tests._creation import TurnProvider, brain_answer, create_game
 from tests._helpers import make_brain_result, make_game_state, make_npc
 
 
@@ -25,9 +30,6 @@ def _starforged() -> Any:
 def test_what_a_turn_rolls_with_or_plays_as_dialog(
     load_engine: None, move: str, stat: str, dialog_only: bool, rolled: tuple[str, int] | None
 ) -> None:
-    from straightjacket.engine.game import process_turn
-    from tests._creation import TurnProvider, brain_answer, create_game
-
     game = create_game(
         "starforged",
         location="Drift Station",
@@ -45,8 +47,6 @@ def test_what_a_turn_rolls_with_or_plays_as_dialog(
 
 
 def test_a_stat_the_brain_names_for_a_meter_move_is_ignored(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.make_move import roll_move
-
     game = _starforged()
     game.resources.meters["supply"] = 2
     outcome = roll_move(game, make_brain_result(move="exploration/set_a_course", stat="wits"), None)
@@ -54,8 +54,6 @@ def test_a_stat_the_brain_names_for_a_meter_move_is_ignored(load_engine: None) -
 
 
 def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.make_move import roll_move
-
     game = _starforged()
     game.npcs = [make_npc(id="npc_1", name="Vex")]
     track = new_track(track_id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
@@ -67,9 +65,6 @@ def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(lo
 
 
 def test_a_connection_without_a_bond_gives_develop_your_relationship_nothing_to_roll(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.moves import get_moves
-    from straightjacket.engine.ruleset.roll_sources import roll_source_without_stat
-
     game = _starforged()
     game.progress_tracks.append(
         new_track(track_id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")

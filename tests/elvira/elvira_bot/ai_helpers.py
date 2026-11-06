@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
 from straightjacket.engine.ai.api_client import provider_named
-from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, post_process_response
-from straightjacket.engine.models import GameState
+from straightjacket.engine.ai.provider_base import AICallSpec, post_process_response
 from straightjacket.engine.ruleset.meters import max_momentum, momentum
 from straightjacket.engine.ruleset.progress import filled_boxes
 from straightjacket.engine.story_state import get_current_act
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AIProvider
+    from straightjacket.engine.models import GameState
 
 _HERE = Path(__file__).resolve().parent.parent
 _PROMPTS_PATH = _HERE / "elvira_prompts.yaml"

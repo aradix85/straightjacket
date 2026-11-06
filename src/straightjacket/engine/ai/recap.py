@@ -1,14 +1,12 @@
-from ..config_loader import model_for_role, narration_language, sampling_params
-from ..engine_loader import eng
-from ..logging_util import log
-from ..models import GameState
-from ..prompt_blocks import (
-    content_boundaries_block,
-)
-from ..prompt_loader import get_prompt
-from ..ruleset.bond import get_npc_bond
-from ..story_state import get_current_act
-from .provider_base import AICallSpec, AIProvider, create_with_retry
+from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, create_with_retry
+from straightjacket.engine.config_loader import model_for_role, narration_language, sampling_params
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState
+from straightjacket.engine.prompt_blocks import content_boundaries_block
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.bond import get_npc_bond
+from straightjacket.engine.story_state import get_current_act
 
 
 def call_recap(provider: AIProvider, game: GameState) -> str:

@@ -1,6 +1,8 @@
 from typing import Any
 
+from straightjacket.engine.game.scene_finalization import invoked_threads
 from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.random_events import add_thread_weight
 from straightjacket.engine.models import RandomEvent, ThreatEvent
 from straightjacket.engine.ruleset.progress import new_track
 from tests._helpers import make_brain_result, make_game_state, make_random_event, make_thread, make_threat
@@ -34,8 +36,6 @@ def _event(target_id: str) -> RandomEvent:
 
 
 def _invoked(game: Any, brain: Any, events: list[Any], threat_events: list[Any]) -> list[str]:
-    from straightjacket.engine.game.scene_finalization import invoked_threads
-
     return invoked_threads(game, brain, events, threat_events)
 
 
@@ -78,8 +78,6 @@ def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_
 
 
 def test_thread_weight_stops_at_the_list_maximum(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.random_events import add_thread_weight
-
     game = _sworn_game()
     for _ in range(gm().random_events.list_weight_max + 2):
         add_thread_weight(game, "thread_bell")

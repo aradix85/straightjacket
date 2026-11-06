@@ -1,7 +1,15 @@
+import random
+
 import pytest
 
+from straightjacket.engine.director import should_call_director
+from straightjacket.engine.gamemaster.clocks import check_npc_agency, tick_autonomous_clocks
+from straightjacket.engine.gamemaster.npc.processing import process_npc_details
 from straightjacket.engine.models import StoryAct, StoryBlueprint
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 from straightjacket.engine.ruleset.progress import mark_progress
+from straightjacket.engine.ruleset.rolls import roll_action
 from tests._helpers import (
     fix_dice,
     make_clock,
@@ -14,16 +22,11 @@ from tests._helpers import (
 
 
 def test_the_action_score_stops_at_its_cap(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.ruleset.config import rules
-    from straightjacket.engine.ruleset.rolls import roll_action
-
     fix_dice(monkeypatch, 6, 1, 1)
     assert roll_action("edge", 3, "adventure/face_danger", 0, 3).action_score == rules().dice.action_score_max
 
 
 def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-
     game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
@@ -37,8 +40,6 @@ def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: N
 
 
 def test_test_bond_disposition_shift(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-
     game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
@@ -55,8 +56,6 @@ def test_test_bond_disposition_shift(load_engine: None) -> None:
 
 
 def test_npc_owned_threat_clock_ticks_in_agency() -> None:
-    from straightjacket.engine.gamemaster.clocks import check_npc_agency
-
     game = make_game_state()
     game.narrative.scene_count = 5
     npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
@@ -74,8 +73,6 @@ def test_npc_owned_threat_clock_ticks_in_agency() -> None:
 
 
 def test_npc_agency_clock_fires_on_full() -> None:
-    from straightjacket.engine.gamemaster.clocks import check_npc_agency
-
     game = make_game_state()
     game.narrative.scene_count = 10
     npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
@@ -93,8 +90,6 @@ def test_npc_agency_clock_fires_on_full() -> None:
 
 
 def test_npc_agency_empty_on_wrong_scene() -> None:
-    from straightjacket.engine.gamemaster.clocks import check_npc_agency
-
     game = make_game_state()
     game.narrative.scene_count = 3
     npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
@@ -105,10 +100,6 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
 
 
 def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
-    import random
-
-    from straightjacket.engine.gamemaster.clocks import tick_autonomous_clocks
-
     random.seed(0)
     game = make_game_state()
     clock = make_clock(
@@ -139,8 +130,6 @@ def test_story_blueprint_triggered_director_phases_snapshot() -> None:
 
 
 def test_phase_trigger_dedup(load_engine: None) -> None:
-    from straightjacket.engine.director import should_call_director
-
     game = make_game_state()
     game.narrative.scene_count = 12
     bp = StoryBlueprint(
@@ -171,8 +160,6 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
 
 
 def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_npc_details
-
     game = make_game_state()
     npc = make_npc(
         id="npc_1",
@@ -192,8 +179,6 @@ def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:
 
 
 def test_memory_guard_allows_no_memories() -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_npc_details
-
     game = make_game_state()
     npc = make_npc(id="npc_1", name="Der Fremde", status="active")
     game.npcs.append(npc)

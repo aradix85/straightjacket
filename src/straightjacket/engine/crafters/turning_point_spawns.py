@@ -1,14 +1,18 @@
 from __future__ import annotations
 
-from ..gamemaster.clocks import spawn_emergent_clock
-from ..gamemaster.keyed_scenes import add_keyed_scene, has_keyed_scene_from
-from ..gamemaster.questions import answers
-from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX
-from ..logging_util import log
-from ..models import GameState
-from ..models_story import NarrativeState
-from .adventure_crafter import TurningPoint
-from .config import crafter
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.gamemaster.clocks import spawn_emergent_clock
+from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene, has_keyed_scene_from
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.gamemaster.spawn_sources import AC_SOURCE_PREFIX
+from straightjacket.engine.logging_util import log
+
+if TYPE_CHECKING:
+    from straightjacket.engine.crafters.adventure_crafter import TurningPoint
+    from straightjacket.engine.models import GameState
+    from straightjacket.engine.models_story import NarrativeState
 
 
 def plot_point_source(plot_point: str) -> str:

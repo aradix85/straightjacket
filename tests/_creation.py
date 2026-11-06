@@ -1,16 +1,25 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import pytest
 from typing_extensions import override
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from straightjacket.engine.models import GameState, RollResult
+from straightjacket.engine.ai.provider_base import AIResponse
+from straightjacket.engine.game import start_new_game, turn
+from straightjacket.engine.models import RollResult
+from straightjacket.engine.ruleset import make_move
+from straightjacket.engine.setting.packages import load_package
 from tests._helpers import make_scene_setup
 from tests._mocks import ScriptedProvider
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    import pytest
+
+    from straightjacket.engine.ai.provider_base import AICallSpec
+    from straightjacket.engine.models import GameState
 
 OPENING_TEXT = "The opening scene settles around you."
 STAT_ORDER = ("edge", "heart", "iron", "shadow", "wits")
@@ -165,9 +174,6 @@ def fixed_roll(result: str) -> Callable[[str, int, str, int, int], RollResult]:
 
 
 def force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.ruleset import make_move
-
     monkeypatch.setattr(make_move, "roll_action", fixed_roll(result))
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
 
@@ -175,8 +181,6 @@ def force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
 def creation_data(
     setting_id: str, *, stats: tuple[int, int, int, int, int], player_name: str, background_vow: str
 ) -> dict[str, Any]:
-    from straightjacket.engine.setting.packages import load_package
-
     return {
         "setting_id": setting_id,
         "tone": load_package(setting_id).default_tone,
@@ -204,8 +208,6 @@ def create_game(
     player_name: str,
     background_vow: str,
 ) -> GameState:
-    from straightjacket.engine.game import start_new_game
-
     creation = creation_data(setting_id, stats=stats, player_name=player_name, background_vow=background_vow)
     game, _narration = start_new_game(OpeningProvider(npcs, location), creation)
     return game

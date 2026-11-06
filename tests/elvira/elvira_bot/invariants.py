@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import ClockData, GameState, MemoryEntry, NpcData
+from straightjacket.engine.models import MemoryEntry
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.meters import condition_meters, in_crisis, max_momentum, momentum
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import ClockData, GameState, NpcData
 
 
 def assert_game_state(game: GameState, turn: int) -> list[str]:

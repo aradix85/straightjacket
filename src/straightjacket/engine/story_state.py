@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from .engine_loader import eng
-from .gamemaster.config import gm
-from .gamemaster.keyed_scenes import has_keyed_scene_from
-from .logging_util import log
-from .models import CurrentAct, GameState, Revelation
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.keyed_scenes import has_keyed_scene_from
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import CurrentAct
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, Revelation
 
 
 def get_current_act(game: GameState) -> CurrentAct:

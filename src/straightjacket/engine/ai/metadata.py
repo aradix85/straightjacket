@@ -1,11 +1,16 @@
 from typing import Any
 
-from ..gamemaster.config import gm
-from ..gamemaster.npc.lifecycle import new_npc
-from ..gamemaster.npc.matching import apply_name_sanitization, find_npc, fuzzy_match_existing_npc, next_npc_id
-from ..gamemaster.npc.processing import process_new_npcs, process_npc_details, process_npc_renames
-from ..logging_util import log
-from ..models import GameState, NpcData
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.lifecycle import new_npc
+from straightjacket.engine.gamemaster.npc.matching import (
+    apply_name_sanitization,
+    find_npc,
+    fuzzy_match_existing_npc,
+    next_npc_id,
+)
+from straightjacket.engine.gamemaster.npc.processing import process_new_npcs, process_npc_details, process_npc_renames
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, NpcData
 
 
 def apply_narrator_metadata(

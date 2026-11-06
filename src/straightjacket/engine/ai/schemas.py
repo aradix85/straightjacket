@@ -1,10 +1,10 @@
 from typing import Any
 
-from ..engine_loader import eng
-from ..gamemaster.config import gm
-from ..ruleset.config import rules
-from ..ruleset.moves import PICK_METHODS
-from ..ruleset.progress import ranks
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.moves import PICK_METHODS
+from straightjacket.engine.ruleset.progress import ranks
 
 
 def _str() -> dict[str, Any]:

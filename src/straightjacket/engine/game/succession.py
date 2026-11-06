@@ -2,40 +2,38 @@ from __future__ import annotations
 
 import random as _random_module
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..ai.blueprint_voicing import call_blueprint_voicing
-from ..ai.metadata import process_deceased_npcs
-from ..ai.narrator import call_narrator, call_opening_setup
-from ..ai.provider_base import AIProvider
-from ..crafters.blueprint import assemble_blueprint_seed_from_ac
-from ..director import new_guidance
-from ..gamemaster.config import gm
-from ..gamemaster.keyed_scenes import drop_keyed_scenes_from
-from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX, CLOCK_KEYED_SOURCE_PREFIX
-from ..gamemaster.world import clear_facts
-from ..logging_util import log
-from ..models import GameState, PredecessorRecord, ProgressTrack, ThreadEntry, ThreatData
-from ..parser import parse_narrator_response
-from ..prompt_boundary import build_new_game_prompt
-from ..prompt_loader import get_prompt
-from ..ruleset.character import make_character
-from ..ruleset.meters import starting_resources
-from ..ruleset.succession import (
+from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
+from straightjacket.engine.ai.metadata import process_deceased_npcs
+from straightjacket.engine.ai.narrator import call_narrator, call_opening_setup
+from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
+from straightjacket.engine.director import new_guidance
+from straightjacket.engine.game.chapters import _apply_blueprint, _close_previous_chapter, _prepare_npcs_for_new_chapter
+from straightjacket.engine.game.game_start import take_up_character
+from straightjacket.engine.game.setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.keyed_scenes import drop_keyed_scenes_from
+from straightjacket.engine.gamemaster.spawn_sources import AC_SOURCE_PREFIX, CLOCK_KEYED_SOURCE_PREFIX
+from straightjacket.engine.gamemaster.world import clear_facts
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.parser import parse_narrator_response
+from straightjacket.engine.prompt_boundary import build_new_game_prompt
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.character import make_character
+from straightjacket.engine.ruleset.meters import starting_resources
+from straightjacket.engine.ruleset.succession import (
     apply_npc_carryover,
     build_predecessor_record,
     run_inheritance_rolls,
     seed_successor_legacy,
     threads_for_successor,
 )
-from ..setting.packages import load_package
-from .chapters import (
-    _apply_blueprint,
-    _close_previous_chapter,
-    _prepare_npcs_for_new_chapter,
-)
-from .game_start import take_up_character
-from .setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.setting.packages import load_package
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AIProvider
+    from straightjacket.engine.models import GameState, PredecessorRecord, ProgressTrack, ThreadEntry, ThreatData
 
 END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
 

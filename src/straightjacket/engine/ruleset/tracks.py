@@ -2,32 +2,50 @@ from __future__ import annotations
 
 import random
 import re
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
-from ..gamemaster.config import gm
-from ..ids import unique_id
-from ..logging_util import log
-from ..models import (
-    BrainResult,
-    ClockData,
-    GameState,
-    ProgressTrack,
-    RollResult,
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.ids import unique_id
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import (
     ThreadEntry,
-    ThreatData,
     ThreatEvent,
     consequence,
 )
-from .bond import connection_track, connection_track_id
-from .bonuses import bond_of_bonus
-from .config import rules
-from .datasworn import load_ruleset
-from .impacts import clear_impact
-from .legacy import apply_threat_overcome_bonus, mark_legacy, mark_legacy_ticks, shifted_rank
-from .moves import get_moves
-from .outcome_result import OutcomeResult, move_outcome_config
-from .progress import filled_boxes, mark_progress, menace_boxes, menace_total_boxes, new_track
-from .suffer import suffer
+from straightjacket.engine.ruleset.bond import connection_track, connection_track_id
+from straightjacket.engine.ruleset.bonuses import bond_of_bonus
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.impacts import clear_impact
+from straightjacket.engine.ruleset.legacy import (
+    apply_threat_overcome_bonus,
+    mark_legacy,
+    mark_legacy_ticks,
+    shifted_rank,
+)
+from straightjacket.engine.ruleset.moves import get_moves
+from straightjacket.engine.ruleset.outcome_result import move_outcome_config
+from straightjacket.engine.ruleset.progress import (
+    filled_boxes,
+    mark_progress,
+    menace_boxes,
+    menace_total_boxes,
+    new_track,
+)
+from straightjacket.engine.ruleset.suffer import suffer
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from straightjacket.engine.models import (
+        BrainResult,
+        ClockData,
+        GameState,
+        ProgressTrack,
+        RollResult,
+        ThreatData,
+    )
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
 def _slug(name: str) -> str:

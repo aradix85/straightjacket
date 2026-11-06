@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 import pytest
 from typing_extensions import override
@@ -17,6 +17,9 @@ from straightjacket.engine.ai.provider_base import (
 )
 from straightjacket.engine.ai.sentence_stream import SentenceStream
 from tests._mocks import ScriptedProvider
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _spec(max_retries: int = 2) -> AICallSpec:

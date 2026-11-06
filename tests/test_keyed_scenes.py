@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene, evaluate_keyed_scenes
 from straightjacket.engine.gamemaster.scene import check_scene
-from straightjacket.engine.models import GameState, KeyedScene
+from straightjacket.engine.models import KeyedScene
 from straightjacket.engine.models_base import SceneSetup
 from tests._helpers import (
     dialog_prompt,
@@ -20,6 +22,9 @@ from tests._helpers import (
     make_threat,
     make_world_state,
 )
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def _seed_game(**world_kwargs: object) -> GameState:

@@ -1,10 +1,15 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from straightjacket.engine.models import GameState, TurnSnapshot
+from straightjacket.engine.correction import process_correction
+from straightjacket.engine.game import finalization, process_turn
+from straightjacket.engine.models import ClockEvent, ClockFillResult, GameState, ThreatEvent
 from tests._creation import TurnProvider, brain_answer, correction_answer, force_result, library_game
-from tests._helpers import make_random_event, make_scene_setup
+from tests._helpers import make_clock, make_random_event, make_scene_setup
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import TurnSnapshot
 
 _SHOVE = brain_answer(stat="iron", target_npc="npc_1", player_intent="Shove past the guard", location_change=None)
 _TALK = brain_answer(
@@ -34,8 +39,6 @@ def _provider(correction: dict[str, Any], *brains: dict[str, Any]) -> TurnProvid
 
 
 def _played_game(provider: TurnProvider, monkeypatch: pytest.MonkeyPatch) -> GameState:
-    from straightjacket.engine.game import process_turn
-
     game = library_game()
     force_result(monkeypatch, "MISS")
     _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard", stream=None)
@@ -43,8 +46,6 @@ def _played_game(provider: TurnProvider, monkeypatch: pytest.MonkeyPatch) -> Gam
 
 
 def test_correction_input_misread_full_flow(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.correction import process_correction
-
     provider = _provider(_MISREAD, _SHOVE, _TALK)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
@@ -67,8 +68,6 @@ def test_correction_input_misread_full_flow(load_engine: None, monkeypatch: pyte
 def test_correction_to_dialog_does_not_roll_even_with_a_stat(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-
     provider = _provider(_MISREAD, _SHOVE, {**_TALK, "stat": "heart", "dialog_only": False})
     game = _played_game(provider, monkeypatch)
     narration, _offer, _director_ctx = process_correction(
@@ -80,8 +79,6 @@ def test_correction_to_dialog_does_not_roll_even_with_a_stat(
 
 
 def test_correction_state_error_full_flow(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.correction import process_correction
-
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     assert game.npcs[0].disposition == "friendly"
@@ -98,8 +95,6 @@ def test_correction_state_error_full_flow(load_engine: None, monkeypatch: pytest
 def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
@@ -117,9 +112,6 @@ def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
 def test_a_state_correction_does_not_tell_a_clock_that_filled_after_the_turn(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.models import ClockEvent
-
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     game.narrative.session_log[-1].clock_events.append(
@@ -134,9 +126,6 @@ def test_a_state_correction_does_not_tell_a_clock_that_filled_after_the_turn(
 def test_a_state_correction_extracts_with_the_turns_world_addition(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.game import finalization
-
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
@@ -156,10 +145,6 @@ def test_a_state_correction_extracts_with_the_turns_world_addition(
 def test_a_state_correction_retells_what_the_turn_told_without_moving_npc_clocks_again(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.game import process_turn
-    from tests._helpers import make_clock
-
     provider = _provider(_LOYAL, _SHOVE)
     game = library_game()
     game.npcs[0].agenda = "Hide the ledger from the wardens"
@@ -182,9 +167,6 @@ def test_a_state_correction_retells_what_the_turn_told_without_moving_npc_clocks
 def test_a_state_correction_retells_the_turns_events_and_filled_clocks(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.models import ClockFillResult, ThreatEvent
-
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     snap = game.last_turn_snapshot
@@ -208,8 +190,6 @@ def test_a_state_correction_retells_the_turns_events_and_filled_clocks(
 
 
 def test_a_snapshot_without_a_played_turn_is_refused(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.correction import process_correction
-
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
@@ -219,8 +199,6 @@ def test_a_snapshot_without_a_played_turn_is_refused(load_engine: None, monkeypa
 
 
 def test_a_game_without_a_played_turn_has_nothing_to_correct(load_engine: None) -> None:
-    from straightjacket.engine.correction import process_correction
-
     provider = _provider(_MISREAD, _SHOVE)
     with pytest.raises(ValueError, match="No turn to correct"):
         process_correction(provider, library_game(), "Fix something")

@@ -1,22 +1,24 @@
 from collections.abc import Sequence
 from typing import Any
 
-from ..director import should_call_director
-from ..gamemaster.chaos import update_chaos_factor
-from ..gamemaster.clocks import tick_autonomous_clocks
-from ..gamemaster.config import gm
-from ..gamemaster.moves import is_dialog_branch
-from ..gamemaster.npc.matching import find_npc, present_in_narration
-from ..gamemaster.pacing import record_scene_intensity
-from ..gamemaster.questions import outcome_of
-from ..gamemaster.random_events import (
+from straightjacket.engine.director import should_call_director
+from straightjacket.engine.game.finalization import apply_post_narration
+from straightjacket.engine.game.turn_types import DirectorCall, SceneContext
+from straightjacket.engine.gamemaster.chaos import update_chaos_factor
+from straightjacket.engine.gamemaster.clocks import tick_autonomous_clocks
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.moves import is_dialog_branch
+from straightjacket.engine.gamemaster.npc.matching import find_npc, present_in_narration
+from straightjacket.engine.gamemaster.pacing import record_scene_intensity
+from straightjacket.engine.gamemaster.questions import outcome_of
+from straightjacket.engine.gamemaster.random_events import (
     add_character,
     add_character_weight,
     add_thread_weight,
     consolidate_lists,
 )
-from ..logging_util import log
-from ..models import (
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import (
     BrainResult,
     ClockEvent,
     GameState,
@@ -25,11 +27,9 @@ from ..models import (
     SceneLogEntry,
     ThreatEvent,
 )
-from ..ruleset.threats import tick_autonomous_threats
-from ..ruleset.tracks import vow_acted_on
-from ..story_state import check_act_transition, check_story_completion
-from .finalization import apply_post_narration
-from .turn_types import DirectorCall, SceneContext
+from straightjacket.engine.ruleset.threats import tick_autonomous_threats
+from straightjacket.engine.ruleset.tracks import vow_acted_on
+from straightjacket.engine.story_state import check_act_transition, check_story_completion
 
 
 def _update_characters_list(game: GameState, metadata: dict[str, Any], scene_present_ids: set[Any]) -> None:

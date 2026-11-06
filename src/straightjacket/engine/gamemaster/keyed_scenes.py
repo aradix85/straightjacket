@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
-from ..ids import next_id
-from ..models import GameState, KeyedScene, NarrativeState
-from ..models_npc import NpcData
-from .config import gm
-from .npc.matching import find_npc
-from .questions import answers
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.ids import next_id
+from straightjacket.engine.models import KeyedScene
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from straightjacket.engine.models import GameState, NarrativeState
+    from straightjacket.engine.models_npc import NpcData
 
 _ID_PREFIX = "ks_"
 

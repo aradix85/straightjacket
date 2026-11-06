@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .logging_util import log
-from .models_base import (
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models_base import (
     ClockData,
     ClockEvent,
     ClockFillResult,
@@ -24,11 +24,8 @@ from .models_base import (
     consequence,
     labels_of,
 )
-from .models_npc import (
-    MemoryEntry,
-    NpcData,
-)
-from .models_story import (
+from straightjacket.engine.models_npc import MemoryEntry, NpcData
+from straightjacket.engine.models_story import (
     CampaignState,
     ChapterSummary,
     CharacterListEntry,
@@ -47,7 +44,7 @@ from .models_story import (
     StoryBlueprint,
     ThreadEntry,
 )
-from .serialization import SerializableMixin
+from straightjacket.engine.serialization import SerializableMixin
 
 
 @dataclass

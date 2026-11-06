@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
-from ..config_loader import PROJECT_ROOT
-from ..logging_util import log
-from .loader import OracleTable, Setting, load_setting
-from .oracle_rolls import PLACEHOLDER_PATTERN, link_owner_and_path
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.setting.loader import load_setting
+from straightjacket.engine.setting.oracle_rolls import PLACEHOLDER_PATTERN, link_owner_and_path
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from straightjacket.engine.setting.loader import OracleTable, Setting
 
 _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 

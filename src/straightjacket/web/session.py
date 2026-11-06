@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from starlette.websockets import WebSocket
+if TYPE_CHECKING:
+    from starlette.websockets import WebSocket
 
-from ..engine.game import BurnOffer
-from ..engine.models import GameState
+    from straightjacket.engine.game import BurnOffer
+    from straightjacket.engine.models import GameState
 
 
 @dataclass(kw_only=True)

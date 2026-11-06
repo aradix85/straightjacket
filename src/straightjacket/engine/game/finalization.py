@@ -1,34 +1,39 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..ai.metadata import apply_narrator_metadata
-from ..ai.narrator import call_narrator, call_narrator_metadata
-from ..ai.provider_base import AIProvider, NarrationSink
-from ..gamemaster.clocks import tick_threat_clock
-from ..gamemaster.config import gm
-from ..gamemaster.engine_memories import generate_engine_memories
-from ..gamemaster.npc.matching import named_in
-from ..gamemaster.npc.memory import consolidate_memory
-from ..gamemaster.questions import answers
-from ..gamemaster.scene_context import generate_scene_context
-from ..models import (
-    BrainResult,
-    ClockEvent,
-    ClockFillResult,
-    Consequence,
-    GameState,
-    MemoryEntry,
-    NpcData,
-    RollResult,
+from straightjacket.engine.ai.metadata import apply_narrator_metadata
+from straightjacket.engine.ai.narrator import call_narrator, call_narrator_metadata
+from straightjacket.engine.gamemaster.clocks import tick_threat_clock
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.engine_memories import generate_engine_memories
+from straightjacket.engine.gamemaster.npc.matching import named_in
+from straightjacket.engine.gamemaster.npc.memory import consolidate_memory
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.gamemaster.scene_context import generate_scene_context
+from straightjacket.engine.models import (
     labels_of,
 )
-from ..parser import parse_narrator_response
-from ..ruleset.make_move import resolve_move
-from ..ruleset.meters import in_crisis
-from ..ruleset.outcome_result import OutcomeResult
+from straightjacket.engine.parser import parse_narrator_response
+from straightjacket.engine.ruleset.make_move import resolve_move
+from straightjacket.engine.ruleset.meters import in_crisis
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from straightjacket.engine.ai.provider_base import AIProvider, NarrationSink
+    from straightjacket.engine.models import (
+        BrainResult,
+        ClockEvent,
+        ClockFillResult,
+        Consequence,
+        GameState,
+        MemoryEntry,
+        NpcData,
+        RollResult,
+    )
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
 @dataclass

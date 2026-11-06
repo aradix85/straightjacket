@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-import random
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from .adventure_crafter import load_ac_data
-from .config import crafter
+from straightjacket.engine.crafters.adventure_crafter import load_ac_data
+from straightjacket.engine.crafters.config import crafter
+
+if TYPE_CHECKING:
+    import random
 
 
 @dataclass(frozen=True)

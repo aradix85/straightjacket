@@ -1,12 +1,23 @@
 from __future__ import annotations
 
+import asyncio
+import logging
+import socket
 from pathlib import Path
-from types import ModuleType
+from typing import TYPE_CHECKING
 
-import pytest
-
+from straightjacket.engine.gamemaster import questions
+from straightjacket.engine.ruleset import answers, threats
+from straightjacket.web import handlers
 from tests._creation import TurnProvider, brain_answer
-from tests.elvira.elvira_bot.models import SessionLog
+from tests._helpers import emit_engine_log
+from tests.elvira.elvira_bot import ai_helpers, runner, ws_runner
+from tests.elvira.elvira_bot.models import SessionLog, TurnRecord
+from tests.elvira.elvira_bot.report import _event_lines, collect_problems
+from tests.elvira.elvira_bot.runner import _EventCapture
+
+if TYPE_CHECKING:
+    import pytest
 
 ELVIRA_CONFIG = Path(__file__).resolve().parent / "elvira" / "elvira_config.yaml"
 
@@ -15,9 +26,7 @@ def _provider() -> TurnProvider:
     return TurnProvider(brain_answer(player_intent="I search the room for clues", location_change=None))
 
 
-def _mock_direct_runner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> ModuleType:
-    from tests.elvira.elvira_bot import ai_helpers, runner
-
+def _mock_direct_runner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     users = tmp_path / "users"
     users.mkdir()
     for target in (
@@ -31,10 +40,9 @@ def _mock_direct_runner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Modu
     monkeypatch.setattr(ai_helpers, "provider_named", lambda name: _provider())
     monkeypatch.setattr(runner, "selectable_settings", lambda: ["starforged"])
     monkeypatch.setattr(runner, "available_styles", lambda: ["explorer"])
-    return runner
 
 
-def _scenario_run(runner: ModuleType, name: str, turns: int) -> SessionLog:
+def _scenario_run(name: str, turns: int) -> SessionLog:
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
     bot_cfg["session"] |= {"scenario": name, "max_turns": turns, "inject_ai_failure_turn": 0}
     bot_cfg["logging"]["print_full_narration"] = False
@@ -45,8 +53,8 @@ def _scenario_run(runner: ModuleType, name: str, turns: int) -> SessionLog:
 def test_a_scenario_with_fixed_results_plays_to_its_aim(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    runner = _mock_direct_runner(monkeypatch, tmp_path)
-    session = _scenario_run(runner, "miss", 3)
+    _mock_direct_runner(monkeypatch, tmp_path)
+    session = _scenario_run("miss", 3)
     assert session.scenario["missed"] == []
     rolled = [t.roll.result for t in session.turns if t.roll and not t.is_correction]
     assert rolled
@@ -56,8 +64,8 @@ def test_a_scenario_with_fixed_results_plays_to_its_aim(
 def test_a_scenario_that_starts_at_a_game_over_plays_the_successor(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    runner = _mock_direct_runner(monkeypatch, tmp_path)
-    session = _scenario_run(runner, "succession", 1)
+    _mock_direct_runner(monkeypatch, tmp_path)
+    session = _scenario_run("succession", 1)
     assert session.scenario["missed"] == []
     assert "new_character" in session.succession
     assert session.turns[0].error == ""
@@ -66,27 +74,24 @@ def test_a_scenario_that_starts_at_a_game_over_plays_the_successor(
 def test_a_threat_on_the_vow_advances_on_a_miss(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from straightjacket.engine.ruleset import threats
-    from tests._helpers import emit_engine_log
-
-    runner = _mock_direct_runner(monkeypatch, tmp_path)
+    _mock_direct_runner(monkeypatch, tmp_path)
     emit_engine_log(monkeypatch, threats)
-    session = _scenario_run(runner, "threat_advance", 2)
+    session = _scenario_run("threat_advance", 2)
     assert session.scenario["missed"] == []
 
 
 def test_a_scenario_plays_the_setting_it_names(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    runner = _mock_direct_runner(monkeypatch, tmp_path)
-    session = _scenario_run(runner, "bond", 1)
+    _mock_direct_runner(monkeypatch, tmp_path)
+    session = _scenario_run("bond", 1)
     assert session.config["game"]["setting_id"] == "classic"
 
 
 def test_elvira_plays_a_short_session_end_to_end(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    runner = _mock_direct_runner(monkeypatch, tmp_path)
+    _mock_direct_runner(monkeypatch, tmp_path)
     monkeypatch.setattr(runner, "CORRECTION_TEST_INTERVAL", 2)
 
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
@@ -117,13 +122,6 @@ def test_elvira_plays_a_short_session_end_to_end(
 def test_elvira_websocket_mode_plays_through_the_real_server(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    import asyncio
-    import socket
-
-    from straightjacket.engine.ai import api_client
-    from straightjacket.web import handlers
-    from tests.elvira.elvira_bot import ai_helpers, runner, ws_runner
-
     users = tmp_path / "users"
     users.mkdir()
     for target in (
@@ -132,8 +130,8 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
     ):
         monkeypatch.setattr(target, users)
     monkeypatch.setattr(ws_runner, "RUNS_DIR", tmp_path / "runs")
-    monkeypatch.setattr(api_client, "check_configured_models", lambda: None)
-    monkeypatch.setattr(api_client, "get_provider", _provider)
+    monkeypatch.setattr(ws_runner, "check_configured_models", lambda: None)
+    monkeypatch.setattr(ws_runner, "get_provider", _provider)
     monkeypatch.setattr(ai_helpers, "provider_named", lambda name: _provider())
     monkeypatch.setattr(handlers, "get_provider", _provider)
     with socket.socket() as probe:
@@ -160,10 +158,6 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
 
 
 def test_event_capture_keeps_only_the_configured_prefixes() -> None:
-    import logging
-
-    from tests.elvira.elvira_bot.runner import _EventCapture
-
     capture = _EventCapture(["[Bonus]", "[Chain]"])
     logger = logging.getLogger("elvira-capture-test")
     logger.setLevel(logging.DEBUG)
@@ -177,7 +171,7 @@ def test_event_capture_keeps_only_the_configured_prefixes() -> None:
 def test_a_failed_load_back_is_reported_not_raised(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    runner = _mock_direct_runner(monkeypatch, tmp_path)
+    _mock_direct_runner(monkeypatch, tmp_path)
 
     def broken_load(username: str, name: str) -> tuple[object, list[object]]:
         raise RuntimeError("UNIQUE constraint failed: threads.id")
@@ -192,10 +186,6 @@ def test_a_failed_load_back_is_reported_not_raised(
 
 
 def test_event_capture_keeps_every_warning_and_error() -> None:
-    import logging
-
-    from tests.elvira.elvira_bot.runner import _EventCapture
-
     capture = _EventCapture(["[Bonus]"])
     logger = logging.getLogger("elvira-warning-test")
     logger.setLevel(logging.DEBUG)
@@ -208,9 +198,6 @@ def test_event_capture_keeps_every_warning_and_error() -> None:
 
 
 def test_the_report_counts_the_directors_tool_calls() -> None:
-    from tests.elvira.elvira_bot.models import SessionLog, TurnRecord
-    from tests.elvira.elvira_bot.report import _event_lines
-
     slog = SessionLog(config={"game": {"setting_id": "starforged"}})
     slog.turns = [
         TurnRecord(turn=1, engine_events=["[Director] Phase 1: 1 tool calls"]),
@@ -223,11 +210,22 @@ def test_the_report_counts_the_directors_tool_calls() -> None:
 
 
 def test_repeated_engine_warnings_become_one_counted_problem() -> None:
-    from tests.elvira.elvira_bot.models import SessionLog
-    from tests.elvira.elvira_bot.report import collect_problems
-
     slog = SessionLog(config={"game": {"setting_id": "starforged"}})
     slog.engine_warnings = ["WARNING: [Metadata] Extraction failed"] * 3 + ["ERROR: [DB] sync failed"]
     problems = collect_problems(slog)
     assert "Engine WARNING: [Metadata] Extraction failed (3 times)" in problems
     assert "Engine ERROR: [DB] sync failed" in problems
+
+
+def test_elvira_installs_the_ruleset_answers_when_she_starts(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _mock_direct_runner(monkeypatch, tmp_path)
+    bot_cfg = runner.load_config(ELVIRA_CONFIG)
+    bot_cfg["session"]["max_turns"] = 1
+    bot_cfg["logging"]["print_full_narration"] = False
+    monkeypatch.setattr(questions, "_answers", None)
+
+    runner.run_session(bot_cfg, auto_override=True)
+
+    assert questions.answers() is answers

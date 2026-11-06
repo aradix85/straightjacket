@@ -1,5 +1,7 @@
 import pytest
 
+from straightjacket.engine.gamemaster.fate import resolve_fate_chart
+from straightjacket.engine.gamemaster.mythic_data import load_mythic
 from straightjacket.engine.gamemaster.random_events import (
     add_character_weight,
     add_thread_weight,
@@ -56,8 +58,6 @@ def test_meaning_table_descriptions_returns_pair() -> None:
 
 
 def _target(monkeypatch: pytest.MonkeyPatch, game: GameState, focus: str) -> tuple[str, str]:
-    from straightjacket.engine.gamemaster.mythic_data import load_mythic
-
     fix_dice(monkeypatch, next(entry["min"] for entry in load_mythic()["event_focus"] if entry["focus"] == focus))
     event = generate_random_event(game, "interrupt_scene")
     drain_pending_events()
@@ -151,9 +151,6 @@ def test_generate_random_event_empty_lists() -> None:
 
 
 def test_fate_doublet_generates_random_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.gamemaster.fate import resolve_fate_chart
-    from straightjacket.engine.gamemaster.random_events import generate_random_event
-
     game = make_game_state()
     game.world.chaos_factor = 5
     game.narrative.characters_list = [
@@ -170,8 +167,6 @@ def test_fate_doublet_generates_random_event(load_engine: None, monkeypatch: pyt
 
 
 def test_fate_no_doublet_no_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.gamemaster.fate import resolve_fate_chart
-
     fix_dice(monkeypatch, 34)
     result = resolve_fate_chart("fifty_fifty", chaos_factor=5)
     assert result.random_event_triggered is False

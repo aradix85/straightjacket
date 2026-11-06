@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from ..models import GameState
-from .bond import get_npc_bond as closeness
-from .bond import merge_connections as merge_npcs
-from .config import rules
-from .threats import add_threat as add_danger
-from .threats import threats_as_dangers as dangers
-from .tracks import complete_track_of_clock as clock_filled
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.ruleset.bond import get_npc_bond as closeness
+from straightjacket.engine.ruleset.bond import merge_connections as merge_npcs
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.threats import add_threat as add_danger
+from straightjacket.engine.ruleset.threats import threats_as_dangers as dangers
+from straightjacket.engine.ruleset.tracks import complete_track_of_clock as clock_filled
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 __all__ = [
     "action_kind",

@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..logging_util import log
-from ..setting.loader import OracleTable, parse_oracle_table
-from ..setting.oracle_rolls import is_table_link, link_path, plain_text
-from ..setting.packages import load_package
-from .datasworn import RulesFile, load_ruleset, rules_file
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.ruleset.datasworn import load_ruleset, rules_file
+from straightjacket.engine.setting.loader import parse_oracle_table
+from straightjacket.engine.setting.oracle_rolls import is_table_link, link_path, plain_text
+from straightjacket.engine.setting.packages import load_package
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from straightjacket.engine.ruleset.datasworn import RulesFile
+    from straightjacket.engine.setting.loader import OracleTable
 
 
 def _highest(values: dict[str, int]) -> str:

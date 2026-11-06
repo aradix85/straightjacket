@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .models_base import ClockEvent, Consequence, ProgressTrack
-from .serialization import SerializableMixin
+from straightjacket.engine.models_base import ClockEvent, Consequence, ProgressTrack
+from straightjacket.engine.serialization import SerializableMixin
 
 
 @dataclass

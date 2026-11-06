@@ -1,11 +1,12 @@
 from typing import Any
 
-from ...engine_loader import eng
-from ...logging_util import log
-from ...models import GameState, MemoryEntry, NpcData
-from ..config import gm
-from .description_match import description_match_existing_npc, is_complete_description
-from .lifecycle import (
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.description_match import (
+    description_match_existing_npc,
+    is_complete_description,
+)
+from straightjacket.engine.gamemaster.npc.lifecycle import (
     absorb_duplicate_npc,
     merge_npc_identity,
     new_npc,
@@ -13,9 +14,17 @@ from .lifecycle import (
     rename_npc,
     retire_distant_npcs,
 )
-from .matching import find_npc, fuzzy_match_existing_npc, next_npc_id, normalize_for_match, sanitize_npc_name
-from .memory import score_importance
-from .naming import roll_oracle_name
+from straightjacket.engine.gamemaster.npc.matching import (
+    find_npc,
+    fuzzy_match_existing_npc,
+    next_npc_id,
+    normalize_for_match,
+    sanitize_npc_name,
+)
+from straightjacket.engine.gamemaster.npc.memory import score_importance
+from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, MemoryEntry, NpcData
 
 
 def process_npc_renames(game: GameState, renames: list[Any]) -> None:

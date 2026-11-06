@@ -2,16 +2,22 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.game import process_turn
+from straightjacket.engine.gamemaster.npc.lifecycle import absorb_npc
+from straightjacket.engine.gamemaster.questions import answers
 from straightjacket.engine.models import GameState, ProgressTrack, labels_of
+from straightjacket.engine.ruleset import move_outcome
+from straightjacket.engine.ruleset.bond import connection_track, seal_bond
+from straightjacket.engine.ruleset.move_outcome import make_due_bond_test, resolve_move_outcome
+from straightjacket.engine.ruleset.outcome_result import new_outcome
 from tests._creation import TurnProvider, brain_answer, create_game, fixed_roll, force_result, library_game
+from tests._helpers import make_npc, make_threat
 
 VOW = "Find the lost page"
 TESTED = f'Mira: the bond is tested, since the vow "{VOW}" made to them was forsaken'
 
 
 def _bonded_library(monkeypatch: pytest.MonkeyPatch) -> GameState:
-    from straightjacket.engine.ruleset.bond import seal_bond
-
     game = library_game()
     seal_bond(game, game.npcs[0])
     force_result(monkeypatch, "STRONG_HIT")
@@ -19,8 +25,6 @@ def _bonded_library(monkeypatch: pytest.MonkeyPatch) -> GameState:
 
 
 def _swear(game: GameState, bonus_id: str | None) -> ProgressTrack:
-    from straightjacket.engine.game import process_turn
-
     brain = brain_answer(
         move="quest/swear_an_iron_vow",
         stat="heart",
@@ -35,9 +39,6 @@ def _swear(game: GameState, bonus_id: str | None) -> ProgressTrack:
 
 
 def _forsake(game: GameState, vow: ProgressTrack) -> None:
-    from straightjacket.engine.game import process_turn
-    from tests._helpers import make_threat
-
     threat = make_threat(id="threat_thief", name="The ink thief", linked_vow_id=vow.id)
     threat.menace_ticks = threat.max_menace_ticks
     game.threats.append(threat)
@@ -49,9 +50,6 @@ def _forsake(game: GameState, vow: ProgressTrack) -> None:
 def _meet_mira(
     game: GameState, monkeypatch: pytest.MonkeyPatch, result: str, **brain_changes: Any
 ) -> tuple[list[str], str]:
-    from straightjacket.engine.game import process_turn
-    from straightjacket.engine.ruleset import move_outcome
-
     monkeypatch.setattr(move_outcome, "roll_action", fixed_roll(result))
     brain = brain_answer(
         **{
@@ -84,8 +82,6 @@ def test_a_vow_sworn_with_a_bonds_aid_tests_the_bond_once_when_they_next_meet(
 
 
 def test_a_missed_test_after_a_forsaken_vow_clears_the_bond(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.gamemaster.questions import answers
-
     game = _bonded_library(monkeypatch)
     _forsake(game, _swear(game, "connection:npc_1"))
     labels, _prompt = _meet_mira(game, monkeypatch, "MISS")
@@ -130,8 +126,6 @@ def test_a_test_of_the_bond_the_brain_names_but_plays_as_dialog_still_tests_it(
 
 
 def test_a_bond_gone_before_they_meet_asks_no_test(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-
     game = _bonded_library(monkeypatch)
     vow = _swear(game, "connection:npc_1")
     _forsake(game, vow)
@@ -143,10 +137,6 @@ def test_a_bond_gone_before_they_meet_asks_no_test(load_engine: None, monkeypatc
 def test_the_vow_follows_the_person_when_two_npcs_turn_out_to_be_one(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import absorb_npc
-    from straightjacket.engine.ruleset.bond import connection_track
-    from tests._helpers import make_npc
-
     game = _bonded_library(monkeypatch)
     vow = _swear(game, "connection:npc_1")
     mira, archivist = game.npcs[0], make_npc(id="npc_2", name="The archivist", status="active")
@@ -157,10 +147,6 @@ def test_the_vow_follows_the_person_when_two_npcs_turn_out_to_be_one(
 
 
 def test_starforged_asks_no_bond_test_for_a_forsaken_vow(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.bond import seal_bond
-    from straightjacket.engine.ruleset.move_outcome import make_due_bond_test
-    from straightjacket.engine.ruleset.outcome_result import new_outcome
-
     game = create_game(
         "starforged",
         location="Hearthwood",

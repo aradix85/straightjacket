@@ -1,9 +1,9 @@
-from ...logging_util import log
-from ...models import GameState, NpcData
-from ..config import gm
-from ..questions import answers
-from .matching import normalize_for_match, sanitize_npc_name
-from .memory import consolidate_memory
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.matching import normalize_for_match, sanitize_npc_name
+from straightjacket.engine.gamemaster.npc.memory import consolidate_memory
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, NpcData
 
 
 def new_npc(

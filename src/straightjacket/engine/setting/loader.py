@@ -6,8 +6,8 @@ from typing import Any
 
 from typing_extensions import override
 
-from ..config_loader import PROJECT_ROOT
-from ..logging_util import log
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.logging_util import log
 
 _DATA_DIR = PROJECT_ROOT / "data"
 _RULESET_TYPE = "ruleset"

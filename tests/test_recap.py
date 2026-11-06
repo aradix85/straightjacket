@@ -1,3 +1,5 @@
+from straightjacket.engine.ai.recap import call_recap
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState
 from tests._helpers import make_act, make_blueprint, make_game_state, make_npc, make_scene_log_entry
 from tests._mocks import MockProvider
@@ -18,8 +20,6 @@ def _game() -> GameState:
 
 
 def test_a_recap_is_asked_with_the_story_so_far_and_returns_the_answer(load_engine: None) -> None:
-    from straightjacket.engine.ai.recap import call_recap
-
     game = _game()
     game.narrative.story_blueprint = make_blueprint(
         central_conflict="x",
@@ -40,9 +40,6 @@ def test_a_recap_is_asked_with_the_story_so_far_and_returns_the_answer(load_engi
 
 
 def test_a_failed_recap_falls_back_to_the_engines_text(load_engine: None) -> None:
-    from straightjacket.engine.ai.recap import call_recap
-    from straightjacket.engine.engine_loader import eng
-
     game = _game()
     fallback = eng().ai_text.narrator_defaults["recap_fallback"].format(player_name=game.player_name)
     assert call_recap(MockProvider(fail=True), game) == fallback

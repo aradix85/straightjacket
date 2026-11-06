@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import itertools
 import random
-from collections.abc import Generator
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 from unittest import mock
 
-from straightjacket.engine.models import RollResult
 from straightjacket.engine.ruleset import rolls
 from straightjacket.engine.ruleset.config import rules
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from straightjacket.engine.models import RollResult
 
 
 def check_results(results: list[str]) -> None:

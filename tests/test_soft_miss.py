@@ -1,5 +1,6 @@
 import pytest
 
+from straightjacket.engine import prompt_shared
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.facts import find_fact, settle_facts_by_miss
 from straightjacket.engine.models import GameState, ResolvedFact, RollResult, labels_of
@@ -9,7 +10,14 @@ from straightjacket.engine.ruleset.move_effects import has_story_complication
 from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 from straightjacket.engine.ruleset.moves import get_moves, move_table
 from straightjacket.engine.setting.oracle_rolls import plain_text
-from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc, record_price_tables
+from tests._helpers import (
+    action_prompt_kwargs,
+    make_brain_result,
+    make_game_state,
+    make_memory,
+    make_npc,
+    record_price_tables,
+)
 
 
 def _game(setting_id: str = "starforged") -> GameState:
@@ -99,8 +107,6 @@ def test_other_moves_and_hits_leave_useful_alone(load_engine: None, move: str, o
 def test_the_target_npc_volunteers_nothing_on_a_miss(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
-    from straightjacket.engine import prompt_shared
-
     monkeypatch.setattr(prompt_shared, "compute_npc_gate", lambda *_: 4)
     game = _game()
     game.npcs.append(make_npc(id="npc_1", name="Kira", disposition="friendly"))
@@ -156,8 +162,6 @@ def test_other_misses_pay_the_price(
 def test_the_narrator_gets_no_npc_knowledge_on_a_miss(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
-    from straightjacket.engine import prompt_shared
-
     monkeypatch.setattr(prompt_shared, "compute_npc_gate", lambda *_: 4)
     game = _game()
     npc = make_npc(id="npc_1", name="Kira", disposition="friendly")
@@ -183,9 +187,6 @@ def test_director_guidance_waits_for_a_hit(load_engine: None, result: str) -> No
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT"])
 def test_everyone_present_withholds_on_a_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str) -> None:
-    from straightjacket.engine import prompt_shared
-    from tests._helpers import make_memory
-
     monkeypatch.setattr(prompt_shared, "compute_npc_gate", lambda *_: 4)
     game = _game()
     target = make_npc(id="npc_1", name="Kira", disposition="friendly")

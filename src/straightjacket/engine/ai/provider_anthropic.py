@@ -3,8 +3,8 @@ from typing import Any
 
 import anthropic
 
-from ..logging_util import log
-from .provider_base import AICallSpec, AIResponse, ToolCall, normalize_stop_reason
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, ToolCall, normalize_stop_reason
+from straightjacket.engine.logging_util import log
 
 
 def _cached_system(spec: AICallSpec, cache_control: dict[str, Any]) -> list[dict[str, Any]]:

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from .oracle_rolls import LINK_PATTERN, is_table_link, link_path, roll_rows
-from .packages import SettingPackage
+from straightjacket.engine.setting.oracle_rolls import LINK_PATTERN, is_table_link, link_path, roll_rows
+
+if TYPE_CHECKING:
+    from straightjacket.engine.setting.packages import SettingPackage
 
 _MAX_DEPTH = 4
 

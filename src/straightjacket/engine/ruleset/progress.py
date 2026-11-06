@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from ..models import ProgressTrack, ThreatData
-from .config import rules
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.models import ProgressTrack
+from straightjacket.engine.ruleset.config import rules
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import ThreatData
 
 
 def ranks() -> list[str]:

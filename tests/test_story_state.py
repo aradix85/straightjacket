@@ -2,6 +2,8 @@ import pytest
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models_story import StoryAct, StoryBlueprint
+from straightjacket.engine.prompt_blocks import story_context_block
+from straightjacket.engine.story_state import check_act_transition, check_story_completion, get_current_act
 from tests._helpers import make_blueprint, make_game_state
 
 
@@ -21,8 +23,6 @@ def _bp_with_acts(scene_ranges: list[tuple[int, int]]) -> StoryBlueprint:
 
 
 def test_there_is_no_current_act_without_a_blueprint(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = None
     with pytest.raises(ValueError, match="blueprint"):
@@ -30,8 +30,6 @@ def test_there_is_no_current_act_without_a_blueprint(load_engine: None) -> None:
 
 
 def test_get_current_act_first_act_when_in_range(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.scene_count = 3
@@ -41,8 +39,6 @@ def test_get_current_act_first_act_when_in_range(load_engine: None) -> None:
 
 
 def test_get_current_act_advances_when_triggered(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.story_blueprint.triggered_transitions = ["act_0"]
@@ -52,8 +48,6 @@ def test_get_current_act_advances_when_triggered(load_engine: None) -> None:
 
 
 def test_get_current_act_advances_when_scene_past_range(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.scene_count = 12
@@ -62,8 +56,6 @@ def test_get_current_act_advances_when_scene_past_range(load_engine: None) -> No
 
 
 def test_get_current_act_progress_early(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 10)])
     g.narrative.scene_count = 1
@@ -72,8 +64,6 @@ def test_get_current_act_progress_early(load_engine: None) -> None:
 
 
 def test_get_current_act_progress_late(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 10)])
     g.narrative.scene_count = 9
@@ -82,8 +72,6 @@ def test_get_current_act_progress_late(load_engine: None) -> None:
 
 
 def test_get_current_act_aftermath_when_complete_and_dismissed(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10)])
     g.narrative.story_blueprint.story_complete = True
@@ -95,8 +83,6 @@ def test_get_current_act_aftermath_when_complete_and_dismissed(load_engine: None
 
 
 def test_get_current_act_approaching_end_on_final_act(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10)])
     g.narrative.story_blueprint.triggered_transitions = ["act_0"]
@@ -106,8 +92,6 @@ def test_get_current_act_approaching_end_on_final_act(load_engine: None) -> None
 
 
 def test_check_act_transition_waits_for_the_last_scene_of_the_act(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_act_transition
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.scene_count = 4
@@ -116,8 +100,6 @@ def test_check_act_transition_waits_for_the_last_scene_of_the_act(load_engine: N
 
 
 def test_check_act_transition_marks_the_act_at_its_last_scene(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_act_transition, get_current_act
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.scene_count = 5
@@ -127,8 +109,6 @@ def test_check_act_transition_marks_the_act_at_its_last_scene(load_engine: None)
 
 
 def test_check_act_transition_is_idempotent(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_act_transition
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.scene_count = 5
@@ -138,8 +118,6 @@ def test_check_act_transition_is_idempotent(load_engine: None) -> None:
 
 
 def test_check_act_transition_backfills_skipped_acts(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_act_transition
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.scene_count = 10
@@ -148,8 +126,6 @@ def test_check_act_transition_backfills_skipped_acts(load_engine: None) -> None:
 
 
 def test_check_act_transition_ignores_the_final_act(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_act_transition
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.story_blueprint.triggered_transitions = ["act_0", "act_1"]
@@ -159,16 +135,12 @@ def test_check_act_transition_ignores_the_final_act(load_engine: None) -> None:
 
 
 def test_check_story_completion_no_blueprint_noop(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_story_completion
-
     g = make_game_state()
     g.narrative.story_blueprint = None
     check_story_completion(g)
 
 
 def test_check_story_completion_already_complete_noop(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_story_completion
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10)])
     g.narrative.story_blueprint.story_complete = True
@@ -178,8 +150,6 @@ def test_check_story_completion_already_complete_noop(load_engine: None) -> None
 
 
 def test_check_story_completion_completes_when_final_act_entered(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_story_completion
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.story_blueprint.triggered_transitions = ["act_0", "act_1"]
@@ -189,8 +159,6 @@ def test_check_story_completion_completes_when_final_act_entered(load_engine: No
 
 
 def test_check_story_completion_backfills_transitions(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_story_completion
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
     g.narrative.scene_count = 15
@@ -201,8 +169,6 @@ def test_check_story_completion_backfills_transitions(load_engine: None) -> None
 
 
 def test_check_story_completion_fallback_far_past_end(load_engine: None) -> None:
-    from straightjacket.engine.story_state import check_story_completion
-
     offset = gm().story_state.completion_overrun_scenes
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 5)])
@@ -212,8 +178,6 @@ def test_check_story_completion_fallback_far_past_end(load_engine: None) -> None
 
 
 def test_the_narrators_story_arc_names_the_antagonist(load_engine: None) -> None:
-    from straightjacket.engine.prompt_blocks import story_context_block
-
     g = make_game_state()
     g.narrative.story_blueprint = _bp_with_acts([(1, 10)])
     g.narrative.story_blueprint.antagonist_force = "The tide-priests"

@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from ..logging_util import log
-from ..models import GameState
-from ..prompt_loader import get_prompt
-from ..setting.oracle_rolls import plain_text
-from ..xml_utils import xe as _xe
-from .assets import asset_data, enabled_abilities
-from .bond import connection_track, is_bonded
-from .config import rules
-from .datasworn import load_ruleset
-from .meters import adjust_momentum
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.assets import asset_data, enabled_abilities
+from straightjacket.engine.ruleset.bond import connection_track, is_bonded
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.meters import adjust_momentum
+from straightjacket.engine.setting.oracle_rolls import plain_text
+from straightjacket.engine.xml_utils import xe as _xe
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 _CONNECTION = "connection:"
 _ADD = re.compile(r"\badd \+(\d)", re.IGNORECASE)

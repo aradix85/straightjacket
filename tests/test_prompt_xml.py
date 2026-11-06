@@ -2,16 +2,31 @@ from __future__ import annotations
 
 import random
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from defusedxml.ElementTree import fromstring
 from typing_extensions import override
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from straightjacket.engine.crafters.blueprint import BlueprintSeed
-from straightjacket.engine.models import GameState
-from tests._creation import OpeningProvider, TurnProvider, brain_answer, force_result, library_game
+from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
+from straightjacket.engine.ai.provider_base import AIResponse
+from straightjacket.engine.correction.analysis import call_correction_brain
+from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
+from straightjacket.engine.game import process_turn, run_deferred_director, start_new_game
+from straightjacket.engine.prompt_blocks import story_context_block, truths_block
+from straightjacket.engine.prompt_boundary import build_new_game_prompt
+from straightjacket.engine.prompt_dialog import build_dialog_prompt
+from straightjacket.engine.ruleset.bond import connection_track_id
+from straightjacket.engine.ruleset.bonuses import bonus_block
+from tests._creation import (
+    OpeningProvider,
+    TurnProvider,
+    brain_answer,
+    create_game,
+    creation_data,
+    force_result,
+    library_game,
+)
 from tests._helpers import (
     dialog_prompt_kwargs,
     make_brain_result,
@@ -21,10 +36,13 @@ from tests._helpers import (
     make_progress_track,
 )
 
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AICallSpec
+    from straightjacket.engine.crafters.blueprint import BlueprintSeed
+    from straightjacket.engine.models import GameState
+
 
 def _narrator_prompt(monkeypatch: pytest.MonkeyPatch, result: str, brain: dict[str, Any]) -> str:
-    from straightjacket.engine.game.turn import process_turn
-
     force_result(monkeypatch, result)
     provider = TurnProvider(brain)
     process_turn(provider, library_game(), "I try to take the ledger from the counter.", stream=None)
@@ -59,8 +77,6 @@ def test_dialog_scene_is_well_formed_xml(load_engine: None, monkeypatch: pytest.
 
 
 def test_correction_analysis_escapes_player_text(load_engine: None) -> None:
-    from straightjacket.engine.correction.analysis import call_correction_brain
-
     provider = TurnProvider()
     game = library_game()
     game.world.current_location = "Gate</current_state><x>"
@@ -77,9 +93,6 @@ def test_correction_analysis_escapes_player_text(load_engine: None) -> None:
 
 
 def _voicing_request(game: GameState) -> tuple[str, BlueprintSeed]:
-    from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
-    from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
-
     seed = assemble_blueprint_seed_from_ac(random.Random(7), game)
     provider = OpeningProvider([], "")
     call_blueprint_voicing(provider, game, seed)
@@ -115,9 +128,6 @@ def test_blueprint_voicing_sees_each_acts_revelation_seed(load_engine: None) -> 
 
 
 def test_the_target_npcs_memories_are_escaped(load_engine: None) -> None:
-    from straightjacket.engine.prompt_dialog import build_dialog_prompt
-    from straightjacket.engine.ruleset.bond import connection_track_id
-
     game = make_game_state(setting_id="starforged")
     game.narrative.scene_count = 8
     npc = make_npc(id="npc_1", name="Kira", disposition="friendly", agenda="a", instinct="i", gather_count=6)
@@ -144,8 +154,6 @@ def test_the_target_npcs_memories_are_escaped(load_engine: None) -> None:
 
 
 def test_the_brains_roll_bonuses_are_escaped(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.bonuses import bonus_block
-
     game = make_game_state(setting_id="starforged")
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Kira</bonuses><x>", track_type="connection")
@@ -158,9 +166,6 @@ def test_the_brains_roll_bonuses_are_escaped(load_engine: None) -> None:
 
 
 def test_the_opening_prompt_and_the_truths_escape_the_players_words(load_engine: None) -> None:
-    from straightjacket.engine.prompt_blocks import truths_block
-    from straightjacket.engine.prompt_boundary import build_new_game_prompt
-
     game = make_game_state(player_name="Ash</task><x>", setting_id="starforged")
     game.pronouns = "she</task>"
     game.truths = {"cataclysm</world_truths>": "A sun & </world_truths><x>"}
@@ -206,9 +211,6 @@ def _requests_of(calls: list[AICallSpec], role: str) -> list[str]:
 def test_the_narration_and_its_consequences_reach_the_metadata_extraction_escaped(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game.turn import process_turn
-    from tests._creation import create_game
-
     game = create_game(
         "classic",
         location="Abandoned Library",
@@ -232,9 +234,6 @@ def test_the_narration_and_its_consequences_reach_the_metadata_extraction_escape
 
 
 def test_the_opening_narration_reaches_the_opening_extraction_escaped(load_engine: None) -> None:
-    from straightjacket.engine.game import start_new_game
-    from tests._creation import creation_data
-
     provider = _TaggingOpening([("Mira", "Young archivist", "friendly")], "Abandoned Library")
     start_new_game(
         provider,
@@ -249,8 +248,6 @@ def test_the_opening_narration_reaches_the_opening_extraction_escaped(load_engin
 def test_the_narration_reaches_the_director_after_the_turn_escaped(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_turn, run_deferred_director
-
     force_result(monkeypatch, "MISS")
     provider = _TaggingNarrator(brain_answer())
     game = library_game()
@@ -267,8 +264,6 @@ def test_the_narration_reaches_the_director_after_the_turn_escaped(
 
 
 def test_the_possible_endings_reach_the_narrator_escaped(load_engine: None) -> None:
-    from straightjacket.engine.prompt_blocks import story_context_block
-
     game = library_game()
     blueprint = game.narrative.story_blueprint
     assert blueprint is not None

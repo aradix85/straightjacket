@@ -1,14 +1,21 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
-from straightjacket.engine.models import GameState
+from straightjacket.engine.game import process_turn
+from straightjacket.engine.ruleset.outcome_result import new_outcome
+from straightjacket.engine.ruleset.progress import filled_boxes
+from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy, complete_track, start_track
+from tests._creation import TurnProvider, brain_answer, force_result, library_game
 from tests._helpers import make_brain_result, make_game_state
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def _swear(game: GameState, name: str) -> None:
-    from straightjacket.engine.ruleset.tracks import start_track
-
     brain = make_brain_result(move="quest/swear_an_iron_vow", stat="heart")
     brain.track_name = name
     brain.track_rank = "dangerous"
@@ -16,8 +23,6 @@ def _swear(game: GameState, name: str) -> None:
 
 
 def _connect(game: GameState, target: str | None, result: str) -> None:
-    from straightjacket.engine.ruleset.tracks import start_track
-
     brain = make_brain_result(move="connection/make_a_connection", stat="heart", target_npc=target)
     brain.track_name = "Kira"
     brain.track_rank = "dangerous"
@@ -58,10 +63,6 @@ def test_a_track_id_holds_only_word_characters(load_engine: None) -> None:
 
 
 def test_completing_a_track_that_does_not_exist_raises(load_engine: None) -> None:
-    import pytest
-
-    from straightjacket.engine.ruleset.tracks import complete_track
-
     with pytest.raises(KeyError):
         complete_track(make_game_state(setting_id="starforged"), "vow_missing", "completed")
 
@@ -82,10 +83,6 @@ def test_a_vow_sworn_again_after_completion_gets_unique_ids(load_engine: None) -
 def test_a_second_journey_named_by_its_own_name_takes_the_progress(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_turn
-    from straightjacket.engine.ruleset.progress import filled_boxes
-    from tests._creation import TurnProvider, brain_answer, force_result, library_game
-
     game = library_game()
     force_result(monkeypatch, "STRONG_HIT")
     for name in ("To the ridge", "To the coast"):
@@ -100,9 +97,6 @@ def test_a_second_journey_named_by_its_own_name_takes_the_progress(
 
 
 def test_a_vow_without_a_rank_from_the_brain_fails_the_turn(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.game import process_turn
-    from tests._creation import TurnProvider, brain_answer, force_result, library_game
-
     force_result(monkeypatch, "STRONG_HIT")
     brain = brain_answer(
         move="quest/swear_an_iron_vow",
@@ -116,9 +110,6 @@ def test_a_vow_without_a_rank_from_the_brain_fails_the_turn(load_engine: None, m
 
 
 def test_progress_on_a_new_track_without_a_name_from_the_brain_fails_the_turn(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.outcome_result import new_outcome
-    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
-
     brain = make_brain_result(move="exploration/undertake_an_expedition", stat="wits")
     brain.track_name = None
     outcome = new_outcome()

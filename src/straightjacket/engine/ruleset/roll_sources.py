@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from operator import itemgetter
+from typing import TYPE_CHECKING
 
-from ..models import GameState
-from .bond import connection_track
-from .moves import PICK_METHODS, Move, TriggerCondition
+from straightjacket.engine.ruleset.bond import connection_track
+from straightjacket.engine.ruleset.moves import PICK_METHODS
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.moves import Move, TriggerCondition
 
 
 def _option_values(game: GameState, condition: TriggerCondition) -> dict[str, int]:

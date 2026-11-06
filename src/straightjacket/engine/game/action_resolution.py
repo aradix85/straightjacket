@@ -1,11 +1,13 @@
 import random
 
-from ..gamemaster.clocks import avert_complication, check_npc_agency, tick_threat_clock
-from ..gamemaster.config import gm
-from ..gamemaster.npc.matching import find_npc
-from ..gamemaster.questions import answers, gained
-from ..gamemaster.resolvers import resolve_effect, resolve_position
-from ..models import (
+from straightjacket.engine.game.finalization import resolve_action_consequences, update_crisis
+from straightjacket.engine.game.turn_types import ActionResolution
+from straightjacket.engine.gamemaster.clocks import avert_complication, check_npc_agency, tick_threat_clock
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.gamemaster.questions import answers, gained
+from straightjacket.engine.gamemaster.resolvers import resolve_effect, resolve_position
+from straightjacket.engine.models import (
     BrainResult,
     ClockEvent,
     ClockFillResult,
@@ -15,18 +17,16 @@ from ..models import (
     ThreatEvent,
     consequence,
 )
-from ..ruleset.make_move import RollOutcome
-from ..ruleset.move_outcome import make_due_bond_test, make_follow_up_moves
-from ..ruleset.outcome_result import OutcomeResult
-from ..ruleset.suffer import tick_dying_clock
-from ..ruleset.threats import (
+from straightjacket.engine.ruleset.make_move import RollOutcome
+from straightjacket.engine.ruleset.move_outcome import make_due_bond_test, make_follow_up_moves
+from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+from straightjacket.engine.ruleset.suffer import tick_dying_clock
+from straightjacket.engine.ruleset.threats import (
     advance_menace_on_miss,
     resolve_full_menace,
     take_pending_threat_events,
 )
-from ..ruleset.tracks import apply_progress_and_legacy, resolve_progress_roll, start_track
-from .finalization import resolve_action_consequences, update_crisis
-from .turn_types import ActionResolution
+from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy, resolve_progress_roll, start_track
 
 
 def _maybe_tick_weak_hit_clock(

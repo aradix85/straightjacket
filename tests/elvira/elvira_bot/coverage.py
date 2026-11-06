@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.gamemaster.clocks import open_complications
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.bond import bonded_tracks
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 TARGETS = (
     "result:MISS",

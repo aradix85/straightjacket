@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import random
+from typing import TYPE_CHECKING
 
-from ..logging_util import log
-from ..models import FateResult, GameState
-from .config import gm
-from .mythic_data import load_mythic
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.mythic_data import load_mythic
+from straightjacket.engine.gamemaster.random_events import generate_random_event
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import FateResult
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def resolve_fate_chart(odds: str, chaos_factor: int) -> FateResult:
@@ -107,8 +112,6 @@ def resolve_fate(game: GameState, odds: str) -> FateResult:
         raise ValueError(f"Unknown fate method {method!r}; valid: 'fate_chart', 'fate_check'")
 
     if result.random_event_triggered:
-        from .random_events import generate_random_event
-
         generate_random_event(game, source="fate_doublet")
 
     return result

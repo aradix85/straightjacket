@@ -11,12 +11,16 @@ from straightjacket.engine.models import (
     GameState,
     RollResult,
 )
+from straightjacket.engine.persistence import save_game
+from straightjacket.engine.user_management import create_user
 from straightjacket.i18n import t
+from straightjacket.web import handlers
 from straightjacket.web.serializers import (
     build_creation_options,
     build_narrative_status,
     highlight_dialog,
 )
+from straightjacket.web.server import active_session, app
 from straightjacket.web.session import new_session
 from tests._helpers import (
     make_act,
@@ -164,20 +168,16 @@ class TestBuildCreationOptions:
 class TestWebSocket:
     @pytest.fixture
     def _setup(self, load_engine: None) -> None:
-        from straightjacket.web.server import _session
-
-        _session.player = ""
-        _session.game = None
-        _session.chat_messages = []
-        _session.processing = False
-        _session.active_ws = None
-        _session.pending_burn = None
-        self.session = _session
+        active_session.player = ""
+        active_session.game = None
+        active_session.chat_messages = []
+        active_session.processing = False
+        active_session.active_ws = None
+        active_session.pending_burn = None
+        self.session = active_session
 
     @pytest.fixture
     def client(self) -> TestClient:
-        from straightjacket.web.server import app
-
         return TestClient(app)
 
     def test_full_connection_flow(self, client: TestClient) -> None:
@@ -240,9 +240,6 @@ class TestWebSocket:
     def test_an_unexpected_handler_error_is_reported_and_the_connection_stays(
         self, client: TestClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from straightjacket.i18n import t
-        from straightjacket.web import handlers
-
         def broken(_player: str) -> list[dict[str, Any]]:
             raise KeyError("boom")
 
@@ -297,8 +294,6 @@ class TestWebSocket:
 class TestSuccessionWebSocket:
     @pytest.fixture
     def _setup(self, load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        from straightjacket.web.server import _session
-
         users = tmp_path / "users"
         users.mkdir()
         for target in (
@@ -306,24 +301,19 @@ class TestSuccessionWebSocket:
             "straightjacket.engine.user_management.USERS_DIR",
         ):
             monkeypatch.setattr(target, users)
-        _session.player = ""
-        _session.game = None
-        _session.chat_messages = []
-        _session.processing = False
-        _session.active_ws = None
-        _session.pending_burn = None
-        self.session = _session
+        active_session.player = ""
+        active_session.game = None
+        active_session.chat_messages = []
+        active_session.processing = False
+        active_session.active_ws = None
+        active_session.pending_burn = None
+        self.session = active_session
 
     @pytest.fixture
     def client(self) -> TestClient:
-        from straightjacket.web.server import app
-
         return TestClient(app)
 
     def _seed_session(self, player: str = "ws_succ") -> None:
-        from straightjacket.engine.persistence import save_game
-        from straightjacket.engine.user_management import create_user
-
         create_user(player)
         game = make_game_state(
             player_name="Aria",
@@ -444,8 +434,6 @@ class TestSuccessionWebSocket:
 
 
 def test_highlight_dialog_never_touches_the_markup_it_inserts() -> None:
-    from straightjacket.web.serializers import highlight_dialog
-
     text = '\u201cRun,\u201d she says. He answers, "Not yet." \u2018Fine.\u2019'
     assert highlight_dialog(text) == (
         '\u201c<span class="dialog">Run,</span>\u201d she says. '

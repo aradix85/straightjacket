@@ -1,15 +1,22 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..gamemaster.moves import roll_oracle_answer
-from ..logging_util import log
-from ..models import GameState, consequence
-from .config import rules
-from .impacts import apply_impact, blocks_recovery, clear_impact, impact_consequence
-from .meters import adjust_momentum, condition_meters, gain, is_condition_meter, is_momentum, lose, momentum
-from .move_effects import (
+from straightjacket.engine.gamemaster.moves import roll_oracle_answer
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import consequence
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.impacts import apply_impact, blocks_recovery, clear_impact, impact_consequence
+from straightjacket.engine.ruleset.meters import (
+    adjust_momentum,
+    condition_meters,
+    gain,
+    is_condition_meter,
+    is_momentum,
+    lose,
+    momentum,
+)
+from straightjacket.engine.ruleset.move_effects import (
     apply_effects,
     complication_replaces_price,
     parse_effects,
@@ -17,12 +24,18 @@ from .move_effects import (
     roll_oracle_result,
     roll_story_complication,
 )
-from .moves import get_moves
-from .outcome_result import OutcomeResult, move_outcome_config, new_outcome
-from .roll_sources import best_roll_option
-from .rolls import roll_action
-from .suffer import start_dying_clock, suffer
-from .tracks import forsake_vow, start_bound_vow
+from straightjacket.engine.ruleset.moves import get_moves
+from straightjacket.engine.ruleset.outcome_result import move_outcome_config, new_outcome
+from straightjacket.engine.ruleset.roll_sources import best_roll_option
+from straightjacket.engine.ruleset.rolls import roll_action
+from straightjacket.engine.ruleset.suffer import start_dying_clock, suffer
+from straightjacket.engine.ruleset.tracks import forsake_vow, start_bound_vow
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
 def _can_recover(game: GameState, params: dict[str, Any], blocked: bool) -> bool:

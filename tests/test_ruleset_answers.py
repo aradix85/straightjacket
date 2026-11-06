@@ -1,20 +1,22 @@
 import pytest
+from starlette.testclient import TestClient
 
+from straightjacket.engine import prompt_blocks
 from straightjacket.engine.gamemaster import questions
 from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.world import resolve_time_progression
 from straightjacket.engine.ruleset import answers
 from straightjacket.engine.ruleset.progress import menace_total_boxes
+from straightjacket.engine.ruleset.threats import active_threats, overcome_threats, take_pending_threat_events
+from straightjacket.engine.ruleset.tracks import complete_track
+from straightjacket.web.server import app
 from tests._helpers import make_game_state, make_npc, make_progress_track, make_scene_log_entry, make_threat
 
 
-def test_the_game_package_installs_the_ironsworn_answers(monkeypatch: pytest.MonkeyPatch) -> None:
-    import importlib
-
-    from straightjacket.engine import game
-
+def test_the_server_installs_the_ironsworn_answers_when_it_starts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(questions, "_answers", None)
-    importlib.reload(game)
-    assert questions.answers() is answers
+    with TestClient(app):
+        assert questions.answers() is answers
 
 
 def test_without_installed_answers_the_game_master_cannot_ask(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -43,8 +45,6 @@ def test_a_label_the_ruleset_does_not_know_raises(load_engine: None) -> None:
 
 
 def test_the_narrator_is_told_the_rulesets_own_result_names(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine import prompt_blocks
-
     names = answers.results_by_outcome()
     assert names == {"success": "STRONG_HIT", "partial": "WEAK_HIT", "failure": "MISS"}
     assert names["success"] in prompt_blocks.task_action()
@@ -57,8 +57,6 @@ def test_the_narrator_is_told_the_rulesets_own_result_names(load_engine: None, m
 
 
 def test_the_ruleset_says_which_threats_are_active_and_which_overcome(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.threats import active_threats, overcome_threats
-
     game = make_game_state(player_name="Test")
     active = make_threat(id="t_active", name="Raiders")
     storm = make_threat(id="t_storm", name="Storm", status="overcome")
@@ -69,9 +67,6 @@ def test_the_ruleset_says_which_threats_are_active_and_which_overcome(load_engin
 
 
 def test_a_vow_fulfilled_against_a_pressing_threat_tells_it_overcome_once(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.threats import take_pending_threat_events
-    from straightjacket.engine.ruleset.tracks import complete_track
-
     game = make_game_state(player_name="Test")
     game.progress_tracks = [
         make_progress_track(id="vow_storm", name="Calm the storm"),
@@ -147,8 +142,6 @@ def test_a_danger_is_open_while_its_threat_is_active_and_not_full(load_engine: N
 
 
 def test_the_game_master_s_time_for_a_place_change_is_its_own(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import resolve_time_progression
-
     assert resolve_time_progression("combat/strike", has_location_change=True) == gm().location.change_time
     assert resolve_time_progression("recover/resupply", has_location_change=False) == "moderate"
     assert resolve_time_progression("quest/swear_an_iron_vow", has_location_change=False) == "short"

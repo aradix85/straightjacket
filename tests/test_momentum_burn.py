@@ -1,18 +1,27 @@
 import asyncio
+import copy
 from typing import Any
 
 import pytest
 from typing_extensions import override
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, AIUnavailableError
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.game import process_momentum_burn, process_turn
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import (
     GameState,
     NarrationEntry,
 )
+from straightjacket.engine.persistence import load_game
+from straightjacket.engine.ruleset import move_outcome
 from straightjacket.engine.ruleset.config import rules
-from tests._creation import OPENING_TEXT, TurnProvider, brain_answer, force_result, library_game
+from straightjacket.engine.ruleset.suffer import start_dying_clock
+from straightjacket.web import handlers, server
+from straightjacket.web.session import new_session
+from tests._creation import OPENING_TEXT, TurnProvider, brain_answer, fixed_roll, force_result, library_game
 from tests._mocks import RecordingWebSocket
+from tests.elvira.elvira_bot.invariants import check_turn_replacement
 
 
 @pytest.fixture
@@ -21,8 +30,6 @@ def forced_miss(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _turn_then_burn(provider: TurnProvider, game: GameState) -> tuple[GameState, str, Any]:
-    from straightjacket.engine.game import process_momentum_burn, process_turn
-
     _narration, roll, offer, _director = process_turn(
         provider, game, "I slip past Mira into the archive vault", stream=None
     )
@@ -63,7 +70,6 @@ def test_burn_keeps_the_track_the_turn_created(load_engine: None, forced_miss: N
 
 
 def test_burn_updates_the_turn_snapshot(load_engine: None, forced_miss: None) -> None:
-
     game, narration, _director = _turn_then_burn(TurnProvider(brain_answer()), library_game())
 
     snap = game.last_turn_snapshot
@@ -76,8 +82,6 @@ def test_burn_updates_the_turn_snapshot(load_engine: None, forced_miss: None) ->
 
 
 def test_burn_runs_scene_end_bookkeeping_exactly_once(load_engine: None, forced_miss: None) -> None:
-    from straightjacket.engine.game import process_turn
-
     reference = library_game()
     _n, _r, _o, _d = process_turn(
         TurnProvider(brain_answer()), reference, "I slip past Mira into the archive vault", stream=None
@@ -104,11 +108,6 @@ def test_restore_reverts_changes_inside_the_story_lists(load_engine: None) -> No
 
 
 def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(load_engine: None, forced_miss: None) -> None:
-    import copy
-
-    from straightjacket.engine.game import process_momentum_burn, process_turn
-    from tests.elvira.elvira_bot.invariants import check_turn_replacement
-
     game = library_game()
     cap = gm().pacing.max_narration_history
     game.narrative.narration_history = [
@@ -127,11 +126,6 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(load_engine: None, 
 def test_new_player_input_withdraws_a_pending_burn_offer(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
-    from straightjacket.engine.game import process_turn
-    from straightjacket.web import handlers
-    from straightjacket.web.session import new_session
-
     game = library_game()
     _n, _r, offer, _d = process_turn(TurnProvider(brain_answer()), game, "I slip into the vault", stream=None)
     session = new_session()
@@ -162,11 +156,6 @@ class _FlakyNarrator(TurnProvider):
 
 
 def _session(monkeypatch: pytest.MonkeyPatch, tmp_path: Any, provider: TurnProvider) -> Any:
-    from straightjacket.engine.ruleset import move_outcome
-    from straightjacket.web import handlers
-    from straightjacket.web.session import new_session
-    from tests._creation import fixed_roll
-
     for target in (
         "straightjacket.engine.config_loader.USERS_DIR",
         "straightjacket.engine.user_management.USERS_DIR",
@@ -181,16 +170,12 @@ def _session(monkeypatch: pytest.MonkeyPatch, tmp_path: Any, provider: TurnProvi
 
 
 def _play(session: Any, text: str) -> RecordingWebSocket:
-    from straightjacket.web import handlers
-
     ws = RecordingWebSocket()
     asyncio.run(handlers.handle_player_input(session, ws, {"text": text}))
     return ws
 
 
 def _dying(session: Any) -> None:
-    from straightjacket.engine.ruleset.suffer import start_dying_clock
-
     game = session.game
     game.resources.meters["health"] = 0
     start_dying_clock(game)
@@ -218,8 +203,6 @@ def _types(ws: RecordingWebSocket) -> list[str]:
 def test_a_game_over_turn_offers_the_burn_before_it_announces_the_end(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers
-
     session, ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
 
     assert [t for t in _types(ws) if t in ("burn_offer", "game_over")] == ["burn_offer"]
@@ -234,10 +217,6 @@ def test_a_game_over_turn_offers_the_burn_before_it_announces_the_end(
 def test_a_burn_that_saves_the_character_leaves_no_predecessor(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.persistence import load_game
-    from straightjacket.web import handlers
-
     session, ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
 
     asyncio.run(handlers.handle_burn_momentum(session, ws, {"accept": True}))
@@ -253,8 +232,6 @@ def test_a_burn_that_saves_the_character_leaves_no_predecessor(
 def test_a_burn_that_does_not_save_the_character_archives_them_once(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers
-
     session, ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_PRESS_ON))
 
     asyncio.run(handlers.handle_burn_momentum(session, ws, {"accept": True}))
@@ -270,8 +247,6 @@ def test_a_burn_that_does_not_save_the_character_archives_them_once(
 def test_a_failed_burn_is_rolled_back_and_offered_again(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers
-
     provider = _FlakyNarrator(_HEAL)
     session, _ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, provider)
     offer = session.pending_burn
@@ -289,8 +264,6 @@ def test_a_failed_burn_is_rolled_back_and_offered_again(
 def test_a_game_that_is_over_answers_input_and_corrections_with_what_stands(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers
-
     session, _ws, provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
     before, calls = session.game.to_dict(), len(provider.calls)
 
@@ -310,10 +283,8 @@ def test_a_game_that_is_over_answers_input_and_corrections_with_what_stands(
 def test_a_reload_drops_a_standing_burn_and_shows_the_end_while_a_reconnect_offers_it_again(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers, server
-
     session, _ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
-    monkeypatch.setattr(server, "_session", session)
+    monkeypatch.setattr(server, "active_session", session)
 
     reconnected = RecordingWebSocket()
     asyncio.run(server._send_initial_state(reconnected))
@@ -328,9 +299,6 @@ def test_a_reload_drops_a_standing_burn_and_shows_the_end_while_a_reconnect_offe
 def test_a_correction_that_replays_the_turn_into_death_prepares_the_succession_once(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers
-    from tests._creation import force_result
-
     force_result(monkeypatch, "STRONG_HIT")
     session = _session(monkeypatch, tmp_path, TurnProvider(_HEAL, _PRESS_ON))
     _dying(session)
@@ -353,8 +321,6 @@ def test_a_correction_that_replays_the_turn_into_death_prepares_the_succession_o
 def test_a_failed_correction_leaves_the_burn_offer_standing(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers
-
     provider = _FlakyNarrator(_PRESS_ON)
     session = _session(monkeypatch, tmp_path, provider)
     _play(session, "I slip into the vault")
@@ -372,8 +338,6 @@ def test_a_failed_correction_leaves_the_burn_offer_standing(
 def test_retiring_withdraws_a_standing_burn_offer(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers
-
     session = _session(monkeypatch, tmp_path, TurnProvider(_PRESS_ON))
     _play(session, "I slip into the vault")
     assert session.pending_burn is not None
@@ -387,8 +351,6 @@ def test_retiring_withdraws_a_standing_burn_offer(
 def test_what_the_player_chose_between_a_turn_and_its_burn_or_correction_stays(
     load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:
-    from straightjacket.web import handlers
-
     session = _session(monkeypatch, tmp_path, TurnProvider(_PRESS_ON))
     session.game.campaign.xp = 10
     _play(session, "I slip into the vault")

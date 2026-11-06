@@ -1,6 +1,6 @@
-from .engine.config_loader import PROJECT_ROOT
-from .engine.logging_util import log
-from .engine.yaml_merge import load_text_dir
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.yaml_merge import load_text_dir
 
 _strings: dict[str, str] | None = None
 

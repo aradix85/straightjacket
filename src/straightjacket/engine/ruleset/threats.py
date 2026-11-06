@@ -1,22 +1,26 @@
 from __future__ import annotations
 
 import random
+from typing import TYPE_CHECKING
 
-from ..gamemaster.questions import Danger
-from ..gamemaster.spawn_sources import EMERGENT_SOURCE_PREFIXES
-from ..ids import next_id
-from ..logging_util import log
-from ..models import GameState, ProgressTrack, ThreatData, ThreatEvent
-from ..setting.cascade import roll_oracle_cascade
-from ..setting.oracle_rolls import plain_text, roll_table
-from ..setting.packages import load_package
-from .config import rules
-from .config_types import AdvanceAThreatConfig
-from .datasworn import load_ruleset
-from .moves import move_of_file
-from .outcome_result import OutcomeResult
-from .progress import advance_menace, menace_boxes, menace_total_boxes
-from .tracks import forsake_vow
+from straightjacket.engine.gamemaster.questions import Danger
+from straightjacket.engine.gamemaster.spawn_sources import EMERGENT_SOURCE_PREFIXES
+from straightjacket.engine.ids import next_id
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import ThreatData, ThreatEvent
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.moves import move_of_file
+from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes, menace_total_boxes
+from straightjacket.engine.ruleset.tracks import forsake_vow
+from straightjacket.engine.setting.cascade import roll_oracle_cascade
+from straightjacket.engine.setting.oracle_rolls import plain_text, roll_table
+from straightjacket.engine.setting.packages import load_package
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState, ProgressTrack
+    from straightjacket.engine.ruleset.config_types import AdvanceAThreatConfig
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
 def threats_as_dangers(game: GameState) -> list[Danger]:

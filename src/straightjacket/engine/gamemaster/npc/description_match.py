@@ -1,10 +1,10 @@
-from ...engine_loader import eng
-from ...logging_util import log
-from ...models import GameState, NpcData
-from ..config import gm
-from ..config_types import DescriptionDedupConfig
-from ..world import locations_match
-from .matching import normalize_for_match
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.config_types import DescriptionDedupConfig
+from straightjacket.engine.gamemaster.npc.matching import normalize_for_match
+from straightjacket.engine.gamemaster.world import locations_match
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, NpcData
 
 
 def is_complete_description(desc: str) -> bool:

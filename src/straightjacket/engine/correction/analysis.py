@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..ai.provider_base import AICallSpec, AIProvider, create_with_retry
-from ..ai.schemas import get_correction_output_schema
-from ..config_loader import model_for_role, narration_language, sampling_params
-from ..engine_loader import eng
-from ..logging_util import log
-from ..models import BrainResult, GameState, NpcData, TurnSnapshot
-from ..prompt_loader import get_prompt
-from ..xml_utils import xe as _xe
+from straightjacket.engine.ai.provider_base import AICallSpec, create_with_retry
+from straightjacket.engine.ai.schemas import get_correction_output_schema
+from straightjacket.engine.config_loader import model_for_role, narration_language, sampling_params
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.xml_utils import xe as _xe
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AIProvider
+    from straightjacket.engine.models import BrainResult, GameState, NpcData, TurnSnapshot
 
 
 def call_correction_brain(

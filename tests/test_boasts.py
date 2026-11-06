@@ -2,16 +2,20 @@ import json
 
 import pytest
 
+from straightjacket.engine.ai.brain import call_brain
+from straightjacket.engine.ai.provider_base import AIUnavailableError
+from straightjacket.engine.ai.schemas import get_brain_output_schema
+from straightjacket.engine.game.finalization import resolve_action_consequences
 from straightjacket.engine.models import RollResult, labels_of
 from straightjacket.engine.ruleset.config import rules
+from tests._creation import brain_answer
 from tests._helpers import make_brain_result, make_game_state
+from tests._mocks import MockProvider
 
 _MOVE = "relationship/draw_the_circle"
 
 
 def _duel(result: str, boasts: list[str]) -> tuple[int, int, list[str]]:
-    from straightjacket.engine.game.finalization import resolve_action_consequences
-
     game = make_game_state(setting_id="classic")
     momentum, health = game.resources.meters["momentum"], game.resources.meters["health"]
     brain = make_brain_result(move=_MOVE, stat="heart", boasts=boasts)
@@ -46,8 +50,6 @@ def test_a_miss_ignores_boasts(load_engine: None) -> None:
 
 
 def test_the_brain_offers_the_boasts_of_the_rules(load_engine: None) -> None:
-    from straightjacket.engine.ai.schemas import get_brain_output_schema
-
     boasts = get_brain_output_schema([_MOVE], [], [], [], [], [], [])["properties"]["boasts"]
     assert boasts["items"]["enum"] == sorted(rules().boasts.options)
     assert len(boasts["items"]["enum"]) == 5
@@ -55,11 +57,6 @@ def test_the_brain_offers_the_boasts_of_the_rules(load_engine: None) -> None:
 
 
 def test_the_brain_rejects_an_unknown_boast(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
-    from tests._creation import brain_answer
-    from tests._mocks import MockProvider
-
     content = json.dumps(brain_answer(location_change=None, boasts=["fight_naked"]))
     with pytest.raises(AIUnavailableError, match="boasts"):
         call_brain(MockProvider(response_content=content), make_game_state(setting_id="classic"), "I challenge him")

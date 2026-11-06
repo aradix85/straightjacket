@@ -2,10 +2,10 @@ import re
 from dataclasses import dataclass
 from itertools import takewhile
 
-from ...ids import next_id
-from ...logging_util import log
-from ...models import GameState, NpcData
-from ..config import gm
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.ids import next_id
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, NpcData
 
 NPC_ID_PREFIX = "npc_"
 

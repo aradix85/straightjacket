@@ -2,15 +2,15 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.ai.brain import call_brain
 from straightjacket.engine.ai.provider_base import AIUnavailableError
+from straightjacket.engine.ruleset.move_availability import available_moves
 from straightjacket.engine.ruleset.progress import new_track
 from tests._creation import TurnProvider, brain_answer
-from tests._helpers import make_game_state, schema_of
+from tests._helpers import make_game_state, make_npc, schema_of
 
 
 def _offered(game: Any) -> tuple[list[str], str]:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = TurnProvider(brain_answer(move="dialog"))
     call_brain(provider, game, "I look around.")
     offered: list[str] = schema_of(provider.calls[0])["properties"]["move"]["enum"]
@@ -40,8 +40,6 @@ def test_the_brain_is_offered_the_game_masters_moves_and_world_shaping_beside_th
 
 
 def test_the_brain_cannot_play_a_move_the_situation_does_not_allow(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = TurnProvider(brain_answer(move="combat/strike", stat="iron"))
     with pytest.raises(AIUnavailableError, match="not available"):
         call_brain(provider, _starforged(), "I stab at the raider.")
@@ -49,14 +47,10 @@ def test_the_brain_cannot_play_a_move_the_situation_does_not_allow(load_engine: 
 
 
 def test_the_brain_plays_an_available_move(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     assert call_brain(TurnProvider(brain_answer()), _starforged(), "I jump the gap.").move == "adventure/face_danger"
 
 
 def _infiltrator() -> Any:
-    from tests._helpers import make_npc
-
     game = _starforged()
     game.paths = ["infiltrator"]
     game.npcs = [make_npc(id="npc_1", name="Vex")]
@@ -67,8 +61,6 @@ def _infiltrator() -> Any:
 
 
 def test_the_brain_is_offered_only_existing_bonuses_npcs_and_tracks(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = TurnProvider(brain_answer())
     call_brain(provider, _infiltrator(), "I slip past the guard.")
     properties = schema_of(provider.calls[0])["properties"]
@@ -78,8 +70,6 @@ def test_the_brain_is_offered_only_existing_bonuses_npcs_and_tracks(load_engine:
 
 
 def test_a_vow_the_player_wrote_reaches_the_brain_escaped_and_is_chosen_by_id(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     game = _starforged()
     game.progress_tracks.append(
         new_track(
@@ -99,8 +89,6 @@ def test_a_vow_the_player_wrote_reaches_the_brain_escaped_and_is_chosen_by_id(lo
 
 
 def test_a_move_that_starts_a_track_needs_a_track_name(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     with pytest.raises(AIUnavailableError, match="track_name"):
         call_brain(
             TurnProvider(brain_answer(move="quest/swear_an_iron_vow", stat="heart", track_name=" ")),
@@ -110,16 +98,12 @@ def test_a_move_that_starts_a_track_needs_a_track_name(load_engine: None) -> Non
 
 
 def test_a_connection_needs_the_npc_it_is_made_with(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     answer = brain_answer(move="connection/make_a_connection", stat="heart", track_name="Vex")
     with pytest.raises(AIUnavailableError, match="names no target_npc"):
         call_brain(TurnProvider(answer), _infiltrator(), "I buy Vex a drink.")
 
 
 def test_a_bonus_the_game_does_not_offer_is_refused(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     with pytest.raises(AIUnavailableError, match="bonus_id"):
         call_brain(TurnProvider(brain_answer(bonus_id="infiltrator#0{")), _infiltrator(), "I slip past the guard.")
     chosen = call_brain(TurnProvider(brain_answer(bonus_id="infiltrator#0")), _infiltrator(), "I slip past the guard.")
@@ -131,8 +115,6 @@ def _stats_answered(*stats: str, move: str) -> TurnProvider:
 
 
 def test_an_action_move_without_a_stat_is_asked_again_once(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = _stats_answered("none", "edge", move="adventure/face_danger")
     result = call_brain(provider, _starforged(), "I jump the gap.")
     assert result.stat == "edge"
@@ -143,24 +125,17 @@ def test_an_action_move_without_a_stat_is_asked_again_once(load_engine: None) ->
 
 
 def test_an_action_move_still_without_a_stat_fails_the_turn(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     with pytest.raises(AIUnavailableError, match="stat is 'none'"):
         call_brain(_stats_answered("none", "none", move="adventure/face_danger"), _starforged(), "I jump the gap.")
 
 
 def test_a_stat_the_move_does_not_offer_is_asked_again(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = _stats_answered("wits", "heart", move="adventure/compel")
     assert call_brain(provider, _starforged(), "I talk her into it.").stat == "heart"
     assert "stat is wits" in provider.calls[1].messages[-1]["content"]
 
 
 def test_a_move_on_a_connection_is_refused_for_someone_without_one(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-    from tests._helpers import make_npc
-
     game = _starforged()
     game.npcs = [make_npc(id="npc_1", name="Vex"), make_npc(id="npc_2", name="Orla")]
     bonded = new_track(track_id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
@@ -172,9 +147,6 @@ def test_a_move_on_a_connection_is_refused_for_someone_without_one(load_engine: 
 
 
 def test_develop_your_relationship_rolls_only_for_a_connection_with_a_bond(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-    from tests._helpers import make_npc
-
     game = _starforged()
     game.npcs = [make_npc(id="npc_1", name="Vex"), make_npc(id="npc_2", name="Orla")]
     bonded = new_track(track_id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
@@ -192,16 +164,12 @@ def test_develop_your_relationship_rolls_only_for_a_connection_with_a_bond(load_
 
 
 def test_a_move_that_acts_on_an_npc_without_a_target_is_refused(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = TurnProvider(brain_answer(move="connection/test_your_relationship", stat="heart"))
     with pytest.raises(AIUnavailableError, match="acts on an NPC, but names no target_npc"):
         call_brain(provider, _starforged(), "I test whether she still trusts me.")
 
 
 def test_develop_your_relationship_is_offered_only_with_a_bond(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.move_availability import available_moves
-
     game = _starforged()
     connection = new_track(track_id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
     game.progress_tracks.append(connection)
@@ -213,8 +181,6 @@ def test_develop_your_relationship_is_offered_only_with_a_bond(load_engine: None
 
 
 def test_the_brain_sees_each_way_of_a_move_in_the_books_words(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = TurnProvider(brain_answer(move="recover/heal", stat="lowest"))
     assert call_brain(provider, _starforged(), "I stitch the cut on my arm.").stat == "lowest"
     [call] = provider.calls
@@ -232,8 +198,6 @@ def test_the_brain_sees_each_way_of_a_move_in_the_books_words(load_engine: None)
     ],
 )
 def test_the_brain_reads_the_stats_as_the_rulebook_describes_them(load_engine: None, setting: str, edge: str) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     game = make_game_state(setting_id=setting)
     provider = TurnProvider(brain_answer())
     call_brain(provider, game, "I jump the gap.")
@@ -242,24 +206,18 @@ def test_the_brain_reads_the_stats_as_the_rulebook_describes_them(load_engine: N
 
 @pytest.mark.parametrize(("move", "second"), [("adventure/face_danger", "edge"), ("world_shaping", "wits")])
 def test_lowest_for_a_move_without_that_way_is_asked_again(load_engine: None, move: str, second: str) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = _stats_answered("lowest", second, move=move)
     assert call_brain(provider, _starforged(), "I jump the gap.").stat == second
     assert "stat is lowest" in provider.calls[1].messages[-1]["content"]
 
 
 def test_world_shaping_without_a_stat_is_not_asked_again(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = _stats_answered("none", move="world_shaping")
     assert call_brain(provider, _starforged(), "There is a well in the square.").stat == "none"
     assert len(provider.calls) == 1
 
 
 def test_the_brain_prompt_explains_every_field_of_its_schema(load_engine: None) -> None:
-    from straightjacket.engine.ai.brain import call_brain
-
     provider = TurnProvider(brain_answer())
     call_brain(provider, _infiltrator(), "I slip past the guard.")
     [call] = provider.calls

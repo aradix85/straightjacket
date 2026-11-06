@@ -1,33 +1,30 @@
 import json
 from typing import Any, NoReturn
 
-from ..config_loader import model_for_role, narration_language, sampling_params
-from ..engine_loader import eng
-from ..gamemaster.clocks import open_complications
-from ..gamemaster.config import gm
-from ..gamemaster.config_types import GameMasterMove
-from ..logging_util import log
-from ..models import BrainResult, GameState, ThreatData
-from ..prompt_blocks import (
-    content_boundaries_block,
-    world_tag,
-)
-from ..prompt_loader import get_prompt, get_prompt_prefix
-from ..ruleset.bond import connection_track, is_bonded, starts_a_connection
-from ..ruleset.bonuses import bonus_block, roll_bonuses
-from ..ruleset.config import rules
-from ..ruleset.config_types import EngineMove
-from ..ruleset.move_availability import available_moves
-from ..ruleset.move_outcome import acts_on_an_npc, needs_a_connection
-from ..ruleset.moves import PICK_METHODS, Move, get_moves
-from ..ruleset.progress import filled_boxes, menace_boxes, menace_total_boxes
-from ..ruleset.roll_sources import roll_source_without_stat
-from ..ruleset.stats import stat_descriptions
-from ..ruleset.threats import active_threats, vow_against
-from ..ruleset.tracks import active_tracks, track_category_of_move
-from ..xml_utils import xe as _xe
-from .provider_base import AICallSpec, AIProvider, AIUnavailableError, create_with_retry
-from .schemas import get_brain_output_schema
+from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, AIUnavailableError, create_with_retry
+from straightjacket.engine.ai.schemas import get_brain_output_schema
+from straightjacket.engine.config_loader import model_for_role, narration_language, sampling_params
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.clocks import open_complications
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.config_types import GameMasterMove
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import BrainResult, GameState, ThreatData
+from straightjacket.engine.prompt_blocks import content_boundaries_block, world_tag
+from straightjacket.engine.prompt_loader import get_prompt, get_prompt_prefix
+from straightjacket.engine.ruleset.bond import connection_track, is_bonded, starts_a_connection
+from straightjacket.engine.ruleset.bonuses import bonus_block, roll_bonuses
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.config_types import EngineMove
+from straightjacket.engine.ruleset.move_availability import available_moves
+from straightjacket.engine.ruleset.move_outcome import acts_on_an_npc, needs_a_connection
+from straightjacket.engine.ruleset.moves import PICK_METHODS, Move, get_moves
+from straightjacket.engine.ruleset.progress import filled_boxes, menace_boxes, menace_total_boxes
+from straightjacket.engine.ruleset.roll_sources import roll_source_without_stat
+from straightjacket.engine.ruleset.stats import stat_descriptions
+from straightjacket.engine.ruleset.threats import active_threats, vow_against
+from straightjacket.engine.ruleset.tracks import active_tracks, track_category_of_move
+from straightjacket.engine.xml_utils import xe as _xe
 
 
 def _ways(move: Move) -> list[str]:

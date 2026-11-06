@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, AIResponse
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, AIResponse
 
 
 class TokenMeter:

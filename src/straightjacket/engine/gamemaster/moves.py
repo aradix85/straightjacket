@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from ..models import BrainResult, GameState
-from ..setting.packages import load_package
-from .config import gm
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.setting.packages import load_package
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import BrainResult, GameState
 
 
 def is_dialog_branch(brain: BrainResult) -> bool:

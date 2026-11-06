@@ -1,3 +1,5 @@
+from straightjacket.engine.game.finalization import apply_engine_memories
+from straightjacket.engine.gamemaster.npc.matching import named_in, present_in_narration
 from straightjacket.engine.models import MemoryEntry, NpcData
 from tests._helpers import make_game_state, make_memory, make_npc
 
@@ -7,8 +9,6 @@ def _memory(npc: NpcData) -> tuple[NpcData, MemoryEntry]:
 
 
 def test_an_npc_the_narration_leaves_behind_keeps_its_place(load_engine: None) -> None:
-    from straightjacket.engine.game.finalization import apply_engine_memories
-
     game = make_game_state()
     game.world.current_location = "Glacier ridge trail"
     edda = make_npc(id="npc_1", name="Edda Varn")
@@ -20,8 +20,6 @@ def test_an_npc_the_narration_leaves_behind_keeps_its_place(load_engine: None) -
 
 
 def test_an_npc_the_narration_names_moves_along(load_engine: None) -> None:
-    from straightjacket.engine.game.finalization import apply_engine_memories
-
     game = make_game_state()
     game.world.current_location = "Glacier ridge trail"
     edda = make_npc(id="npc_1", name="Edda Varn")
@@ -32,8 +30,6 @@ def test_an_npc_the_narration_names_moves_along(load_engine: None) -> None:
 
 
 def test_a_name_counts_as_a_whole_word_or_an_alias(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import named_in
-
     tomas = make_npc(id="npc_2", name="Tomas Reed", aliases=["the smith"])
     assert not named_in(tomas, "A crate of tomatoes waits by the door.")
     assert named_in(tomas, "Tomas waves from the forge.")
@@ -41,8 +37,6 @@ def test_a_name_counts_as_a_whole_word_or_an_alias(load_engine: None) -> None:
 
 
 def test_the_scene_holds_its_target_and_whom_the_narration_names(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import present_in_narration
-
     game = make_game_state()
     game.npcs = [
         make_npc(id="npc_1", name="Edda Varn"),

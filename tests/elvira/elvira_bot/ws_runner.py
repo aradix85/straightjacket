@@ -14,13 +14,17 @@ from unittest import mock
 
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
+    from tests.elvira.elvira_bot.models import NpcSnapshot
 
+import uvicorn
 import websockets
 
+from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 from straightjacket.engine.config_loader import VERSION, cfg
 from straightjacket.engine.models import GameState
-
-from .ai_helpers import (
+from straightjacket.web import handlers
+from straightjacket.web.server import app
+from tests.elvira.elvira_bot.ai_helpers import (
     ask_bot,
     available_styles,
     build_turn_context,
@@ -28,19 +32,16 @@ from .ai_helpers import (
     decide_burn_momentum,
     get_persona,
 )
-from .coverage import Coverage
-from .creation import roll_character
-from .display import print_narration, print_state, print_summary
-from .invariants import assert_game_state
-from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
-from .quality_checks import (
-    check_narration_quality,
-    check_npc_spatial_consistency,
-)
-from .recorder import record_turn
-from .report import write_report
-from .runner import RUNS_DIR, _EventCapture, aggregate_token_stats, selectable_settings
-from .tokens import TokenMeter
+from tests.elvira.elvira_bot.coverage import Coverage
+from tests.elvira.elvira_bot.creation import roll_character
+from tests.elvira.elvira_bot.display import print_narration, print_state, print_summary
+from tests.elvira.elvira_bot.invariants import assert_game_state
+from tests.elvira.elvira_bot.models import ChapterRecord, SessionLog, TurnRecord
+from tests.elvira.elvira_bot.quality_checks import check_narration_quality, check_npc_spatial_consistency
+from tests.elvira.elvira_bot.recorder import record_turn
+from tests.elvira.elvira_bot.report import write_report
+from tests.elvira.elvira_bot.runner import RUNS_DIR, _EventCapture, aggregate_token_stats, selectable_settings
+from tests.elvira.elvira_bot.tokens import TokenMeter
 
 SEPARATOR = "=" * 62
 CORRECTION_TEST_INTERVAL = 8
@@ -152,10 +153,6 @@ _BACKGROUND_TASKS: set[asyncio.Task[None]] = set()
 
 
 async def _start_server(port: int) -> Any:
-    import uvicorn
-
-    from straightjacket.web.server import app
-
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
     server = uvicorn.Server(config)
     serve_task = asyncio.create_task(server.serve())
@@ -194,9 +191,6 @@ async def run_ws_session(
     print_full = log_cfg["print_full_narration"]
     do_invariants = log_cfg["assert_state_invariants"]
     full_debug = log_cfg["full_debug_log"]
-
-    from straightjacket.engine.ai.api_client import check_configured_models, get_provider
-    from straightjacket.web import handlers
 
     check_configured_models()
     configure_bot(bot_cfg["ai"])

@@ -2,8 +2,21 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.game import process_turn
+from straightjacket.engine.game.game_start import start_new_game
 from straightjacket.engine.models import GameState
-from tests._creation import OPENING_TEXT, OpeningProvider, creation_data
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.progress import ranks
+from tests._creation import (
+    OPENING_TEXT,
+    OpeningProvider,
+    TurnProvider,
+    brain_answer,
+    create_game,
+    creation_data,
+    force_result,
+)
+from tests.elvira.elvira_bot.invariants import assert_game_state
 
 
 def _provider() -> OpeningProvider:
@@ -19,8 +32,6 @@ def _creation() -> dict[str, Any]:
 
 
 def test_start_new_game_happy_path(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import start_new_game
-
     provider = _provider()
     creation = _creation()
     game, narration = start_new_game(provider, creation)
@@ -33,8 +44,6 @@ def test_start_new_game_happy_path(load_engine: None) -> None:
 
 
 def test_start_new_game_empty_background_vow_raises(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import start_new_game
-
     provider = _provider()
     creation = _creation()
     creation["background_vow"] = ""
@@ -43,8 +52,6 @@ def test_start_new_game_empty_background_vow_raises(load_engine: None) -> None:
 
 
 def test_start_new_game_empty_player_name_raises(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import start_new_game
-
     provider = _provider()
     creation = _creation()
     creation["player_name"] = ""
@@ -53,8 +60,6 @@ def test_start_new_game_empty_player_name_raises(load_engine: None) -> None:
 
 
 def test_start_new_game_invalid_stats_raises(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import start_new_game
-
     provider = _provider()
     creation = _creation()
     creation["stats"] = {"edge": 1, "heart": 1, "iron": 1, "shadow": 1, "wits": 1}
@@ -63,8 +68,6 @@ def test_start_new_game_invalid_stats_raises(load_engine: None) -> None:
 
 
 def test_start_new_game_seeds_background_vow_track(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import start_new_game
-
     provider = _provider()
     game, _ = start_new_game(provider, _creation())
     vow_tracks = [t for t in game.progress_tracks if t.id == "vow_background"]
@@ -73,8 +76,6 @@ def test_start_new_game_seeds_background_vow_track(load_engine: None) -> None:
 
 
 def test_start_new_game_creates_opening_clock(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import start_new_game
-
     provider = _provider()
     game, _ = start_new_game(provider, _creation())
     assert len(game.world.clocks) >= 1
@@ -82,8 +83,6 @@ def test_start_new_game_creates_opening_clock(load_engine: None) -> None:
 
 
 def test_start_new_game_seeds_thread_for_vow(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import start_new_game
-
     provider = _provider()
     game, _ = start_new_game(provider, _creation())
     vow_threads = [t for t in game.narrative.threads if t.id == "thread_background_vow"]
@@ -91,8 +90,6 @@ def test_start_new_game_seeds_thread_for_vow(load_engine: None) -> None:
 
 
 def test_start_new_game_keeps_the_content_lines(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import start_new_game
-
     provider = _provider()
     creation = _creation()
     creation["content_lines"] = "no spiders, no body horror"
@@ -101,9 +98,6 @@ def test_start_new_game_keeps_the_content_lines(load_engine: None) -> None:
 
 
 def test_the_ranks_run_from_troublesome_to_epic_in_every_rank_table(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.config import rules
-    from straightjacket.engine.ruleset.progress import ranks
-
     assert ranks() == ["troublesome", "dangerous", "formidable", "extreme", "epic"]
     assert list(rules().legacy.ticks_by_rank) == ranks()
     assert list(rules().legacy.experience_by_rank) == ranks()
@@ -113,10 +107,6 @@ def test_the_ranks_run_from_troublesome_to_epic_in_every_rank_table(load_engine:
 def test_a_created_game_plays_a_turn_in_every_playable_setting(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, setting_id: str
 ) -> None:
-    from straightjacket.engine.game import process_turn
-    from tests._creation import TurnProvider, brain_answer, create_game, force_result
-    from tests.elvira.elvira_bot.invariants import assert_game_state
-
     game = create_game(
         setting_id,
         location="Abandoned Library",

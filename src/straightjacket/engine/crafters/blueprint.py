@@ -1,22 +1,41 @@
 from __future__ import annotations
 
-import random
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..engine_loader import eng
-from ..gamemaster.config import gm
-from ..gamemaster.keyed_scenes import has_keyed_scene_from
-from ..models import GameState
-from ..models_story import NarrativeState, PlotlineEntry, PossibleEnding, Revelation, StoryAct, StoryBlueprint
-from .adventure_crafter import PlotPointHit, TurningPoint, assign_themes, roll_turning_point
-from .config import crafter
-from .turning_point_spawns import (
+from straightjacket.engine.crafters.adventure_crafter import (
+    assign_themes,
+    roll_turning_point,
+)
+from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.crafters.turning_point_spawns import (
     plot_point_source,
     spawn_clocks_for_turning_point,
     spawn_dangers_for_turning_point,
     spawn_keyed_scenes_for_turning_point,
 )
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.keyed_scenes import has_keyed_scene_from
+from straightjacket.engine.models_story import (
+    PossibleEnding,
+    Revelation,
+    StoryAct,
+    StoryBlueprint,
+)
+
+if TYPE_CHECKING:
+    import random
+
+    from straightjacket.engine.crafters.adventure_crafter import (
+        PlotPointHit,
+        TurningPoint,
+    )
+    from straightjacket.engine.models import GameState
+    from straightjacket.engine.models_story import (
+        NarrativeState,
+        PlotlineEntry,
+    )
 
 
 @dataclass(frozen=True)

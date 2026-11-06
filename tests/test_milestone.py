@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AIUnavailableError
+from straightjacket.engine.correction import process_correction
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game import process_turn
 from straightjacket.engine.gamemaster.config import gm
@@ -186,8 +187,6 @@ def test_a_vow_is_fulfilled_after_its_milestones(
 def test_a_state_correction_retells_a_milestone_as_a_move_without_a_roll(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-
     game = library_game()
     background = next(t for t in game.progress_tracks if t.id == "vow_background")
     force_result(monkeypatch, "STRONG_HIT")
@@ -203,8 +202,6 @@ def test_a_state_correction_retells_a_milestone_as_a_move_without_a_roll(
 
 
 def test_a_turn_corrected_into_a_milestone_keeps_no_roll(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.correction import process_correction
-
     game = library_game()
     background = next(t for t in game.progress_tracks if t.id == "vow_background")
     force_result(monkeypatch, "STRONG_HIT")

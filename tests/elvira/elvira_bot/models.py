@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
 
@@ -127,8 +127,6 @@ class TurnRecord:
     engine_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        from dataclasses import asdict
-
         d = asdict(self)
 
         return {k: v for k, v in d.items() if v is not None and v not in ("", [], {})}
@@ -235,8 +233,6 @@ class SessionLog:
     engine_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        from dataclasses import asdict
-
         d = asdict(self)
         d["turns"] = [t.to_dict() for t in self.turns]
         return d

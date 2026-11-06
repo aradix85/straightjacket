@@ -1,9 +1,16 @@
+import asyncio
+import json
+
 import pytest
 
 from straightjacket.engine.models import (
     GameState,
 )
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_progress_track
+from tests.elvira.elvira_bot.display import final_state_dict
+from tests.elvira.elvira_bot.invariants import assert_game_state
+from tests.elvira.elvira_bot.recorder import record_turn
+from tests.elvira.elvira_bot.ws_runner import WsClient
 
 
 @pytest.fixture
@@ -43,8 +50,6 @@ def game(load_engine: None) -> GameState:
 
 
 def test_the_final_state_holds_the_character_the_bond_of_each_npc_and_the_clocks(game: GameState) -> None:
-    from tests.elvira.elvira_bot.display import final_state_dict
-
     result = final_state_dict(game)
     assert (result["character"], result["meters"]["health"], result["scene"]) == ("Elvira", 4, 5)
     kira = next(n for n in result["npcs"] if n["name"] == "Kira")
@@ -53,8 +58,6 @@ def test_the_final_state_holds_the_character_the_bond_of_each_npc_and_the_clocks
 
 
 def test_a_turn_record_keeps_the_state_and_the_npcs_in_play(game: GameState) -> None:
-    from tests.elvira.elvira_bot.recorder import record_turn
-
     game.world.combat_position = "in_control"
     record = record_turn(game, 1, "I look around.", "The docks are quiet.", None)
     state = record.state_after
@@ -66,32 +69,21 @@ def test_a_turn_record_keeps_the_state_and_the_npcs_in_play(game: GameState) -> 
 
 class TestInvariants:
     def test_clean_game_no_violations(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.invariants import assert_game_state
-
         violations = assert_game_state(game, turn=1)
         assert violations == []
 
     def test_catches_bad_health(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.invariants import assert_game_state
-
         game.resources.meters["health"] = -1
         violations = assert_game_state(game, turn=1)
         assert any("health" in v for v in violations)
 
     def test_catches_bad_disposition(self, game: GameState) -> None:
-        from tests.elvira.elvira_bot.invariants import assert_game_state
-
         game.npcs[0].disposition = "invalid"
         violations = assert_game_state(game, turn=1)
         assert any("disposition" in v for v in violations)
 
 
 def test_waiting_for_one_message_keeps_the_others_for_later_without_reading_them_again() -> None:
-    import asyncio
-    import json
-
-    from tests.elvira.elvira_bot.ws_runner import WsClient
-
     class _Socket:
         def __init__(self, *messages: dict[str, str]) -> None:
             self.queue = [json.dumps(m) for m in messages]

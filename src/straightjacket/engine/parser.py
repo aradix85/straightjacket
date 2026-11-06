@@ -1,10 +1,10 @@
 import re
 
-from .ai.provider_base import AIUnavailableError
-from .engine_loader import eng
-from .gamemaster.npc.matching import named_in
-from .logging_util import log
-from .models import GameState
+from straightjacket.engine.ai.provider_base import AIUnavailableError
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.npc.matching import named_in
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState
 
 
 def salvage_truncated_narration(raw: str) -> str:

@@ -24,6 +24,7 @@ if not _logger.handlers:
 
 from tests.elvira.elvira_bot.ai_helpers import available_styles
 from tests.elvira.elvira_bot.runner import load_config, run_session, selectable_settings
+from tests.elvira.elvira_bot.ws_runner import run_ws_session
 
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 
@@ -97,7 +98,6 @@ def main() -> None:
     if args.ws:
         if args.port:
             bot_cfg["ws_port"] = args.port
-        from tests.elvira.elvira_bot.ws_runner import run_ws_session
 
         asyncio.run(run_ws_session(bot_cfg, auto_override=args.auto, turns_override=args.turns))
     else:

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 import random
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
+from straightjacket.engine.crafters import adventure_crafter
 from straightjacket.engine.crafters.adventure_crafter import (
     PlotPointHit,
     PlotPointResult,
@@ -22,8 +23,12 @@ from straightjacket.engine.crafters.adventure_crafter import (
 )
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.crafters.meta_plot_points import dispatch_meta
-from straightjacket.engine.models import CharacterListEntry, NarrativeState, PlotlineEntry
 from tests._helpers import make_character_entry, make_narrative, make_plotline
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from straightjacket.engine.models import CharacterListEntry, NarrativeState, PlotlineEntry
 
 _SPECIAL_BOUNDARIES = [
     (1, "conclusion"),
@@ -58,8 +63,6 @@ def _meta(name: str, narrative: NarrativeState, active_plotline_id: str | None =
 def test_data_whose_themes_disagree_with_the_theme_die_refuses_to_load(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.crafters import adventure_crafter
-
     data = json.loads(json.dumps(load_ac_data()))
     data["random_themes"][-1]["theme"] = "horror"
     bad = tmp_path / "adventure_crafter.json"
@@ -294,7 +297,6 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
 
 
 def test_meta_character_exits_marks_active_character_exited() -> None:
-
     narrative = make_narrative()
     char = _present(narrative, "Alice")
     _meta("Character Exits The Adventure", narrative)
@@ -302,7 +304,6 @@ def test_meta_character_exits_marks_active_character_exited() -> None:
 
 
 def test_meta_character_returns_marks_exited_character_returned() -> None:
-
     narrative = make_narrative()
     char = _present(narrative, "Alice")
     char.ac_status = "exited"
@@ -311,7 +312,6 @@ def test_meta_character_returns_marks_exited_character_returned() -> None:
 
 
 def test_meta_character_returns_creates_new_when_no_exited() -> None:
-
     narrative = make_narrative()
     _meta("Character Returns", narrative)
     assert len(narrative.characters_list) == 1
@@ -319,7 +319,6 @@ def test_meta_character_returns_creates_new_when_no_exited() -> None:
 
 
 def test_meta_character_steps_up_increases_weight() -> None:
-
     narrative = make_narrative()
     char = _present(narrative, "Alice")
     initial = char.weight
@@ -329,7 +328,6 @@ def test_meta_character_steps_up_increases_weight() -> None:
 
 
 def test_meta_character_steps_down_decreases_weight_to_floor() -> None:
-
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
     char = _present(narrative, "Alice")
@@ -342,7 +340,6 @@ def test_meta_character_steps_down_decreases_weight_to_floor() -> None:
 
 
 def test_meta_character_downgrade_marks_status_and_decreases_weight() -> None:
-
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
     char = _present(narrative, "Alice")
@@ -353,7 +350,6 @@ def test_meta_character_downgrade_marks_status_and_decreases_weight() -> None:
 
 
 def test_meta_character_upgrade_marks_status_and_increases_weight() -> None:
-
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = make_narrative()
     char = _present(narrative, "Alice")
@@ -364,7 +360,6 @@ def test_meta_character_upgrade_marks_status_and_increases_weight() -> None:
 
 
 def test_meta_plotline_combo_merges_two_advancing_plotlines() -> None:
-
     narrative = make_narrative()
     a = _plotline(narrative, "First")
     b = _plotline(narrative, "Second")
@@ -375,7 +370,6 @@ def test_meta_plotline_combo_merges_two_advancing_plotlines() -> None:
 
 
 def test_meta_plotline_combo_skips_when_fewer_than_two_advancing() -> None:
-
     narrative = make_narrative()
     only = _plotline(narrative, "Only one")
     _meta("Plotline Combo", narrative)
@@ -383,7 +377,6 @@ def test_meta_plotline_combo_skips_when_fewer_than_two_advancing() -> None:
 
 
 def test_meta_plotline_combo_excludes_active_plotline_id() -> None:
-
     narrative = make_narrative()
     active = _plotline(narrative, "Active")
     _plotline(narrative, "Other")

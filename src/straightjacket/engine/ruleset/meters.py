@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from ..logging_util import log
-from ..models import GameState, Resources
-from .config import rules
-from .datasworn import load_ruleset
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import Resources
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 _MOMENTUM = "momentum"
 

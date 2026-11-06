@@ -3,11 +3,11 @@ from __future__ import annotations
 import random
 from collections.abc import Callable
 
-from ..ids import next_id
-from ..logging_util import log
-from ..models_story import CharacterListEntry, NarrativeState
-from .adventure_crafter import lookup_meta_plot_point
-from .config import crafter
+from straightjacket.engine.crafters.adventure_crafter import lookup_meta_plot_point
+from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.ids import next_id
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models_story import CharacterListEntry, NarrativeState
 
 _CHARACTER_ID_PREFIX = "ac_char_"
 

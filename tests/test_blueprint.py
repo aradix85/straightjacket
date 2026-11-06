@@ -1,3 +1,5 @@
+import dataclasses
+import pathlib
 import random
 from typing import Any
 
@@ -11,6 +13,7 @@ from straightjacket.engine.crafters.blueprint import (
     materialize_blueprint,
 )
 from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.keyed_scenes import has_keyed_scene_from
 from tests._helpers import make_game_state
 
@@ -91,8 +94,6 @@ def test_each_acts_revelation_is_seeded_from_its_own_turning_point(
 
 
 def test_scene_ranges_evenly_split_covers_full_range(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
-
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     total = list(eng().scene_range_default)
@@ -152,8 +153,6 @@ def test_materialize_blueprint_raises_on_revelation_count_mismatch(load_engine: 
 
 
 def test_blueprint_seed_is_frozen_dataclass(load_engine: None) -> None:
-    import dataclasses
-
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     assert isinstance(seed, BlueprintSeed)
@@ -163,8 +162,6 @@ def test_blueprint_seed_is_frozen_dataclass(load_engine: None) -> None:
 
 
 def test_call_story_architect_no_longer_in_src() -> None:
-    import pathlib
-
     src = pathlib.Path(__file__).parent.parent / "src"
     for f in src.rglob("*.py"):
         text = f.read_text(encoding="utf-8")

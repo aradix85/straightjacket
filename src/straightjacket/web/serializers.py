@@ -1,22 +1,22 @@
 import re
 from typing import Any
 
-from ..engine.engine_loader import eng
-from ..engine.format_utils import describe_by_threshold
-from ..engine.gamemaster.config import gm
-from ..engine.gamemaster.questions import answers
-from ..engine.models import GameState
-from ..engine.ruleset.bond import bonded_tracks, get_npc_bond
-from ..engine.ruleset.config import rules
-from ..engine.ruleset.datasworn import load_ruleset
-from ..engine.ruleset.impacts import impact_label
-from ..engine.ruleset.progress import filled_boxes, menace_boxes, ranks
-from ..engine.ruleset.stats import stat_descriptions
-from ..engine.ruleset.threats import active_threats
-from ..engine.ruleset.tracks import active_tracks
-from ..engine.setting.packages import list_packages, load_package
-from ..engine.story_state import get_current_act
-from ..i18n import t
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.format_utils import describe_by_threshold
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.bond import bonded_tracks, get_npc_bond
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.impacts import impact_label
+from straightjacket.engine.ruleset.progress import filled_boxes, menace_boxes, ranks
+from straightjacket.engine.ruleset.stats import stat_descriptions
+from straightjacket.engine.ruleset.threats import active_threats
+from straightjacket.engine.ruleset.tracks import active_tracks
+from straightjacket.engine.setting.packages import list_packages, load_package
+from straightjacket.engine.story_state import get_current_act
+from straightjacket.i18n import t
 
 
 def _status_resources_line(game: GameState) -> str:

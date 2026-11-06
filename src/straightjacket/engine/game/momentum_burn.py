@@ -1,13 +1,13 @@
 from dataclasses import replace
 
-from ..ai.provider_base import AIProvider
-from ..engine_loader import eng
-from ..models import GameState
-from ..prompt_loader import get_prompt
-from ..ruleset.make_move import RollOutcome
-from ..ruleset.meters import reset_momentum
-from .turn import build_scene_context, resolve_and_narrate_action
-from .turn_types import BurnOffer, DirectorCall
+from straightjacket.engine.ai.provider_base import AIProvider
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.game.turn import build_scene_context, resolve_and_narrate_action
+from straightjacket.engine.game.turn_types import BurnOffer, DirectorCall
+from straightjacket.engine.models import GameState
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.make_move import RollOutcome
+from straightjacket.engine.ruleset.meters import reset_momentum
 
 
 def process_momentum_burn(

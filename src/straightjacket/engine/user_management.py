@@ -2,8 +2,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from .config_loader import USERS_DIR
-from .logging_util import log
+from straightjacket.engine.config_loader import USERS_DIR
+from straightjacket.engine.logging_util import log
 
 _FORBIDDEN_NAME_CHARS = frozenset('<>:"|?*/\\')
 _WINDOWS_RESERVED_NAMES = frozenset(

@@ -1,28 +1,35 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from ..engine_loader import eng
-from ..gamemaster.clocks import spawn_complication_clock
-from ..gamemaster.config import gm
-from ..gamemaster.npc.matching import find_npc
-from ..gamemaster.random_events import roll_meaning_table
-from ..logging_util import log
-from ..models import Consequence, GameState, NpcData, ProgressTrack, consequence
-from ..setting.loader import OracleTable
-from ..setting.oracle_rolls import plain_text, roll_rows, roll_table
-from ..setting.packages import load_package
-from .bond import connection_track, seal_bond
-from .config import rules
-from .impacts import blocks_recovery
-from .legacy import shifted_rank
-from .meters import adjust_momentum, condition_meters, gain, is_condition_meter
-from .moves import Move, get_moves, move_table, offers_table
-from .outcome_result import OutcomeResult, new_outcome
-from .progress import filled_boxes, mark_progress
-from .suffer import suffer
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.clocks import spawn_complication_clock
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.gamemaster.random_events import roll_meaning_table
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import consequence
+from straightjacket.engine.ruleset.bond import connection_track, seal_bond
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.impacts import blocks_recovery
+from straightjacket.engine.ruleset.legacy import shifted_rank
+from straightjacket.engine.ruleset.meters import adjust_momentum, condition_meters, gain, is_condition_meter
+from straightjacket.engine.ruleset.moves import get_moves, move_table, offers_table
+from straightjacket.engine.ruleset.outcome_result import new_outcome
+from straightjacket.engine.ruleset.progress import filled_boxes, mark_progress
+from straightjacket.engine.ruleset.suffer import suffer
+from straightjacket.engine.setting.oracle_rolls import plain_text, roll_rows, roll_table
+from straightjacket.engine.setting.packages import load_package
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from straightjacket.engine.models import Consequence, GameState, NpcData, ProgressTrack
+    from straightjacket.engine.ruleset.moves import Move
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+    from straightjacket.engine.setting.loader import OracleTable
 
 
 @dataclass

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..models import GameState
-from .datasworn import load_ruleset
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def asset_data(game: GameState, asset_id: str) -> dict[str, Any] | None:

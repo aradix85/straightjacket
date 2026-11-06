@@ -1,19 +1,23 @@
 from __future__ import annotations
 
 import random
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..logging_util import log
-from ..models import CharacterListEntry, GameState, RandomEvent, ThreadEntry
-from ..prompt_loader import get_prompt
-from .clocks import spawn_emergent_clock
-from .config import gm
-from .keyed_scenes import add_keyed_scene, has_keyed_scene_from
-from .mythic_data import load_mythic
-from .npc.matching import find_npc
-from .questions import answers
-from .spawn_sources import RANDOM_EVENT_SOURCE_PREFIX
+from straightjacket.engine.gamemaster.clocks import spawn_emergent_clock
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene, has_keyed_scene_from
+from straightjacket.engine.gamemaster.mythic_data import load_mythic
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.gamemaster.spawn_sources import RANDOM_EVENT_SOURCE_PREFIX
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import CharacterListEntry, RandomEvent
+from straightjacket.engine.prompt_loader import get_prompt
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from straightjacket.engine.models import GameState, ThreadEntry
 
 _pending_events: list[RandomEvent] = []
 

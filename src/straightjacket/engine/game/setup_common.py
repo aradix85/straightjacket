@@ -1,18 +1,18 @@
 from typing import Any
 
-from ..gamemaster.npc.lifecycle import new_npc
-from ..gamemaster.npc.matching import (
+from straightjacket.engine.gamemaster.npc.lifecycle import new_npc
+from straightjacket.engine.gamemaster.npc.matching import (
     apply_name_sanitization,
     find_npc,
     fuzzy_match_existing_npc,
     named_in,
     next_npc_id,
 )
-from ..gamemaster.npc.memory import score_importance
-from ..gamemaster.pacing import record_scene_intensity
-from ..gamemaster.world import update_location
-from ..logging_util import log
-from ..models import GameState, MemoryEntry, NarrationEntry, SceneLogEntry
+from straightjacket.engine.gamemaster.npc.memory import score_importance
+from straightjacket.engine.gamemaster.pacing import record_scene_intensity
+from straightjacket.engine.gamemaster.world import update_location
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, MemoryEntry, NarrationEntry, SceneLogEntry
 
 
 def register_extracted_npcs(game: GameState, npc_dicts: list[dict[str, Any]]) -> None:

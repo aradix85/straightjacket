@@ -1,13 +1,13 @@
-from .engine_loader import eng
-from .logging_util import log
-from .models import GameState
-from .prompt_blocks import campaign_history_block, story_context_block
-from .prompt_loader import get_prompt
-from .prompt_shared import _loc_hist, _scene_header, _time_ctx, creativity_seed
-from .ruleset.bond import get_npc_bond
-from .ruleset.config import rules
-from .xml_utils import xa as _xa
-from .xml_utils import xe as _xe
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState
+from straightjacket.engine.prompt_blocks import campaign_history_block, story_context_block
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.prompt_shared import _loc_hist, _scene_header, _time_ctx, creativity_seed
+from straightjacket.engine.ruleset.bond import get_npc_bond
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.xml_utils import xa as _xa
+from straightjacket.engine.xml_utils import xe as _xe
 
 
 def build_new_game_prompt(game: GameState) -> str:

@@ -1,16 +1,31 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..logging_util import log
-from ..models import GameState, consequence
-from .config import rules
-from .impacts import clear_impact, impact_consequence
-from .meters import adjust_momentum, condition_meters, gain, is_momentum, max_momentum, momentum
-from .move_effects import complication_replaces_price, pay_the_price, roll_story_complication
-from .outcome_result import OutcomeResult, new_outcome
-from .rolls import roll_action
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import consequence
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.impacts import clear_impact, impact_consequence
+from straightjacket.engine.ruleset.meters import (
+    adjust_momentum,
+    condition_meters,
+    gain,
+    is_momentum,
+    max_momentum,
+    momentum,
+)
+from straightjacket.engine.ruleset.move_effects import (
+    complication_replaces_price,
+    pay_the_price,
+    roll_story_complication,
+)
+from straightjacket.engine.ruleset.outcome_result import new_outcome
+from straightjacket.engine.ruleset.rolls import roll_action
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
 @dataclass(frozen=True)

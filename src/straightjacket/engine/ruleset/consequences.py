@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import random
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..engine_loader import eng
-from ..gamemaster.npc.matching import find_npc
-from ..models import BrainResult, ClockEvent, Consequence, GameState
-from .config import rules
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.ruleset.config import rules
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import BrainResult, ClockEvent, Consequence, GameState
 
 
 def pick_template(key: str) -> str:

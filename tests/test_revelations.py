@@ -2,9 +2,13 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.game import process_turn
+from straightjacket.engine.correction import process_correction
+from straightjacket.engine.director import should_call_director
+from straightjacket.engine.game import process_momentum_burn, process_turn, scene_finalization, turn
 from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset import make_move
+from straightjacket.engine.ruleset.rolls import score_action_roll
 from tests._creation import TurnProvider, brain_answer, correction_answer, fixed_roll, force_result, library_game
 from tests._helpers import make_act, make_blueprint, make_revelation, make_scene_setup
 
@@ -53,8 +57,6 @@ def _add_trigger(game: GameState) -> None:
 
 
 def _play_keyed(monkeypatch: pytest.MonkeyPatch, game: GameState, provider: TurnProvider, result: str) -> None:
-    from straightjacket.engine.ruleset import make_move
-
     monkeypatch.setattr(make_move, "roll_action", fixed_roll(result))
     process_turn(provider, game, "I press on", stream=None)
 
@@ -65,9 +67,6 @@ def _play(monkeypatch: pytest.MonkeyPatch, game: GameState, provider: TurnProvid
 
 
 def _director_reasons(monkeypatch: pytest.MonkeyPatch) -> list[tuple[bool, str | None]]:
-    from straightjacket.engine.director import should_call_director
-    from straightjacket.engine.game import scene_finalization
-
     reasons: list[tuple[bool, str | None]] = []
     real = should_call_director
 
@@ -193,8 +192,6 @@ def test_ready_revelations_land_one_turn_at_a_time_the_oldest_first(
 def test_a_momentum_burn_that_turns_a_miss_into_a_hit_lands_the_revelation(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_momentum_burn
-
     game = _game(_revelation("r1", 1, ""), scene=7)
     provider = TurnProvider(_ACT)
 
@@ -211,11 +208,6 @@ def test_a_momentum_burn_that_turns_a_miss_into_a_hit_lands_the_revelation(
 def test_a_correction_tells_the_turns_revelation_again_and_marks_it_once(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, source: str
 ) -> None:
-    from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.ruleset import make_move
-    from straightjacket.engine.ruleset.rolls import score_action_roll
-
     def _hit(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> Any:
         return score_action_roll(6, 1, 2, stat_name, stat_value, move, momentum, adds)
 

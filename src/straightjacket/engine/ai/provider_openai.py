@@ -4,8 +4,8 @@ from typing import Any
 
 import openai
 
-from ..logging_util import log
-from .provider_base import AICallSpec, AIResponse, ToolCall, normalize_stop_reason
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, ToolCall, normalize_stop_reason
+from straightjacket.engine.logging_util import log
 
 
 def _usage(raw_usage: Any) -> dict[str, int] | None:

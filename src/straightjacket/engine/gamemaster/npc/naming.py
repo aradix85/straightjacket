@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import random
+from typing import TYPE_CHECKING
 
-from ...models import GameState
-from ..config import gm
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.generation import generate_entity
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def roll_oracle_name(game: GameState) -> str:
-    from ..generation import generate_entity
-
     naming = gm().naming
     parts = generate_entity(game, naming.category).results
     callsign = parts.pop(naming.callsign_role, "")

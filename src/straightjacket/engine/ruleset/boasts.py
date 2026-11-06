@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 
-from ..logging_util import log
-from ..models import GameState, consequence
-from .config import rules
-from .move_effects import apply_effects, parse_effects
-from .outcome_result import OutcomeResult
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState, consequence
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects
+from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
 def apply_boasts(game: GameState, boasts: Sequence[str], outcome: OutcomeResult) -> None:

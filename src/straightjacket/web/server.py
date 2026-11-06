@@ -1,6 +1,7 @@
 import asyncio
 import ipaddress
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -10,10 +11,12 @@ from starlette.responses import FileResponse
 from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from ..engine.engine_loader import eng
-from ..engine.logging_util import log
-from ..i18n import all_strings, t
-from .handlers import (
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.questions import install_answers
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.ruleset import answers as ironsworn
+from straightjacket.i18n import all_strings, t
+from straightjacket.web.handlers import (
     _send,
     handle_advance_asset,
     handle_burn_momentum,
@@ -41,12 +44,12 @@ from .handlers import (
     handle_tracks_query,
     send_player_selected,
 )
-from .session import new_session
+from straightjacket.web.session import new_session
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
-_session = new_session()
+active_session = new_session()
 
 
 _HANDLERS: dict[str, Callable[..., Any]] = {
@@ -98,30 +101,30 @@ def _check_origin(ws: WebSocket) -> bool:
 
 
 async def _takeover_existing_session(ws: WebSocket) -> None:
-    if _session.active_ws is not None:
+    if active_session.active_ws is not None:
         try:
-            await _session.active_ws.send_json({"type": "session_taken"})
-            await _session.active_ws.close()
+            await active_session.active_ws.send_json({"type": "session_taken"})
+            await active_session.active_ws.close()
         except (WebSocketDisconnect, RuntimeError, OSError) as e:
             log(f"[Web] takeover notify on old ws failed: {e}", level="debug")
     _rl = eng().rate_limit
     for _ in range(_rl.warn_probe_max_tries):
-        if not _session.processing:
+        if not active_session.processing:
             break
         await asyncio.sleep(_rl.warn_probe_poll_seconds)
-    _session.active_ws = ws
+    active_session.active_ws = ws
 
 
 async def _send_initial_state(ws: WebSocket) -> None:
     await _send(ws, {"type": "ui_strings", "strings": all_strings()})
-    await handle_list_players(_session, ws, {})
+    await handle_list_players(active_session, ws, {})
 
-    orphan = _session.orphan_input()
+    orphan = active_session.orphan_input()
     if orphan:
         await _send(ws, {"type": "retry_available", "text": orphan})
 
-    if _session.player:
-        await send_player_selected(_session, ws)
+    if active_session.player:
+        await send_player_selected(active_session, ws)
 
 
 async def _dispatch_one_message(ws: WebSocket, data: dict[str, Any]) -> None:
@@ -132,7 +135,7 @@ async def _dispatch_one_message(ws: WebSocket, data: dict[str, Any]) -> None:
     handler = _HANDLERS.get(msg_type)
     if handler:
         try:
-            await handler(_session, ws, data)
+            await handler(active_session, ws, data)
         except WebSocketDisconnect:
             raise
         except Exception as e:
@@ -179,12 +182,18 @@ async def websocket_endpoint(ws: WebSocket) -> None:
     except WebSocketDisconnect:
         pass
     finally:
-        if _session.active_ws is ws:
-            _session.active_ws = None
+        if active_session.active_ws is ws:
+            active_session.active_ws = None
 
 
 def homepage(_request: object) -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
+
+
+@asynccontextmanager
+async def _lifespan(_app: Starlette) -> AsyncGenerator[None]:
+    install_answers(ironsworn)
+    yield
 
 
 app = Starlette(
@@ -192,4 +201,5 @@ app = Starlette(
         Route("/", homepage),
         WebSocketRoute("/ws", websocket_endpoint),
     ],
+    lifespan=_lifespan,
 )

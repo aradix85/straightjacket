@@ -16,6 +16,11 @@ from typing_extensions import override
 
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
+    from straightjacket.engine.game import (
+        BurnOffer,
+        DirectorCall,
+    )
+    from straightjacket.engine.models import GameState, TurnSnapshot
 
 from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 from straightjacket.engine.ai.provider_base import AIUnavailableError
@@ -23,8 +28,6 @@ from straightjacket.engine.ai.sentence_stream import SentenceStream
 from straightjacket.engine.config_loader import VERSION, model_for_role, narration_language, provider_for_role
 from straightjacket.engine.correction import process_correction
 from straightjacket.engine.game import (
-    BurnOffer,
-    DirectorCall,
     generate_epilogue,
     prepare_succession,
     process_momentum_burn,
@@ -34,12 +37,12 @@ from straightjacket.engine.game import (
     start_new_game,
     start_succession_with_character,
 )
-from straightjacket.engine.models import GameState, TurnSnapshot
+from straightjacket.engine.gamemaster.questions import install_answers
 from straightjacket.engine.persistence import delete_save, load_game, save_game
+from straightjacket.engine.ruleset import answers as ironsworn
 from straightjacket.engine.setting.packages import list_packages, load_package
 from straightjacket.engine.user_management import create_user
-
-from .ai_helpers import (
+from tests.elvira.elvira_bot.ai_helpers import (
     ask_bot,
     available_styles,
     bot_label,
@@ -48,23 +51,23 @@ from .ai_helpers import (
     decide_burn_momentum,
     get_persona,
 )
-from .coverage import Coverage, world_view
-from .creation import roll_character
-from .display import print_narration, print_state, print_summary
-from .faults import NarratorOutage
-from .fixed_results import fixed_result
-from .invariants import assert_game_state, check_turn_replacement
-from .judge import consequences_in, judge_turn, revelation_in
-from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
-from .quality_checks import (
+from tests.elvira.elvira_bot.coverage import Coverage, world_view
+from tests.elvira.elvira_bot.creation import roll_character
+from tests.elvira.elvira_bot.display import print_narration, print_state, print_summary
+from tests.elvira.elvira_bot.faults import NarratorOutage
+from tests.elvira.elvira_bot.fixed_results import fixed_result
+from tests.elvira.elvira_bot.invariants import assert_game_state, check_turn_replacement
+from tests.elvira.elvira_bot.judge import consequences_in, judge_turn, revelation_in
+from tests.elvira.elvira_bot.models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
+from tests.elvira.elvira_bot.quality_checks import (
     check_chapter_continuity,
     check_narration_quality,
     check_npc_spatial_consistency,
 )
-from .recorder import record_turn
-from .report import write_report
-from .scenarios import fixed_result_of_turn, prepare_scenario
-from .tokens import TokenMeter
+from tests.elvira.elvira_bot.recorder import record_turn
+from tests.elvira.elvira_bot.report import write_report
+from tests.elvira.elvira_bot.scenarios import fixed_result_of_turn, prepare_scenario
+from tests.elvira.elvira_bot.tokens import TokenMeter
 
 RUNS_DIR = Path(__file__).resolve().parent.parent / "runs"
 SEPARATOR = "=" * 62
@@ -91,6 +94,7 @@ def _role_label(role: str) -> str:
 
 
 def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
+    install_answers(ironsworn)
     auto_mode = auto_override or bot_cfg["auto_mode"]
     username = bot_cfg["username"]
     game_cfg = bot_cfg["game"]

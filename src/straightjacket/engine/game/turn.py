@@ -1,27 +1,31 @@
 import copy
 
-from ..ai.brain import call_brain
-from ..ai.provider_base import AIProvider, NarrationSink
-from ..engine_loader import eng
-from ..gamemaster.clocks import check_npc_agency, purge_old_fired_clocks
-from ..gamemaster.facts import (
+from straightjacket.engine.ai.brain import call_brain
+from straightjacket.engine.ai.provider_base import AIProvider, NarrationSink
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.game.action_resolution import resolve_action_phase
+from straightjacket.engine.game.finalization import narrate_scene, update_crisis
+from straightjacket.engine.game.scene_finalization import finalize_scene
+from straightjacket.engine.game.turn_types import ActionResolution, BurnOffer, DirectorCall, SceneContext
+from straightjacket.engine.gamemaster.clocks import check_npc_agency, purge_old_fired_clocks
+from straightjacket.engine.gamemaster.facts import (
     clear_facts_settled_by_hit,
     overrule_facts_by_hit,
     release_absent_target,
     remember_facts,
     settle_facts_by_miss,
 )
-from ..gamemaster.generation import generate_place_on_arrival, resolve_turn_facts
-from ..gamemaster.moves import asks_the_oracle, is_dialog_branch, roll_oracle_answer
-from ..gamemaster.npc.activation import activate_npcs_for_prompt
-from ..gamemaster.npc.lifecycle import reactivate_npc
-from ..gamemaster.npc.matching import find_npc
-from ..gamemaster.questions import answers, outcome_of
-from ..gamemaster.random_events import drain_pending_events
-from ..gamemaster.scene import check_scene
-from ..gamemaster.world import apply_brain_location_time
-from ..logging_util import log
-from ..models import (
+from straightjacket.engine.gamemaster.generation import generate_place_on_arrival, resolve_turn_facts
+from straightjacket.engine.gamemaster.moves import asks_the_oracle, is_dialog_branch, roll_oracle_answer
+from straightjacket.engine.gamemaster.npc.activation import activate_npcs_for_prompt
+from straightjacket.engine.gamemaster.npc.lifecycle import reactivate_npc
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.gamemaster.questions import answers, outcome_of
+from straightjacket.engine.gamemaster.random_events import drain_pending_events
+from straightjacket.engine.gamemaster.scene import check_scene
+from straightjacket.engine.gamemaster.world import apply_brain_location_time
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import (
     BrainResult,
     ClockFillResult,
     GameState,
@@ -35,24 +39,20 @@ from ..models import (
     ThreatEvent,
     TurnSnapshot,
 )
-from ..prompt_action import build_action_prompt
-from ..prompt_dialog import build_dialog_prompt
-from ..prompt_loader import get_prompt
-from ..ruleset.config import rules
-from ..ruleset.consequences import consequence_texts, generate_consequence_sentences
-from ..ruleset.make_move import RollOutcome, make_move_without_roll, plays_without_roll, roll_move
-from ..ruleset.meters import momentum
-from ..ruleset.move_outcome import make_due_bond_test, make_follow_up_moves
-from ..ruleset.moves import get_moves
-from ..ruleset.outcome_result import new_outcome
-from ..ruleset.rolls import can_burn_momentum
-from ..ruleset.suffer import tick_dying_clock
-from ..ruleset.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
-from ..story_state import land_revelation
-from .action_resolution import resolve_action_phase
-from .finalization import narrate_scene, update_crisis
-from .scene_finalization import finalize_scene
-from .turn_types import ActionResolution, BurnOffer, DirectorCall, SceneContext
+from straightjacket.engine.prompt_action import build_action_prompt
+from straightjacket.engine.prompt_dialog import build_dialog_prompt
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.consequences import consequence_texts, generate_consequence_sentences
+from straightjacket.engine.ruleset.make_move import RollOutcome, make_move_without_roll, plays_without_roll, roll_move
+from straightjacket.engine.ruleset.meters import momentum
+from straightjacket.engine.ruleset.move_outcome import make_due_bond_test, make_follow_up_moves
+from straightjacket.engine.ruleset.moves import get_moves
+from straightjacket.engine.ruleset.outcome_result import new_outcome
+from straightjacket.engine.ruleset.rolls import can_burn_momentum
+from straightjacket.engine.ruleset.suffer import tick_dying_clock
+from straightjacket.engine.ruleset.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
+from straightjacket.engine.story_state import land_revelation
 
 
 def process_turn(

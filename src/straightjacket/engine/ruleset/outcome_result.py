@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..models import Consequence, GameState
-from .config import rules
-from .datasworn import load_ruleset
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import Consequence, GameState
 
 
 @dataclass(kw_only=True)

@@ -2,19 +2,17 @@ import json
 from itertools import starmap
 from typing import Any
 
-from ..config_loader import model_for_role, narration_language, sampling_params
-from ..crafters.blueprint import ActSeed, BlueprintSeed
-from ..crafters.config import crafter
-from ..engine_loader import eng
-from ..logging_util import log
-from ..models import GameState
-from ..prompt_blocks import (
-    content_boundaries_block,
-)
-from ..prompt_loader import get_prompt
-from ..xml_utils import xe as _xe
-from .provider_base import AICallSpec, AIProvider, create_with_retry
-from .schemas import get_blueprint_voicing_schema
+from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, create_with_retry
+from straightjacket.engine.ai.schemas import get_blueprint_voicing_schema
+from straightjacket.engine.config_loader import model_for_role, narration_language, sampling_params
+from straightjacket.engine.crafters.blueprint import ActSeed, BlueprintSeed
+from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState
+from straightjacket.engine.prompt_blocks import content_boundaries_block
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.xml_utils import xe as _xe
 
 
 def _act_line(n: int, act_seed: ActSeed) -> str:

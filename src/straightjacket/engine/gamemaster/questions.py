@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
-from ..models import ClockData, GameState, NpcData
-from .config import gm
+from straightjacket.engine.gamemaster.config import gm
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import ClockData, GameState, NpcData
 
 
 @dataclass(frozen=True)
@@ -17,29 +19,17 @@ class Danger:
 
 class RulesetAnswers(Protocol):
     def outcome(self, result: str) -> str: ...
-
     def action_kind(self, move: str) -> str: ...
-
     def action_phrase(self, move: str) -> str: ...
-
     def time_taken(self, move: str) -> str: ...
-
     def effect_bonus(self, move: str) -> int: ...
-
     def closeness(self, game: GameState, npc_id: str) -> int: ...
-
     def strain(self, game: GameState) -> list[str]: ...
-
     def gained_advantage(self, game: GameState) -> bool: ...
-
     def gathers_information(self, move: str) -> bool: ...
-
     def dangers(self, game: GameState) -> list[Danger]: ...
-
     def add_danger(self, game: GameState, origin: str, source: str, named: tuple[str, str] | None) -> None: ...
-
     def merge_npcs(self, game: GameState, kept: NpcData, merged: NpcData) -> None: ...
-
     def clock_filled(self, game: GameState, clock: ClockData) -> None: ...
 
 
@@ -53,7 +43,7 @@ def install_answers(ruleset: RulesetAnswers) -> None:
 
 def answers() -> RulesetAnswers:
     if _answers is None:
-        raise RuntimeError("No ruleset answers the game master; the game package installs one when it loads")
+        raise RuntimeError("No ruleset answers the game master; the server and Elvira install one when they start")
     return _answers
 
 

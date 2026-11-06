@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .config_binding import RawSections, build_strict, reject_unknown
-from .engine_config_dataclasses import (
+from straightjacket.engine.config_binding import RawSections, build_strict, reject_unknown
+from straightjacket.engine.engine_config_dataclasses import (
     AiTextConfig,
     CorrectionConfig,
     NarrativeDirectionConfig,

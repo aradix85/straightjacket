@@ -1,13 +1,26 @@
 from __future__ import annotations
 
-from ..logging_util import log
-from ..models import GameState, InheritanceRollResult, NpcData, PredecessorRecord, ProgressTrack, ThreadEntry
-from .bond import connection_track_id
-from .config import rules
-from .datasworn import load_ruleset
-from .progress import filled_boxes, ticks_for_filled_boxes
-from .rolls import roll_progress
-from .tracks import is_vow_thread
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import (
+    InheritanceRollResult,
+    PredecessorRecord,
+    ProgressTrack,
+)
+from straightjacket.engine.ruleset.bond import connection_track_id
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.progress import filled_boxes, ticks_for_filled_boxes
+from straightjacket.engine.ruleset.rolls import roll_progress
+from straightjacket.engine.ruleset.tracks import is_vow_thread
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import (
+        GameState,
+        NpcData,
+        ThreadEntry,
+    )
 
 
 def build_predecessor_record(game: GameState, end_reason: str) -> PredecessorRecord:

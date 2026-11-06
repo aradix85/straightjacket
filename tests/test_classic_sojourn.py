@@ -1,7 +1,11 @@
 import pytest
 
+from straightjacket.engine.game import process_turn
 from straightjacket.engine.models import GameState, Resources, labels_of
+from straightjacket.engine.ruleset import sojourn
+from straightjacket.engine.ruleset.bond import seal_bond
 from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
+from tests._creation import TurnProvider, brain_answer, fixed_roll, force_result, library_game
 from tests._helpers import fix_dice, make_game_state
 
 STRONG_FOCUS = (6, 1, 1)
@@ -69,11 +73,6 @@ def test_a_miss_pays_the_price(load_engine: None) -> None:
 def test_a_sojourn_aided_by_a_bond_takes_its_extra_pick_through_a_turn(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game import process_turn
-    from straightjacket.engine.ruleset import sojourn
-    from straightjacket.engine.ruleset.bond import seal_bond
-    from tests._creation import TurnProvider, brain_answer, fixed_roll, force_result, library_game
-
     game = library_game()
     seal_bond(game, game.npcs[0])
     game.resources.meters.update({"health": 1, "spirit": 5, "supply": 5})

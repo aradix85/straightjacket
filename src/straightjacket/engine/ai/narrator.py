@@ -2,17 +2,7 @@ import json
 from collections.abc import Sequence
 from typing import Any
 
-from ..config_loader import model_for_role, narration_language, sampling_params
-from ..engine_loader import eng
-from ..gamemaster.config import gm
-from ..logging_util import log
-from ..models import BrainResult, GameState
-from ..parser import salvage_truncated_narration
-from ..prompt_blocks import content_boundaries_block, get_narrator_system
-from ..prompt_loader import get_prompt
-from ..xml_utils import xa as _xa
-from ..xml_utils import xe as _xe
-from .provider_base import (
+from straightjacket.engine.ai.provider_base import (
     AICallSpec,
     AIProvider,
     AIUnavailableError,
@@ -20,7 +10,17 @@ from .provider_base import (
     create_with_retry,
     stream_with_retry,
 )
-from .schemas import get_narrator_metadata_schema, get_opening_setup_schema
+from straightjacket.engine.ai.schemas import get_narrator_metadata_schema, get_opening_setup_schema
+from straightjacket.engine.config_loader import model_for_role, narration_language, sampling_params
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import BrainResult, GameState
+from straightjacket.engine.parser import salvage_truncated_narration
+from straightjacket.engine.prompt_blocks import content_boundaries_block, get_narrator_system
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.xml_utils import xa as _xa
+from straightjacket.engine.xml_utils import xe as _xe
 
 
 def call_narrator(

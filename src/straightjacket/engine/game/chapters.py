@@ -4,28 +4,32 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from ..ai.blueprint_voicing import call_blueprint_voicing
-from ..ai.metadata import process_deceased_npcs
-from ..ai.narrator import call_narrator, call_opening_setup
-from ..ai.provider_base import AIProvider
-from ..crafters.blueprint import BlueprintSeed, assemble_blueprint_seed_from_ac, materialize_blueprint
-from ..director import new_guidance
-from ..engine_loader import eng
-from ..gamemaster.config import gm
-from ..gamemaster.keyed_scenes import drop_keyed_scenes_from
-from ..gamemaster.npc.memory import consolidate_memory
-from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX
-from ..gamemaster.world import clear_facts
-from ..logging_util import log
-from ..models import ChapterSummary, GameState
-from ..parser import parse_narrator_response
-from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
-from ..prompt_loader import get_prompt
-from ..ruleset.bond import get_npc_bond
-from ..ruleset.progress import menace_boxes, menace_total_boxes
-from ..ruleset.threats import active_threats, overcome_threats
-from ..ruleset.tracks import is_vow_thread, vow_record
-from .setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
+from straightjacket.engine.ai.metadata import process_deceased_npcs
+from straightjacket.engine.ai.narrator import call_narrator, call_opening_setup
+from straightjacket.engine.ai.provider_base import AIProvider
+from straightjacket.engine.crafters.blueprint import (
+    BlueprintSeed,
+    assemble_blueprint_seed_from_ac,
+    materialize_blueprint,
+)
+from straightjacket.engine.director import new_guidance
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.game.setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.keyed_scenes import drop_keyed_scenes_from
+from straightjacket.engine.gamemaster.npc.memory import consolidate_memory
+from straightjacket.engine.gamemaster.spawn_sources import AC_SOURCE_PREFIX
+from straightjacket.engine.gamemaster.world import clear_facts
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import ChapterSummary, GameState
+from straightjacket.engine.parser import parse_narrator_response
+from straightjacket.engine.prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.ruleset.bond import get_npc_bond
+from straightjacket.engine.ruleset.progress import menace_boxes, menace_total_boxes
+from straightjacket.engine.ruleset.threats import active_threats, overcome_threats
+from straightjacket.engine.ruleset.tracks import is_vow_thread, vow_record
 
 
 def generate_epilogue(provider: AIProvider, game: GameState) -> str:

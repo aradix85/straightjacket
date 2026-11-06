@@ -1,13 +1,37 @@
 from unittest.mock import patch
 
+from straightjacket.engine.gamemaster.npc.activation import activate_npcs_for_prompt, compute_npc_tfidf_scores
+from straightjacket.engine.gamemaster.npc.description_match import is_complete_description
+from straightjacket.engine.gamemaster.npc.lifecycle import (
+    absorb_duplicate_npc,
+    absorb_npc,
+    merge_npc_identity,
+    reactivate_npc,
+    retire_distant_npcs,
+    sanitize_aliases,
+)
+from straightjacket.engine.gamemaster.npc.matching import (
+    edit_distance_le1,
+    find_npc,
+    fuzzy_match_existing_npc,
+    normalize_for_match,
+    resolve_about_npc,
+    sanitize_npc_name,
+)
+from straightjacket.engine.gamemaster.npc.memory import consolidate_memory, retrieve_memories, score_importance
+from straightjacket.engine.gamemaster.npc.processing import process_new_npcs, process_npc_details, process_npc_renames
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.bond import get_npc_bond
 from tests._helpers import (
     make_brain_result,
+    make_character_entry,
+    make_clock,
     make_game_state,
     make_memory,
     make_npc,
     make_npc_detail,
     make_npc_rename,
+    make_progress_track,
 )
 
 
@@ -38,8 +62,6 @@ def _make_game() -> "GameState":
 
 
 def test_find_npc_by_id(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import find_npc
-
     game = _make_game()
     _npc = find_npc(game, "npc_1")
     assert _npc is not None
@@ -47,8 +69,6 @@ def test_find_npc_by_id(load_engine: None) -> None:
 
 
 def test_find_npc_by_name(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import find_npc
-
     game = _make_game()
     _npc = find_npc(game, "Kira Voss")
     assert _npc is not None
@@ -56,8 +76,6 @@ def test_find_npc_by_name(load_engine: None) -> None:
 
 
 def test_find_npc_by_alias(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import find_npc
-
     game = _make_game()
     _npc = find_npc(game, "Kira")
     assert _npc is not None
@@ -65,8 +83,6 @@ def test_find_npc_by_alias(load_engine: None) -> None:
 
 
 def test_find_npc_substring(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import find_npc
-
     game = _make_game()
 
     result = find_npc(game, "Old Borin Ironhand")
@@ -75,8 +91,6 @@ def test_find_npc_substring(load_engine: None) -> None:
 
 
 def test_find_npc_substring_short_no_match(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import find_npc
-
     game = _make_game()
 
     result = find_npc(game, "Borin Ironhand")
@@ -85,8 +99,6 @@ def test_find_npc_substring_short_no_match(load_engine: None) -> None:
 
 
 def test_find_npc_returns_none(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import find_npc
-
     game = _make_game()
     assert find_npc(game, "Nobody") is None
     assert find_npc(game, "") is None
@@ -94,8 +106,6 @@ def test_find_npc_returns_none(load_engine: None) -> None:
 
 
 def test_edit_distance_le1() -> None:
-    from straightjacket.engine.gamemaster.npc.matching import edit_distance_le1
-
     assert edit_distance_le1("kira", "kira") is True
     assert edit_distance_le1("kira", "kirra") is True
     assert edit_distance_le1("kira", "kia") is True
@@ -105,8 +115,6 @@ def test_edit_distance_le1() -> None:
 
 
 def test_fuzzy_match_stt_variant(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
-
     game = make_game_state(player_name="Hero")
     game.npcs = [
         make_npc(id="npc_1", name="Eisenberg", disposition="neutral"),
@@ -119,8 +127,6 @@ def test_fuzzy_match_stt_variant(load_engine: None) -> None:
 
 
 def test_fuzzy_match_stt_variant_multiword(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
-
     game = make_game_state(player_name="Hero")
     game.npcs = [
         make_npc(id="npc_1", name="Markus Eisenberg", disposition="neutral"),
@@ -132,8 +138,6 @@ def test_fuzzy_match_stt_variant_multiword(load_engine: None) -> None:
 
 
 def test_fuzzy_match_stt_variant_sorted_mismatch(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
-
     game = _make_game()
 
     match, _match_type = fuzzy_match_existing_npc(game, "Kira Foss")
@@ -143,8 +147,6 @@ def test_fuzzy_match_stt_variant_sorted_mismatch(load_engine: None) -> None:
 
 
 def test_fuzzy_match_title_only_rejected(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
-
     game = _make_game()
 
     match, _ = fuzzy_match_existing_npc(game, "Mrs.")
@@ -152,8 +154,6 @@ def test_fuzzy_match_title_only_rejected(load_engine: None) -> None:
 
 
 def test_fuzzy_match_substring(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
-
     game = _make_game()
     match, _match_type = fuzzy_match_existing_npc(game, "Kira Voss-Eisenstein")
     assert match is not None
@@ -161,8 +161,6 @@ def test_fuzzy_match_substring(load_engine: None) -> None:
 
 
 def test_fuzzy_match_by_a_shared_word_is_the_same_figure(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
-
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Halvard Brennick")]
     match, match_type = fuzzy_match_existing_npc(game, "Brennick the Elder")
@@ -172,40 +170,30 @@ def test_fuzzy_match_by_a_shared_word_is_the_same_figure(load_engine: None) -> N
 
 
 def test_fuzzy_match_without_a_match_has_no_type(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
-
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Halvard Brennick")]
     assert fuzzy_match_existing_npc(game, "Odette Marrow") == (None, None)
 
 
 def test_sanitize_npc_name() -> None:
-    from straightjacket.engine.gamemaster.npc.matching import sanitize_npc_name
-
     clean, aliases = sanitize_npc_name("Kira (also known as Shadow)")
     assert clean == "Kira"
     assert "Shadow" in aliases
 
 
 def test_sanitize_npc_name_no_parens() -> None:
-    from straightjacket.engine.gamemaster.npc.matching import sanitize_npc_name
-
     clean, aliases = sanitize_npc_name("Kira Voss")
     assert clean == "Kira Voss"
     assert aliases == []
 
 
 def test_normalize_for_match() -> None:
-    from straightjacket.engine.gamemaster.npc.matching import normalize_for_match
-
     assert normalize_for_match("Wacholder-im-Schnee") == "wacholder im schnee"
     assert normalize_for_match("Wacholder im Schnee") == "wacholder im schnee"
     assert normalize_for_match("wacholder_im_schnee") == "wacholder im schnee"
 
 
 def test_resolve_about_npc_self_reference(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import resolve_about_npc
-
     game = _make_game()
 
     result = resolve_about_npc(game, "Kira Voss", owner_id="npc_1")
@@ -213,38 +201,28 @@ def test_resolve_about_npc_self_reference(load_engine: None) -> None:
 
 
 def test_resolve_about_npc_valid(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.matching import resolve_about_npc
-
     game = _make_game()
     result = resolve_about_npc(game, "Old Borin", owner_id="npc_1")
     assert result == "npc_2"
 
 
 def test_score_importance_direct(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.memory import score_importance
-
     assert score_importance("neutral", event_text="") == 2
     assert score_importance("terrified", event_text="") == 7
     assert score_importance("transformed", event_text="") == 10
 
 
 def test_score_importance_compound(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.memory import score_importance
-
     score = score_importance("angry_terrified", event_text="")
     assert score >= 7
 
 
 def test_score_importance_keyword_boost(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.memory import score_importance
-
     score = score_importance("neutral", "witnessed a death")
     assert score >= 7
 
 
 def test_consolidate_memory_under_limit(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.memory import consolidate_memory
-
     npc = make_npc(id="npc_1", name="Test")
     npc.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=3) for i in range(5)]
     consolidate_memory(npc)
@@ -252,8 +230,6 @@ def test_consolidate_memory_under_limit(load_engine: None) -> None:
 
 
 def test_consolidate_memory_over_limit(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.memory import consolidate_memory
-
     npc = make_npc(id="npc_1", name="Test")
 
     npc.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=i % 10) for i in range(30)]
@@ -265,16 +241,12 @@ def test_consolidate_memory_over_limit(load_engine: None) -> None:
 
 
 def test_retrieve_memories_empty(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.memory import retrieve_memories
-
     npc = make_npc(id="npc_1", name="Test")
     result = retrieve_memories(npc, context_text="", max_count=5, current_scene=5)
     assert result == []
 
 
 def test_retrieve_memories_includes_reflection(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.memory import retrieve_memories
-
     npc = make_npc(id="npc_1", name="Test")
     npc.memory = [
         make_memory(scene=1, event="saw player", type="observation", importance=3),
@@ -289,8 +261,6 @@ def test_retrieve_memories_includes_reflection(load_engine: None) -> None:
 
 
 def test_retrieve_memories_about_npc_boost(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.memory import retrieve_memories
-
     npc = make_npc(id="npc_1", name="Test")
     npc.memory = [
         make_memory(scene=1, event="old boring event", type="observation", importance=2, about_npc="npc_3"),
@@ -302,16 +272,12 @@ def test_retrieve_memories_about_npc_boost(load_engine: None) -> None:
 
 
 def test_reactivate_background_npc(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import reactivate_npc
-
     npc = make_npc(id="npc_1", name="Test", status="background")
     reactivate_npc(npc, reason="test")
     assert npc.status == "active"
 
 
 def test_a_lore_figure_who_appears_in_person_becomes_active(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_new_npcs
-
     game = _make_game()
     game.npcs.append(make_npc(id="npc_9", name="Edda Varn", status="lore"))
     process_new_npcs(game, [{"name": "Edda Varn", "description": "The founder, alive", "disposition": "neutral"}])
@@ -319,24 +285,18 @@ def test_a_lore_figure_who_appears_in_person_becomes_active(load_engine: None) -
 
 
 def test_reactivate_deceased_refused(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import reactivate_npc
-
     npc = make_npc(id="npc_1", name="Test", status="deceased")
     reactivate_npc(npc, reason="test")
     assert npc.status == "deceased"
 
 
 def test_reactivate_deceased_forced(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import reactivate_npc
-
     npc = make_npc(id="npc_1", name="Test", status="deceased")
     reactivate_npc(npc, reason="resurrection", force=True)
     assert npc.status == "active"
 
 
 def test_merge_npc_identity(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
-
     npc = make_npc(id="npc_1", name="Old Man", disposition="neutral")
     merge_npc_identity(npc, "Professor Heinrich", game=make_game_state(npcs=[npc]))
     assert npc.name == "Professor Heinrich"
@@ -344,8 +304,6 @@ def test_merge_npc_identity(load_engine: None) -> None:
 
 
 def test_merge_npc_identity_same_name_skipped(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
-
     npc = make_npc(id="npc_1", name="Kira", disposition="neutral")
     merge_npc_identity(npc, "Kira", game=make_game_state(npcs=[npc]))
     assert npc.name == "Kira"
@@ -353,8 +311,6 @@ def test_merge_npc_identity_same_name_skipped(load_engine: None) -> None:
 
 
 def test_sanitize_aliases(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import sanitize_aliases
-
     npc = make_npc(
         id="npc_1",
         name="Kira Voss",
@@ -368,8 +324,6 @@ def test_sanitize_aliases(load_engine: None) -> None:
 
 
 def test_absorb_duplicate_npc(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import absorb_duplicate_npc
-
     game = _make_game()
 
     dup = make_npc(
@@ -388,8 +342,6 @@ def test_absorb_duplicate_npc(load_engine: None) -> None:
 
 
 def _merge_game(original_ticks: int | None, dup_ticks: int | None) -> GameState:
-    from tests._helpers import make_character_entry, make_clock, make_progress_track
-
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Mira"), make_npc(id="npc_2", name="The stranger")]
     for npc_id, ticks in (("npc_1", original_ticks), ("npc_2", dup_ticks)):
@@ -406,9 +358,6 @@ def _merge_game(original_ticks: int | None, dup_ticks: int | None) -> GameState:
 
 
 def test_a_merged_npc_leaves_nothing_that_points_at_it(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import absorb_npc
-    from straightjacket.engine.ruleset.bond import get_npc_bond
-
     game = _merge_game(original_ticks=None, dup_ticks=12)
     mira, stranger = game.npcs
     absorb_npc(game, mira, stranger)
@@ -422,8 +371,6 @@ def test_a_merged_npc_leaves_nothing_that_points_at_it(load_engine: None) -> Non
 
 
 def test_a_merge_keeps_the_connection_with_the_most_progress(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import absorb_npc
-
     for original_ticks, dup_ticks, kept in ((20, 8, 20), (8, 20, 20), (8, 8, 8)):
         game = _merge_game(original_ticks, dup_ticks)
         absorb_npc(game, game.npcs[0], game.npcs[1])
@@ -431,8 +378,6 @@ def test_a_merge_keeps_the_connection_with_the_most_progress(load_engine: None) 
 
 
 def test_is_complete_description() -> None:
-    from straightjacket.engine.gamemaster.npc.description_match import is_complete_description
-
     assert is_complete_description("Tall woman with red hair.") is True
     assert is_complete_description("Tall woman with red") is False
     assert is_complete_description("Short.") is False
@@ -440,8 +385,6 @@ def test_is_complete_description() -> None:
 
 
 def test_retire_distant_npcs(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import retire_distant_npcs
-
     game = _make_game()
 
     for i in range(15):
@@ -452,8 +395,6 @@ def test_retire_distant_npcs(load_engine: None) -> None:
 
 
 def test_tfidf_scores_basic(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.activation import compute_npc_tfidf_scores
-
     npcs = [
         make_npc(id="npc_1", name="Kira Voss", description="sword fighter warrior"),
         make_npc(id="npc_2", name="Old Borin", description="blacksmith forge anvil"),
@@ -463,8 +404,6 @@ def test_tfidf_scores_basic(load_engine: None) -> None:
 
 
 def test_activate_npcs_target_always_activated(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.activation import activate_npcs_for_prompt
-
     game = _make_game()
 
     brain = make_brain_result(target_npc="npc_2", player_intent="talk to blacksmith")
@@ -474,8 +413,6 @@ def test_activate_npcs_target_always_activated(load_engine: None) -> None:
 
 
 def test_activate_npcs_name_mention(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.activation import activate_npcs_for_prompt
-
     game = _make_game()
 
     brain = make_brain_result(player_intent="I look for Kira")
@@ -485,8 +422,6 @@ def test_activate_npcs_name_mention(load_engine: None) -> None:
 
 
 def test_process_new_npcs_adds_npc(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_new_npcs
-
     game = _make_game()
     assert len(game.npcs) == 2
 
@@ -501,8 +436,6 @@ def test_process_new_npcs_adds_npc(load_engine: None) -> None:
 
 
 def test_process_new_npcs_skips_player_character(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_new_npcs
-
     game = _make_game()
 
     process_new_npcs(game, [{"name": "Hero", "description": "The protagonist", "disposition": "neutral"}])
@@ -511,8 +444,6 @@ def test_process_new_npcs_skips_player_character(load_engine: None) -> None:
 
 
 def test_process_new_npcs_skips_existing(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_new_npcs
-
     game = _make_game()
 
     process_new_npcs(game, [{"name": "Kira Voss", "description": "Same person", "disposition": "friendly"}])
@@ -521,8 +452,6 @@ def test_process_new_npcs_skips_existing(load_engine: None) -> None:
 
 
 def test_process_npc_renames_updates_name(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_npc_renames
-
     game = _make_game()
 
     process_npc_renames(game, [make_npc_rename(npc_id="npc_1", new_name="Kira von Asten")])
@@ -533,8 +462,6 @@ def test_process_npc_renames_updates_name(load_engine: None) -> None:
 
 
 def test_process_npc_renames_rejects_player_name(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_npc_renames
-
     game = _make_game()
 
     process_npc_renames(game, [make_npc_rename(npc_id="npc_1", new_name="Hero")])
@@ -544,8 +471,6 @@ def test_process_npc_renames_rejects_player_name(load_engine: None) -> None:
 
 
 def test_process_npc_details_extends_surname(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_npc_details
-
     game = _make_game()
 
     process_npc_details(game, [make_npc_detail(npc_id="npc_2", full_name="Old Borin Ironhand")], world_addition="")
@@ -556,8 +481,6 @@ def test_process_npc_details_extends_surname(load_engine: None) -> None:
 
 
 def test_process_npc_details_updates_description(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.processing import process_npc_details
-
     game = _make_game()
 
     process_npc_details(

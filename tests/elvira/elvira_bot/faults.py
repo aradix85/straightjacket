@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, AIResponse
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, AIResponse
 
 INJECTED = "injected narrator outage"
 

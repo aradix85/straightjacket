@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .engine_loader import eng
-from .serialization import SerializableMixin, deserialize, serialize
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.serialization import SerializableMixin, deserialize, serialize
 
 
 @dataclass

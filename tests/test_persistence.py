@@ -3,8 +3,10 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.models import GameState
+from straightjacket.engine.models import GameState, Resources
+from straightjacket.engine.persistence import delete_save, list_saves_with_info, load_game, save_game
 from straightjacket.engine.ruleset.meters import starting_resources
+from straightjacket.engine.user_management import get_save_dir
 from tests._helpers import make_blueprint, make_clock, make_game_state, make_memory, make_npc
 
 
@@ -37,8 +39,6 @@ def save_dir(tmp_path: Any, monkeypatch: pytest.MonkeyPatch, load_engine: None) 
 
 
 def test_a_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import load_game, save_game
-
     game = _game()
     game.npcs[0].arc = "Beginning to trust the player"
     game.npcs[0].aliases = [game.npcs[0].name]
@@ -54,23 +54,17 @@ def test_a_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
 
 
 def test_load_nonexistent_returns_none(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import load_game
-
     game, msgs = load_game("tester", "nonexistent")
     assert game is None
     assert msgs == []
 
 
 def test_list_saves_empty(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import list_saves_with_info
-
     result = list_saves_with_info("empty_user")
     assert result == []
 
 
 def test_list_saves_with_saves(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import list_saves_with_info, save_game
-
     save_game(_game(), "lister", [], "save_a")
     save_game(_game(), "lister", [], "save_b")
     result = list_saves_with_info("lister")
@@ -81,25 +75,17 @@ def test_list_saves_with_saves(save_dir: Any) -> None:
 
 
 def test_delete_save(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import delete_save, list_saves_with_info, save_game
-
     save_game(_game(), "deleter", [], "to_delete")
     delete_save("deleter", "to_delete")
     assert list_saves_with_info("deleter") == []
 
 
 def test_deleting_a_save_that_does_not_exist_changes_nothing(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import delete_save
-    from straightjacket.engine.user_management import get_save_dir
-
     delete_save("nobody", "nope")
     assert not (get_save_dir("nobody") / "nope.json").exists()
 
 
 def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import save_game
-    from straightjacket.engine.user_management import get_save_dir
-
     msgs = [{"role": "assistant", "content": "Narration.", "epilogue": True}]
     save_game(_game(), "tester", msgs, "keys")
     data = json.loads((get_save_dir("tester") / "keys.json").read_text(encoding="utf-8"))
@@ -108,9 +94,6 @@ def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
 
 
 def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import list_saves_with_info, save_game
-    from straightjacket.engine.user_management import get_save_dir
-
     save_game(_game(), "mixed", [], "good_save")
     save_root = get_save_dir("mixed")
 
@@ -126,8 +109,6 @@ def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
 
 
 def test_a_save_missing_a_field_does_not_load(load_engine: None) -> None:
-    from straightjacket.engine.models import Resources
-
     data = starting_resources("starforged").to_dict()
     data.pop("next_move_bonus")
     with pytest.raises(ValueError, match=r"Resources: missing fields \['next_move_bonus'\]"):
@@ -168,8 +149,6 @@ def test_a_save_with_a_value_where_an_object_belongs_does_not_load(load_engine: 
 
 
 def test_a_snapshot_that_disagrees_on_the_blueprint_does_not_restore(load_engine: None) -> None:
-    from tests._helpers import make_blueprint
-
     game = _game()
     game.narrative.story_blueprint = make_blueprint()
     snap = game.snapshot()

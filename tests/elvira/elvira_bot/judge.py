@@ -3,14 +3,15 @@ from __future__ import annotations
 import html
 import json
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from straightjacket.engine.ai.provider_base import AICallSpec
-from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.moves import get_moves, outcome_text
+from tests.elvira.elvira_bot.ai_helpers import ELVIRA_ROLE, _p, bot_model, bot_provider
+from tests.elvira.elvira_bot.coverage import unrolled_kind
 
-from .ai_helpers import ELVIRA_ROLE, _p, bot_model, bot_provider
-from .coverage import unrolled_kind
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 CRITERIA = ("result_integrity", "prompt_elements", "npc_voice", "player_agency", "restraint", "prose")
 

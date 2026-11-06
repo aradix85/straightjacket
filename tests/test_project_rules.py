@@ -6,16 +6,17 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
+from radon.complexity import cc_visit
 from typing_extensions import override
 
 if TYPE_CHECKING:
-    from radon.visitors import Class, Function
+    from collections.abc import Callable, Iterator
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = REPO_ROOT / "src" / "straightjacket"
@@ -460,39 +461,6 @@ def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
     return "YAML COMMENT", violations
 
 
-_INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
-    ("engine/gamemaster/npc/naming.py", "roll_oracle_name"),
-    ("engine/ai/api_client.py", "build_adapter"),
-    ("engine/gamemaster/fate.py", "resolve_fate"),
-    ("engine/gamemaster/engine_memories.py", "generate_engine_memories"),
-}
-
-
-def _inline_imports() -> list[tuple[str, str, int, str]]:
-    found: list[tuple[str, str, int, str]] = []
-    for path in _iter_source_files():
-        rel = _rel(path)
-        _, lines, tree, _ = _load(path)
-        for func in ast.walk(tree):
-            if not isinstance(func, ast.FunctionDef | ast.AsyncFunctionDef):
-                continue
-            for node in ast.walk(func):
-                if node is func or not isinstance(node, ast.Import | ast.ImportFrom):
-                    continue
-                snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-                found.append((rel, func.name, node.lineno, snippet))
-    return found
-
-
-def _check_inline_imports_only_in_whitelist() -> tuple[str, list[Violation]]:
-    violations = [
-        Violation(rel, lineno, f"{snippet}  [in {func}]")
-        for rel, func, lineno, snippet in _inline_imports()
-        if (rel, func) not in _INLINE_IMPORT_WHITELIST
-    ]
-    return "INLINE IMPORT outside whitelist", violations
-
-
 _MODELS_FILES = ("models.py", "models_base.py", "models_npc.py", "models_story.py")
 
 
@@ -635,22 +603,18 @@ _COMPLEXITY_CEILING = 20
 
 
 def _check_no_function_exceeds_complexity_ceiling() -> tuple[str, list[Violation]]:
-    from radon.complexity import cc_visit
-
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
-        violations.extend(_scan_complexity(path, rel, cc_visit, set()))
+        violations.extend(_scan_complexity(path, rel, set()))
     for path in _iter_test_files():
         rel = _rel_test(path)
-        violations.extend(_scan_complexity(path, rel, cc_visit, _COMPLEXITY_TEST_WHITELIST))
+        violations.extend(_scan_complexity(path, rel, _COMPLEXITY_TEST_WHITELIST))
 
     return f"CYCLOMATIC COMPLEXITY above {_COMPLEXITY_CEILING} (decompose into sub-functions)", violations
 
 
-def _scan_complexity(
-    path: Path, rel: str, cc_visit: Callable[[str], list[Function | Class]], whitelist: set[tuple[str, str]]
-) -> list[Violation]:
+def _scan_complexity(path: Path, rel: str, whitelist: set[tuple[str, str]]) -> list[Violation]:
     violations: list[Violation] = []
     try:
         text, _, _, _ = _load(path)
@@ -1015,9 +979,6 @@ def _stale_symbol_entries() -> list[Violation]:
     violations: list[Violation] = []
     for name, rel in sorted(_ORPHAN_SYMBOL_CARVE_OUT - _orphan_public_symbols()):
         violations.append(Violation(rel, 0, f"orphan carve-out {name!r} is not an orphan, or not defined there"))
-    inline = {(rel, func) for rel, func, _, _ in _inline_imports()}
-    for rel, name in sorted(_INLINE_IMPORT_WHITELIST - inline):
-        violations.append(Violation(rel, 0, f"inline-import whitelist function {name!r} holds no inline import"))
     for rel, name in sorted(_EXTERNAL_STRUCTURE_DATACLASSES):
         if not _defines(SRC_ROOT / rel, name):
             violations.append(Violation(rel, 0, f"external-structure dataclass {name!r} is not defined there"))
@@ -1345,12 +1306,9 @@ def _layer(parts: list[str]) -> str:
     return "top"
 
 
-def _import_target(node: ast.ImportFrom, file_parts: tuple[str, ...]) -> list[str] | None:
-    if node.level == 0:
-        module = node.module or ""
-        return module.split(".")[1:] if module.startswith("straightjacket.") else None
-    base = list(file_parts[: len(file_parts) - node.level])
-    return base + (node.module.split(".") if node.module else [])
+def _import_target(node: ast.ImportFrom) -> list[str] | None:
+    module = node.module or ""
+    return module.split(".")[1:] if module.startswith("straightjacket.") else None
 
 
 def _check_import_layers() -> tuple[str, list[Violation]]:
@@ -1362,7 +1320,7 @@ def _check_import_layers() -> tuple[str, list[Violation]]:
         for node in ast.walk(tree):
             if not isinstance(node, ast.ImportFrom):
                 continue
-            target = _import_target(node, parts)
+            target = _import_target(node)
             if target is None:
                 continue
             other = _layer(target)
@@ -1383,7 +1341,7 @@ def _check_hub_packages_imported_through_init() -> tuple[str, list[Violation]]:
         for node in ast.walk(tree):
             if not isinstance(node, ast.ImportFrom):
                 continue
-            target = _import_target(node, parts)
+            target = _import_target(node)
             if target is None or len(target) < 3 or target[0] != "engine" or target[1] not in _HUB_PACKAGES:
                 continue
             if parts[:2] != ("engine", target[1]):
@@ -1438,7 +1396,6 @@ _ALL_CHECKS = (
     _check_broad_except_inside_carve_out_only,
     _check_no_python_comments_or_docstrings,
     _check_no_yaml_comments,
-    _check_inline_imports_only_in_whitelist,
     _check_dataclasses_in_models_inherit_serializablemixin,
     _check_no_direct_provider_sdk_imports,
     _check_no_hardcoded_model_names_in_engine,

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..logging_util import log
-from ..models import GameState
-from ..prompt_loader import get_prompt
-from .registry import get_handler
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.tools.registry import get_handler
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def execute_tool_call(name: str, arguments: dict[str, Any], game: GameState) -> str:

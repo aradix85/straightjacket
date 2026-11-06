@@ -4,9 +4,11 @@ import os
 from collections.abc import Callable
 from dataclasses import replace
 
-from ..config_loader import ProviderConfig, cfg, provider_for_role
-from ..prompt_loader import get_prompt
-from .provider_base import AICallSpec, AIProvider, AIResponse, ModelListingProvider
+from straightjacket.engine.ai.provider_anthropic import AnthropicProvider
+from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, AIResponse, ModelListingProvider
+from straightjacket.engine.ai.provider_openai import OpenAICompatibleProvider
+from straightjacket.engine.config_loader import ProviderConfig, cfg, provider_for_role
+from straightjacket.engine.prompt_loader import get_prompt
 
 _adapter_cache: dict[str, ModelListingProvider] = {}
 
@@ -24,12 +26,8 @@ def build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
 
     adapter: ModelListingProvider
     if pc.type == "anthropic":
-        from .provider_anthropic import AnthropicProvider
-
         adapter = AnthropicProvider(api_key=resolved_key, timeout_seconds=pc.timeout_seconds, api_base=pc.api_base)
     elif pc.type == "openai_compatible":
-        from .provider_openai import OpenAICompatibleProvider
-
         adapter = OpenAICompatibleProvider(
             api_key=resolved_key, timeout_seconds=pc.timeout_seconds, api_base=pc.api_base
         )

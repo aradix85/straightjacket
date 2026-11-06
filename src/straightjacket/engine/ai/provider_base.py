@@ -4,8 +4,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any, Protocol
 
-from ..engine_loader import eng
-from ..logging_util import log
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.logging_util import log
 
 
 @dataclass(frozen=True)
@@ -51,7 +51,6 @@ def normalize_stop_reason(raw: str, truncated_values: tuple[str, ...], tool_use_
 
 class AIProvider(Protocol):
     def create_message(self, spec: AICallSpec) -> AIResponse: ...
-
     def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse: ...
 
 
@@ -61,9 +60,7 @@ class ModelListingProvider(AIProvider, Protocol):
 
 class NarrationSink(Protocol):
     def feed(self, delta: str) -> None: ...
-
     def finish(self) -> None: ...
-
     def fail(self) -> None: ...
 
 

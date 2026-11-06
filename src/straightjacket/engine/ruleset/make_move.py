@@ -1,27 +1,38 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..engine_loader import eng
-from ..logging_util import log
-from ..models import BrainResult, GameState, ProgressTrack, RollResult, consequence, labels_of
-from ..setting.loader import OracleTable
-from ..setting.oracle_rolls import plain_text, roll_rows
-from .boasts import apply_boasts
-from .bond import connection_track, is_bonded
-from .bonuses import apply_momentum_on_hit, bond_of_bonus, chosen_bonus
-from .config import rules
-from .legacy import mark_legacy_ticks
-from .meters import momentum
-from .move_effects import apply_effects, parse_effects
-from .move_outcome import resolve_move_outcome
-from .moves import PICK_METHODS, Move, get_moves
-from .outcome_result import OutcomeResult, move_outcome_config
-from .progress import filled_boxes
-from .roll_sources import best_roll_option, roll_by_method, roll_source_without_stat
-from .rolls import downgrade_in_position, keep_action_dice, keep_progress_dice, roll_action, roll_progress
-from .tracks import apply_progress_and_legacy, find_progress_track
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import consequence, labels_of
+from straightjacket.engine.ruleset.boasts import apply_boasts
+from straightjacket.engine.ruleset.bond import connection_track, is_bonded
+from straightjacket.engine.ruleset.bonuses import apply_momentum_on_hit, bond_of_bonus, chosen_bonus
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.legacy import mark_legacy_ticks
+from straightjacket.engine.ruleset.meters import momentum
+from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects
+from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
+from straightjacket.engine.ruleset.moves import PICK_METHODS, get_moves
+from straightjacket.engine.ruleset.outcome_result import move_outcome_config
+from straightjacket.engine.ruleset.progress import filled_boxes
+from straightjacket.engine.ruleset.roll_sources import best_roll_option, roll_by_method, roll_source_without_stat
+from straightjacket.engine.ruleset.rolls import (
+    downgrade_in_position,
+    keep_action_dice,
+    keep_progress_dice,
+    roll_action,
+    roll_progress,
+)
+from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy, find_progress_track
+from straightjacket.engine.setting.oracle_rolls import plain_text, roll_rows
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import BrainResult, GameState, ProgressTrack, RollResult
+    from straightjacket.engine.ruleset.moves import Move
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+    from straightjacket.engine.setting.loader import OracleTable
 
 
 @dataclass

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.bond import get_npc_bond
 
-from .models import SessionLog
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
+    from tests.elvira.elvira_bot.models import SessionLog
 
 
 def print_narration(narration: str, full: bool) -> None:

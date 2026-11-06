@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..gamemaster.config import gm
-from ..gamemaster.npc.lifecycle import absorb_npc, new_npc
-from ..gamemaster.npc.matching import find_npc, next_npc_id
-from ..gamemaster.npc.naming import roll_oracle_name
-from ..gamemaster.world import clear_facts, locations_match
-from ..logging_util import log
-from ..models import GameState
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.npc.lifecycle import absorb_npc, new_npc
+from straightjacket.engine.gamemaster.npc.matching import find_npc, next_npc_id
+from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
+from straightjacket.engine.gamemaster.world import clear_facts, locations_match
+from straightjacket.engine.logging_util import log
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def _skip(op_dict: dict[str, Any], reason: str) -> None:

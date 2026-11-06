@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
-from .gamemaster.questions import answers
-from .models import (
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.models import (
     BrainResult,
     ClockFillResult,
     Consequence,
@@ -15,9 +15,14 @@ from .models import (
     ThreatEvent,
     labels_of,
 )
-from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block, task_action
-from .prompt_loader import get_prompt
-from .prompt_shared import (
+from straightjacket.engine.prompt_blocks import (
+    narrative_direction_block,
+    recent_events_block,
+    story_context_block,
+    task_action,
+)
+from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.prompt_shared import (
     _clock_filled_block,
     _consequence_tags,
     _director_block,
@@ -39,9 +44,9 @@ from .prompt_shared import (
     _time_ctx,
     _world_add_tag,
 )
-from .ruleset.moves import get_moves, outcome_text
-from .xml_utils import xa as _xa
-from .xml_utils import xe as _xe
+from straightjacket.engine.ruleset.moves import get_moves, outcome_text
+from straightjacket.engine.xml_utils import xa as _xa
+from straightjacket.engine.xml_utils import xe as _xe
 
 _RESULT_PROMPTS = {
     "success": ("result_success_body", "result_match_hint_success"),

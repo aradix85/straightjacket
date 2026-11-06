@@ -1,5 +1,7 @@
 from typing import Any
 
+from straightjacket.engine.ai.schemas import get_opening_setup_schema
+from straightjacket.engine.game.setup_common import apply_opening_setup, seed_opening_memories
 from tests._helpers import make_clock, make_game_state, make_npc
 
 
@@ -19,8 +21,6 @@ def _setup(*npcs: dict[str, Any]) -> dict[str, Any]:
 
 
 def test_an_opening_registers_neither_the_player_nor_a_known_npc_again(load_engine: None) -> None:
-    from straightjacket.engine.game.setup_common import apply_opening_setup
-
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Kira", status="deceased")]
     apply_opening_setup(
@@ -32,8 +32,6 @@ def test_an_opening_registers_neither_the_player_nor_a_known_npc_again(load_engi
 
 
 def test_an_opening_does_not_split_a_known_npc_by_a_shorter_name(load_engine: None) -> None:
-    from straightjacket.engine.game.setup_common import apply_opening_setup
-
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Maren Silk", description="A smuggler.")]
     apply_opening_setup(game, _setup(_npc("Maren", "A smuggler", "neutral")), label="OpeningSetup")
@@ -41,8 +39,6 @@ def test_an_opening_does_not_split_a_known_npc_by_a_shorter_name(load_engine: No
 
 
 def test_seed_opening_memories_matches_and_skips(load_engine: None) -> None:
-    from straightjacket.engine.game.setup_common import seed_opening_memories
-
     game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 1
     game.npcs = [make_npc(id="npc_1", name="Captain Ashwood")]
@@ -57,8 +53,6 @@ def test_seed_opening_memories_matches_and_skips(load_engine: None) -> None:
 
 
 def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and_time(load_engine: None) -> None:
-    from straightjacket.engine.game.setup_common import apply_opening_setup
-
     game = make_game_state(player_name="Hero")
     game.world.clocks = [make_clock(name="Engine clock")]
     game.world.time_of_day = "morning"
@@ -72,8 +66,6 @@ def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and
 
 
 def test_opening_setup_schema_leaves_clocks_and_time_to_the_engine(load_engine: None) -> None:
-    from straightjacket.engine.ai.schemas import get_opening_setup_schema
-
     properties = get_opening_setup_schema()["properties"]
     assert "clocks" not in properties
     assert "time_of_day" not in properties

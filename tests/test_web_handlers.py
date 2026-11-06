@@ -1,10 +1,42 @@
 import asyncio
+import json
 from collections.abc import Coroutine
 from pathlib import Path
 
 import pytest
 
+from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.persistence import load_game, save_game
+from straightjacket.engine.user_management import InvalidNameError, get_save_dir
+from straightjacket.i18n import t
+from straightjacket.web import handlers
+from straightjacket.web.handlers import (
+    handle_advance_asset,
+    handle_burn_momentum,
+    handle_correction,
+    handle_create_player,
+    handle_debug_state,
+    handle_delete_save,
+    handle_dismiss_epilogue,
+    handle_generate_epilogue,
+    handle_list_players,
+    handle_list_saves,
+    handle_load,
+    handle_new_chapter,
+    handle_player_input,
+    handle_recap,
+    handle_request_succession_creation,
+    handle_retire,
+    handle_save,
+    handle_select_player,
+    handle_start_game,
+    handle_start_succession,
+    handle_status_query,
+    handle_threats_query,
+    handle_tracks_query,
+)
 from straightjacket.web.session import Session, new_session
+from tests._creation import TurnProvider, brain_answer, force_result, library_game
 from tests._helpers import make_game_state
 from tests._mocks import DroppedWebSocket, RecordingWebSocket
 
@@ -34,8 +66,6 @@ def users(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
 
 
 def test_a_new_players_name_is_trimmed(session: Session, fake_ws: RecordingWebSocket, users: Path) -> None:
-    from straightjacket.web.handlers import handle_create_player
-
     _run(handle_create_player(session, fake_ws, {"name": "  Alice  "}))
     selected = next(m for m in fake_ws.sent if m["type"] == "player_selected")
     assert selected["name"] == "Alice"
@@ -46,25 +76,18 @@ def test_a_new_players_name_is_trimmed(session: Session, fake_ws: RecordingWebSo
 def test_a_new_player_without_a_name_is_refused(
     session: Session, fake_ws: RecordingWebSocket, users: Path, msg: dict[str, object]
 ) -> None:
-    from straightjacket.i18n import t
-    from straightjacket.web.handlers import handle_create_player
-
     _run(handle_create_player(session, fake_ws, msg))
     assert fake_ws.sent == [{"type": "error", "text": t("error.empty_player_name")}]
     assert list(users.iterdir()) == []
 
 
 def test_a_closed_connection_ends_a_handler_quietly(session: Session, users: Path) -> None:
-    from straightjacket.web.handlers import handle_list_players
-
     _run(handle_list_players(session, DroppedWebSocket(), {}))
 
 
 def test_handle_list_players_returns_list(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from straightjacket.web.handlers import handle_list_players
-
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     _run(handle_list_players(session, fake_ws, {}))
     assert len(fake_ws.sent) == 1
@@ -75,8 +98,6 @@ def test_handle_list_players_returns_list(
 def test_handle_select_player_missing_name_errors(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_select_player
-
     _run(handle_select_player(session, fake_ws, {}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
@@ -84,9 +105,6 @@ def test_handle_select_player_missing_name_errors(
 def test_a_refused_player_name_leaves_the_session_as_it_was(
     session: Session, fake_ws: RecordingWebSocket, users: Path
 ) -> None:
-    from straightjacket.engine.user_management import InvalidNameError
-    from straightjacket.web.handlers import handle_select_player
-
     with pytest.raises(InvalidNameError):
         _run(handle_select_player(session, fake_ws, {"name": "../elsewhere"}))
     assert (session.player, fake_ws.sent) == (new_session().player, [])
@@ -95,8 +113,6 @@ def test_a_refused_player_name_leaves_the_session_as_it_was(
 def test_handle_select_player_no_game_returns_creation_options(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from straightjacket.web.handlers import handle_select_player
-
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
 
@@ -109,14 +125,6 @@ def test_handle_select_player_no_game_returns_creation_options(
 def test_handle_select_player_with_an_incompatible_save_offers_a_new_game(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    import json
-
-    from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.persistence import save_game
-    from straightjacket.engine.user_management import get_save_dir
-    from straightjacket.i18n import t
-    from straightjacket.web.handlers import handle_select_player
-
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
     name = eng().persistence.default_save_name
@@ -136,8 +144,6 @@ def test_handle_select_player_with_an_incompatible_save_offers_a_new_game(
 def test_handle_start_game_when_processing_errors(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_start_game
-
     session.processing = True
     _run(handle_start_game(session, fake_ws, {"creation_data": {}}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
@@ -146,8 +152,6 @@ def test_handle_start_game_when_processing_errors(
 def test_handle_start_game_malformed_creation_data_errors(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_start_game
-
     _run(handle_start_game(session, fake_ws, {"creation_data": "not a dict"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
@@ -155,16 +159,12 @@ def test_handle_start_game_malformed_creation_data_errors(
 def test_handle_player_input_when_processing_errors(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_player_input
-
     session.processing = True
     _run(handle_player_input(session, fake_ws, {"text": "go north"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
 def test_handle_player_input_no_game_errors(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_player_input
-
     session.game = None
     _run(handle_player_input(session, fake_ws, {"text": "go north"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
@@ -173,24 +173,18 @@ def test_handle_player_input_no_game_errors(load_engine: None, session: Session,
 def test_handle_player_input_empty_text_silent(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_player_input
-
     session.game = make_game_state(player_name="Test", setting_id="starforged")
     _run(handle_player_input(session, fake_ws, {"text": "   "}))
     assert fake_ws.sent == []
 
 
 def test_handle_correction_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_correction
-
     session.game = None
     _run(handle_correction(session, fake_ws, {"text": "fix something"}))
     assert fake_ws.sent == []
 
 
 def test_handle_correction_processing_errors(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_correction
-
     session.processing = True
     _run(handle_correction(session, fake_ws, {"text": "x"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
@@ -199,8 +193,6 @@ def test_handle_correction_processing_errors(load_engine: None, session: Session
 def test_handle_burn_momentum_no_pending_silent(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_burn_momentum
-
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.pending_burn = None
     _run(handle_burn_momentum(session, fake_ws, {"accept": True}))
@@ -208,16 +200,12 @@ def test_handle_burn_momentum_no_pending_silent(
 
 
 def test_handle_save_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_save
-
     session.game = None
     _run(handle_save(session, fake_ws, {"name": "test"}))
     assert fake_ws.sent == []
 
 
 def test_handle_save_no_player_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_save
-
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.player = ""
     _run(handle_save(session, fake_ws, {"name": "test"}))
@@ -227,9 +215,6 @@ def test_handle_save_no_player_silent(load_engine: None, session: Session, fake_
 def test_handle_create_player_invalid_name_is_reported_and_creates_nothing(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from straightjacket.i18n import t
-    from straightjacket.web.handlers import handle_create_player
-
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
     _run(handle_create_player(session, fake_ws, {"name": "D:"}))
@@ -241,9 +226,6 @@ def test_handle_create_player_invalid_name_is_reported_and_creates_nothing(
 def test_a_save_under_an_unusable_name_writes_nothing(
     session: Session, fake_ws: RecordingWebSocket, users: Path, name: str
 ) -> None:
-    from straightjacket.i18n import t
-    from straightjacket.web.handlers import handle_save
-
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.player = "Alice"
     _run(handle_save(session, fake_ws, {"name": name}))
@@ -252,8 +234,6 @@ def test_a_save_under_an_unusable_name_writes_nothing(
 
 
 def test_handle_load_no_player_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_load
-
     session.player = ""
     _run(handle_load(session, fake_ws, {"name": "test"}))
     assert fake_ws.sent == []
@@ -262,8 +242,6 @@ def test_handle_load_no_player_silent(load_engine: None, session: Session, fake_
 def test_handle_load_nonexistent_save_errors(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from straightjacket.web.handlers import handle_load
-
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
     session.player = "Alice"
@@ -272,16 +250,12 @@ def test_handle_load_nonexistent_save_errors(
 
 
 def test_handle_delete_save_no_player_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_delete_save
-
     session.player = ""
     _run(handle_delete_save(session, fake_ws, {"name": "x"}))
     assert fake_ws.sent == []
 
 
 def test_handle_recap_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_recap
-
     session.game = None
     _run(handle_recap(session, fake_ws, {}))
     assert fake_ws.sent == []
@@ -290,8 +264,6 @@ def test_handle_recap_no_game_silent(load_engine: None, session: Session, fake_w
 def test_handle_status_query_no_game_returns_no_game_status(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_status_query
-
     session.game = None
     _run(handle_status_query(session, fake_ws, {}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
@@ -300,8 +272,6 @@ def test_handle_status_query_no_game_returns_no_game_status(
 def test_handle_status_query_with_game_returns_status(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_status_query
-
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.game.world.time_of_day = "evening"
     _run(handle_status_query(session, fake_ws, {}))
@@ -311,8 +281,6 @@ def test_handle_status_query_with_game_returns_status(
 def test_handle_tracks_query_no_game_returns_status(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_tracks_query
-
     session.game = None
     _run(handle_tracks_query(session, fake_ws, {}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
@@ -321,8 +289,6 @@ def test_handle_tracks_query_no_game_returns_status(
 def test_handle_threats_query_no_game_returns_status(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_threats_query
-
     session.game = None
     _run(handle_threats_query(session, fake_ws, {}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
@@ -331,8 +297,6 @@ def test_handle_threats_query_no_game_returns_status(
 def test_handle_advance_asset_no_game_returns_status(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_advance_asset
-
     session.game = None
     _run(handle_advance_asset(session, fake_ws, {"asset_id": "x"}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
@@ -341,9 +305,6 @@ def test_handle_advance_asset_no_game_returns_status(
 def test_a_refused_advance_tells_the_player_why(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.i18n import t
-    from straightjacket.web.handlers import handle_advance_asset
-
     session.game = make_game_state(player_name="Hero", setting_id="starforged")
     session.game.campaign.xp = 10
     _run(handle_advance_asset(session, fake_ws, {"kind": "upgrade", "asset_id": "empath"}))
@@ -354,8 +315,6 @@ def test_a_refused_advance_tells_the_player_why(
 def test_handle_generate_epilogue_no_game_silent(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_generate_epilogue
-
     session.game = None
     _run(handle_generate_epilogue(session, fake_ws, {}))
     assert fake_ws.sent == []
@@ -364,24 +323,18 @@ def test_handle_generate_epilogue_no_game_silent(
 def test_handle_dismiss_epilogue_no_game_silent(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_dismiss_epilogue
-
     session.game = None
     _run(handle_dismiss_epilogue(session, fake_ws, {}))
     assert fake_ws.sent == []
 
 
 def test_handle_new_chapter_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_new_chapter
-
     session.game = None
     _run(handle_new_chapter(session, fake_ws, {}))
     assert fake_ws.sent == []
 
 
 def test_handle_retire_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_retire
-
     session.game = None
     _run(handle_retire(session, fake_ws, {}))
     assert fake_ws.sent == []
@@ -390,8 +343,6 @@ def test_handle_retire_no_game_silent(load_engine: None, session: Session, fake_
 def test_handle_start_succession_no_pending_errors(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_start_succession
-
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.game.campaign.pending_succession = False
     _run(handle_start_succession(session, fake_ws, {"creation_data": {}}))
@@ -401,8 +352,6 @@ def test_handle_start_succession_no_pending_errors(
 def test_handle_request_succession_creation_no_game_errors(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_request_succession_creation
-
     session.game = None
     _run(handle_request_succession_creation(session, fake_ws, {}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
@@ -411,8 +360,6 @@ def test_handle_request_succession_creation_no_game_errors(
 def test_handle_debug_state_no_game_returns_null_data(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_debug_state
-
     session.game = None
     _run(handle_debug_state(session, fake_ws, {}))
     assert any(m["type"] == "debug_state" for m in fake_ws.sent)
@@ -421,8 +368,6 @@ def test_handle_debug_state_no_game_returns_null_data(
 def test_handle_debug_state_with_game_returns_state(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    from straightjacket.web.handlers import handle_debug_state
-
     session.game = make_game_state(player_name="X", setting_id="starforged")
     _run(handle_debug_state(session, fake_ws, {}))
     assert any(m["type"] == "debug_state" for m in fake_ws.sent)
@@ -431,8 +376,6 @@ def test_handle_debug_state_with_game_returns_state(
 def test_handle_list_saves_returns_list(
     load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from straightjacket.web.handlers import handle_list_saves
-
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
     session.player = "Alice"
@@ -441,17 +384,12 @@ def test_handle_list_saves_returns_list(
 
 
 def test_handle_list_saves_no_player_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
-    from straightjacket.web.handlers import handle_list_saves
-
     session.player = ""
     _run(handle_list_saves(session, fake_ws, {}))
     assert fake_ws.sent == []
 
 
 def _play_a_turn(session: Session, ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, text: str) -> None:
-    from straightjacket.web import handlers
-    from tests._creation import TurnProvider, brain_answer, force_result
-
     force_result(monkeypatch, "STRONG_HIT")
     monkeypatch.setattr(handlers, "get_provider", lambda: TurnProvider(brain_answer(location_change=None)))
     _run(handlers.handle_player_input(session, ws, {"text": text}))
@@ -461,10 +399,6 @@ def _play_a_turn(session: Session, ws: RecordingWebSocket, monkeypatch: pytest.M
 def test_selecting_the_player_after_a_save_as_resumes_the_game_where_it_was_left(
     session: Session, fake_ws: RecordingWebSocket, users: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.persistence import load_game
-    from straightjacket.web.handlers import handle_save, handle_select_player
-    from tests._creation import library_game
-
     session.player = "Kael"
     session.take_game(library_game(), [])
     _run(handle_save(session, fake_ws, {"name": "Before the vault"}))
@@ -483,11 +417,6 @@ def test_selecting_the_player_after_a_save_as_resumes_the_game_where_it_was_left
 def test_play_after_loading_a_save_goes_to_the_autosave_and_leaves_that_save_as_it_was(
     session: Session, fake_ws: RecordingWebSocket, users: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.persistence import load_game
-    from straightjacket.web.handlers import handle_load, handle_save
-    from tests._creation import library_game
-
     session.player = "Kael"
     session.take_game(library_game(), [])
     _run(handle_save(session, fake_ws, {"name": "Checkpoint"}))
@@ -508,10 +437,6 @@ def test_play_after_loading_a_save_goes_to_the_autosave_and_leaves_that_save_as_
 def test_a_correction_with_no_turn_to_correct_is_refused_outside_the_story(
     session: Session, fake_ws: RecordingWebSocket, users: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.i18n import t
-    from straightjacket.web import handlers
-    from tests._creation import TurnProvider, library_game
-
     provider = TurnProvider()
     monkeypatch.setattr(handlers, "get_provider", lambda: provider)
     session.player = "Kael"

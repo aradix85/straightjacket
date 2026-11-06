@@ -2,9 +2,9 @@ import json
 from datetime import datetime
 from typing import Any
 
-from .logging_util import log
-from .models import GameState
-from .user_management import _safe_name, get_save_dir
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import GameState
+from straightjacket.engine.user_management import _safe_name, get_save_dir
 
 
 class IncompatibleSaveError(Exception):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import random
 import re
 from pathlib import Path
@@ -8,11 +9,38 @@ import pytest
 import yaml
 from typing_extensions import override
 
+from straightjacket.engine.crafters.adventure_crafter import (
+    ThemeAlternation,
+    load_ac_data,
+    lookup_plot_point,
+    lookup_theme_priority,
+    roll_turning_point,
+)
+from straightjacket.engine.game.finalization import resolve_action_consequences
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import labels_of
+from straightjacket.engine.gamemaster.fate import resolve_fate_check
+from straightjacket.engine.gamemaster.mythic_data import load_mythic
+from straightjacket.engine.gamemaster.scene import check_scene
+from straightjacket.engine.models import RollResult, labels_of
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.legacy import mark_legacy_ticks
+from straightjacket.engine.ruleset.make_move import roll_move
+from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects, pay_the_price
+from straightjacket.engine.ruleset.move_outcome import acts_on_an_npc, resolve_move_outcome
+from straightjacket.engine.ruleset.moves import get_moves
+from straightjacket.engine.ruleset.outcome_result import move_outcome_config
 from straightjacket.engine.ruleset.progress import ticks_per_mark
-from tests._helpers import fix_dice
+from straightjacket.engine.ruleset.roll_sources import best_roll_option
+from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
+from tests._helpers import (
+    fix_dice,
+    make_brain_result,
+    make_game_state,
+    make_npc,
+    make_outcome,
+    make_progress_track,
+    record_price_tables,
+)
 
 REPO = Path(__file__).resolve().parent.parent
 GAIN = re.compile(r"take \+(\d) momentum", re.IGNORECASE)
@@ -44,8 +72,6 @@ def _yaml_momentum(effects: list[str]) -> int | None:
 
 
 def test_unconditional_momentum_matches_the_rulebooks(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.moves import get_moves
-
     table = yaml.safe_load((REPO / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8"))
     found = set()
     for setting in ("starforged", "classic"):
@@ -84,15 +110,11 @@ def test_unconditional_momentum_matches_the_rulebooks(load_engine: None) -> None
 def test_fate_check_follows_mythic_2e(
     load_engine: None, dice: tuple[int, int], odds: str, chaos: int, expected: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.gamemaster.fate import resolve_fate_check
-
     fix_dice(monkeypatch, *dice)
     assert resolve_fate_check(odds, chaos).answer == expected
 
 
 def test_fate_check_random_event_needs_doubles_within_chaos(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.gamemaster.fate import resolve_fate_check
-
     fix_dice(monkeypatch, *(4, 4))
     assert resolve_fate_check("fifty_fifty", 5).random_event_triggered
     fix_dice(monkeypatch, *(6, 6))
@@ -102,8 +124,6 @@ def test_fate_check_random_event_needs_doubles_within_chaos(load_engine: None, m
 
 
 def test_fate_chart_has_the_mythic_2e_shape(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.mythic_data import load_mythic
-
     chart = load_mythic()["fate_chart"]
     rows = [[cell["yes"] for cell in chart[odds]] for odds in chart]
     assert chart["fifty_fifty"][4]["yes"] == 50
@@ -112,8 +132,6 @@ def test_fate_chart_has_the_mythic_2e_shape(load_engine: None) -> None:
 
 
 def test_event_focus_table_is_mythic_2e(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.mythic_data import load_mythic
-
     table = [(row["min"], row["max"], row["focus"]) for row in load_mythic()["event_focus"]]
     assert table == MYTHIC_2E_EVENT_FOCUS
 
@@ -122,9 +140,6 @@ def test_event_focus_table_is_mythic_2e(load_engine: None) -> None:
 def test_scene_test_follows_mythic_2e(
     load_engine: None, roll: int, expected: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.gamemaster.scene import check_scene
-    from tests._helpers import make_game_state
-
     game = make_game_state()
     game.world.chaos_factor = 5
     game.narrative.keyed_scenes = []
@@ -134,9 +149,6 @@ def test_scene_test_follows_mythic_2e(
 
 @pytest.mark.parametrize(("setting", "expected"), [("classic", 1), ("starforged", 2)])
 def test_secure_an_advantage_weak_hit_follows_each_rulebook(load_engine: None, setting: str, expected: int) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state
-
     game = make_game_state(setting_id=setting)
     game.resources.meters["momentum"] = 0
     resolve_move_outcome(
@@ -162,9 +174,6 @@ def test_secure_an_advantage_weak_hit_follows_each_rulebook(load_engine: None, s
 def test_endure_harm_follows_each_rulebook(
     load_engine: None, setting: str, health: int, result: str, expected: tuple[int, int]
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state
-
     game = make_game_state(setting_id=setting)
     game.resources.meters["health"] = health
     game.resources.meters["momentum"] = 2
@@ -177,10 +186,6 @@ def test_endure_harm_follows_each_rulebook(
 def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
     load_engine: None, vow_rank: str, expected_ticks: int
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
-    from tests._helpers import make_brain_result, make_game_state, make_progress_track
-
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(
         game, "quest/fulfill_your_vow", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
@@ -201,10 +206,6 @@ def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
 def test_classic_fulfill_your_vow_marks_experience_by_rank(
     load_engine: None, result: str, vow_rank: str, expected_xp: int
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
-    from tests._helpers import make_brain_result, make_game_state, make_progress_track
-
     game = make_game_state(setting_id="classic")
     outcome = resolve_move_outcome(
         game, "quest/fulfill_your_vow", result, target_npc_id=None, aided_by=None, match=False
@@ -215,10 +216,6 @@ def test_classic_fulfill_your_vow_marks_experience_by_rank(
 
 
 def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
-    from tests._helpers import make_brain_result, make_game_state
-
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(
         game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
@@ -229,10 +226,6 @@ def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> N
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged"])
 def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id: str) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
-    from tests._helpers import make_brain_result, make_game_state, make_progress_track
-
     game = make_game_state(setting_id=setting_id)
     game.progress_tracks.append(make_progress_track(id="combat_raider", name="Raider", track_type="combat"))
     outcome = resolve_move_outcome(game, "combat/strike", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
@@ -241,8 +234,6 @@ def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id
 
 
 def test_every_move_that_marks_progress_names_its_track_category(load_engine: None) -> None:
-    import yaml
-
     outcomes = yaml.safe_load((REPO / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8"))["move_outcomes"]
     marking = sorted(
         move for move, results in outcomes.items() if re.search(r"'(mark_progress|milestone)\b", str(results))
@@ -253,9 +244,6 @@ def test_every_move_that_marks_progress_names_its_track_category(load_engine: No
 
 
 def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state
-
     game = make_game_state(setting_id="starforged")
     game.resources.meters["momentum"] = 2
     resolve_move_outcome(
@@ -265,9 +253,6 @@ def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
 
 
 def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.legacy import mark_legacy_ticks
-    from tests._helpers import make_game_state
-
     game = make_game_state(setting_id="starforged")
     game.campaign.xp = 0
     track = game.campaign.legacy["quests"]
@@ -280,19 +265,15 @@ def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_e
 
 
 def test_clocks_use_blades_sizes(load_engine: None) -> None:
-
     assert gm().clocks.default_segments in (4, 6, 8)
     assert gm().opening.clock_segments in (4, 6, 8)
 
 
 def test_mythic_lists_hold_an_entry_at_most_three_times(load_engine: None) -> None:
-
     assert gm().random_events.list_weight_max == 3
 
 
 def test_meaning_tables_have_the_mythic_2e_shape(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.mythic_data import load_mythic
-
     tables = load_mythic()["meaning_tables"]
     pairs = [
         tables["actions"]["verbs"],
@@ -307,14 +288,10 @@ def test_meaning_tables_have_the_mythic_2e_shape(load_engine: None) -> None:
 
 @pytest.mark.parametrize(("roll", "expected"), [(1, 1), (4, 1), (5, 2), (7, 2), (8, 3), (9, 3)])
 def test_adventure_crafter_theme_priority(load_engine: None, roll: int, expected: int) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import ThemeAlternation, lookup_theme_priority
-
     assert lookup_theme_priority(roll, ThemeAlternation(next_is_4=True)) == expected
 
 
 def test_adventure_crafter_theme_priority_ten_alternates_between_four_and_five(load_engine: None) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import ThemeAlternation, lookup_theme_priority
-
     alternation = ThemeAlternation(next_is_4=True)
     assert {lookup_theme_priority(10, alternation) for _ in range(2)} == {4, 5}
 
@@ -325,8 +302,6 @@ def _covers_one_to_hundred(ranges: list[tuple[int, int]]) -> bool:
 
 
 def test_adventure_crafter_tables_are_complete(load_engine: None) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import load_ac_data
-
     data = load_ac_data()
     themes = {theme for point in data["plot_points"] for theme in point["themes"]}
     assert themes == {"action", "tension", "mystery", "social", "personal"}
@@ -344,8 +319,6 @@ def test_adventure_crafter_tables_are_complete(load_engine: None) -> None:
 
 
 def test_adventure_crafter_conclusion_and_none_ranges(load_engine: None) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import load_ac_data
-
     points = {p["name"]: p["themes"] for p in load_ac_data()["plot_points"]}
     assert all((r["min"], r["max"]) == (1, 8) for r in points["Conclusion"].values())
     assert all((r["min"], r["max"]) == (9, 24) for r in points["None"].values())
@@ -365,9 +338,6 @@ THEMES = ["action", "tension", "mystery", "social", "personal"]
 
 
 def test_turning_point_always_has_five_slots_and_at_most_three_none(load_engine: None) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import roll_turning_point
-    from tests._helpers import make_game_state
-
     for seed in range(200):
         narrative = make_game_state().narrative
         points = roll_turning_point(random.Random(seed), THEMES, narrative).plot_points
@@ -376,9 +346,6 @@ def test_turning_point_always_has_five_slots_and_at_most_three_none(load_engine:
 
 
 def test_a_fourth_none_is_rerolled(load_engine: None) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import lookup_plot_point, roll_turning_point
-    from tests._helpers import make_game_state
-
     rolls = [5] + [1, 10] * 4 + [1, 50, 1, 60]
     points = roll_turning_point(_ScriptedRng(*rolls), THEMES, make_game_state().narrative).plot_points
     assert [p.special_range for p in points].count("none") == 3
@@ -386,9 +353,6 @@ def test_a_fourth_none_is_rerolled(load_engine: None) -> None:
 
 
 def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import roll_turning_point
-    from tests._helpers import make_game_state
-
     rolls = [5, 1, 1] + [1, 50] * 4
     narrative = make_game_state().narrative
     turning_point = roll_turning_point(_ScriptedRng(*rolls), THEMES, narrative)
@@ -398,18 +362,12 @@ def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
 
 
 def _price_dice(monkeypatch: pytest.MonkeyPatch, *dice: int) -> None:
-
     rolls = list(dice)
     monkeypatch.setattr("straightjacket.engine.setting.loader.random.randint", lambda low, high: rolls.pop(0))
 
 
 @pytest.mark.parametrize("setting", ["starforged", "classic"])
 def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str) -> None:
-    import json
-
-    from straightjacket.engine.ruleset.move_effects import pay_the_price
-    from tests._helpers import make_game_state, make_outcome
-
     data = json.loads((REPO / "data" / f"{setting}.json").read_text(encoding="utf-8"))
     rows = [
         re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", r["text"]).strip()
@@ -427,9 +385,6 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
 
 
 def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.ruleset.move_effects import pay_the_price
-    from tests._helpers import make_game_state, make_outcome
-
     _price_dice(monkeypatch, 75)
     game = make_game_state(setting_id="starforged")
     game.resources.meters["health"] = 4
@@ -442,9 +397,6 @@ def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.
 def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.ruleset.move_effects import pay_the_price
-    from tests._helpers import make_game_state, make_outcome
-
     _price_dice(monkeypatch, 96, 82, 45)
     game = make_game_state(setting_id="starforged")
     game.resources.meters["spirit"] = 4
@@ -457,9 +409,6 @@ def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
 def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.ruleset.move_effects import pay_the_price
-    from tests._helpers import make_game_state, make_outcome
-
     _price_dice(monkeypatch, 99, 42, 42)
     result = make_outcome()
     pay_the_price(make_game_state(setting_id="classic"), result)
@@ -469,9 +418,6 @@ def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
 def test_classic_roll_again_tells_the_next_result_made_worse(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.ruleset.move_effects import pay_the_price
-    from tests._helpers import make_game_state, make_outcome
-
     _price_dice(monkeypatch, 1, 60)
     game = make_game_state(setting_id="classic")
     game.resources.meters["health"] = 4
@@ -485,9 +431,6 @@ def test_classic_roll_again_tells_the_next_result_made_worse(
 def test_enter_the_fray_miss_pays_the_price_only_in_classic(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, setting: str, pays: bool
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state, record_price_tables
-
     rolled = record_price_tables(monkeypatch)
     resolve_move_outcome(
         make_game_state(setting_id=setting),
@@ -507,9 +450,6 @@ def test_enter_the_fray_miss_pays_the_price_only_in_classic(
 def test_every_enter_the_fray_result_sets_who_is_in_control(
     load_engine: None, setting: str, result: str, position: str
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state
-
     outcome = resolve_move_outcome(
         make_game_state(setting_id=setting),
         "combat/enter_the_fray",
@@ -525,8 +465,6 @@ KNOWN_MATCH_GAPS: set[tuple[str, str, str]] = set()
 
 
 def test_every_match_clause_is_modelled_or_known(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.moves import get_moves
-
     table = yaml.safe_load((REPO / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8"))
     unmodelled = set()
     for setting in ("starforged", "classic"):
@@ -555,9 +493,6 @@ def test_every_match_clause_is_modelled_or_known(load_engine: None) -> None:
 def test_scene_challenge_match_outcomes(
     load_engine: None, move: str, result: str, match: bool, progress: int, clock: int
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state
-
     outcome = resolve_move_outcome(
         make_game_state(setting_id="starforged"), move, result, aided_by=None, match=match, target_npc_id=None
     )
@@ -565,10 +500,6 @@ def test_scene_challenge_match_outcomes(
 
 
 def test_test_your_relationship_marks_progress_on_a_connection_without_a_bond(load_engine: None) -> None:
-    from straightjacket.engine.game.finalization import resolve_action_consequences
-    from straightjacket.engine.models import RollResult
-    from tests._helpers import make_brain_result, make_game_state, make_npc, make_progress_track
-
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous")
@@ -584,10 +515,6 @@ def test_test_your_relationship_marks_progress_on_a_connection_without_a_bond(lo
 def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game.finalization import resolve_action_consequences
-    from straightjacket.engine.models import RollResult
-    from tests._helpers import make_brain_result, make_game_state, make_npc, make_progress_track
-
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     game.progress_tracks.append(
@@ -605,10 +532,6 @@ def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
 
 
 def test_a_chain_without_a_connection_is_skipped(load_engine: None) -> None:
-    from straightjacket.engine.game.finalization import resolve_action_consequences
-    from straightjacket.engine.models import RollResult
-    from tests._helpers import make_brain_result, make_game_state, make_npc
-
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     roll = RollResult(4, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
@@ -624,10 +547,6 @@ def test_a_chain_without_a_connection_is_skipped(load_engine: None) -> None:
 def test_explore_a_waypoint_match_chains_an_oracle_move(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str, move_name: str, ticks: int, pays: bool
 ) -> None:
-    from straightjacket.engine.game.finalization import resolve_action_consequences
-    from straightjacket.engine.models import RollResult
-    from tests._helpers import make_brain_result, make_game_state, record_price_tables
-
     rolled = record_price_tables(monkeypatch)
     game = make_game_state(setting_id="starforged")
     roll = RollResult(3, 3, 3, "wits", 2, 5, result, "exploration/explore_a_waypoint", match=True)
@@ -641,9 +560,6 @@ def test_explore_a_waypoint_match_chains_an_oracle_move(
 def test_develop_your_relationship_match_raises_the_connection_rank(
     load_engine: None, rank: str, expected: str
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state, make_npc, make_progress_track
-
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank=rank, ticks=0)
@@ -664,18 +580,12 @@ def test_develop_your_relationship_match_raises_the_connection_rank(
     ],
 )
 def test_an_npc_effect_without_a_target_raises(load_engine: None, effect: str, message: str) -> None:
-    from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects
-    from tests._helpers import make_game_state
-
     with pytest.raises(ValueError, match=message):
         apply_effects(make_game_state(setting_id="starforged"), parse_effects([effect]), target_npc_id=None)
 
 
 @pytest.mark.parametrize("effect", ["bond +1", "raise_connection_rank"])
 def test_a_connection_effect_on_an_npc_without_a_connection_raises(load_engine: None, effect: str) -> None:
-    from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects
-    from tests._helpers import make_game_state, make_npc
-
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira")]
     with pytest.raises(ValueError, match="needs a connection with Mira"):
@@ -694,9 +604,6 @@ def test_a_connection_effect_on_an_npc_without_a_connection_raises(load_engine: 
     ],
 )
 def test_which_moves_act_on_an_npc(load_engine: None, setting: str, move: str, acts: bool) -> None:
-    from straightjacket.engine.ruleset.move_outcome import acts_on_an_npc
-    from tests._helpers import make_game_state
-
     assert acts_on_an_npc(make_game_state(setting_id=setting), move) is acts
 
 
@@ -714,9 +621,6 @@ def test_which_moves_act_on_an_npc(load_engine: None, setting: str, move: str, a
 def test_lasting_harm_uses_each_rulebooks_names(
     load_engine: None, setting: str, move: str, first: str, lasting: str
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state
-
     game = make_game_state(setting_id=setting)
     track = "health" if move.endswith("harm") else "spirit"
     game.resources.meters[track] = 0
@@ -726,19 +630,11 @@ def test_lasting_harm_uses_each_rulebooks_names(
 
 
 def test_delve_faces_death_with_the_classic_move(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.outcome_result import move_outcome_config
-    from tests._helpers import make_game_state
-
     params = move_outcome_config(make_game_state(setting_id="delve"), "suffer/endure_harm")["params"]
     assert params["threshold_move"] == "suffer/face_death"
 
 
 def test_sundered_isles_discovers_from_its_own_table(load_engine: None) -> None:
-    from straightjacket.engine.game.finalization import resolve_action_consequences
-    from straightjacket.engine.models import RollResult
-    from straightjacket.engine.ruleset.moves import get_moves
-    from tests._helpers import make_brain_result, make_game_state
-
     table = get_moves("sundered_isles")["exploration/make_a_discovery"].tables["make_a_discovery"]
     own = {row.text for row in table.rows}
     game = make_game_state(setting_id="sundered_isles")
@@ -753,10 +649,6 @@ def test_sundered_isles_discovers_from_its_own_table(load_engine: None) -> None:
 def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from straightjacket.engine.ruleset.moves import get_moves
-    from tests._helpers import make_game_state, record_price_tables
-
     worse = get_moves("starforged")["combat/take_decisive_action"].tables["take_decisive_action"].rows[0].text
     rolled = record_price_tables(monkeypatch)
     fix_dice(monkeypatch, 10)
@@ -775,9 +667,6 @@ def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
 def test_gather_information_rolls_a_story_clue_where_the_move_has_one(
     load_engine: None, setting: str, clue: bool
 ) -> None:
-    from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state
-
     for result in ("STRONG_HIT", "WEAK_HIT"):
         game = make_game_state(setting_id=setting)
         outcome = resolve_move_outcome(
@@ -787,10 +676,6 @@ def test_gather_information_rolls_a_story_clue_where_the_move_has_one(
 
 
 def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine: None) -> None:
-    from straightjacket.engine.game.finalization import resolve_action_consequences
-    from straightjacket.engine.models import RollResult
-    from tests._helpers import make_brain_result, make_game_state
-
     game = make_game_state(setting_id="delve")
     brain = make_brain_result(move="delve/escape_the_depths")
     for _ in range(30):
@@ -805,9 +690,6 @@ def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine:
 def test_mending_your_own_wounds_rolls_the_lower_stat(
     load_engine: None, iron: int, wits: int, rolled: tuple[str, int]
 ) -> None:
-    from straightjacket.engine.ruleset.make_move import roll_move
-    from tests._helpers import make_brain_result, make_game_state
-
     game = make_game_state(setting_id="starforged")
     game.last_turn_snapshot = game.snapshot()
     game.stats.update(iron=iron, wits=wits)
@@ -816,10 +698,6 @@ def test_mending_your_own_wounds_rolls_the_lower_stat(
 
 
 def test_an_engine_chosen_roll_keeps_a_lowest_way_low(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.moves import get_moves
-    from straightjacket.engine.ruleset.roll_sources import best_roll_option
-    from tests._helpers import make_game_state
-
     game = make_game_state(setting_id="classic")
     game.stats.update(iron=3, wits=1)
     assert best_roll_option(game, get_moves("classic")["adventure/heal"]) == ("wits", 1)

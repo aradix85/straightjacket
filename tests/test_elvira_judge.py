@@ -5,7 +5,10 @@ import pytest
 from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from tests._helpers import make_game_state, make_memory, make_npc
 from tests._mocks import ScriptedProvider
+from tests.elvira.elvira_bot import judge
+from tests.elvira.elvira_bot.ai_helpers import _p
 
 VERDICT = (
     '{"result_integrity": 5, "prompt_elements": 5, "npc_voice": 5,'
@@ -14,8 +17,6 @@ VERDICT = (
 
 
 def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, list[AICallSpec]]:
-    from tests.elvira.elvira_bot import judge
-
     seen: list[AICallSpec] = []
 
     class Capture(ScriptedProvider):
@@ -30,8 +31,6 @@ def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, li
 
 
 def _game() -> Any:
-    from tests._helpers import make_game_state, make_memory, make_npc
-
     game = make_game_state()
     game.setting_id = "classic"
     game.backstory = "Raised by smugglers on the northern coast."
@@ -84,8 +83,6 @@ def test_the_judge_sees_the_move_text_the_previous_narration_and_what_is_establi
 
 
 def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from tests.elvira.elvira_bot.ai_helpers import _p
-
     judge, seen = _judge_with_capture(monkeypatch)
     judge.judge_turn(
         {"max_tokens": 200, "extra_body": {}},
@@ -106,8 +103,6 @@ def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monk
 
 
 def test_the_judge_names_a_move_without_a_roll(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from tests.elvira.elvira_bot.ai_helpers import _p
-
     judge, seen = _judge_with_capture(monkeypatch)
     judge.judge_turn(
         {"max_tokens": 200, "extra_body": {}},

@@ -4,6 +4,8 @@ from typing import Any
 from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.ai.schemas import get_director_output_schema
+from straightjacket.engine.director import call_director
 from tests._helpers import make_game_state, make_npc
 from tests._mocks import ScriptedProvider
 
@@ -45,8 +47,6 @@ def _reflections(schema: dict[str, Any]) -> Any:
 
 
 def test_the_director_may_reflect_only_on_the_npcs_chosen_for_reflection(load_engine: None) -> None:
-    from straightjacket.engine.director import call_director
-
     game = make_game_state()
     game.npcs = [
         make_npc(id="npc_1", name="Kira", needs_reflection=True, agenda="Hold the pass", instinct="Strikes first"),
@@ -62,8 +62,6 @@ def test_the_director_may_reflect_only_on_the_npcs_chosen_for_reflection(load_en
 
 
 def test_without_chosen_npcs_there_is_no_reflection_to_write(load_engine: None) -> None:
-    from straightjacket.engine.ai.schemas import get_director_output_schema
-
     reflections = _reflections(get_director_output_schema([]))
     assert reflections["properties"] == {}
     assert reflections["required"] == []

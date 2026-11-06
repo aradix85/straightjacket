@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..gamemaster.npc.matching import find_npc
-from ..logging_util import log
-from ..models import GameState, consequence
-from .bond import connection_track, is_bonded
-from .config import rules
-from .datasworn import load_ruleset
-from .meters import momentum
-from .move_effects import (
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import consequence
+from straightjacket.engine.ruleset.bond import connection_track, is_bonded
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.meters import momentum
+from straightjacket.engine.ruleset.move_effects import (
     CONNECTION_EFFECTS,
     NPC_EFFECTS,
     MoveEffect,
@@ -18,12 +18,20 @@ from .move_effects import (
     parse_effects,
     roll_move_table,
 )
-from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_threshold_handler
-from .moves import get_moves
-from .outcome_result import OutcomeResult, move_outcome_config
-from .roll_sources import best_roll_option
-from .rolls import roll_action
-from .sojourn import apply_sojourn_handler
+from straightjacket.engine.ruleset.move_handlers import (
+    apply_recovery_handler,
+    apply_suffer_handler,
+    apply_threshold_handler,
+)
+from straightjacket.engine.ruleset.moves import get_moves
+from straightjacket.engine.ruleset.outcome_result import move_outcome_config
+from straightjacket.engine.ruleset.roll_sources import best_roll_option
+from straightjacket.engine.ruleset.rolls import roll_action
+from straightjacket.engine.ruleset.sojourn import apply_sojourn_handler
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
 def resolve_move_outcome(

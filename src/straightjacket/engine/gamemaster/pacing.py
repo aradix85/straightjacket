@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from ..models import GameState
-from .config import gm
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.gamemaster.config import gm
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def get_pacing_hint(game: GameState) -> str:

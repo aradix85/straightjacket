@@ -1,12 +1,12 @@
 from collections.abc import Callable, Sequence
 
-from ..logging_util import log
-from ..models import BrainResult, FactRequest, GameState, ResolvedFact
-from .config import gm
-from .fate import resolve_fate, score_to_odds
-from .npc.matching import find_npc
-from .questions import answers
-from .world import locations_match
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.fate import resolve_fate, score_to_odds
+from straightjacket.engine.gamemaster.npc.matching import find_npc
+from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.gamemaster.world import locations_match
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import BrainResult, FactRequest, GameState, ResolvedFact
 
 
 def _npc_disposition(game: GameState, request: FactRequest) -> int:

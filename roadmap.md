@@ -199,7 +199,7 @@ At the user's request, Elvira is to test during a run everything the engine does
 - In WebSocket mode `collect_turn` counts a turn without narration as an empty success.
 - `test_the_coverage_counts_what_the_engine_logs_for_bonds_threats_and_forsaken_vows` failed once in thirteen runs of the whole suite with coverage and in none of forty on its own; its rolls are not fixed.
 - A failed correction is not rolled back; the injected turn drops every warning, real ones too; a failed save only prints, so the load-back blames serialization; a failed burn decision is swallowed; failed corrections and burns count as covered, and failed judgments are no problems; the game's and the judge's calls skip the retry wrapper; `--ws --matrix` plays direct mode.
-- Her code breaks the rules the scans read only in `src/`: silent fallbacks, broad excepts beyond AI calls, dataclass defaults, inline imports, domain lists copied into `invariants.py`, checks that cannot fail, dead code (`TurnRecord.has_issues`, `final_state_dict`, a doubled report line, the `load_existing` path), the stale `[MoveOutcome]` prefix, and code the two runners copy from each other. The scans extend to `tests/elvira`.
+- Her code breaks the rules the scans read only in `src/`: silent fallbacks, broad excepts beyond AI calls, dataclass defaults, domain lists copied into `invariants.py`, checks that cannot fail, dead code (`TurnRecord.has_issues`, `final_state_dict`, a doubled report line, the `load_existing` path), the stale `[MoveOutcome]` prefix, and code the two runners copy from each other. The scans extend to `tests/elvira`.
 
 **9w.2** What a run sees.
 

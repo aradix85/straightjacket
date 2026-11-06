@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from straightjacket.engine.models import ChapterSummary, GameState
+from typing import TYPE_CHECKING
+
+from straightjacket.engine.game.chapters import start_new_chapter
+from straightjacket.engine.models import ChapterSummary
+from tests._creation import OpeningProvider, create_game
 from tests._helpers import (
     make_blueprint,
     make_npc,
@@ -9,6 +13,9 @@ from tests._helpers import (
     make_thread,
     make_threat,
 )
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def _populated_summary() -> ChapterSummary:
@@ -35,16 +42,11 @@ class TestChapterSummaryRoundTrip:
 
 
 def _closed(game: GameState) -> ChapterSummary:
-    from straightjacket.engine.game.chapters import start_new_chapter
-    from tests._creation import OpeningProvider
-
     start_new_chapter(OpeningProvider([], "Ring Dock"), game)
     return game.campaign.campaign_history[-1]
 
 
 def _game() -> GameState:
-    from tests._creation import create_game
-
     return create_game(
         "starforged",
         location="Old tollhouse",

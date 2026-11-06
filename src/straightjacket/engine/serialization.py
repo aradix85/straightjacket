@@ -4,10 +4,9 @@ import dataclasses
 import types
 from typing import TYPE_CHECKING, Any, Self, TypeVar, Union, get_args, get_origin, get_type_hints
 
-from typing_extensions import TypeIs
-
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
+    from typing_extensions import TypeIs
 
 _T = TypeVar("_T")
 

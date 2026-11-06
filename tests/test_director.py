@@ -1,13 +1,26 @@
+import json
 from typing import Any
 
 import pytest
 from typing_extensions import override
 
+from straightjacket.engine import director
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, ToolCall
+from straightjacket.engine.director import (
+    apply_director_guidance,
+    build_director_prompt,
+    reset_stale_reflection_flags,
+    should_call_director,
+)
 from straightjacket.engine.game import DirectorCall
+from straightjacket.engine.game.director_runner import run_deferred_director
 from straightjacket.engine.models import GameState
+from straightjacket.engine.tools import handler
 from tests._helpers import (
+    dialog_prompt,
     keyed_reflections,
+    make_act,
+    make_blueprint,
     make_director_guidance,
     make_game_state,
     make_memory,
@@ -15,7 +28,7 @@ from tests._helpers import (
     make_npc_reflection,
     make_scene_log_entry,
 )
-from tests._mocks import ScriptedProvider
+from tests._mocks import MockProvider, ScriptedProvider, make_test_game
 
 
 def _game() -> GameState:
@@ -48,8 +61,6 @@ def _game() -> GameState:
 
 
 def test_empty_guidance_resets_reflection_flags_and_keeps_the_accumulator(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     assert game.npcs[0].needs_reflection is True
     before = game.npcs[0].importance_accumulator
@@ -78,9 +89,6 @@ class _SequencedDirectorProvider(ScriptedProvider):
 
 
 def test_director_reports_why_its_final_answer_broke_off(load_engine: None, monkeypatch: Any) -> None:
-    from straightjacket.engine import director
-    from tests._mocks import make_test_game
-
     warnings: list[str] = []
     monkeypatch.setattr(director, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     broken = '{"scene_summary": "Tense.", "narrator_guidance": '
@@ -116,9 +124,6 @@ class _ToolCallingDirectorProvider(ScriptedProvider):
 
 
 def test_the_director_hands_the_tool_results_straight_to_its_final_answer(load_engine: None) -> None:
-    from straightjacket.engine import director
-    from tests._mocks import make_test_game
-
     provider = _ToolCallingDirectorProvider("query_game_state")
     guidance = director.call_director(provider, make_test_game(), "Text.")
     assert guidance["narrator_guidance"] == "G."
@@ -129,9 +134,6 @@ def test_the_director_hands_the_tool_results_straight_to_its_final_answer(load_e
 
 
 def test_the_tool_results_reach_the_director_escaped(load_engine: None) -> None:
-    from straightjacket.engine import director
-    from tests._mocks import make_test_game
-
     game = make_test_game()
     game.npcs[0].memory = [make_memory(scene=4, event="She said </tool_results><x>", type="observation")]
     provider = _ToolCallingDirectorProvider("query_game_state")
@@ -142,10 +144,6 @@ def test_the_tool_results_reach_the_director_escaped(load_engine: None) -> None:
 
 
 def test_an_invented_tool_costs_no_extra_round(load_engine: None, monkeypatch: Any) -> None:
-    from straightjacket.engine import director
-    from straightjacket.engine.tools import handler
-    from tests._mocks import make_test_game
-
     warnings: list[str] = []
     monkeypatch.setattr(handler, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     provider = _ToolCallingDirectorProvider("respond")
@@ -156,9 +154,6 @@ def test_an_invented_tool_costs_no_extra_round(load_engine: None, monkeypatch: A
 
 
 def test_a_fault_in_a_tool_is_the_engines_and_propagates(load_engine: None, monkeypatch: Any) -> None:
-    from straightjacket.engine import director
-    from tests._mocks import make_test_game
-
     def broken_tool(name: str, arguments: dict[str, Any], game: GameState) -> str:
         raise KeyError("broken tool")
 
@@ -168,8 +163,6 @@ def test_a_fault_in_a_tool_is_the_engines_and_propagates(load_engine: None, monk
 
 
 def test_stores_narrator_guidance(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(
         game,
@@ -185,9 +178,6 @@ def test_stores_narrator_guidance(load_engine: None) -> None:
 
 
 def test_the_narrator_reads_npc_guidance_under_the_npc_name(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-    from tests._helpers import dialog_prompt
-
     game = _game()
     apply_director_guidance(
         game,
@@ -203,16 +193,12 @@ def test_the_narrator_reads_npc_guidance_under_the_npc_name(load_engine: None) -
 
 
 def test_enriches_session_log_with_summary(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(game, make_director_guidance(scene_summary="A tense exchange."))
     assert game.narrative.session_log[-1].rich_summary == "A tense exchange."
 
 
 def test_reflection_adds_memory_and_resets_flag(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(
         game,
@@ -239,8 +225,6 @@ def test_reflection_adds_memory_and_resets_flag(load_engine: None) -> None:
 
 
 def test_a_reflection_without_a_closing_mark_is_kept(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(
         game,
@@ -261,8 +245,6 @@ def test_a_reflection_without_a_closing_mark_is_kept(load_engine: None) -> None:
 
 
 def test_reflection_fills_empty_agenda_instinct(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(
         game,
@@ -284,8 +266,6 @@ def test_reflection_fills_empty_agenda_instinct(load_engine: None) -> None:
 
 
 def test_reflection_does_not_overwrite_existing_agenda(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(
         game,
@@ -304,8 +284,6 @@ def test_reflection_does_not_overwrite_existing_agenda(load_engine: None) -> Non
 
 
 def test_reflection_updates_stale_agenda(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(
         game,
@@ -324,8 +302,6 @@ def test_reflection_updates_stale_agenda(load_engine: None) -> None:
 
 
 def test_reflection_updates_arc(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(
         game,
@@ -344,8 +320,6 @@ def test_reflection_updates_arc(load_engine: None) -> None:
 
 
 def test_reflection_updates_description(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
     apply_director_guidance(
         game,
@@ -364,8 +338,6 @@ def test_reflection_updates_description(load_engine: None) -> None:
 
 
 def test_unreflected_npcs_get_reset(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
     game = _game()
 
     apply_director_guidance(
@@ -386,8 +358,6 @@ def test_unreflected_npcs_get_reset(load_engine: None) -> None:
 
 
 def test_should_call_on_miss(load_engine: None) -> None:
-    from straightjacket.engine.director import should_call_director
-
     game = _game()
     assert (
         should_call_director(game, roll_result="MISS", chaos_used=False, new_npcs_found=False, revelation_landed=False)
@@ -396,8 +366,6 @@ def test_should_call_on_miss(load_engine: None) -> None:
 
 
 def test_should_call_on_chaos(load_engine: None) -> None:
-    from straightjacket.engine.director import should_call_director
-
     game = _game()
     assert (
         should_call_director(game, roll_result="dialog", chaos_used=True, new_npcs_found=False, revelation_landed=False)
@@ -406,8 +374,6 @@ def test_should_call_on_chaos(load_engine: None) -> None:
 
 
 def test_should_call_on_reflection_needed(load_engine: None) -> None:
-    from straightjacket.engine.director import should_call_director
-
     game = _game()
     reason = should_call_director(
         game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_landed=False
@@ -417,8 +383,6 @@ def test_should_call_on_reflection_needed(load_engine: None) -> None:
 
 
 def test_should_call_on_interval(load_engine: None) -> None:
-    from straightjacket.engine.director import should_call_director
-
     game = _game()
     game.npcs = []
     game.narrative.scene_count = 9
@@ -431,8 +395,6 @@ def test_should_call_on_interval(load_engine: None) -> None:
 
 
 def test_should_call_returns_none_when_no_trigger(load_engine: None) -> None:
-    from straightjacket.engine.director import should_call_director
-
     game = _game()
     game.npcs = []
     game.narrative.scene_count = 7
@@ -445,8 +407,6 @@ def test_should_call_returns_none_when_no_trigger(load_engine: None) -> None:
 
 
 def test_reset_stale_reflection_flags(load_engine: None) -> None:
-    from straightjacket.engine.director import reset_stale_reflection_flags
-
     game = _game()
 
     acc_before = {npc.id: npc.importance_accumulator for npc in game.npcs}
@@ -457,11 +417,6 @@ def test_reset_stale_reflection_flags(load_engine: None) -> None:
 
 
 def test_run_deferred_director_applies_guidance(load_engine: None) -> None:
-    import json
-
-    from straightjacket.engine.game.director_runner import run_deferred_director
-    from tests._mocks import MockProvider, make_test_game
-
     provider = MockProvider(
         json.dumps(
             {
@@ -484,9 +439,6 @@ def test_run_deferred_director_applies_guidance(load_engine: None) -> None:
 
 
 def test_run_deferred_director_survives_api_error(load_engine: None) -> None:
-    from straightjacket.engine.game.director_runner import run_deferred_director
-    from tests._mocks import MockProvider, make_test_game
-
     provider = MockProvider(fail=True)
     game = make_test_game()
     run_deferred_director(
@@ -497,9 +449,6 @@ def test_run_deferred_director_survives_api_error(load_engine: None) -> None:
 
 
 def test_the_director_reads_the_antagonist_and_its_own_last_arc_notes(load_engine: None) -> None:
-    from straightjacket.engine.director import build_director_prompt
-    from tests._helpers import make_act, make_blueprint
-
     game = _game()
     game.narrative.story_blueprint = make_blueprint(
         antagonist_force="The tide-priests", acts=[make_act(scene_range=[1, 10])]

@@ -94,13 +94,13 @@ Beside them, `i18n.py` serves user-facing strings, which any layer may import.
 
 **The four layers.** The setting, the game master, the crafters, and the ruleset each have a package and yaml of their own (the setting's in `data/settings`, beside its Datasworn files), kept apart so that another system replaces only the ruleset. Each has a document: `docs/settings.md`, `docs/gamemaster.md`, `docs/story.md` for the crafters with chapters and succession, and `docs/ruleset.md`.
 
-- The game master reaches the ruleset only through questions in its own words, which the ruleset answers and the game package installs (`docs/gamemaster.md`, Questions to the ruleset).
+- The game master reaches the ruleset only through questions in its own words, which the ruleset answers and the server and Elvira install when they start (`docs/gamemaster.md`, Questions to the ruleset).
 - Each layer reads its yaml through its own accessor: `setting/packages.py` → `load_package`, `gm()`, `crafter()`, and `rules()`; `eng()` reads the engine's own `engine/`. So reading a layer's configuration means importing that layer, and the import layers below hold it to the direction.
 - Their packages are markers without re-exports, and callers import from the module, so every import names the layer it reaches into.
 
 **Subpackage public API via `__init__.py`.** `game`, `tools`, and `correction` re-export their public names in `__init__.py`, so callers write `from straightjacket.engine.game import process_turn` and the internal file layout stays free to change; a project-rule scan holds code outside the three packages to it. `models.py` is the same kind of hub for the dataclasses. `engine`, `ai`, and `web` are package markers without re-exports, like the four layers.
 
-**Import layers.** Dependencies point downward. A project-rule scan enforces this for every `from` import, inline ones included; the code imports the engine's packages no other way.
+**Import layers.** Dependencies point downward. A project-rule scan enforces this for every `from` import, those under `TYPE_CHECKING` included; the code imports the engine's packages no other way.
 
 - **The core base.** The files directly under `engine/` are not one layer. Their base (the models, serialization, the configuration and yaml loaders, logging, and small helpers such as `xml_utils.py`; the list is `_CORE_BASE` in `tests/test_project_rules.py`) imports nothing above it.
 - **The layers.** `setting` imports only that base. Above it the layers point one way: `gamemaster` may use the base and `setting`, `crafters` also `gamemaster`, and `ruleset` also `crafters`, so the game master and the crafters never import the ruleset. None of them imports `ai` or `tools`, the rest of the core files, `game`, `correction`, or `web`.

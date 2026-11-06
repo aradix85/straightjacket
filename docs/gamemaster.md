@@ -4,7 +4,7 @@ How the engine plays Mythic GME 2e as the game master, with Blades in the Dark's
 
 ## Questions to the ruleset
 
-The game master (`gamemaster/`) never reads the ruleset. It asks the questions of `gamemaster/questions.py` → `RulesetAnswers` in its own words; the ruleset answers them in `ruleset/answers.py` from its yaml (`ruleset/answers.yaml`), and the game package installs those answers when it loads (`game/__init__.py`).
+The game master (`gamemaster/`) never reads the ruleset. It asks the questions of `gamemaster/questions.py` → `RulesetAnswers` in its own words; the ruleset answers them in `ruleset/answers.py` from its yaml (`ruleset/answers.yaml`), and the server and Elvira install those answers when they start (`web/server.py` → `_lifespan`, and `run_session` in `elvira_bot/runner.py`).
 
 What it asks:
 

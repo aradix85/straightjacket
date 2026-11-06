@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from ..logging_util import log
-from ..models import Consequence, GameState, consequence
-from ..setting.oracle_rolls import plain_text
-from .datasworn import load_ruleset
-from .meters import cap_momentum, max_momentum
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import consequence
+from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.ruleset.meters import cap_momentum, max_momentum
+from straightjacket.engine.setting.oracle_rolls import plain_text
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import Consequence, GameState
 
 
 @dataclass(frozen=True)

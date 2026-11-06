@@ -2,15 +2,21 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from starlette.types import Message
 from starlette.websockets import WebSocket, WebSocketState
 from typing_extensions import override
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from straightjacket.engine.models import GameState
+from straightjacket.engine.ai.provider_base import AIResponse
+from tests._helpers import make_game_state, make_npc
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from starlette.types import Message
+
+    from straightjacket.engine.ai.provider_base import AICallSpec
+    from straightjacket.engine.models import GameState
 
 
 class RecordingWebSocket(WebSocket):
@@ -58,8 +64,6 @@ class MockProvider(ScriptedProvider):
 
 
 def make_test_game() -> GameState:
-    from tests._helpers import make_game_state, make_npc
-
     g = make_game_state(
         player_name="Hero",
         setting_id="classic",

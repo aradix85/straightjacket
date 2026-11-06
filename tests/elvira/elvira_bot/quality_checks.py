@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING
 
-from straightjacket.engine.models import GameState
-
-from .models import NpcSnapshot
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
+    from tests.elvira.elvira_bot.models import NpcSnapshot
 
 _LEAKED_MECHANICS = [
     (re.compile(r"\b(?:MISS|WEAK_HIT|STRONG_HIT)\b"), "result type leaked"),

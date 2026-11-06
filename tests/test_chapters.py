@@ -1,12 +1,23 @@
+from typing import TYPE_CHECKING
+
 import pytest
 from typing_extensions import override
 
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, AIUnavailableError
+from straightjacket.engine.game.chapters import generate_epilogue, start_new_chapter
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.models import GameState, TurnSnapshot
-from straightjacket.engine.models_story import StoryBlueprint
+from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
+from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.legacy import mark_legacy
+from straightjacket.engine.ruleset.progress import filled_boxes
 from tests._creation import OPENING_TEXT, OpeningProvider, create_game
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_threat
+from tests._helpers import make_blueprint, make_clock, make_game_state, make_memory, make_npc, make_threat
 from tests._mocks import MockProvider
+from tests.elvira.elvira_bot.invariants import assert_game_state
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import TurnSnapshot
+    from straightjacket.engine.models_story import StoryBlueprint
 
 
 def _game() -> GameState:
@@ -21,8 +32,6 @@ def _game() -> GameState:
 
 
 def _next_chapter(game: GameState, provider: OpeningProvider | None = None) -> str:
-    from straightjacket.engine.game.chapters import start_new_chapter
-
     return start_new_chapter(provider or OpeningProvider([], "Ring Dock"), game)
 
 
@@ -54,8 +63,6 @@ def test_a_new_chapter_keeps_what_carries_over(load_engine: None) -> None:
 
 
 def test_a_new_chapter_restarts_what_belongs_to_one_chapter(load_engine: None) -> None:
-    from tests._helpers import make_blueprint
-
     game = _game()
     game.world.chaos_factor = 7
     game.world.time_of_day = "evening"
@@ -83,8 +90,6 @@ def test_a_new_chapter_restarts_what_belongs_to_one_chapter(load_engine: None) -
 
 
 def test_a_new_chapter_drops_only_the_old_adventures_keyed_scenes(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
-
     game = _game()
     game.narrative.keyed_scenes = []
     for source in ("ac:Old Plot Point", "clock:The flood rises:2", "random_event:pc_negative:npc_1"):
@@ -100,8 +105,6 @@ def test_a_new_chapter_drops_only_the_old_adventures_keyed_scenes(load_engine: N
 
 
 def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none(load_engine: None) -> None:
-    from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-
     class _NoVoicing(OpeningProvider):
         @override
         def create_message(self, spec: AICallSpec) -> AIResponse:
@@ -131,10 +134,6 @@ def test_at_a_chapter_boundary_an_npc_without_a_part_in_the_story_steps_back(loa
 
 
 def test_a_created_game_moves_into_its_next_chapter(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.legacy import mark_legacy
-    from straightjacket.engine.ruleset.progress import filled_boxes
-    from tests.elvira.elvira_bot.invariants import assert_game_state
-
     game = _game()
     game.npcs[0].agenda = "keep her ship"
     mark_legacy(game, "quests", "epic")
@@ -176,16 +175,12 @@ def test_a_game_that_is_over_cannot_start_a_chapter(load_engine: None) -> None:
 
 
 def _ending_game() -> GameState:
-    from tests._helpers import make_blueprint
-
     g = make_game_state(player_name="Aria", setting_id="starforged")
     g.narrative.story_blueprint = make_blueprint(story_complete=True)
     return g
 
 
 def test_generate_epilogue_returns_narration(load_engine: None) -> None:
-    from straightjacket.engine.game.chapters import generate_epilogue
-
     provider = MockProvider("The journey ended quietly.")
     g = _ending_game()
     g.world.current_location = "Tavern"
@@ -194,8 +189,6 @@ def test_generate_epilogue_returns_narration(load_engine: None) -> None:
 
 
 def test_generate_epilogue_strips_epilogue_header(load_engine: None) -> None:
-    from straightjacket.engine.game.chapters import generate_epilogue
-
     provider = MockProvider("# Epilogue\n\nThe story ends here.")
     g = _ending_game()
     narration = generate_epilogue(provider, g)
@@ -203,9 +196,6 @@ def test_generate_epilogue_strips_epilogue_header(load_engine: None) -> None:
 
 
 def test_generate_epilogue_raises_on_empty_narration(load_engine: None) -> None:
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
-    from straightjacket.engine.game.chapters import generate_epilogue
-
     provider = MockProvider("")
     g = _ending_game()
     with pytest.raises(AIUnavailableError, match="empty narration"):
@@ -213,9 +203,6 @@ def test_generate_epilogue_raises_on_empty_narration(load_engine: None) -> None:
 
 
 def test_generate_epilogue_raises_when_cleanup_leaves_nothing(load_engine: None) -> None:
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
-    from straightjacket.engine.game.chapters import generate_epilogue
-
     provider = MockProvider("```json\n{}\n```")
     g = _ending_game()
     with pytest.raises(AIUnavailableError, match="empty narration after cleanup"):

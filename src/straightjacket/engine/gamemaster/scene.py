@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import random
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..logging_util import log
-from ..models import GameState, SceneSetup
-from .config import gm
-from .keyed_scenes import evaluate_keyed_scenes
-from .mythic_data import load_mythic
-from .random_events import generate_random_event
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.keyed_scenes import evaluate_keyed_scenes
+from straightjacket.engine.gamemaster.mythic_data import load_mythic
+from straightjacket.engine.gamemaster.random_events import generate_random_event
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import SceneSetup
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def check_scene(game: GameState) -> SceneSetup:

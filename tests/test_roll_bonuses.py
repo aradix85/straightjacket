@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
-from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.assets import asset_data, enable_next_ability
+from straightjacket.engine.ruleset.bonuses import chosen_bonus, roll_bonuses
+from straightjacket.engine.ruleset.make_move import roll_move
 from tests._helpers import make_brain_result, make_game_state, make_progress_track
+
+if TYPE_CHECKING:
+    from straightjacket.engine.models import GameState
 
 
 def _game_with(*assets: str) -> GameState:
@@ -13,16 +20,11 @@ def _game_with(*assets: str) -> GameState:
 
 
 def test_an_enabled_ability_with_an_add_becomes_an_option(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.bonuses import roll_bonuses
-
     options = {o.id: o for o in roll_bonuses(_game_with("companion/combat_bot"))}
     assert options["companion/combat_bot#0"].add == 1
 
 
 def test_a_disabled_ability_is_offered_only_after_an_upgrade(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.assets import enable_next_ability
-    from straightjacket.engine.ruleset.bonuses import roll_bonuses
-
     game = _game_with("companion/banshee")
     assert "companion/banshee#1" not in {o.id for o in roll_bonuses(game)}
     enable_next_ability(game, "companion/banshee")
@@ -31,8 +33,6 @@ def test_a_disabled_ability_is_offered_only_after_an_upgrade(load_engine: None) 
 
 
 def test_a_connection_offers_its_aid(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.bonuses import roll_bonuses
-
     game = _game_with()
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=0)
@@ -42,8 +42,6 @@ def test_a_connection_offers_its_aid(load_engine: None) -> None:
 
 
 def test_a_bonded_connection_aids_with_more(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.bonuses import roll_bonuses
-
     game = _game_with()
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", ticks=40, status="bonded")
@@ -53,8 +51,6 @@ def test_a_bonded_connection_aids_with_more(load_engine: None) -> None:
 
 
 def test_a_bonus_not_on_offer_raises(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.bonuses import chosen_bonus
-
     with pytest.raises(ValueError, match="combat_bot#7"):
         chosen_bonus(_game_with("companion/combat_bot"), "companion/combat_bot#7")
 
@@ -63,8 +59,6 @@ def test_a_bonus_not_on_offer_raises(load_engine: None) -> None:
 def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, dice: list[int], momentum_after: int
 ) -> None:
-    from straightjacket.engine.ruleset.make_move import roll_move
-
     game = _game_with()
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=0)
@@ -81,16 +75,11 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
 
 
 def test_momentum_tied_to_another_move_is_not_granted_with_the_add(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.bonuses import roll_bonuses
-
     option = next(o for o in roll_bonuses(_game_with("companion/combat_bot")) if o.id == "companion/combat_bot#0")
     assert (option.add, option.momentum_on_hit) == (1, 0)
 
 
 def test_bare_ids_and_paths_as_the_creation_stores_them_are_found(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.assets import asset_data
-    from straightjacket.engine.ruleset.bonuses import roll_bonuses
-
     game = make_game_state(setting_id="starforged")
     game.paths = ["ace"]
     game.assets = ["combat_bot"]

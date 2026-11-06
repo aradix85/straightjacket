@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..config_binding import RawSections, build_strict, reject_unknown
-from ..config_loader import PROJECT_ROOT
-from ..gamemaster.config_types import ClockCreationMappingEntry
-from ..logging_util import log
-from ..yaml_merge import load_yaml_dir
+from straightjacket.engine.config_binding import RawSections, build_strict, reject_unknown
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.gamemaster.config_types import ClockCreationMappingEntry
+from straightjacket.engine.logging_util import log
+from straightjacket.engine.yaml_merge import load_yaml_dir
 
 _CONFIG_DIR = PROJECT_ROOT / "crafters"
 
