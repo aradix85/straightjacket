@@ -27,7 +27,7 @@ def test_roll_oracle_name_starforged_multi_path() -> None:
     assert name
 
     word_count = len(name.split())
-    assert word_count in (1, 2)
+    assert word_count in {1, 2}
 
 
 def test_roll_oracle_name_delve_inherits_from_classic() -> None:

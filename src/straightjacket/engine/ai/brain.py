@@ -32,7 +32,7 @@ def _ways(move: Move) -> list[str]:
     for condition in move.conditions:
         if condition.method in PICK_METHODS:
             options = [
-                o.stat or o.condition_meter for o in condition.roll_options if o.using in ("stat", "condition_meter")
+                o.stat or o.condition_meter for o in condition.roll_options if o.using in {"stat", "condition_meter"}
             ]
             labels = [get_prompt("brain_pick_way", method=condition.method, options=", ".join(options))]
         else:

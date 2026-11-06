@@ -42,7 +42,7 @@ def test_a_meter_the_ruleset_lacks_is_refused() -> None:
 
 
 @pytest.mark.parametrize(("health", "spirit", "crisis"), [(5, 5, False), (0, 5, True), (5, 0, True), (1, 1, False)])
-def test_crisis_follows_the_meters_the_ruleset_names(health: int, spirit: int, crisis: bool) -> None:
+def test_crisis_follows_the_meters_the_ruleset_names(health: int, spirit: int, *, crisis: bool) -> None:
     game = make_game_state()
     game.resources.meters.update(health=health, spirit=spirit, supply=0)
     assert in_crisis(game) is crisis

@@ -101,7 +101,7 @@ def _snapshot_npcs(game: GameState) -> list[NpcSnapshot]:
             aliases=list(n.aliases),
         )
         for n in game.npcs
-        if n.status in ("active", "background")
+        if n.status in {"active", "background"}
     ]
 
 

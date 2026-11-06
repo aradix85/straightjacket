@@ -37,7 +37,7 @@ class TestSession:
     @staticmethod
     def test_initial_state() -> None:
         s = new_session()
-        assert s.player == ""
+        assert not s.player
         assert s.game is None
         assert s.processing is False
         assert s.chat_messages == []

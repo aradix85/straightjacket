@@ -12,7 +12,7 @@ def asset_data(game: GameState, asset_id: str) -> dict[str, Any] | None:
     parts = asset_id.split("/")
     key = parts[-1]
     for rules_file in reversed(load_ruleset(game.setting_id).files):
-        categories = [parts[-2]] if len(parts) >= 2 else sorted(rules_file.assets)
+        categories = [parts[-2]] if len(parts) > 1 else sorted(rules_file.assets)
         for category in categories:
             found = rules_file.asset(category, key)
             if found is not None:

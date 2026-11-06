@@ -37,7 +37,7 @@ def new_world() -> WorldState:
     )
 
 
-def resolve_time_progression(move: str, has_location_change: bool) -> str:
+def resolve_time_progression(move: str, *, has_location_change: bool) -> str:
     if has_location_change:
         return gm().location.change_time
     if move in gm().moves:
@@ -84,6 +84,6 @@ def update_location(game: GameState, new_location: str) -> bool:
 def apply_brain_location_time(game: GameState, brain: BrainResult) -> bool:
     change = brain.location_change
     moved = update_location(game, change.name) if change is not None else False
-    time_prog = resolve_time_progression(brain.move, change is not None)
+    time_prog = resolve_time_progression(brain.move, has_location_change=change is not None)
     advance_time(game, time_prog)
     return moved

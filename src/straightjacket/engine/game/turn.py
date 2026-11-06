@@ -140,7 +140,7 @@ def _play_turn(
     brain = _run_brain_phase(provider, game, player_message)
     _sanitize_brain_output(game, brain)
     moved = _apply_brain_state_mutations(game, brain)
-    generate_place_on_arrival(game, brain, moved, earlier_places)
+    generate_place_on_arrival(game, brain, moved=moved, earlier=earlier_places)
     if earlier is not None:
         remember_facts(game, earlier.facts)
     facts, pending_random_events = _resolve_brain_requests(game, brain)

@@ -94,7 +94,7 @@ def test_ac_threat_spawns_for_mapped_plot_point() -> None:
     assert threat.rank == "dangerous"
     assert threat.category == "scheming_leader"
     assert threat.linked_vow_id is None
-    assert threat.name != ""
+    assert threat.name
 
 
 def test_ac_threat_skips_unmapped_plot_point() -> None:
@@ -201,4 +201,4 @@ def test_keyed_scene_threat_menace_fires_after_spawn() -> None:
 
     setup = check_scene(g)
     assert setup.scene_type == "keyed", f"keyed scene did not fire; got {setup.scene_type}"
-    assert "sharpens" in setup.narrative_hint.lower() or setup.narrative_hint != ""
+    assert "sharpens" in setup.narrative_hint.lower() or setup.narrative_hint

@@ -55,13 +55,15 @@ class BlueprintSeed:
 
 
 def _scene_ranges_evenly_split(total_range: list[int], act_count: int) -> list[list[int]]:
-    if len(total_range) != 2:
-        msg = f"scene_range_default must have length 2, got {total_range}"
-        raise ValueError(msg)
+    match total_range:
+        case [start, end]:
+            pass
+        case _:
+            msg = f"scene_range_default must have length 2, got {total_range}"
+            raise ValueError(msg)
     if act_count < 1:
         msg = f"act_count must be >= 1, got {act_count}"
         raise ValueError(msg)
-    start, end = total_range[0], total_range[1]
     span = end - start + 1
     base = span // act_count
     remainder = span % act_count

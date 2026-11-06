@@ -81,7 +81,7 @@ def test_unconditional_momentum_matches_the_rulebooks() -> None:
             if key not in outcomes:
                 continue
             for result, outcome in move.outcomes.items():
-                if result not in ("strong_hit", "weak_hit", "miss"):
+                if result not in {"strong_hit", "weak_hit", "miss"}:
                     continue
                 text = outcome.text
                 gains = [int(x) for x in GAIN.findall(text)]
@@ -91,7 +91,7 @@ def test_unconditional_momentum_matches_the_rulebooks() -> None:
                 single = (
                     len(gains) == 1 and "choose" not in lowered and " or " not in lowered and "whenever" not in lowered
                 )
-                if (single and engine != gains[0]) or (not gains and not losses and engine not in (None, 0)):
+                if (single and engine != gains[0]) or (not gains and not losses and engine not in {None, 0}):
                     found.add((setting, key, result))
     assert found == KNOWN_DIVERGENCES
 
@@ -257,8 +257,8 @@ def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box() -> N
 
 
 def test_clocks_use_blades_sizes() -> None:
-    assert gm().clocks.default_segments in (4, 6, 8)
-    assert gm().opening.clock_segments in (4, 6, 8)
+    assert gm().clocks.default_segments in {4, 6, 8}
+    assert gm().opening.clock_segments in {4, 6, 8}
 
 
 def test_mythic_lists_hold_an_entry_at_most_three_times() -> None:
@@ -415,7 +415,7 @@ def test_classic_roll_again_tells_the_next_result_made_worse(monkeypatch: pytest
 
 @pytest.mark.parametrize(("setting", "pays"), [("classic", True), ("starforged", False)])
 def test_enter_the_fray_miss_pays_the_price_only_in_classic(
-    monkeypatch: pytest.MonkeyPatch, setting: str, pays: bool
+    monkeypatch: pytest.MonkeyPatch, setting: str, *, pays: bool
 ) -> None:
     rolled = record_price_tables(monkeypatch)
     resolve_move_outcome(
@@ -474,7 +474,7 @@ def test_every_match_clause_is_modelled_or_known() -> None:
         ("scene_challenge/secure_an_advantage", "MISS", True, 0, 2),
     ],
 )
-def test_scene_challenge_match_outcomes(move: str, result: str, match: bool, progress: int, clock: int) -> None:
+def test_scene_challenge_match_outcomes(move: str, result: str, *, match: bool, progress: int, clock: int) -> None:
     outcome = resolve_move_outcome(
         make_game_state(setting_id="starforged"), move, result, aided_by=None, match=match, target_npc_id=None
     )
@@ -525,7 +525,7 @@ def test_a_chain_without_a_connection_is_skipped() -> None:
     [("STRONG_HIT", "Make a Discovery", 2, False), ("MISS", "Confront Chaos", 1, False)],
 )
 def test_explore_a_waypoint_match_chains_an_oracle_move(
-    monkeypatch: pytest.MonkeyPatch, result: str, move_name: str, ticks: int, pays: bool
+    monkeypatch: pytest.MonkeyPatch, result: str, move_name: str, ticks: int, *, pays: bool
 ) -> None:
     rolled = record_price_tables(monkeypatch)
     game = make_game_state(setting_id="starforged")
@@ -581,7 +581,7 @@ def test_a_connection_effect_on_an_npc_without_a_connection_raises(effect: str) 
         ("classic", "relationship/forge_a_bond", True),
     ],
 )
-def test_which_moves_act_on_an_npc(setting: str, move: str, acts: bool) -> None:
+def test_which_moves_act_on_an_npc(setting: str, move: str, *, acts: bool) -> None:
     assert acts_on_an_npc(make_game_state(setting_id=setting), move) is acts
 
 
@@ -638,7 +638,7 @@ def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(monkeypa
 
 
 @pytest.mark.parametrize(("setting", "clue"), [("starforged", True), ("sundered_isles", True), ("classic", False)])
-def test_gather_information_rolls_a_story_clue_where_the_move_has_one(setting: str, clue: bool) -> None:
+def test_gather_information_rolls_a_story_clue_where_the_move_has_one(setting: str, *, clue: bool) -> None:
     for result in ("STRONG_HIT", "WEAK_HIT"):
         game = make_game_state(setting_id=setting)
         outcome = resolve_move_outcome(

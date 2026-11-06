@@ -154,13 +154,13 @@ class TestBlocksRecovery:
     @staticmethod
     def test_no_impact_no_block() -> None:
         game = _game()
-        assert blocks_recovery(game, "health") == ""
+        assert not blocks_recovery(game, "health")
 
     @staticmethod
     def test_doomed_does_not_block_recovery() -> None:
         game = _game()
         apply_impact(game, "doomed")
-        assert blocks_recovery(game, "health") == ""
+        assert not blocks_recovery(game, "health")
 
 
 class TestImpactsSnapshotRestore:
@@ -195,7 +195,7 @@ class TestRecoveryHandlerClearsImpact:
         [("shaken", True, 3), ("wounded", False, 4)],
     )
     def test_the_impact_a_recovery_clears_is_the_one_its_rules_say_blocks_its_meter(
-        marked: str, cleared: bool, spirit: int
+        marked: str, *, cleared: bool, spirit: int
     ) -> None:
         game = _game()
         game.resources.meters["spirit"] = 2
@@ -206,7 +206,7 @@ class TestRecoveryHandlerClearsImpact:
 
     @staticmethod
     @pytest.mark.parametrize("wounded", [True, False])
-    def test_heal_clears_wounded_and_says_so_only_when_it_was_marked(wounded: bool) -> None:
+    def test_heal_clears_wounded_and_says_so_only_when_it_was_marked(*, wounded: bool) -> None:
         game = _game()
         if wounded:
             apply_impact(game, "wounded")

@@ -100,7 +100,7 @@ def test_strain_is_a_level_per_meter(value: int, level: str) -> None:
         ("adventure/face_danger", "STRONG_HIT", False),
     ],
 )
-def test_an_advantage_is_gained_by_a_hit_on_an_advantage_move(move: str, result: str, gained: bool) -> None:
+def test_an_advantage_is_gained_by_a_hit_on_an_advantage_move(move: str, result: str, *, gained: bool) -> None:
     game = make_game_state(player_name="Test")
     game.narrative.session_log.append(make_scene_log_entry(scene=1, move=move, result=result))
     assert answers.gained_advantage(game) is gained
@@ -114,7 +114,7 @@ def test_an_advantage_is_gained_by_a_hit_on_an_advantage_move(move: str, result:
         ("dialog", False),
     ],
 )
-def test_only_the_information_moves_gather_information(move: str, gathers: bool) -> None:
+def test_only_the_information_moves_gather_information(move: str, *, gathers: bool) -> None:
     assert answers.gathers_information(move) is gathers
 
 

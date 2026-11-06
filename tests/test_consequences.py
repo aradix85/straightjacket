@@ -34,7 +34,7 @@ def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) 
 
 def test_roll_action_returns_valid_result() -> None:
     r = roll_action("edge", 3, "adventure/face_danger", 0, 0)
-    assert r.result in ("STRONG_HIT", "WEAK_HIT", "MISS")
+    assert r.result in {"STRONG_HIT", "WEAK_HIT", "MISS"}
     assert r.move == "adventure/face_danger"
     assert r.stat_name == "edge"
     assert r.stat_value == 3
@@ -187,7 +187,7 @@ def test_purge_old_fired_clocks() -> None:
 
 def test_roll_progress_returns_valid_result() -> None:
     r = roll_progress("Test Vow", 6, "quest/fulfill_your_vow")
-    assert r.result in ("STRONG_HIT", "WEAK_HIT", "MISS")
+    assert r.result in {"STRONG_HIT", "WEAK_HIT", "MISS"}
     assert r.move == "quest/fulfill_your_vow"
     assert r.stat_name == "Test Vow"
     assert r.stat_value == 6

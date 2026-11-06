@@ -95,7 +95,7 @@ class Coverage:
         if times > 0:
             self.counts[target] = self.counts.get(target, 0) + times
 
-    def observe_turn(self, before: WorldView, after: WorldView, result: str, match: bool, move: str) -> None:
+    def observe_turn(self, before: WorldView, after: WorldView, result: str, *, match: bool, move: str) -> None:
         kind = unrolled_kind(result)
         if kind is not None:
             self.hit(kind)

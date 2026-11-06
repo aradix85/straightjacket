@@ -92,7 +92,7 @@ def _observed(memories: Sequence[MemoryEntry]) -> str:
 
 
 def _format_memories(
-    target: NpcData, context_text: str, gate: int, current_scene: int, include_reflections: bool
+    target: NpcData, context_text: str, gate: int, current_scene: int, *, include_reflections: bool
 ) -> str:
     gate_mem_counts = gm().npc.gate_memory_counts
     mem_count = gate_mem_counts[gate]
@@ -141,22 +141,23 @@ def _npc_block(
             description=_xe(target.description),
         )
 
+    reveals = gm().information_gate.reveals
     agenda_line = ""
     mem_str = ""
-    if gate >= 2:
+    if gate >= reveals.agenda:
         agenda_line = get_prompt("block_target_npc_agenda", agenda=_xe(target.agenda))
         mem_str = _format_memories(target, context_text, gate, game.narrative.scene_count, include_reflections=False)
 
     instinct_line = ""
     arc_attr = ""
-    if gate >= 3:
+    if gate >= reveals.instinct:
         instinct_line = get_prompt("block_target_npc_instinct", instinct=_xe(target.instinct))
         if target.arc.strip():
             arc_attr = get_prompt("block_npc_arc_attr", arc=_xa(target.arc))
         mem_str = _format_memories(target, context_text, gate, game.narrative.scene_count, include_reflections=True)
 
     secrets_line = ""
-    if gate >= 4 and target.secrets:
+    if gate >= reveals.secrets and target.secrets:
         secs = json.dumps(target.secrets, ensure_ascii=False)
         secrets_line = "\n" + get_prompt(
             "block_target_npc_secrets", label=get_prompt("secrets_label"), secrets=_xe(secs)
@@ -164,7 +165,7 @@ def _npc_block(
 
     if miss:
         body = f"{_xe(target.description)}{instinct_line}"
-    elif gate >= 2:
+    elif gate >= reveals.agenda:
         body = f"{agenda_line}{instinct_line}{mem_str}{secrets_line}"
     else:
         body = _xe(target.description)

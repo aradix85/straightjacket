@@ -14,7 +14,7 @@ from straightjacket.engine.ruleset.tracks import recommit_track, start_track
 from tests._helpers import fix_dice, make_brain_result, make_game_state, make_outcome, make_progress_track
 
 
-def _roll(move: str, result: str, match: bool = False) -> RollResult:
+def _roll(move: str, result: str, *, match: bool = False) -> RollResult:
     return RollResult(
         d1=0,
         c1=5,
@@ -58,7 +58,7 @@ def test_a_weak_hit_on_a_progress_move_completes_its_track_or_bonds_a_connection
     game, _ = _play(setting_id, move, track, "WEAK_HIT")
     assert track.status == status
     if track_type == "combat":
-        assert game.world.combat_position == ""
+        assert not game.world.combat_position
 
 
 @pytest.mark.parametrize(
@@ -149,10 +149,12 @@ def test_a_bonded_connection_keeps_its_bond_and_is_not_made_again() -> None:
         ("in_control", "WEAK_HIT", False, "WEAK_HIT"),
     ],
 )
-def test_take_decisive_action_in_a_bad_spot_counts_lower(position: str, result: str, match: bool, counted: str) -> None:
+def test_take_decisive_action_in_a_bad_spot_counts_lower(
+    position: str, result: str, *, match: bool, counted: str
+) -> None:
     game = make_game_state(setting_id="starforged")
     game.world.combat_position = position
-    roll = _roll("combat/take_decisive_action", result, match)
+    roll = _roll("combat/take_decisive_action", result, match=match)
     assert downgrade_in_position(game, roll) == dataclasses.replace(roll, result=counted)
 
 

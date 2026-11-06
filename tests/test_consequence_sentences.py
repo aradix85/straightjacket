@@ -71,7 +71,7 @@ def test_pick_template_unknown_key_raises() -> None:
 )
 def test_resolve_consequence_produces_sentence(cons: Consequence, npc: str, must_contain: str) -> None:
     sentence = resolve_consequence_sentence(cons, "Ash", npc, "The Docks")
-    assert sentence != ""
+    assert sentence
     assert "{" not in sentence
     if must_contain:
         assert must_contain in sentence
@@ -96,7 +96,7 @@ def test_a_complication_is_told_as_a_sentence_naming_the_player(kind: str) -> No
     ],
 )
 def test_a_consequence_without_a_sentence_of_its_own_is_not_told_as_one(cons: Consequence) -> None:
-    assert resolve_consequence_sentence(cons, "Ash", "Kira", "") == ""
+    assert not resolve_consequence_sentence(cons, "Ash", "Kira", "")
 
 
 def test_an_impact_is_labelled_and_told_by_its_rulesets_label() -> None:

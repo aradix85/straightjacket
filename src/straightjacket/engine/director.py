@@ -29,6 +29,7 @@ def _director_system(game: GameState) -> str:
 def should_call_director(
     game: GameState,
     roll_result: str,
+    *,
     chaos_used: bool,
     new_npcs_found: bool,
     revelation_landed: bool,

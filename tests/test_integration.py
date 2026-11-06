@@ -66,7 +66,7 @@ def test_turn_action_produces_narration() -> None:
     assert roll is not None
     assert roll.move == "adventure/face_danger"
     assert roll.stat_name == "wits"
-    assert roll.result in ("STRONG_HIT", "WEAK_HIT", "MISS")
+    assert roll.result in {"STRONG_HIT", "WEAK_HIT", "MISS"}
 
     assert game.last_turn_snapshot is not None
     assert game.last_turn_snapshot.player_input == "I search the room for clues"
@@ -127,7 +127,7 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id() -> None:
     for _ in range(2):
         _narration, roll, _burn_info, _director_ctx = process_turn(provider, game, "I travel on", stream=None)
         assert roll is not None
-        hits += roll.result in ("STRONG_HIT", "WEAK_HIT")
+        hits += roll.result in {"STRONG_HIT", "WEAK_HIT"}
     [track] = [t for t in game.progress_tracks if t.track_type == "journey"]
     assert (track.id, track.status) == ("journey_to_the_ridge", "active")
     assert track.ticks == hits * ticks_per_mark(track)
@@ -335,7 +335,7 @@ def test_correction_brain_parses_response() -> None:
     )
 
     assert "correction_source" in result
-    assert result["correction_source"] in ("input_misread", "state_error")
+    assert result["correction_source"] in {"input_misread", "state_error"}
 
 
 def test_momentum_burn_upgrades_result() -> None:

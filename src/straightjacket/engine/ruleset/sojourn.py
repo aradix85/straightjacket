@@ -37,11 +37,11 @@ class _Pick:
 
 
 def apply_sojourn_handler(
-    game: GameState, move_key: str, roll_result: str, params: dict[str, Any], match: bool, aided_by: str | None
+    game: GameState, move_key: str, roll_result: str, params: dict[str, Any], *, match: bool, aided_by: str | None
 ) -> OutcomeResult:
     result = new_outcome()
     if roll_result not in rules().dice.hit_results:
-        if complication_replaces_price(game, match):
+        if complication_replaces_price(game, match=match):
             roll_story_complication(game, result)
         else:
             pay_the_price(game, result)

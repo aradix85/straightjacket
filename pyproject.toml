@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.06.4"
+version = "2026.11.06.5"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -31,14 +31,9 @@ ignore = [
     "if-else-block-instead-of-dict-get",          # wants dict.get with a fallback; domain config raises on a miss
     "suspicious-non-cryptographic-random-usage",  # the dice use random, and the tests patch random
     # taken up in later releases, one group at a time:
-    "FBT",
     "any-type",
-    "compare-to-empty-string",
     "complex-structure",
     "global-statement",
-    "literal-membership",
-    "magic-value-comparison",
-    "print",
     "private-member-access",
     "too-many-arguments",
     "too-many-boolean-expressions",
@@ -54,6 +49,7 @@ ignore = [
 "tests/**/test_*.py" = ["assert"]
 "tests/conftest.py" = ["assert"]
 "tests/_*.py" = ["assert"]
+"tests/**/*.py" = ["magic-value-comparison"]
 "tests/elvira/elvira.py" = ["module-import-not-at-top-of-file"]
 "run.py" = [
     "import-outside-top-level",

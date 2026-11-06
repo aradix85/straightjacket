@@ -134,7 +134,7 @@ def check_story_completion(game: GameState) -> None:
 
     triggered = set(bp.triggered_transitions)
     penultimate_id = f"act_{len(acts) - 2}"
-    final_act_entered = len(acts) >= 2 and penultimate_id in triggered
+    final_act_entered = len(acts) > 1 and penultimate_id in triggered
 
     if final_act_entered and sc >= final_end:
         bp.story_complete = True
@@ -148,7 +148,7 @@ def check_story_completion(game: GameState) -> None:
                 bp.triggered_transitions.append(act_id)
                 log(f"[Story] Back-filled transition: {act_id} (scene {sc} > range end {act.scene_range[1]})")
         triggered = set(bp.triggered_transitions)
-        if len(acts) >= 2 and penultimate_id in triggered:
+        if len(acts) > 1 and penultimate_id in triggered:
             bp.story_complete = True
             log(
                 f"[Story] Complete (back-fill): '{penultimate_id}' triggered after "

@@ -8,6 +8,7 @@ from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.stats import stat_descriptions, validate_stats
 from straightjacket.engine.setting.packages import load_package
+from tests.elvira.elvira_bot.console import say
 
 if TYPE_CHECKING:
     from straightjacket.engine.setting.packages import SettingPackage
@@ -27,19 +28,19 @@ def roll_character(setting_id: str, game_cfg: dict[str, Any]) -> dict[str, Any]:
     vow_rank = game_cfg.get("background_vow_rank", rules().creation.background_vow_default_rank)
     vow_subject = game_cfg.get("vow_subject", "")
 
-    print(f"[CREATION] Setting: {pkg.title}")
-    print(f"[CREATION] Name: {name} ({pronouns})")
-    print(f"[CREATION] Paths: {paths}")
+    say(f"[CREATION] Setting: {pkg.title}")
+    say(f"[CREATION] Name: {name} ({pronouns})")
+    say(f"[CREATION] Paths: {paths}")
     if backstory:
-        print(f"[CREATION] Backstory: {backstory[:80]}")
-    print(f"[CREATION] Vow: {vow} (rank: {vow_rank})")
+        say(f"[CREATION] Backstory: {backstory[:80]}")
+    say(f"[CREATION] Vow: {vow} (rank: {vow_rank})")
     if vow_subject:
-        print(f"[CREATION] Vow subject: {vow_subject}")
-    print(f"[CREATION] Stats: {stats}")
+        say(f"[CREATION] Vow subject: {vow_subject}")
+    say(f"[CREATION] Stats: {stats}")
     if truths:
-        print(f"[CREATION] Truths: {len(truths)} selected")
+        say(f"[CREATION] Truths: {len(truths)} selected")
     if assets:
-        print(f"[CREATION] Starting assets: {assets}")
+        say(f"[CREATION] Starting assets: {assets}")
 
     return {
         "setting_id": setting_id,

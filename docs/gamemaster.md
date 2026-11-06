@@ -95,7 +95,7 @@ The engine computes each NPC's stance from disposition, bond, and move category 
 
 ### Information gating
 
-A gate level from 0 (name and description, a stranger) to 4 (full secrets) decides what of the target NPC enters the narrator prompt (`gamemaster/stance_gate.py` → `compute_npc_gate`; points, caps, and budgets in `gamemaster/information_gate.yaml`; what each level shows in `prompt_shared.py` → `_npc_block`). An activated NPC shows its stance, arc, and a memory whatever its gate.
+A gate level from 0 (name and description, a stranger) to 4 (full secrets) decides what of the target NPC enters the narrator prompt (`gamemaster/stance_gate.py` → `compute_npc_gate`; points, caps, budgets, and the levels that reveal agenda, instinct, and secrets (`reveals`) in `gamemaster/information_gate.yaml`; what each level shows in `prompt_shared.py` → `_npc_block`). An activated NPC shows its stance, arc, and a memory whatever its gate.
 
 The gate rises with scenes known, successful information gathering, and bond. The stance caps it (`stance_caps`), so a hostile NPC opens no further than its agenda and a few memories, at gate 2, whatever the bond. The narrator cannot reveal what it does not have. The gate also sets how many new facts an NPC may volunteer in a reply.
 

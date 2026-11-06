@@ -20,7 +20,7 @@ def test_event_focus_covers_full_range(monkeypatch: pytest.MonkeyPatch) -> None:
     for roll in range(1, 101):
         fix_dice(monkeypatch, roll)
         focus = roll_event_focus()
-        assert focus != "", f"roll {roll} produced empty focus"
+        assert focus, f"roll {roll} produced empty focus"
         seen.add(focus)
 
     assert len(seen) == 12
@@ -87,8 +87,8 @@ def test_target_thread_focus_selects_from_threads(monkeypatch: pytest.MonkeyPatc
 def test_target_empty_list_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     name, target_id = _target(monkeypatch, game, "npc_action")
-    assert name == ""
-    assert target_id == ""
+    assert not name
+    assert not target_id
 
 
 def test_target_pc_focus_no_target(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -97,9 +97,9 @@ def test_target_pc_focus_no_target(monkeypatch: pytest.MonkeyPatch) -> None:
         make_character_entry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
     ]
     name, _ = _target(monkeypatch, game, "pc_negative")
-    assert name == ""
+    assert not name
     name2, _ = _target(monkeypatch, game, "current_context")
-    assert name2 == ""
+    assert not name2
 
 
 def test_target_respects_weight(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -137,17 +137,17 @@ def test_generate_random_event_produces_complete_event() -> None:
     ]
     event = generate_random_event(game, source="test")
     assert isinstance(event, RandomEvent)
-    assert event.focus != ""
-    assert event.meaning_action != ""
-    assert event.meaning_subject != ""
+    assert event.focus
+    assert event.meaning_action
+    assert event.meaning_subject
     assert event.source == "test"
 
 
 def test_generate_random_event_empty_lists() -> None:
     game = make_game_state()
     event = generate_random_event(game, source="test")
-    assert event.focus != ""
-    assert event.meaning_action != ""
+    assert event.focus
+    assert event.meaning_action
 
 
 def test_fate_doublet_generates_random_event(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -163,7 +163,7 @@ def test_fate_doublet_generates_random_event(monkeypatch: pytest.MonkeyPatch) ->
 
     event = generate_random_event(game, source="fate_doublet")
     assert event.source == "fate_doublet"
-    assert event.focus != ""
+    assert event.focus
 
 
 def test_fate_no_doublet_no_event(monkeypatch: pytest.MonkeyPatch) -> None:

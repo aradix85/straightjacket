@@ -28,7 +28,7 @@ def _starforged() -> Any:
     ],
 )
 def test_what_a_turn_rolls_with_or_plays_as_dialog(
-    move: str, stat: str, dialog_only: bool, rolled: tuple[str, int] | None
+    move: str, stat: str, *, dialog_only: bool, rolled: tuple[str, int] | None
 ) -> None:
     game = create_game(
         "starforged",

@@ -74,7 +74,7 @@ def test_fate_check_modifiers_shift_outcome(monkeypatch: pytest.MonkeyPatch) -> 
     [(5, 33, True), (5, 77, False), (9, 34, False), (1, 100, True), (1, 11, True), (1, 22, False), (9, 5, False)],
 )
 def test_a_fate_chart_doublet_within_the_chaos_factor_brings_a_random_event(
-    monkeypatch: pytest.MonkeyPatch, chaos_factor: int, roll: int, event: bool
+    monkeypatch: pytest.MonkeyPatch, chaos_factor: int, roll: int, *, event: bool
 ) -> None:
     assert _chart(monkeypatch, "fifty_fifty", chaos_factor, roll).random_event_triggered is event
 
@@ -83,7 +83,7 @@ def test_a_fate_chart_doublet_within_the_chaos_factor_brings_a_random_event(
     ("chaos_factor", "dice", "event"), [(5, (3, 3), True), (5, (7, 7), False), (9, (3, 4), False), (1, (1, 1), True)]
 )
 def test_a_fate_check_doublet_within_the_chaos_factor_brings_a_random_event(
-    monkeypatch: pytest.MonkeyPatch, chaos_factor: int, dice: tuple[int, int], event: bool
+    monkeypatch: pytest.MonkeyPatch, chaos_factor: int, dice: tuple[int, int], *, event: bool
 ) -> None:
     assert _check(monkeypatch, "fifty_fifty", chaos_factor, dice).random_event_triggered is event
 
@@ -114,14 +114,14 @@ def test_fate_chart_all_odds_all_cf(monkeypatch: pytest.MonkeyPatch) -> None:
     for odds in _odds_scale():
         for cf in range(1, 10):
             for roll in (1, 50, 100):
-                assert _chart(monkeypatch, odds, cf, roll).answer in ("yes", "no", "exceptional_yes", "exceptional_no")
+                assert _chart(monkeypatch, odds, cf, roll).answer in {"yes", "no", "exceptional_yes", "exceptional_no"}
 
 
 def test_fate_check_all_odds_all_cf(monkeypatch: pytest.MonkeyPatch) -> None:
     for odds in _odds_scale():
         for cf in range(1, 10):
             for dice in ((1, 1), (5, 5), (10, 10), (1, 10)):
-                assert _check(monkeypatch, odds, cf, dice).answer in ("yes", "no", "exceptional_yes", "exceptional_no")
+                assert _check(monkeypatch, odds, cf, dice).answer in {"yes", "no", "exceptional_yes", "exceptional_no"}
 
 
 def test_score_to_odds_covers_the_scale() -> None:

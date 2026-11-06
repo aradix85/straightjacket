@@ -214,7 +214,7 @@ def test_a_game_over_turn_offers_the_burn_before_it_announces_the_end(
 ) -> None:
     session, ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
 
-    assert [t for t in _types(ws) if t in ("burn_offer", "game_over")] == ["burn_offer"]
+    assert [t for t in _types(ws) if t in {"burn_offer", "game_over"}] == ["burn_offer"]
     assert len(session.game.campaign.predecessors) == 1
 
     asyncio.run(handlers.handle_burn_momentum(session, ws, {"accept": False}))

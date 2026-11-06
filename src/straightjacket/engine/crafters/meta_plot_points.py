@@ -118,7 +118,7 @@ def _meta_plotline_combo(narrative: NarrativeState, active_plotline_id: str | No
     advancing = [p for p in narrative.plotlines_list if p.status == "advancement"]
     if active_plotline_id is not None:
         advancing = [p for p in advancing if p.id != active_plotline_id]
-    if len(advancing) < 2:
+    if len(advancing) <= 1:
         log("[AdventureCrafter] plotline_combo: fewer than two advancing plotlines, skipped")
         return
     rng = random.Random()

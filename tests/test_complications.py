@@ -101,7 +101,7 @@ def test_a_complication_clock_fills_every_scene_and_strikes_when_full() -> None:
 
 @pytest.mark.parametrize(("result", "averted"), [("STRONG_HIT", True), ("WEAK_HIT", True), ("MISS", False)])
 def test_a_hit_aimed_at_a_complication_heads_it_off(
-    monkeypatch: pytest.MonkeyPatch, result: str, averted: bool
+    monkeypatch: pytest.MonkeyPatch, result: str, *, averted: bool
 ) -> None:
     game = library_game()
     game.world.clocks.append(_complication(filled=1))

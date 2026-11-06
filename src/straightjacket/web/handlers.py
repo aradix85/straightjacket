@@ -501,7 +501,7 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict[str, A
     asset_id = await _require_str(ws, msg, "asset_id", "advance.usage")
     if asset_id is None:
         return
-    if kind not in ("upgrade", "new"):
+    if kind not in {"upgrade", "new"}:
         await _send(ws, {"type": "status", "text": t("advance.usage")})
         return
     refusal = advance_asset(session.game, asset_id, kind)

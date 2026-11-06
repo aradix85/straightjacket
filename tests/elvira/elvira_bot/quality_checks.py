@@ -59,7 +59,7 @@ def check_npc_spatial_consistency(
     prev_by_id = {n.id: n for n in prev_npcs}
 
     for npc in game.npcs:
-        if npc.status not in ("active", "background"):
+        if npc.status not in {"active", "background"}:
             continue
         prev = prev_by_id.get(npc.id)
         if not prev:
@@ -103,7 +103,7 @@ def check_chapter_continuity(
     current_by_name = {n.name.lower().strip(): n for n in game.npcs}
 
     for prev in pre_chapter_npcs:
-        if prev.status in ("deceased", "lore"):
+        if prev.status in {"deceased", "lore"}:
             continue
         name_lower = prev.name.lower().strip()
 

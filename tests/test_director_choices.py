@@ -21,7 +21,7 @@ def _minimal(schema: dict[str, Any]) -> Any:
         return {key: _minimal(value) for key, value in schema["properties"].items()}
     if kind == "array":
         return []
-    if kind in ("integer", "number"):
+    if kind in {"integer", "number"}:
         return 0
     if kind == "boolean":
         return False

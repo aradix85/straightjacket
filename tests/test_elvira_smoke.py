@@ -66,7 +66,7 @@ def test_a_scenario_that_starts_at_a_game_over_plays_the_successor(
     session = _scenario_run("succession", 1)
     assert session.scenario["missed"] == []
     assert "new_character" in session.succession
-    assert session.turns[0].error == ""
+    assert not session.turns[0].error
 
 
 def test_a_threat_on_the_vow_advances_on_a_miss(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

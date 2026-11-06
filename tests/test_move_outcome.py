@@ -174,7 +174,7 @@ class TestEndureHarm:
 
 @pytest.mark.parametrize(("result_type", "game_over"), [("STRONG_HIT", False), ("MISS", True)])
 def test_face_death_returns_on_a_strong_hit_and_dies_on_a_miss(
-    game: GameState, result_type: str, game_over: bool
+    game: GameState, result_type: str, *, game_over: bool
 ) -> None:
     result = resolve_move_outcome(
         game, "threshold/face_death", result_type, target_npc_id=None, aided_by=None, match=False

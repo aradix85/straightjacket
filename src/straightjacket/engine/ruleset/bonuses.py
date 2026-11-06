@@ -64,7 +64,7 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
             momentum_on_hit=aid.momentum_on_hit,
         )
         for track in game.progress_tracks
-        if track.track_type == "connection" and track.status in ("active", "bonded")
+        if track.track_type == "connection" and track.status in {"active", "bonded"}
     )
     return options
 

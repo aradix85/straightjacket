@@ -267,11 +267,10 @@ def add_keyed_scene(
 
 
 def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
-    parts = value.split(":", 1)
-    if len(parts) != 2 or not parts[0] or not parts[1]:
+    pool, separator, threshold_str = value.partition(":")
+    if not separator or not pool or not threshold_str:
         msg = f"{trigger_type} trigger_value must be '<pool>:<threshold>', got {value!r}"
         raise ValueError(msg)
-    pool, threshold_str = parts
     try:
         int(threshold_str)
     except ValueError as exc:

@@ -23,6 +23,7 @@ if not _logger.handlers:
     _logger.addHandler(_ch)
 
 from tests.elvira.elvira_bot.ai_helpers import available_styles
+from tests.elvira.elvira_bot.console import show_on_console
 from tests.elvira.elvira_bot.runner import load_config, run_session, selectable_settings
 from tests.elvira.elvira_bot.ws_runner import run_ws_session
 
@@ -43,6 +44,7 @@ def _scenario_cfg(bot_cfg: dict[str, Any], name: str) -> dict[str, Any]:
 
 
 def main() -> None:
+    show_on_console()
     for stream in (sys.stdout, sys.stderr):
         if isinstance(stream, io.TextIOWrapper):
             stream.reconfigure(encoding="utf-8", errors="replace")

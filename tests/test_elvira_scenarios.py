@@ -109,7 +109,7 @@ def test_the_coverage_counts_what_the_engine_logs_for_bonds_threats_and_forsaken
     coverage = Coverage()
     before = world_view(game)
     seal_bond(game, game.npcs[0])
-    coverage.observe_turn(before, world_view(game), "dialog", False, "dialog")
+    coverage.observe_turn(before, world_view(game), "dialog", match=False, move="dialog")
     prepare_scenario(
         game,
         {
@@ -154,13 +154,13 @@ def test_the_coverage_counts_a_vow_played_to_its_fulfilment(monkeypatch: pytest.
         for brain in (milestone, fulfil):
             before = world_view(game)
             process_turn(TurnProvider(brain), game, "The archive is whole again", stream=None)
-            coverage.observe_turn(before, world_view(game), game.narrative.session_log[-1].result, False, "")
+            coverage.observe_turn(before, world_view(game), game.narrative.session_log[-1].result, match=False, move="")
     finally:
         logger.removeHandler(events)
     coverage.observe_events(events.lines)
     assert {"move_without_roll", "milestone_reached", "vow_fulfilled", "result:STRONG_HIT"} <= set(coverage.exercised())
     assert "dialog" not in coverage.exercised()
-    coverage.observe_turn(world_view(game), world_view(game), "oracle", False, "")
+    coverage.observe_turn(world_view(game), world_view(game), "oracle", match=False, move="")
     assert "dialog" in coverage.exercised()
 
 

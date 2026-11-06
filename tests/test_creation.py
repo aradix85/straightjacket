@@ -199,7 +199,7 @@ def test_truths_block_with_truths() -> None:
 
 def test_truths_block_empty() -> None:
     game = make_game_state(player_name="Test")
-    assert truths_block(game) == ""
+    assert not truths_block(game)
 
 
 _VALID_PAYLOAD = {"player_name": "Kael", "truths": {}, "tone": "pulp"}

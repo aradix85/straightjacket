@@ -1,2 +1,3 @@
 persistence:
   default_save_name: autosave
+  max_name_length: 100

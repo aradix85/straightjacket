@@ -28,7 +28,7 @@ def bonded_tracks(game: GameState) -> list[ProgressTrack]:
 
 def connection_track(game: GameState, npc_id: str) -> ProgressTrack | None:
     track_id = connection_track_id(npc_id)
-    return next((t for t in game.progress_tracks if t.id == track_id and t.status in ("active", "bonded")), None)
+    return next((t for t in game.progress_tracks if t.id == track_id and t.status in {"active", "bonded"}), None)
 
 
 def seal_bond(game: GameState, npc: NpcData) -> ProgressTrack:

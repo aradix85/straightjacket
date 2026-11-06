@@ -3,23 +3,24 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from straightjacket.engine.ruleset.bond import get_npc_bond
+from tests.elvira.elvira_bot.console import say
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import GameState
     from tests.elvira.elvira_bot.models import SessionLog
 
 
-def print_narration(narration: str, full: bool) -> None:
+def print_narration(narration: str, *, full: bool) -> None:
     if full:
-        print(f"\n  [NARRATOR]\n{narration}\n")
+        say(f"\n  [NARRATOR]\n{narration}\n")
     else:
         excerpt = narration.replace("\n", " ").strip()[:220]
-        print(f"\n  [NARRATOR] {excerpt}{'...' if len(narration) > 220 else ''}")
+        say(f"\n  [NARRATOR] {excerpt}{'...' if len(narration) > 220 else ''}")
 
 
 def print_state(game: GameState) -> None:
     meters = " ".join(f"{name}:{value}" for name, value in game.resources.meters.items())
-    print(f"  [STATE] {meters} chaos:{game.world.chaos_factor} scene:{game.narrative.scene_count}")
+    say(f"  [STATE] {meters} chaos:{game.world.chaos_factor} scene:{game.narrative.scene_count}")
 
 
 def final_state_dict(game: GameState) -> dict[str, Any]:
@@ -64,39 +65,39 @@ def final_state_dict(game: GameState) -> dict[str, Any]:
 
 def print_summary(slog: SessionLog, game: GameState | None) -> None:
     separator = "=" * 62
-    print(f"\n{separator}")
-    print(f"  Session complete: {slog.ended_reason}")
-    print(f"  Chapters played : {len(slog.chapters)}")
-    print(f"  Total turns     : {slog.total_turns}")
-    print(f"  Violations      : {len(slog.violations)}")
+    say(f"\n{separator}")
+    say(f"  Session complete: {slog.ended_reason}")
+    say(f"  Chapters played : {len(slog.chapters)}")
+    say(f"  Total turns     : {slog.total_turns}")
+    say(f"  Violations      : {len(slog.violations)}")
     if game:
-        print(f"  Final scene     : {game.narrative.scene_count}")
+        say(f"  Final scene     : {game.narrative.scene_count}")
         meters = ", ".join(f"{name} {value}" for name, value in game.resources.meters.items())
-        print(f"  Final meters    : {meters}")
+        say(f"  Final meters    : {meters}")
     bs = slog.burn_stats
     if bs.get("offered", 0) > 0:
-        print(f"  Burns           : {bs['offered']} offered, {bs['taken']} taken, {bs['failed']} failed")
+        say(f"  Burns           : {bs['offered']} offered, {bs['taken']} taken, {bs['failed']} failed")
     if slog.narration_quality_issues:
-        print(f"  Quality issues  : {len(slog.narration_quality_issues)}")
+        say(f"  Quality issues  : {len(slog.narration_quality_issues)}")
     if slog.spatial_issues:
-        print(f"  Spatial issues  : {len(slog.spatial_issues)}")
+        say(f"  Spatial issues  : {len(slog.spatial_issues)}")
     if slog.correction_tests:
         failed = sum(1 for c in slog.correction_tests if not c.get("success"))
-        print(f"  Corrections     : {len(slog.correction_tests)} tested, {failed} failed")
+        say(f"  Corrections     : {len(slog.correction_tests)} tested, {failed} failed")
     qs = slog.quality_summary
     if qs.get("narration_quality_total", 0) > 0:
-        print(f"  Narration leaks : {qs['narration_quality_total']}")
+        say(f"  Narration leaks : {qs['narration_quality_total']}")
     if qs.get("spatial_issues_total", 0) > 0:
-        print(f"  Spatial issues  : {qs['spatial_issues_total']}")
+        say(f"  Spatial issues  : {qs['spatial_issues_total']}")
     if qs.get("chapter_continuity_total", 0) > 0:
-        print(f"  Continuity      : {qs['chapter_continuity_total']}")
+        say(f"  Continuity      : {qs['chapter_continuity_total']}")
     ct = qs.get("correction_tests_total", 0)
     if ct > 0:
         cf = qs.get("correction_tests_failed", 0)
-        print(f"  Corrections     : {ct} tested, {cf} failed")
+        say(f"  Corrections     : {ct} tested, {cf} failed")
     ts = slog.token_summary
     if ts.get("total", 0) > 0:
-        print(f"  Tokens          : {ts['total_input']} in + {ts['total_output']} out = {ts['total']} total")
+        say(f"  Tokens          : {ts['total_input']} in + {ts['total_output']} out = {ts['total']} total")
         for role, stats in sorted(ts.get("by_role", {}).items(), key=lambda x: -x[1]["input"]):
-            print(f"    {role:<20}: {stats['calls']}x, {stats['input']} in + {stats['output']} out")
-    print(separator)
+            say(f"    {role:<20}: {stats['calls']}x, {stats['input']} in + {stats['output']} out")
+    say(separator)

@@ -132,3 +132,4 @@ class TruncationsConfig:
 @dataclass
 class PersistenceConfig:
     default_save_name: str
+    max_name_length: int

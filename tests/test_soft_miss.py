@@ -139,7 +139,7 @@ def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
 
 
 @pytest.mark.parametrize(("setting_id", "match"), [("starforged", False), ("classic", True)])
-def test_other_misses_pay_the_price(monkeypatch: pytest.MonkeyPatch, setting_id: str, match: bool) -> None:
+def test_other_misses_pay_the_price(monkeypatch: pytest.MonkeyPatch, setting_id: str, *, match: bool) -> None:
     rolled = record_price_tables(monkeypatch)
     game = _game(setting_id)
     rows = _complication_rows(_game("starforged"))

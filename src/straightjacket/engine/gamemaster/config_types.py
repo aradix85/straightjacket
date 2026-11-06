@@ -170,6 +170,13 @@ class InformationGatePoints:
 
 
 @dataclass
+class InformationGateReveals:
+    agenda: int
+    instinct: int
+    secrets: int
+
+
+@dataclass
 class InformationGateBuckets:
     scenes_known_mid_min: int
     scenes_known_high_min: int
@@ -231,6 +238,7 @@ class InformationGateConfig:
     buckets: InformationGateBuckets
     gate_min: int
     gate_max: int
+    reveals: InformationGateReveals
     stance_caps: dict[str, int]
     fact_budget_by_gate: dict[int, int]
     miss_stance: StanceMatrixEntry

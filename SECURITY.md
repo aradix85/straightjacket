@@ -9,7 +9,7 @@ Straightjacket reads AI provider API keys from the environment variables that `c
 Player names and save names become folder and file names. So a name that could reach outside the users directory, or that the file system would quietly change, is refused with `InvalidNameError` rather than altered. Refusing instead of stripping keeps two different names from sharing one folder. Refused are:
 
 - names holding a path separator (`/`, `\`), any of `< > : " | ? *`, or a character below code 32, null byte included (a drive name such as `D:` would otherwise point outside the users directory);
-- empty names and names over 100 characters;
+- empty names and names longer than `persistence.max_name_length` in `engine/persistence.yaml`;
 - names starting with a dot, which covers `.` and `..`, and names ending in a dot, which Windows would silently drop;
 - reserved device names such as `CON`, `NUL`, `COM1`, or `LPT1`, with or without an extension.
 

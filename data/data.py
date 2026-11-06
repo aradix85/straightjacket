@@ -1,8 +1,21 @@
+import logging
 import sys
 import urllib.request
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent
+
+_CONSOLE = logging.getLogger("straightjacket.data")
+_CONSOLE_HANDLER = logging.StreamHandler(sys.stdout)
+_CONSOLE_HANDLER.setFormatter(logging.Formatter("%(message)s"))
+_CONSOLE.addHandler(_CONSOLE_HANDLER)
+_CONSOLE.setLevel(logging.INFO)
+_CONSOLE.propagate = False
+
+
+def _say(text: str = "") -> None:
+    _CONSOLE.info(text)
+
 
 _DATASWORN_COMMIT = "c86923819213f1321170586c4543ceea70bc3d5c"
 _DATASWORN_PATH = f"rsek/datasworn/{_DATASWORN_COMMIT}/datasworn"
@@ -73,10 +86,10 @@ def _fetch(path: str, timeout: int) -> bytes:
 
 def _download(path: str, dest: Path) -> bool:
     try:
-        print(f"  Downloading {path[:80]}...")
+        _say(f"  Downloading {path[:80]}...")
         dest.write_bytes(_fetch(path, timeout=30))
     except OSError as e:
-        print(f"  FAILED: {e}")
+        _say(f"  FAILED: {e}")
         return False
     return True
 
@@ -84,8 +97,8 @@ def _download(path: str, dest: Path) -> bool:
 def main() -> None:
     force = "--force" in sys.argv
 
-    print(f"Data directory: {DATA_DIR}")
-    print()
+    _say(f"Data directory: {DATA_DIR}")
+    _say()
 
     ok = 0
     skipped = 0
@@ -95,27 +108,27 @@ def main() -> None:
     for source_id, source in SOURCES.items():
         if source["group"] != current_group:
             current_group = source["group"]
-            print(f"── {_GROUP_LABELS[current_group]} ──")
+            _say(f"── {_GROUP_LABELS[current_group]} ──")
 
         dest = DATA_DIR / source["file"]
         if dest.exists() and not force:
             size_kb = dest.stat().st_size / 1024
-            print(f"  {source_id}: already exists ({size_kb:.0f}K), skipping")
+            _say(f"  {source_id}: already exists ({size_kb:.0f}K), skipping")
             skipped += 1
             continue
 
-        print(f"  {source_id} ({source['license']}):")
+        _say(f"  {source_id} ({source['license']}):")
         if _download(source["path"], dest):
             size_kb = dest.stat().st_size / 1024
-            print(f"  OK ({size_kb:.0f}K)")
+            _say(f"  OK ({size_kb:.0f}K)")
             ok += 1
         else:
             failed += 1
 
-    print()
-    print(f"Done: {ok} downloaded, {skipped} skipped, {failed} failed")
+    _say()
+    _say(f"Done: {ok} downloaded, {skipped} skipped, {failed} failed")
     if failed:
-        print("Re-run to retry failed downloads.")
+        _say("Re-run to retry failed downloads.")
         sys.exit(1)
 
 

@@ -208,7 +208,7 @@ class TestAdvancesReachTheNarrator:
         assert f">{event.development}</threat_advance>" in dialog_prompt(game, threat_events=[event])
         game.setting_id = "starforged"
         game.threats[0].menace_ticks = 0
-        assert advance_menace_on_miss(game)[0].development == ""
+        assert not advance_menace_on_miss(game)[0].development
 
 
 class TestThreatsStatus:
@@ -416,4 +416,4 @@ class TestAdvanceAThreatInClassic:
         game = _game_with_threat()
         [event] = advance_menace_on_miss(game)
         assert game.threats[0].menace_ticks == rules().threats.menace_on_miss * menace_per_mark(game.threats[0])
-        assert event.development == ""
+        assert not event.development

@@ -51,7 +51,7 @@ class ScriptedProvider(ABC):
 
 
 class MockProvider(ScriptedProvider):
-    def __init__(self, response_content: str = "", fail: bool = False) -> None:
+    def __init__(self, response_content: str = "", *, fail: bool = False) -> None:
         self._content = response_content
         self._fail = fail
         self.calls: list[dict[str, Any]] = []

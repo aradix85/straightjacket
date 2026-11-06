@@ -301,7 +301,7 @@ _EXTERNAL_STRUCTURE_DATACLASSES: set[tuple[str, str]] = {
 _EMPTY_COLLECTION_FACTORIES = frozenset({"list", "dict", "set"})
 
 
-def _field_without_default(value: ast.expr, empty_collection_allowed: bool) -> bool:
+def _field_without_default(value: ast.expr, *, empty_collection_allowed: bool) -> bool:
     if not (isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id == "field"):
         return False
     keywords = {k.arg: k.value for k in value.keywords}
@@ -328,7 +328,7 @@ def _check_no_dataclass_defaults() -> tuple[str, list[Violation]]:
                     continue
                 field_name = stmt.target.id if isinstance(stmt.target, ast.Name) else "?"
                 from_yaml = rel in _CONFIG_BINDING_FILES and not field_name.startswith("_")
-                if _field_without_default(stmt.value, not from_yaml):
+                if _field_without_default(stmt.value, empty_collection_allowed=not from_yaml):
                     continue
                 snippet = lines[stmt.lineno - 1].strip()
                 violations.append(Violation(rel, stmt.lineno, f"{node.name}.{field_name}: {snippet}"))
@@ -643,7 +643,7 @@ def _is_empty_collection(node: ast.expr) -> bool:
     return bool(
         isinstance(node, ast.Call)
         and isinstance(node.func, ast.Name)
-        and node.func.id in ("list", "dict", "set", "tuple")
+        and node.func.id in {"list", "dict", "set", "tuple"}
         and not node.args
         and not node.keywords
     )
@@ -689,10 +689,10 @@ def _is_optional_collection_annotation(node: ast.expr) -> bool:
 
 
 def _is_collection_annotation(node: ast.expr) -> bool:
-    if isinstance(node, ast.Name) and node.id in ("list", "dict", "set", "tuple", "List", "Dict", "Set", "Tuple"):
+    if isinstance(node, ast.Name) and node.id in {"list", "dict", "set", "tuple", "List", "Dict", "Set", "Tuple"}:
         return True
     if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name):
-        return node.value.id in ("list", "dict", "set", "tuple", "List", "Dict", "Set", "Tuple", "Sequence", "Mapping")
+        return node.value.id in {"list", "dict", "set", "tuple", "List", "Dict", "Set", "Tuple", "Sequence", "Mapping"}
     return False
 
 

@@ -111,7 +111,7 @@ def _find_by_substring(game: GameState, ref_norm: str) -> NpcData | None:
     return best_match
 
 
-def _word_pattern(word: str, ignore_case: bool) -> str:
+def _word_pattern(word: str, *, ignore_case: bool) -> str:
     if ignore_case or not word[0].isupper() or word.lower() in gm().stopwords.general:
         return f"(?i:{re.escape(word)})"
     return re.escape(word)
@@ -121,7 +121,7 @@ def stands_in(phrase: str, text: str, *, ignore_case: bool) -> bool:
     words = _WORD_RE.findall(phrase)
     if not words:
         return False
-    body = r"\W+".join(_word_pattern(word, ignore_case) for word in words)
+    body = r"\W+".join(_word_pattern(word, ignore_case=ignore_case) for word in words)
     return re.search(rf"(?<!\w){body}(?!\w)", text) is not None
 
 

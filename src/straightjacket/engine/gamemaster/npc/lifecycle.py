@@ -65,7 +65,7 @@ def retire_distant_npcs(game: GameState) -> None:
         log(f"[NPC] Demoted to background: {npc.name}")
 
 
-def reactivate_npc(npc: NpcData, reason: str, force: bool = False) -> None:
+def reactivate_npc(npc: NpcData, reason: str, *, force: bool = False) -> None:
     if npc.status == "deceased":
         if force:
             npc.status = "active"

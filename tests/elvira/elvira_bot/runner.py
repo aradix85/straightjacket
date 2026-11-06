@@ -51,6 +51,7 @@ from tests.elvira.elvira_bot.ai_helpers import (
     decide_burn_momentum,
     get_persona,
 )
+from tests.elvira.elvira_bot.console import say
 from tests.elvira.elvira_bot.coverage import Coverage, world_view
 from tests.elvira.elvira_bot.creation import roll_character
 from tests.elvira.elvira_bot.display import print_narration, print_state, print_summary
@@ -78,7 +79,7 @@ CORRECTION_TEST_INTERVAL = 8
 
 def load_config(path: Path) -> dict[str, Any]:
     if not path.exists():
-        print(f"[ERROR] Config not found: {path}")
+        say(f"[ERROR] Config not found: {path}")
         raise SystemExit(1)
     with path.open(encoding="utf-8") as f:
         config: dict[str, Any] = yaml.safe_load(f)
@@ -93,7 +94,9 @@ def _role_label(role: str) -> str:
     return f"{role}={provider_for_role(role)}/{model_for_role(role)}"
 
 
-def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
+def run_session(
+    bot_cfg: dict[str, Any], *, auto_override: bool = False, turns_override: int | None = None
+) -> SessionLog:
     install_answers(ironsworn)
     auto_mode = auto_override or bot_cfg["auto_mode"]
     username = bot_cfg["username"]
@@ -143,20 +146,20 @@ def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_over
         style=style,
     )
 
-    print(f"\n{SEPARATOR}")
-    print(f"  Straightjacket — Elvira Test Bot — {setting_id}, {style}")
-    print(
+    say(f"\n{SEPARATOR}")
+    say(f"  Straightjacket — Elvira Test Bot — {setting_id}, {style}")
+    say(
         f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | "
         f"Chapters: {max_chapters} | Lang: {narration_language()}"
     )
     roles = ", ".join(_role_label(role) for role in ("narrator", "brain", "director"))
-    print(f"  Engine: v{VERSION} | {roles}")
-    print(
+    say(f"  Engine: v{VERSION} | {roles}")
+    say(
         f"  Elvira: {bot_label()} plays{' and judges' if judge_cfg else ''} | Injected AI failure on turn {inject_turn}"
     )
-    print(SEPARATOR)
+    say(SEPARATOR)
 
-    game, narration, chat_messages = _setup_game(provider, username, game_cfg, auto_mode, slog)
+    game, narration, chat_messages = _setup_game(provider, username, game_cfg, auto_mode=auto_mode)
 
     _log_story_blueprint(game, slog)
     _apply_scenario(game, scenario_name, scenario, slog)
@@ -183,14 +186,14 @@ def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_over
         ch_rec = ChapterRecord(chapter=chapter_num)
 
         if chapter_idx > 0:
-            print(f"\n{SEPARATOR}")
-            print(f"  CHAPTER {chapter_num} — {game.player_name} at {game.world.current_location}")
-            print(SEPARATOR)
+            say(f"\n{SEPARATOR}")
+            say(f"  CHAPTER {chapter_num} — {game.player_name} at {game.world.current_location}")
+            say(SEPARATOR)
 
         prev_action = ""
         for _ in range(max_turns):
             total_turns += 1
-            print(f"\n{SEPARATOR}\n  TURN {total_turns}/{max_chapters * max_turns}\n{SEPARATOR}")
+            say(f"\n{SEPARATOR}\n  TURN {total_turns}/{max_chapters * max_turns}\n{SEPARATOR}")
 
             is_correction_turn = (
                 total_turns > 1 and total_turns % CORRECTION_TEST_INTERVAL == 0 and game.last_turn_snapshot is not None
@@ -209,11 +212,11 @@ def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_over
                     persona,
                     style,
                     burn_setting,
-                    print_full,
-                    print_rolls,
-                    do_invariants,
-                    slog,
-                    prev_npcs,
+                    print_full=print_full,
+                    print_rolls=print_rolls,
+                    do_invariants=do_invariants,
+                    slog=slog,
+                    prev_npcs=prev_npcs,
                     coverage=coverage,
                     events=events,
                     judge_cfg=judge_cfg,
@@ -278,7 +281,7 @@ def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_over
                     last_location=n.last_location,
                 )
                 for n in game.npcs
-                if n.status in ("active", "background")
+                if n.status in {"active", "background"}
             ]
 
             game, narration, chat_messages, should_break = _chapter_transition(
@@ -288,7 +291,7 @@ def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_over
             if not should_break and pre_chapter_npcs:
                 cont_issues = check_chapter_continuity(game, pre_chapter_npcs)
                 for issue in cont_issues:
-                    print(f"  [CONTINUITY] {issue}")
+                    say(f"  [CONTINUITY] {issue}")
                     slog.chapter_continuity_issues.append(f"Ch{chapter_num}→{chapter_num + 1}: {issue}")
 
             if should_break:
@@ -324,23 +327,23 @@ def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_over
     logging.getLogger("rpg_engine").removeHandler(events)
     slog.engine_warnings = list(events.warnings)
     report_path = write_report(slog, coverage, RUNS_DIR / f"{log_file.stem}.md", prices)
-    print(f"  [REPORT] {report_path}")
+    say(f"  [REPORT] {report_path}")
 
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     log_path = RUNS_DIR / log_file
     log_path.write_text(json.dumps(slog.to_diagnostic_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"  [LOG] Session log written to: {log_path}")
+    say(f"  [LOG] Session log written to: {log_path}")
 
     if full_debug:
         full_path = log_path.with_stem(f"{log_path.stem}_full")
         full_path.write_text(json.dumps(slog.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
-        print(f"  [LOG] Full debug log written to: {full_path}")
+        say(f"  [LOG] Full debug log written to: {full_path}")
 
     return slog
 
 
 def _setup_game(
-    provider: AIProvider, username: str, game_cfg: dict[str, Any], auto_mode: bool, _slog: SessionLog
+    provider: AIProvider, username: str, game_cfg: dict[str, Any], *, auto_mode: bool
 ) -> tuple[GameState, str, list[dict[str, Any]]]:
     if not auto_mode and game_cfg["load_existing"]:
         save_name = game_cfg["save_name"]
@@ -353,7 +356,7 @@ def _setup_game(
             if msg.get("role") == "assistant" and not msg.get("recap"):
                 narration = msg.get("content", "")
                 break
-        print(
+        say(
             f"[SETUP] Loaded: {game.player_name} (Ch{game.campaign.chapter_number}, Scene {game.narrative.scene_count})"
         )
         return game, narration, chat_messages
@@ -363,11 +366,11 @@ def _setup_game(
     try:
         game, narration = start_new_game(provider, creation_data)
     except Exception as e:
-        print(f"[ERROR] start_new_game failed: {e}")
+        say(f"[ERROR] start_new_game failed: {e}")
         traceback.print_exc()
         raise SystemExit(1) from e
 
-    print(f"[SETUP] Character: {game.player_name} at {game.world.current_location}")
+    say(f"[SETUP] Character: {game.player_name} at {game.world.current_location}")
     return game, narration, [{"role": "assistant", "content": narration}]
 
 
@@ -379,6 +382,7 @@ def _play_turn(
     persona: str,
     style: str,
     burn_setting: str,
+    *,
     print_full: bool,
     print_rolls: bool,
     do_invariants: bool,
@@ -390,7 +394,6 @@ def _play_turn(
     prev_action: str = "",
     inject_failure: bool = False,
     directive_key: str | None = None,
-    *,
     fixed: str | None,
 ) -> tuple[GameState, str, TurnRecord, bool]:
     previous_narration = narration
@@ -398,11 +401,11 @@ def _play_turn(
     try:
         action = ask_bot(persona, context, max_tokens=500)
     except Exception as e:
-        print(f"[ERROR] Bot decision failed: {e}")
+        say(f"[ERROR] Bot decision failed: {e}")
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, error=str(e))
         return game, narration, rec, True
 
-    print(f"\n  [PLAYER] {action}")
+    say(f"\n  [PLAYER] {action}")
 
     events.lines.clear()
     warnings_before = len(events.warnings)
@@ -427,19 +430,19 @@ def _play_turn(
         _restore(game, snapshot, last_snapshot)
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, rolled_back=True)
         rec.token_usage = provider.drain()
-        _check_rollback(game, before_state, turn, e, inject_failure, slog, coverage)
+        _check_rollback(game, before_state, turn, e, injected=inject_failure, slog=slog, coverage=coverage)
         if inject_failure:
             del events.warnings[warnings_before:]
         return game, narration, rec, False
     except Exception as e:
-        print(f"[ERROR] process_turn failed: {e}")
+        say(f"[ERROR] process_turn failed: {e}")
         traceback.print_exc()
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, error=str(e))
         return game, narration, rec, True
 
-    print_narration(narration, print_full)
+    print_narration(narration, full=print_full)
     if roll and print_rolls:
-        print(
+        say(
             f"  [ROLL] {roll.stat_name.upper()} {roll.stat_value} | "
             f"Action {roll.d1}+{roll.stat_value}={roll.action_score} vs "
             f"[{roll.c1}, {roll.c2}] -> {roll.result}"
@@ -451,7 +454,7 @@ def _play_turn(
     played = game.narrative.session_log[-1]
     result, played_move = played.result, played.move
     match = bool(roll and roll.match)
-    coverage.observe_turn(before, world_view(game), result, match, roll.move if roll else "")
+    coverage.observe_turn(before, world_view(game), result, match=match, move=roll.move if roll else "")
 
     if burn_offer:
         narration, director_ctx = _handle_burn(
@@ -465,13 +468,13 @@ def _play_turn(
             run_deferred_director(provider, game, director_ctx)
             rec.director_ran = True
             coverage.hit("director")
-            print("  [DIRECTOR] Ran")
+            say("  [DIRECTOR] Ran")
         except Exception as e:
             rec.director_error = str(e)
     rec.token_usage = provider.drain()
 
     print_state(game)
-    _check_turn(game, narration, turn, prev_npcs, do_invariants, slog, rec)
+    _check_turn(game, narration, turn, prev_npcs, do_invariants=do_invariants, slog=slog, rec=rec)
 
     rec.engine_events = list(events.lines)
     rec.engine_warnings = events.warnings[warnings_before:]
@@ -485,11 +488,11 @@ def _play_turn(
             action,
             narration,
             result,
-            match,
-            previous_narration,
-            played_move,
-            rec.revelation,
-            consequences_in(provider.narrator_prompt),
+            match=match,
+            previous=previous_narration,
+            move_id=played_move,
+            revelation=rec.revelation,
+            consequences=consequences_in(provider.narrator_prompt),
         )
         _print_audit(rec.judge)
 
@@ -501,6 +504,7 @@ def _check_turn(
     narration: str,
     turn: int,
     prev_npcs: list[NpcSnapshot] | None,
+    *,
     do_invariants: bool,
     slog: SessionLog,
     rec: TurnRecord,
@@ -509,20 +513,20 @@ def _check_turn(
     if quality_issues:
         rec.narration_quality = quality_issues
         for issue in quality_issues:
-            print(f"  [QUALITY] {issue}")
+            say(f"  [QUALITY] {issue}")
             slog.narration_quality_issues.append(f"Turn {turn}: {issue}")
 
     spatial_issues = check_npc_spatial_consistency(game, prev_npcs, narration)
     if spatial_issues:
         rec.spatial_issues = spatial_issues
         for issue in spatial_issues:
-            print(f"  [SPATIAL] {issue}")
+            say(f"  [SPATIAL] {issue}")
             slog.spatial_issues.append(f"Turn {turn}: {issue}")
 
     if do_invariants:
         violations = assert_game_state(game, turn)
         for v in violations:
-            print(f"  !!  {v}")
+            say(f"  !!  {v}")
             slog.violations.append(v)
         rec.violations = violations
 
@@ -548,7 +552,7 @@ def _apply_scenario(game: GameState, name: str, spec: dict[str, Any] | None, slo
         return
     notes = prepare_scenario(game, spec)
     slog.scenario = {"name": name, "prepared": notes, "expect": list(spec["expect"])}
-    print(f"  [SCENARIO] {name}: {'; '.join(notes) or 'nothing to prepare'}")
+    say(f"  [SCENARIO] {name}: {'; '.join(notes) or 'nothing to prepare'}")
 
 
 def _directive(spec: dict[str, Any] | None, coverage: Coverage, turn: int, max_turns: int) -> str | None:
@@ -576,6 +580,7 @@ def _check_rollback(
     before_state: dict[str, Any],
     turn: int,
     error: AIUnavailableError,
+    *,
     injected: bool,
     slog: SessionLog,
     coverage: Coverage,
@@ -589,7 +594,7 @@ def _check_rollback(
     else:
         coverage.hit("ai_failure_rollback")
     kind = "Injected" if injected else "Real"
-    print(f"  [ROLLBACK] {kind} AI failure: {error}; state restored{' with differences' if changed else ''}")
+    say(f"  [ROLLBACK] {kind} AI failure: {error}; state restored{' with differences' if changed else ''}")
 
 
 def _record_stream(
@@ -613,9 +618,9 @@ def _record_stream(
 
 def _print_audit(verdict: dict[str, Any]) -> None:
     if "overall" in verdict:
-        print(f"  [AUDIT] {verdict['overall']}/10: {verdict['weakness']}")
+        say(f"  [AUDIT] {verdict['overall']}/10: {verdict['weakness']}")
     else:
-        print(f"  [AUDIT] no verdict: {verdict['error']}")
+        say(f"  [AUDIT] no verdict: {verdict['error']}")
 
 
 class _EventCapture(logging.Handler):
@@ -676,11 +681,11 @@ def _play_succession(
         narration = start_succession_with_character(provider, game, creation_data)
     except Exception as e:
         slog.succession = {"error": f"{type(e).__name__}: {e}"[:300]}
-        print(f"  [SUCCESSION] Failed: {e}")
+        say(f"  [SUCCESSION] Failed: {e}")
         return game, ""
     slog.succession = {"new_character": game.player_name}
     coverage.hit("succession")
-    print(f"  [SUCCESSION] Continuing as {game.player_name}")
+    say(f"  [SUCCESSION] Continuing as {game.player_name}")
     return game, narration
 
 
@@ -692,7 +697,7 @@ def _play_correction_turn(
     _persona: str,
     slog: SessionLog,
 ) -> tuple[GameState, str, TurnRecord, bool]:
-    print(f"  [CORRECTION TEST] Sending ## correction at turn {turn}")
+    say(f"  [CORRECTION TEST] Sending ## correction at turn {turn}")
 
     correction_prompts = [
         "## I didn't mean to do that — I wanted to just observe, not act",
@@ -701,7 +706,7 @@ def _play_correction_turn(
         "## I was being cautious, not aggressive",
     ]
     correction_text = _random.choice(correction_prompts)
-    print(f"\n  [PLAYER] {correction_text}")
+    say(f"\n  [PLAYER] {correction_text}")
 
     before = copy.deepcopy(game)
     try:
@@ -709,7 +714,7 @@ def _play_correction_turn(
             provider, game, correction_text.lstrip("# ").strip()
         )
     except Exception as e:
-        print(f"  [CORRECTION] Failed: {e}")
+        say(f"  [CORRECTION] Failed: {e}")
         traceback.print_exc()
         rec = TurnRecord(
             turn=turn,
@@ -753,7 +758,7 @@ def _play_correction_turn(
     if violations:
         rec.violations = violations
         for v in violations:
-            print(f"  !!  {v}")
+            say(f"  !!  {v}")
             slog.violations.append(v)
 
     slog.correction_tests.append(
@@ -765,7 +770,7 @@ def _play_correction_turn(
             "quality_issues": quality_issues,
         }
     )
-    print("  [CORRECTION TEST] Completed successfully")
+    say("  [CORRECTION TEST] Completed successfully")
 
     return game, new_narration, rec, False
 
@@ -793,7 +798,7 @@ def _handle_burn(
 
     rec.burn_offered = offer.new_result
     rec.burn_taken = should_burn
-    print(
+    say(
         f"  [BURN] Available ({offer.roll.result} -> "
         f"{offer.new_result}) | Decision: {'BURN' if should_burn else 'skip'}"
     )
@@ -803,11 +808,11 @@ def _handle_burn(
         snapshot, last_snapshot = game.snapshot(), copy.deepcopy(game.last_turn_snapshot)
         try:
             narration, director_ctx = process_momentum_burn(provider, game, offer)
-            print(f"  [BURN] Re-narrated: {narration.replace(chr(10), ' ')[:180]}...")
+            say(f"  [BURN] Re-narrated: {narration.replace(chr(10), ' ')[:180]}...")
         except Exception as e:
             _restore(game, snapshot, last_snapshot)
             rec.burn_error = str(e)
-            print(f"  [BURN] Failed: {e}")
+            say(f"  [BURN] Failed: {e}")
             return narration, director_ctx
         violations = check_turn_replacement(before, game, narration, turn, "momentum burn", keeps_location=True)
         snap_roll = game.last_turn_snapshot.roll if game.last_turn_snapshot else None
@@ -816,7 +821,7 @@ def _handle_burn(
         if game.narrative.session_log and game.narrative.session_log[-1].result != offer.new_result:
             violations.append(f"[TURN {turn}] momentum burn: last session log entry is not the burned result")
         for v in violations:
-            print(f"  !!  {v}")
+            say(f"  !!  {v}")
             slog.violations.append(v)
         rec.violations.extend(violations)
 
@@ -834,15 +839,15 @@ def _chapter_transition(
     max_chapters: int,
     slog: SessionLog,
 ) -> tuple[GameState, str, list[dict[str, Any]], bool]:
-    print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE — Chapter {chapter_num}\n{SEPARATOR}")
+    say(f"\n{SEPARATOR}\n  GENERATING EPILOGUE — Chapter {chapter_num}\n{SEPARATOR}")
     try:
         epilogue = generate_epilogue(provider, game)
         chat_messages.append({"role": "assistant", "content": epilogue, "epilogue": True})
         print_narration(epilogue, full=True)
     except Exception as e:
         tb = traceback.format_exc()
-        print(f"  [EPILOGUE] Failed: {e}")
-        print(tb)
+        say(f"  [EPILOGUE] Failed: {e}")
+        say(tb)
         slog.ended_reason = f"epilogue_error: {type(e).__name__}: {e}"
         slog.violations.append(f"CRASH in generate_epilogue: {tb[-500:]}")
         return game, "", chat_messages, True
@@ -853,27 +858,27 @@ def _chapter_transition(
         slog.ended_reason = "max_chapters_reached"
         return game, "", chat_messages, True
 
-    print(f"\n{SEPARATOR}\n  STARTING CHAPTER {chapter_num + 1}\n{SEPARATOR}")
+    say(f"\n{SEPARATOR}\n  STARTING CHAPTER {chapter_num + 1}\n{SEPARATOR}")
     try:
         narration = start_new_chapter(provider, game)
     except Exception as e:
         tb = traceback.format_exc()
-        print(f"  [CHAPTER] Failed: {e}")
-        print(tb)
+        say(f"  [CHAPTER] Failed: {e}")
+        say(tb)
         slog.ended_reason = f"chapter_transition_error: {type(e).__name__}: {e}"
         slog.violations.append(f"CRASH in start_new_chapter: {tb[-500:]}")
         return game, "", chat_messages, True
     chat_messages = [{"role": "assistant", "content": narration}]
-    print(f"  [CHAPTER] Chapter {game.campaign.chapter_number} at {game.world.current_location}")
+    say(f"  [CHAPTER] Chapter {game.campaign.chapter_number} at {game.world.current_location}")
     return game, narration, chat_messages, False
 
 
 def _try_save(game: GameState, username: str, chat_messages: list[dict[str, Any]], save_out: str) -> None:
     try:
         save_game(game, username, chat_messages, save_out)
-        print(f"  [SAVE] Saved to '{save_out}'")
+        say(f"  [SAVE] Saved to '{save_out}'")
     except Exception as e:
-        print(f"  [SAVE] Failed: {e}")
+        say(f"  [SAVE] Failed: {e}")
 
 
 def _log_story_blueprint(game: GameState, slog: SessionLog) -> None:

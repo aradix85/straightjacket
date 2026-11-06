@@ -275,7 +275,7 @@ def test_roll_turning_point_reuses_advancing_plotline() -> None:
     rng = random.Random(0)
     themes = ["action", "tension", "mystery", "social", "personal"]
     roll_turning_point(rng, themes, narrative)
-    assert len(narrative.plotlines_list) in (1, 2)
+    assert len(narrative.plotlines_list) in {1, 2}
     if len(narrative.plotlines_list) == 1:
         assert narrative.plotlines_list[0].turning_point_count == 1
 

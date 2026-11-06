@@ -183,7 +183,7 @@ def _create_plotline(narrative: NarrativeState, name: str) -> PlotlineEntry:
 
 
 def _roll_plot_point(
-    rng: random.Random, themes: list[str], alternation: ThemeAlternation, conclusion_counts_as_none: bool
+    rng: random.Random, themes: list[str], alternation: ThemeAlternation, *, conclusion_counts_as_none: bool
 ) -> PlotPointHit:
     priority = lookup_theme_priority(rng.randint(1, crafter().adventure_crafter_dice.theme_die), alternation)
     theme_index = priority - 1
@@ -237,7 +237,7 @@ def roll_turning_point(
     hits: list[PlotPointHit] = []
     none_count = 0
     while len(hits) < slots:
-        hit = _roll_plot_point(rng, themes, alternation, conclusion_counts_as_none)
+        hit = _roll_plot_point(rng, themes, alternation, conclusion_counts_as_none=conclusion_counts_as_none)
         if hit.special_range == "none":
             if none_count == none_limit:
                 continue

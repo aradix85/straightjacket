@@ -48,7 +48,9 @@ def current_place(game: GameState) -> PlaceRecord | None:
     return find_place(game, game.world.current_location)
 
 
-def generate_place_on_arrival(game: GameState, brain: BrainResult, moved: bool, earlier: Sequence[PlaceRecord]) -> None:
+def generate_place_on_arrival(
+    game: GameState, brain: BrainResult, *, moved: bool, earlier: Sequence[PlaceRecord]
+) -> None:
     change = brain.location_change
     if not moved or change is None:
         return

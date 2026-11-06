@@ -58,6 +58,7 @@ def judge_turn(
     action: str,
     narration: str,
     result: str,
+    *,
     match: bool,
     previous: str,
     move_id: str,

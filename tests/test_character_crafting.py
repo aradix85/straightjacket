@@ -53,7 +53,7 @@ def test_lookup_character_special_trait_full_coverage_1_to_100() -> None:
     for roll in range(1, 101):
         result = lookup_character_special_trait(roll)
         assert isinstance(result, str)
-        assert result != ""
+        assert result
 
 
 @pytest.mark.parametrize("roll", [0, -1, 101, 200])
@@ -71,7 +71,7 @@ def test_lookup_character_identity_full_coverage_1_to_100() -> None:
     for roll in range(1, 101):
         result = lookup_character_identity(roll)
         assert isinstance(result, str)
-        assert result != ""
+        assert result
 
 
 def test_lookup_character_identity_99_filled() -> None:
@@ -99,7 +99,7 @@ def test_lookup_character_descriptor_full_coverage_1_to_100() -> None:
     for roll in range(1, 101):
         result = lookup_character_descriptor(roll)
         assert isinstance(result, str)
-        assert result != ""
+        assert result
 
 
 def test_lookup_character_descriptor_boundary_examples() -> None:
@@ -118,7 +118,7 @@ def test_roll_character_traits_returns_struct_with_required_fields() -> None:
     traits = roll_character_traits(rng)
     assert isinstance(traits, CharacterTraits)
     assert isinstance(traits.special_trait, str)
-    assert traits.special_trait != ""
+    assert traits.special_trait
     assert isinstance(traits.identities, list)
     assert isinstance(traits.descriptors, list)
 
@@ -127,7 +127,7 @@ def test_roll_character_traits_identities_length_1_or_2() -> None:
     for seed in range(50):
         rng = random.Random(seed)
         traits = roll_character_traits(rng)
-        assert len(traits.identities) in (1, 2)
+        assert len(traits.identities) in {1, 2}
         for ident in traits.identities:
             assert ident != "Roll for two Identities"
 
@@ -136,7 +136,7 @@ def test_roll_character_traits_descriptors_length_1_or_2() -> None:
     for seed in range(50):
         rng = random.Random(seed)
         traits = roll_character_traits(rng)
-        assert len(traits.descriptors) in (1, 2)
+        assert len(traits.descriptors) in {1, 2}
         for desc in traits.descriptors:
             assert desc != "Roll for two Descriptors"
 

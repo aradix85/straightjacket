@@ -25,7 +25,7 @@ class TestCombatTrackCompletion:
         game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=20))
         complete_track(game, "c1", "completed")
         assert game.progress_tracks[0].status == "completed"
-        assert game.world.combat_position == ""
+        assert not game.world.combat_position
 
     @staticmethod
     def test_fail_combat_track_clears_position() -> None:
@@ -33,7 +33,7 @@ class TestCombatTrackCompletion:
         game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=8))
         complete_track(game, "c1", "failed")
         assert game.progress_tracks[0].status == "failed"
-        assert game.world.combat_position == ""
+        assert not game.world.combat_position
 
     @staticmethod
     def test_complete_vow_does_not_clear_position() -> None:

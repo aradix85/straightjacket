@@ -1,4 +1,3 @@
-from types import ModuleType
 from typing import Any
 
 import pytest
@@ -16,7 +15,7 @@ VERDICT = (
 )
 
 
-def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, list[AICallSpec]]:
+def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> list[AICallSpec]:
     seen: list[AICallSpec] = []
 
     class Capture(ScriptedProvider):
@@ -27,7 +26,7 @@ def _judge_with_capture(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, li
 
     monkeypatch.setattr(judge, "bot_provider", Capture)
     monkeypatch.setattr(judge, "bot_model", lambda: "judge-model")
-    return judge, seen
+    return seen
 
 
 def _game() -> Any:
@@ -57,18 +56,18 @@ def _game() -> Any:
 def test_the_judge_sees_the_move_text_the_previous_narration_and_what_is_established(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    judge, seen = _judge_with_capture(monkeypatch)
+    seen = _judge_with_capture(monkeypatch)
     verdict = judge.judge_turn(
         {"max_tokens": 200, "extra_body": {}},
         _game(),
         "I search the ruined chapel for tracks.",
         "The mud gives you nothing.",
         "MISS",
-        False,
-        "Rain drums on the chapel roof.",
-        "adventure/gather_information",
-        "",
-        [],
+        match=False,
+        previous="Rain drums on the chapel roof.",
+        move_id="adventure/gather_information",
+        revelation="",
+        consequences=[],
     )
     assert verdict["overall"] == 9
     assert "revelation_conveyed" not in verdict
@@ -83,18 +82,18 @@ def test_the_judge_sees_the_move_text_the_previous_narration_and_what_is_establi
 
 
 def test_the_judge_marks_a_dialog_turn_as_having_no_move(monkeypatch: pytest.MonkeyPatch) -> None:
-    judge, seen = _judge_with_capture(monkeypatch)
+    seen = _judge_with_capture(monkeypatch)
     judge.judge_turn(
         {"max_tokens": 200, "extra_body": {}},
         _game(),
         "I ask Mira about the fire.",
         "She shrugs.",
         "dialog",
-        False,
-        "",
-        "",
-        "",
-        [],
+        match=False,
+        previous="",
+        move_id="",
+        revelation="",
+        consequences=[],
     )
     user = seen[0].messages[0]["content"]
     assert _p("judge_none_move") in user
@@ -103,18 +102,18 @@ def test_the_judge_marks_a_dialog_turn_as_having_no_move(monkeypatch: pytest.Mon
 
 
 def test_the_judge_names_a_move_without_a_roll(monkeypatch: pytest.MonkeyPatch) -> None:
-    judge, seen = _judge_with_capture(monkeypatch)
+    seen = _judge_with_capture(monkeypatch)
     judge.judge_turn(
         {"max_tokens": 200, "extra_body": {}},
         _game(),
         "With the map read, the way is clear.",
         "The lines on the vellum finally make sense.",
         "unrolled_move",
-        False,
-        "",
-        "quest/reach_a_milestone",
-        "",
-        [],
+        match=False,
+        previous="",
+        move_id="quest/reach_a_milestone",
+        revelation="",
+        consequences=[],
     )
     user = seen[0].messages[0]["content"]
     assert _p("judge_result_unrolled_move") in user
@@ -125,11 +124,11 @@ def test_the_judge_names_a_move_without_a_roll(monkeypatch: pytest.MonkeyPatch) 
 def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_it_came_across(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    judge, seen = _judge_with_capture(monkeypatch)
+    seen = _judge_with_capture(monkeypatch)
     prompt = '<scene>\n<revelation weight="high">The harbourmaster sold the maps.</revelation>\n</scene>'
     revelation = judge.revelation_in(prompt)
     assert revelation == "The harbourmaster sold the maps."
-    assert judge.revelation_in("<scene>\n</scene>") == ""
+    assert not judge.revelation_in("<scene>\n</scene>")
 
     verdict = judge.judge_turn(
         {"max_tokens": 200, "extra_body": {}},
@@ -137,18 +136,18 @@ def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_i
         "I ask Mira.",
         "She hesitates.",
         "dialog",
-        False,
-        "",
-        "",
-        revelation,
-        [],
+        match=False,
+        previous="",
+        move_id="",
+        revelation=revelation,
+        consequences=[],
     )
     assert verdict["revelation_conveyed"] is True
     assert "The harbourmaster sold the maps." in seen[0].messages[0]["content"]
 
 
 def test_the_judge_sees_the_consequences_the_narrator_was_told_to_show(monkeypatch: pytest.MonkeyPatch) -> None:
-    judge, seen = _judge_with_capture(monkeypatch)
+    seen = _judge_with_capture(monkeypatch)
     prompt = (
         "<scene>\n<consequence>They agree, but on a condition Talan &amp; kin will have to meet.</consequence>"
         "\n<consequence>momentum +1</consequence>\n</scene>"
@@ -161,10 +160,10 @@ def test_the_judge_sees_the_consequences_the_narrator_was_told_to_show(monkeypat
         "I press Mira for the truth.",
         "She names her price.",
         "WEAK_HIT",
-        False,
-        "",
-        "relationship/compel",
-        "",
-        consequences,
+        match=False,
+        previous="",
+        move_id="relationship/compel",
+        revelation="",
+        consequences=consequences,
     )
     assert "- They agree, but on a condition Talan & kin will have to meet." in seen[0].messages[0]["content"]

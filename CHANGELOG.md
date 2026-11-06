@@ -8,6 +8,17 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.06.5] — 2026-11-06
+
+Numbers, booleans, and console output, the sixth step of the user's request: ruff's rules on magic numbers, boolean arguments, comparing with an empty string, membership in a literal, and `print` leave the later groups.
+
+- Numbers in `src/`: the gate levels at which the narrator learns an NPC's agenda, instinct, and secrets are `information_gate.reveals` in `gamemaster/information_gate.yaml`, and the longest player or save name is `persistence.max_name_length` in `engine/persistence.yaml`, both rules of the engine that the code held (`docs/gamemaster.md`, Information gating); the other checks read as "more than one", split a trigger value with `partition`, match a scene range as a pair, and refuse a name character below the space. The tests compare with plain numbers, the user's choice.
+- Every boolean parameter is keyword-only and its callers name it. The move-outcome dispatcher calls each handler with what it reads: the suffer and threshold handlers no longer take the roll's match, nor the threshold and recovery handlers the move key (`ruleset/move_outcome.py` → `_dispatch_handler`).
+- Elvira writes her console output through the `elvira` logger (`elvira_bot/console.py` → `say`), which her script shows on the console, and `run.py` and `data/data.py` through loggers of their own; what appears is unchanged.
+- The tests compare with an empty string through truth, and test membership in a set, ruff's rewrite; the judge's tests call the judge module they import, so mypy now checks those calls, which found the five calls whose keyword arguments a helper typed as a module had hidden.
+
+Quality gate: 1896 tests, coverage 96.07%, mypy clean on 267 files, ruff clean on every rule outside the ignores. Save format unchanged. The Elvira run follows, since her console output now goes through a logger.
+
 ## [2026.11.06.4] — 2026-11-06
 
 Unused arguments and self, the fifth step of the user's request: ruff's rules on unused arguments (ARG), methods that never use `self`, and underscored names that are used leave the later groups.

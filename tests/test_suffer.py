@@ -129,7 +129,7 @@ def test_a_failed_bound_vow_keeps_its_burden() -> None:
 
 @pytest.mark.parametrize(("swear", "dead", "impacts"), [(MISS, True, []), (WEAK_HIT, False, ["cursed"])])
 def test_classic_face_death_dies_when_the_vow_misses(
-    monkeypatch: pytest.MonkeyPatch, swear: tuple[int, ...], dead: bool, impacts: list[str]
+    monkeypatch: pytest.MonkeyPatch, swear: tuple[int, ...], *, dead: bool, impacts: list[str]
 ) -> None:
     game = _game("classic", health=0)
     result = make_outcome(follow_up_moves=["suffer/face_death"])
@@ -167,7 +167,7 @@ def test_dying_ends_when_health_rises_above_zero() -> None:
 
 @pytest.mark.parametrize(("in_a_fight", "follow_ups"), [(False, []), (True, ["threshold/face_death"])])
 def test_unconscious_faces_death_only_in_a_fight(
-    monkeypatch: pytest.MonkeyPatch, in_a_fight: bool, follow_ups: list[str]
+    monkeypatch: pytest.MonkeyPatch, *, in_a_fight: bool, follow_ups: list[str]
 ) -> None:
     game = _game("starforged", health=0)
     game.impacts = ["wounded", "permanently_harmed"]

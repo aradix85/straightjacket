@@ -30,7 +30,7 @@ def _meter_event(meter: str, change: int) -> str | None:
 def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
     values = c.values
     event: str | None
-    if c.kind in ("track_gain", "track_loss"):
+    if c.kind in {"track_gain", "track_loss"}:
         event = _meter_event(values["track"], values["n"] if c.kind == "track_gain" else -values["n"])
         return (event, "", "") if event else None
     if c.kind == "momentum_change":
@@ -41,15 +41,15 @@ def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
         return "bond_gain", values["name"], ""
     if c.kind == "disposition_shift":
         return "disposition_shift", values["name"], ""
-    if c.kind in ("mark_impact", "clear_impact"):
+    if c.kind in {"mark_impact", "clear_impact"}:
         return ("impact_mark" if c.kind == "mark_impact" else "impact_clear"), "", values["impact"]
     if c.kind == "complication":
         return f"complication_{values['kind']}", "", ""
-    if c.kind in ("complication_clock", "complication_averted"):
+    if c.kind in {"complication_clock", "complication_averted"}:
         return c.kind, "", values["name"]
-    if c.kind in ("bond_sealed", "bond_tested"):
+    if c.kind in {"bond_sealed", "bond_tested"}:
         return c.kind, values["name"], ""
-    if c.kind in ("bond_request", "obstacle", "loyalty_test", "milestone"):
+    if c.kind in {"bond_request", "obstacle", "loyalty_test", "milestone"}:
         return c.kind, "", ""
     if c.kind == "bond_cleared":
         return "bond_cleared", values["name"], ""

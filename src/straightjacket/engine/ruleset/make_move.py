@@ -106,7 +106,7 @@ def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> t
     return brain.stat, game.stats[brain.stat]
 
 
-def _log_action_roll(roll: RollResult, adds: int, cancelled: bool) -> None:
+def _log_action_roll(roll: RollResult, adds: int, *, cancelled: bool) -> None:
     raw = (0 if cancelled else roll.d1) + roll.stat_value + adds
     score = f"{raw}→{roll.action_score}(cap)" if raw > roll.action_score else str(roll.action_score)
     log(

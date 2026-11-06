@@ -41,7 +41,7 @@ def _game_with(npc: NpcData) -> GameState:
     return game
 
 
-def _profiled_npc(status: str, needs_reflection: bool) -> NpcData:
+def _profiled_npc(status: str, *, needs_reflection: bool) -> NpcData:
     npc = make_npc(id="npc_1", name="Mira", status=status, agenda="Keep the archive sealed", instinct="Strikes first")
     npc.needs_reflection = needs_reflection
     return npc

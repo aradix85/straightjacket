@@ -233,7 +233,7 @@ class TestOpenAICompatibleProvider:
         openai_endpoint.response = _openai_response(None, "length", None)
         result = _openai().create_message(_spec())
         assert result.stop_reason == "truncated"
-        assert result.content == ""
+        assert not result.content
         assert result.tool_calls == []
 
     @staticmethod
@@ -486,7 +486,7 @@ def test_openai_response_keeps_the_reasoning_text_under_either_name(openai_endpo
     openai_endpoint.response = other_style
     assert provider.create_message(_spec()).reasoning == "Then the clock."
     openai_endpoint.response = _openai_response("{}", "stop", None)
-    assert provider.create_message(_spec()).reasoning == ""
+    assert not provider.create_message(_spec()).reasoning
 
 
 def test_anthropic_refusal_is_reported_as_refusal(anthropic_endpoint: _FakeEndpoint) -> None:

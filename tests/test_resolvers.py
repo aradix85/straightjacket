@@ -89,7 +89,7 @@ def test_position_friendly_npc_helps() -> None:
     )
     brain = make_brain_result(move="adventure/compel", stat="heart", target_npc="npc_1")
     pos = resolve_position(game, brain)
-    assert pos in ("risky", "controlled")
+    assert pos in {"risky", "controlled"}
 
 
 def test_position_consecutive_misses() -> None:
@@ -102,7 +102,7 @@ def test_position_consecutive_misses() -> None:
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     pos = resolve_position(game, brain)
 
-    assert pos in ("desperate", "risky")
+    assert pos in {"desperate", "risky"}
 
 
 def test_position_threat_clock_pressure() -> None:
@@ -111,7 +111,7 @@ def test_position_threat_clock_pressure() -> None:
     game.world.clocks = [make_clock(name="Doom", segments=4, filled=3)]
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     pos = resolve_position(game, brain)
-    assert pos in ("desperate", "risky")
+    assert pos in {"desperate", "risky"}
 
 
 def test_position_combat_baseline() -> None:
@@ -145,7 +145,7 @@ def test_effect_desperate_pushes_limited() -> None:
     game.npcs = [make_npc(id="npc_1", name="Enemy", disposition="hostile")]
     brain = make_brain_result(move="adventure/compel", stat="heart", target_npc="npc_1")
     effect = resolve_effect(game, brain, "desperate")
-    assert effect in ("limited", "standard")
+    assert effect in {"limited", "standard"}
 
 
 def test_effect_controlled_pushes_great() -> None:
@@ -168,7 +168,7 @@ def test_effect_strike_baseline() -> None:
     brain = make_brain_result(move="combat/strike", stat="iron")
     effect = resolve_effect(game, brain, "risky")
 
-    assert effect in ("standard", "great")
+    assert effect in {"standard", "great"}
 
 
 def test_time_progression_dialog_is_none() -> None:

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from straightjacket.engine.config_loader import USERS_DIR
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.logging_util import log
 
 _FORBIDDEN_NAME_CHARS = frozenset('<>:"|?*/\\')
@@ -16,15 +17,16 @@ class InvalidNameError(ValueError):
 
 
 def _safe_name(name: str) -> str:
-    if any(ch in _FORBIDDEN_NAME_CHARS or ord(ch) < 32 for ch in name):
+    if any(ch in _FORBIDDEN_NAME_CHARS or ch < " " for ch in name):
         msg = f"Name contains a character no file name may hold: {name!r}"
         raise InvalidNameError(msg)
     clean = " ".join(name.split())
     if not clean:
         msg = f"Invalid name: {name!r}"
         raise InvalidNameError(msg)
-    if len(clean) > 100:
-        msg = f"Name too long ({len(clean)} chars, max 100): {name[:20]!r}..."
+    max_length = eng().persistence.max_name_length
+    if len(clean) > max_length:
+        msg = f"Name too long ({len(clean)} chars, max {max_length}): {name[:20]!r}..."
         raise InvalidNameError(msg)
     if clean.startswith("."):
         msg = f"Name starts with a dot: {name!r}"

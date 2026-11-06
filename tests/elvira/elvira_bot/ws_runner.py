@@ -32,6 +32,7 @@ from tests.elvira.elvira_bot.ai_helpers import (
     decide_burn_momentum,
     get_persona,
 )
+from tests.elvira.elvira_bot.console import say
 from tests.elvira.elvira_bot.coverage import Coverage
 from tests.elvira.elvira_bot.creation import roll_character
 from tests.elvira.elvira_bot.display import print_narration, print_state, print_summary
@@ -132,7 +133,7 @@ class WsClient:
                 result["epilogue"] = msg
             elif t == "chapter_started":
                 result["chapter_started"] = msg
-            elif t not in ("status", "scene_marker", "turn_complete"):
+            elif t not in {"status", "scene_marker", "turn_complete"}:
                 result["other"].append(msg)
             if t == until:
                 break
@@ -171,7 +172,7 @@ async def _start_server(port: int) -> Any:
 
 
 async def run_ws_session(
-    bot_cfg: dict[str, Any], auto_override: bool = False, turns_override: int | None = None
+    bot_cfg: dict[str, Any], *, auto_override: bool = False, turns_override: int | None = None
 ) -> SessionLog:
     auto_mode = auto_override or bot_cfg["auto_mode"]
     username = bot_cfg["username"]
@@ -216,20 +217,20 @@ async def run_ws_session(
     events = _EventCapture(log_cfg["event_prefixes"])
     logging.getLogger("rpg_engine").addHandler(events)
 
-    print(f"\n{SEPARATOR}")
-    print(f"  Straightjacket — Elvira WebSocket Bot — {style.upper()} mode")
-    print(f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | Chapters: {max_chapters}")
-    print(f"  Engine: v{VERSION} | Server: {url}")
-    print(SEPARATOR)
+    say(f"\n{SEPARATOR}")
+    say(f"  Straightjacket — Elvira WebSocket Bot — {style.upper()} mode")
+    say(f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | Chapters: {max_chapters}")
+    say(f"  Engine: v{VERSION} | Server: {url}")
+    say(SEPARATOR)
 
     server = await _start_server(port)
-    print(f"[SETUP] Server started on port {port}")
+    say(f"[SETUP] Server started on port {port}")
 
     client = WsClient(url)
     try:
         await client.connect()
     except Exception as e:
-        print(f"[ERROR] Cannot connect to {url}: {e}")
+        say(f"[ERROR] Cannot connect to {url}: {e}")
         raise SystemExit(1) from e
 
     await client.drain(quiet=3)
@@ -238,7 +239,7 @@ async def run_ws_session(
     await client.send({"type": "create_player", "name": username})
     async with asyncio.timeout(10):
         msg = await client.recv_until("player_selected")
-    print(f"[SETUP] Player: {username}, has_game: {msg.get('has_game')}")
+    say(f"[SETUP] Player: {username}, has_game: {msg.get('has_game')}")
 
     if clean_before and not game_cfg["load_existing"]:
         if msg.get("has_game"):
@@ -250,7 +251,7 @@ async def run_ws_session(
         await client.send({"type": "select_player", "name": username})
         async with asyncio.timeout(10):
             msg = await client.recv_until("player_selected")
-        print(f"[CLEAN] Deleted previous saves, has_game: {msg.get('has_game')}")
+        say(f"[CLEAN] Deleted previous saves, has_game: {msg.get('has_game')}")
 
     if not msg.get("has_game"):
         creation_data = roll_character(setting_id, game_cfg)
@@ -259,12 +260,12 @@ async def run_ws_session(
         turn_data = await client.collect_turn("narration")
 
         if turn_data["error"]:
-            print(f"[ERROR] start_game: {turn_data['error']}")
+            say(f"[ERROR] start_game: {turn_data['error']}")
             raise SystemExit(1)
 
         narration = (turn_data["narration"] or {}).get("text", "")
-        print("[SETUP] Game started")
-        print_narration(narration, print_full)
+        say("[SETUP] Game started")
+        print_narration(narration, full=print_full)
     else:
         messages = msg.get("messages", [])
         narration = ""
@@ -272,11 +273,11 @@ async def run_ws_session(
             if m.get("role") == "assistant":
                 narration = m.get("content", "")
                 break
-        print("[SETUP] Loaded game, fetching state via debug endpoint")
+        say("[SETUP] Loaded game, fetching state via debug endpoint")
 
     game = await client.get_debug_state()
     if not game:
-        print("[ERROR] Could not get game state")
+        say("[ERROR] Could not get game state")
         raise SystemExit(1)
 
     prev_npcs: list[NpcSnapshot] | None = None
@@ -289,11 +290,11 @@ async def run_ws_session(
         ch_rec = ChapterRecord(chapter=game.campaign.chapter_number)
 
         if chapter_idx > 0:
-            print(f"\n{SEPARATOR}\n  CHAPTER {game.campaign.chapter_number}\n{SEPARATOR}")
+            say(f"\n{SEPARATOR}\n  CHAPTER {game.campaign.chapter_number}\n{SEPARATOR}")
 
         for _ in range(max_turns):
             total_turns += 1
-            print(f"\n{SEPARATOR}\n  TURN {total_turns}/{max_chapters * max_turns}\n{SEPARATOR}")
+            say(f"\n{SEPARATOR}\n  TURN {total_turns}/{max_chapters * max_turns}\n{SEPARATOR}")
 
             is_correction = (
                 total_turns > 1 and total_turns % CORRECTION_TEST_INTERVAL == 0 and game.last_turn_snapshot is not None
@@ -303,7 +304,7 @@ async def run_ws_session(
                 narration, rec = await _play_correction(client, provider, game, total_turns, slog)
             else:
                 narration, rec, burn = await _play_turn(
-                    client, provider, game, narration, total_turns, persona, style, burn_setting, print_full
+                    client, provider, game, narration, total_turns, persona, style, burn_setting, print_full=print_full
                 )
                 if burn:
                     burns_offered += 1
@@ -326,7 +327,7 @@ async def run_ws_session(
 
             game = await client.get_debug_state()
             if not game:
-                print("[ERROR] Lost game state")
+                say("[ERROR] Lost game state")
                 rec.error = "debug_state returned None"
                 session_ended = True
                 slog.turns.append(rec)
@@ -348,20 +349,20 @@ async def run_ws_session(
             if quality:
                 full_rec.narration_quality = quality
                 for q in quality:
-                    print(f"  [QUALITY] {q}")
+                    say(f"  [QUALITY] {q}")
                     slog.narration_quality_issues.append(f"Turn {total_turns}: {q}")
 
             spatial = check_npc_spatial_consistency(game, prev_npcs, narration)
             if spatial:
                 full_rec.spatial_issues = spatial
                 for s in spatial:
-                    print(f"  [SPATIAL] {s}")
+                    say(f"  [SPATIAL] {s}")
                     slog.spatial_issues.append(f"Turn {total_turns}: {s}")
 
             if do_invariants:
                 violations = assert_game_state(game, total_turns)
                 for v in violations:
-                    print(f"  !!  {v}")
+                    say(f"  !!  {v}")
                     slog.violations.append(v)
                 full_rec.violations = violations
 
@@ -372,7 +373,7 @@ async def run_ws_session(
             if total_turns % save_every == 0:
                 await client.send({"type": "save", "name": save_out})
                 await client.drain(quiet=2)
-                print(f"  [SAVE] Saved to '{save_out}'")
+                say(f"  [SAVE] Saved to '{save_out}'")
 
             if game.game_over:
                 ch_rec.ended_reason = "game_over"
@@ -395,7 +396,7 @@ async def run_ws_session(
         bp = game.narrative.story_blueprint
         if bp and bp.story_complete and not game.campaign.epilogue_dismissed:
             narration, game, should_break = await _chapter_transition(
-                client, game, chapter_idx, max_chapters, print_full, slog
+                client, game, chapter_idx, max_chapters, print_full=print_full, slog=slog
             )
             if should_break or game is None:
                 break
@@ -420,17 +421,17 @@ async def run_ws_session(
     slog.engine_warnings = list(events.warnings)
     slog.coverage = coverage.summary()
     report_path = write_report(slog, coverage, RUNS_DIR / f"{log_file.stem}.md", bot_cfg["prices"])
-    print(f"  [REPORT] {report_path}")
+    say(f"  [REPORT] {report_path}")
 
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     log_path = RUNS_DIR / log_file
     log_path.write_text(json.dumps(slog.to_diagnostic_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"  [LOG] Session log: {log_path}")
+    say(f"  [LOG] Session log: {log_path}")
 
     if full_debug:
         full_path = log_path.with_stem(f"{log_path.stem}_full")
         full_path.write_text(json.dumps(slog.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
-        print(f"  [LOG] Full debug log: {full_path}")
+        say(f"  [LOG] Full debug log: {full_path}")
 
     await client.close()
     server.should_exit = True
@@ -447,26 +448,27 @@ async def _play_turn(
     persona: str,
     style: str,
     burn_setting: str,
+    *,
     print_full: bool,
 ) -> tuple[str, TurnRecord, dict[str, Any] | None]:
     context = build_turn_context(game, narration, turn)
     try:
         action = ask_bot(persona, context, max_tokens=500)
     except Exception as e:
-        print(f"[ERROR] Bot decision failed: {e}")
+        say(f"[ERROR] Bot decision failed: {e}")
         return narration, TurnRecord(turn=turn, error=str(e)), None
 
-    print(f"\n  [PLAYER] {action}")
+    say(f"\n  [PLAYER] {action}")
     started = time.monotonic()
     await client.send({"type": "player_input", "text": action})
     td = await client.collect_turn("turn_complete")
 
     if td["error"]:
-        print(f"  [ERROR] {td['error']}")
+        say(f"  [ERROR] {td['error']}")
         return narration, TurnRecord(turn=turn, action=action, error=td["error"]), None
 
     new_narration = (td["narration"] or {}).get("text", "")
-    print_narration(new_narration, print_full)
+    print_narration(new_narration, full=print_full)
 
     rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action)
     rec.turn_secs = round(time.monotonic() - started, 1)
@@ -493,7 +495,7 @@ async def _play_correction(
         "I was being cautious, not aggressive",
     ]
     text = _random.choice(corrections)
-    print(f"  [CORRECTION TEST] ## {text}")
+    say(f"  [CORRECTION TEST] ## {text}")
 
     await client.send({"type": "correction", "text": text})
     td = await client.collect_turn("turn_complete")
@@ -502,14 +504,14 @@ async def _play_correction(
 
     if td["error"]:
         rec.error = f"correction: {td['error']}"
-        print(f"  [CORRECTION] Failed: {td['error']}")
+        say(f"  [CORRECTION] Failed: {td['error']}")
         slog.correction_tests.append({"turn": turn, "correction": text, "success": False, "error": td["error"]})
         return "", rec
 
     narration = (td["replace_narration"] or {}).get("text", "")
     print_narration(narration, full=False)
     slog.correction_tests.append({"turn": turn, "correction": text, "success": True})
-    print("  [CORRECTION TEST] Completed")
+    say("  [CORRECTION TEST] Completed")
     return narration, rec
 
 
@@ -537,7 +539,7 @@ async def _handle_burn(
 
     rec.burn_offered = upgrade
     rec.burn_taken = should_burn
-    print(f"  [BURN] {current} → {upgrade} (cost {cost}) | {'BURN' if should_burn else 'skip'}")
+    say(f"  [BURN] {current} → {upgrade} (cost {cost}) | {'BURN' if should_burn else 'skip'}")
 
     await client.send({"type": "burn_momentum", "accept": should_burn})
     error = ""
@@ -545,25 +547,25 @@ async def _handle_burn(
     if td["error"]:
         error = td["error"]
         rec.burn_error = error
-        print(f"  [BURN] Failed: {error}")
+        say(f"  [BURN] Failed: {error}")
         async with asyncio.timeout(120):
             await client.recv_until("burn_offer")
         await client.send({"type": "burn_momentum", "accept": False})
         await client.collect_turn("turn_complete")
     elif td["replace_narration"]:
-        print("  [BURN] Re-narrated")
+        say("  [BURN] Re-narrated")
 
     return {"taken": should_burn, "error": error}
 
 
 async def _chapter_transition(
-    client: WsClient, game: GameState, chapter_idx: int, max_chapters: int, print_full: bool, slog: SessionLog
+    client: WsClient, game: GameState, chapter_idx: int, max_chapters: int, *, print_full: bool, slog: SessionLog
 ) -> tuple[str, GameState | None, bool]:
-    print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE\n{SEPARATOR}")
+    say(f"\n{SEPARATOR}\n  GENERATING EPILOGUE\n{SEPARATOR}")
     await client.send({"type": "generate_epilogue"})
     td = await client.collect_turn("epilogue")
     if td["error"]:
-        print(f"  [EPILOGUE] Failed: {td['error']}")
+        say(f"  [EPILOGUE] Failed: {td['error']}")
         slog.ended_reason = f"epilogue_error: {td['error']}"
         return "", None, True
     if td["epilogue"]:
@@ -573,17 +575,17 @@ async def _chapter_transition(
         slog.ended_reason = "max_chapters_reached"
         return "", game, True
 
-    print(f"\n{SEPARATOR}\n  STARTING NEW CHAPTER\n{SEPARATOR}")
+    say(f"\n{SEPARATOR}\n  STARTING NEW CHAPTER\n{SEPARATOR}")
     await client.send({"type": "new_chapter"})
     td = await client.collect_turn("chapter_started")
     if td["error"]:
-        print(f"  [CHAPTER] Failed: {td['error']}")
+        say(f"  [CHAPTER] Failed: {td['error']}")
         slog.ended_reason = f"chapter_error: {td['error']}"
         return "", None, True
 
     ch_msg = td["chapter_started"]
     narration = ch_msg.get("narration", "") if ch_msg else ""
-    print_narration(narration, print_full)
+    print_narration(narration, full=print_full)
 
     new_game = await client.get_debug_state()
     return narration, new_game, False

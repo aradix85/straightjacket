@@ -165,7 +165,7 @@ def resolve_clock_fill(game: GameState, clock: ClockData) -> ClockFillResult | N
 
 
 def _advance_clock(
-    game: GameState, clock: ClockData, ticks: int, autonomous: bool
+    game: GameState, clock: ClockData, ticks: int, *, autonomous: bool
 ) -> tuple[ClockEvent, ClockFillResult | None]:
     clock.filled = min(clock.segments, clock.filled + ticks)
     triggered = clock.filled >= clock.segments

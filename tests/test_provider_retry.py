@@ -115,7 +115,7 @@ def test_retry_after_is_honoured_and_capped(waits: list[float]) -> None:
 
 
 class _StreamFails:
-    def __init__(self, refuses: bool) -> None:
+    def __init__(self, *, refuses: bool) -> None:
         self.refuses = refuses
 
     @staticmethod
@@ -131,9 +131,9 @@ class _StreamFails:
 
 
 @pytest.mark.parametrize("refuses", [False, True], ids=["dropped", "refused"])
-def test_a_failed_stream_falls_back_to_a_normal_call_and_is_not_complete(refuses: bool) -> None:
+def test_a_failed_stream_falls_back_to_a_normal_call_and_is_not_complete(*, refuses: bool) -> None:
     stream = SentenceStream(lambda _text: None)
-    response = stream_with_retry(_StreamFails(refuses), _spec(), stream)
+    response = stream_with_retry(_StreamFails(refuses=refuses), _spec(), stream)
     assert response.content == "Recovered without streaming."
     assert stream.failed
     assert not stream.complete

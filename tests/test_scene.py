@@ -38,7 +38,7 @@ def test_interrupt_when_roll_le_cf_even(monkeypatch: pytest.MonkeyPatch) -> None
     assert setup.scene_type == "interrupt"
     assert setup.interrupt_event is not None
     assert setup.interrupt_event.source == "interrupt_scene"
-    assert setup.interrupt_event.focus != ""
+    assert setup.interrupt_event.focus
 
 
 def test_cf1_only_roll1_triggers(monkeypatch: pytest.MonkeyPatch) -> None:

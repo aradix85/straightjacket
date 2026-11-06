@@ -377,7 +377,7 @@ def test_a_successor_takes_up_a_fresh_character_in_the_same_world(aria: GameStat
     assert aria.resources == starting_resources(aria.setting_id)
     assert not [c for c in aria.world.clocks if any(c is old for old in old_clocks)]
     assert [t.id for t in aria.progress_tracks] == ["vow_background"]
-    assert aria.world.combat_position == ""
+    assert not aria.world.combat_position
     assert (aria.narrative.scene_count, aria.crisis_mode, aria.game_over) == (1, False, False)
     assert "thr_1" in [t.id for t in aria.threats]
     snapshot_after: TurnSnapshot | None = aria.last_turn_snapshot

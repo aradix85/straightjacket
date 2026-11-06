@@ -135,7 +135,7 @@ def has_story_complication(game: GameState) -> bool:
     return offers_table(game.setting_id, _pay_the_price_move(game), rules().pay_the_price.match_miss_table)
 
 
-def complication_replaces_price(game: GameState, match: bool) -> bool:
+def complication_replaces_price(game: GameState, *, match: bool) -> bool:
     return match and has_story_complication(game)
 
 

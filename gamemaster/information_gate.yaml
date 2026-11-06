@@ -14,6 +14,10 @@ information_gate:
     bond_high_min: 4
   gate_min: 0
   gate_max: 4
+  reveals:
+    agenda: 2
+    instinct: 3
+    secrets: 4
   fact_budget_by_gate:
     0: 0
     1: 1
