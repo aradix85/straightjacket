@@ -57,7 +57,7 @@ def _prompt(game: GameState, result: str, target: str | None = None) -> str:
     return build_action_prompt(game, brain, _roll(result), [], [], **action_prompt_kwargs(player_words="search"))
 
 
-def test_an_information_miss_turns_useful_to_no(load_engine: None) -> None:
+def test_an_information_miss_turns_useful_to_no() -> None:
     game = _game()
     earlier = _useful("yes")
     game.world.facts.append(earlier)
@@ -67,14 +67,14 @@ def test_an_information_miss_turns_useful_to_no(load_engine: None) -> None:
     assert earlier.answer == "yes"
 
 
-def test_an_information_miss_settles_the_place_even_when_nobody_asked(load_engine: None) -> None:
+def test_an_information_miss_settles_the_place_even_when_nobody_asked() -> None:
     game = _game()
     facts = settle_facts_by_miss(game, [], "adventure/gather_information", "failure")
     assert [(f.fact_type, f.answer, f.about_name) for f in facts] == [("useful", "no", "The Docks")]
     assert game.world.facts == facts
 
 
-def test_the_settled_facts_reach_the_narrator(load_engine: None) -> None:
+def test_the_settled_facts_reach_the_narrator() -> None:
     game = _game()
     facts = settle_facts_by_miss(game, [], "adventure/gather_information", "failure")
     brain = make_brain_result(move="adventure/gather_information", stat="wits")
@@ -84,9 +84,7 @@ def test_the_settled_facts_reach_the_narrator(load_engine: None) -> None:
     assert gm().fact_resolution.types["useful"].description in prompt
 
 
-def test_a_miss_on_any_move_the_ruleset_counts_as_gathering_information_settles_the_place(
-    load_engine: None,
-) -> None:
+def test_a_miss_on_any_move_the_ruleset_counts_as_gathering_information_settles_the_place() -> None:
     for move in rules().information_moves:
         facts = settle_facts_by_miss(_game(), [], move, "failure")
         assert [(f.fact_type, f.answer) for f in facts] == [("useful", "no")], move
@@ -95,7 +93,7 @@ def test_a_miss_on_any_move_the_ruleset_counts_as_gathering_information_settles_
 @pytest.mark.parametrize(
     ("move", "outcome"), [("adventure/face_danger", "failure"), ("adventure/gather_information", "partial")]
 )
-def test_other_moves_and_hits_leave_useful_alone(load_engine: None, move: str, outcome: str) -> None:
+def test_other_moves_and_hits_leave_useful_alone(move: str, outcome: str) -> None:
     game = _game()
     earlier = _useful("yes")
     game.world.facts.append(earlier)
@@ -104,9 +102,7 @@ def test_other_moves_and_hits_leave_useful_alone(load_engine: None, move: str, o
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT"])
-def test_the_target_npc_volunteers_nothing_on_a_miss(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
-) -> None:
+def test_the_target_npc_volunteers_nothing_on_a_miss(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
     monkeypatch.setattr(prompt_shared, "compute_npc_gate", lambda *_: 4)
     game = _game()
     game.npcs.append(make_npc(id="npc_1", name="Kira", disposition="friendly"))
@@ -114,7 +110,7 @@ def test_the_target_npc_volunteers_nothing_on_a_miss(
     assert f'fact_budget="{expected}"' in _prompt(game, result, target="npc_1")
 
 
-def test_story_complication_only_where_the_setting_has_it(load_engine: None) -> None:
+def test_story_complication_only_where_the_setting_has_it() -> None:
     assert has_story_complication(_game("starforged"))
     assert has_story_complication(_game("sundered_isles"))
     assert not has_story_complication(_game("classic"))
@@ -132,7 +128,7 @@ def _rolled_rows(consequence: str) -> list[str]:
 
 @pytest.mark.parametrize("move_key", ["adventure/face_danger", "recover/heal"])
 def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, move_key: str
+    monkeypatch: pytest.MonkeyPatch, move_key: str
 ) -> None:
     rolled = record_price_tables(monkeypatch)
     game = _game("starforged")
@@ -143,9 +139,7 @@ def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
 
 
 @pytest.mark.parametrize(("setting_id", "match"), [("starforged", False), ("classic", True)])
-def test_other_misses_pay_the_price(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, setting_id: str, match: bool
-) -> None:
+def test_other_misses_pay_the_price(monkeypatch: pytest.MonkeyPatch, setting_id: str, match: bool) -> None:
     rolled = record_price_tables(monkeypatch)
     game = _game(setting_id)
     rows = _complication_rows(_game("starforged"))
@@ -159,9 +153,7 @@ def test_other_misses_pay_the_price(
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT"])
-def test_the_narrator_gets_no_npc_knowledge_on_a_miss(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
-) -> None:
+def test_the_narrator_gets_no_npc_knowledge_on_a_miss(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
     monkeypatch.setattr(prompt_shared, "compute_npc_gate", lambda *_: 4)
     game = _game()
     npc = make_npc(id="npc_1", name="Kira", disposition="friendly")
@@ -179,14 +171,14 @@ def test_the_narrator_gets_no_npc_knowledge_on_a_miss(
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT"])
-def test_director_guidance_waits_for_a_hit(load_engine: None, result: str) -> None:
+def test_director_guidance_waits_for_a_hit(result: str) -> None:
     game = _game()
     game.narrative.director_guidance.narrator_guidance = "Let Kira name the buyer"
     assert ("Let Kira name the buyer" in _prompt(game, result)) == (result != "MISS")
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT"])
-def test_everyone_present_withholds_on_a_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str) -> None:
+def test_everyone_present_withholds_on_a_miss(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
     monkeypatch.setattr(prompt_shared, "compute_npc_gate", lambda *_: 4)
     game = _game()
     target = make_npc(id="npc_1", name="Kira", disposition="friendly")
@@ -207,7 +199,7 @@ def test_everyone_present_withholds_on_a_miss(load_engine: None, monkeypatch: py
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT", "STRONG_HIT"])
-def test_the_narrator_reads_the_rulebook_text_of_the_result(load_engine: None, result: str) -> None:
+def test_the_narrator_reads_the_rulebook_text_of_the_result(result: str) -> None:
     book = plain_text(get_moves("starforged")["adventure/gather_information"].outcomes[result.lower()].text)
     prompt = _prompt(_game(), result)
     assert f'<move_outcome move="Gather Information">{book}</move_outcome>' in prompt

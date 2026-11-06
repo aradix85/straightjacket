@@ -14,7 +14,7 @@ from tests._helpers import make_act, make_blueprint, make_game_state
 from tests._mocks import MockProvider, RecordingWebSocket
 
 
-def test_a_failed_chapter_opening_leaves_the_game_as_it_was(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_failed_chapter_opening_leaves_the_game_as_it_was(monkeypatch: pytest.MonkeyPatch) -> None:
     def narrator_down(*_args: Any, **_kwargs: Any) -> str:
         msg = "narrator: down"
         raise AIUnavailableError(msg)
@@ -33,9 +33,7 @@ def test_a_failed_chapter_opening_leaves_the_game_as_it_was(load_engine: None, m
     assert session.processing is False
 
 
-def test_a_fault_outside_the_ai_calls_is_not_swallowed_by_the_handler(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_fault_outside_the_ai_calls_is_not_swallowed_by_the_handler(monkeypatch: pytest.MonkeyPatch) -> None:
     def broken(*_args: Any) -> None:
         msg = "broken succession"
         raise KeyError(msg)
@@ -49,7 +47,7 @@ def test_a_fault_outside_the_ai_calls_is_not_swallowed_by_the_handler(
     assert session.processing is False
 
 
-def test_the_status_after_the_epilogue_names_the_aftermath(load_engine: None) -> None:
+def test_the_status_after_the_epilogue_names_the_aftermath() -> None:
     game = make_game_state(player_name="Aria", setting_id="starforged")
     game.world.time_of_day = "evening"
     game.narrative.story_blueprint = make_blueprint(acts=[make_act(scene_range=[1, 20])], story_complete=True)

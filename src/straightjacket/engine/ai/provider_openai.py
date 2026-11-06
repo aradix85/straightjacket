@@ -68,7 +68,8 @@ class OpenAICompatibleProvider:
             usage=_usage(raw_usage),
         )
 
-    def _request(self, spec: AICallSpec) -> dict[str, Any]:
+    @staticmethod
+    def _request(spec: AICallSpec) -> dict[str, Any]:
         full_messages = [{"role": "system", "content": spec.system}, *spec.messages]
 
         create_kwargs: dict[str, Any] = {
@@ -102,7 +103,8 @@ class OpenAICompatibleProvider:
 
         return create_kwargs
 
-    def _response(self, response: Any) -> AIResponse:
+    @staticmethod
+    def _response(response: Any) -> AIResponse:
         choice = response.choices[0]
         content = choice.message.content or ""
 

@@ -125,7 +125,7 @@ def test_can_burn_momentum(
     assert can_burn_momentum(game, roll) == expected_burn
 
 
-def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
+def test_npc_agency_fires_on_scene_5() -> None:
     game = _game()
     game.narrative.scene_count = 5
     npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
@@ -135,7 +135,7 @@ def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
     assert "Kira" in actions[0]
 
 
-def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
+def test_npc_agency_skips_non_multiple_of_5() -> None:
     game = _game()
     game.narrative.scene_count = 3
     npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
@@ -144,7 +144,7 @@ def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
     assert len(actions) == 0
 
 
-def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
+def test_npc_agency_ticks_owned_clock() -> None:
     game = _game()
     game.narrative.scene_count = 5
     npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
@@ -157,7 +157,7 @@ def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
     assert len(events) == 1
 
 
-def test_autonomous_clock_tick(load_engine: None) -> None:
+def test_autonomous_clock_tick() -> None:
     game = _game()
     game.world.clocks = [make_clock(name="Plague", clock_type="threat", segments=6, filled=2, owner_kind="world")]
     ticked = False
@@ -170,7 +170,7 @@ def test_autonomous_clock_tick(load_engine: None) -> None:
     assert ticked
 
 
-def test_purge_old_fired_clocks(load_engine: None) -> None:
+def test_purge_old_fired_clocks() -> None:
     game = _game()
     game.narrative.scene_count = 10
     game.world.clocks = [
@@ -219,7 +219,7 @@ def test_roll_progress_match_detection() -> None:
     assert matches > 0
 
 
-def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> None:
+def test_action_roll_is_one_d6_plus_stat_like_ironsworn() -> None:
     rolls = [roll_action("wits", 2, "adventure/face_danger", 0, 0) for _ in range(500)]
     assert all(r.action_score == r.d1 + 2 for r in rolls)
     assert max(r.action_score for r in rolls) == 8
@@ -227,43 +227,37 @@ def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> No
 
 def _fixed_dice(monkeypatch: pytest.MonkeyPatch, *values: int) -> None:
     sequence = list(values)
-    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda low, high: sequence.pop(0))
+    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda _low, _high: sequence.pop(0))
 
 
-def test_negative_momentum_cancels_a_matching_action_die(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_negative_momentum_cancels_a_matching_action_die(monkeypatch: pytest.MonkeyPatch) -> None:
     _fixed_dice(monkeypatch, 3, 5, 8)
     roll = roll_action("wits", 2, "adventure/face_danger", -3, 0)
     assert (roll.d1, roll.action_score, roll.result) == (3, 2, "MISS")
 
 
-def test_negative_momentum_that_does_not_match_leaves_the_die(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_negative_momentum_that_does_not_match_leaves_the_die(monkeypatch: pytest.MonkeyPatch) -> None:
     _fixed_dice(monkeypatch, 3, 4, 8)
     roll = roll_action("wits", 2, "adventure/face_danger", -2, 0)
     assert (roll.action_score, roll.result) == (5, "WEAK_HIT")
 
 
-def test_positive_momentum_never_cancels_the_die(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_positive_momentum_never_cancels_the_die(monkeypatch: pytest.MonkeyPatch) -> None:
     _fixed_dice(monkeypatch, 3, 4, 8)
     assert roll_action("wits", 2, "adventure/face_danger", 3, 0).action_score == 5
 
 
-def test_adds_raise_the_action_score(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_adds_raise_the_action_score(monkeypatch: pytest.MonkeyPatch) -> None:
     _fixed_dice(monkeypatch, 3, 5, 8)
     assert roll_action("wits", 2, "adventure/face_danger", 0, 1).action_score == 6
 
 
-def test_adds_still_count_when_negative_momentum_cancels_the_die(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_adds_still_count_when_negative_momentum_cancels_the_die(monkeypatch: pytest.MonkeyPatch) -> None:
     _fixed_dice(monkeypatch, 3, 5, 8)
     assert roll_action("wits", 2, "adventure/face_danger", -3, 1).action_score == 3
 
 
-def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state(setting_id="classic")
     game.last_turn_snapshot = game.snapshot()
     apply_effects(game, [MoveEffect(type="next_move_bonus", value=1, target="")])

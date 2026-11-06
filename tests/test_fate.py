@@ -88,9 +88,7 @@ def test_a_fate_check_doublet_within_the_chaos_factor_brings_a_random_event(
     assert _check(monkeypatch, "fifty_fifty", chaos_factor, dice).random_event_triggered is event
 
 
-def test_resolve_fate_asks_the_configured_method_with_the_games_chaos_factor(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_resolve_fate_asks_the_configured_method_with_the_games_chaos_factor(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 7
     asked: list[tuple[str, str, int]] = []
@@ -112,21 +110,21 @@ def _odds_scale() -> list[str]:
     return [entry["odds"] for entry in gm().fate.likelihood_rules.score_to_odds]
 
 
-def test_fate_chart_all_odds_all_cf(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fate_chart_all_odds_all_cf(monkeypatch: pytest.MonkeyPatch) -> None:
     for odds in _odds_scale():
         for cf in range(1, 10):
             for roll in (1, 50, 100):
                 assert _chart(monkeypatch, odds, cf, roll).answer in ("yes", "no", "exceptional_yes", "exceptional_no")
 
 
-def test_fate_check_all_odds_all_cf(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fate_check_all_odds_all_cf(monkeypatch: pytest.MonkeyPatch) -> None:
     for odds in _odds_scale():
         for cf in range(1, 10):
             for dice in ((1, 1), (5, 5), (10, 10), (1, 10)):
                 assert _check(monkeypatch, odds, cf, dice).answer in ("yes", "no", "exceptional_yes", "exceptional_no")
 
 
-def test_score_to_odds_covers_the_scale(load_engine: None) -> None:
+def test_score_to_odds_covers_the_scale() -> None:
     assert score_to_odds(10) == "certain"
     assert score_to_odds(3) == "very_likely"
     assert score_to_odds(0) == "fifty_fifty"
@@ -134,18 +132,18 @@ def test_score_to_odds_covers_the_scale(load_engine: None) -> None:
     assert score_to_odds(-99) == "impossible"
 
 
-def test_score_below_the_catch_all_raises(load_engine: None) -> None:
+def test_score_below_the_catch_all_raises() -> None:
     with pytest.raises(ValueError, match="no matching threshold"):
         score_to_odds(-100)
 
 
 @pytest.mark.parametrize("resolve", [resolve_fate_chart, resolve_fate_check])
-def test_an_unknown_odds_level_is_refused(load_engine: None, resolve: Callable[[str, int], FateResult]) -> None:
+def test_an_unknown_odds_level_is_refused(resolve: Callable[[str, int], FateResult]) -> None:
     with pytest.raises(KeyError, match="Unknown odds level 'certainish'"):
         resolve("certainish", 5)
 
 
 @pytest.mark.parametrize("resolve", [resolve_fate_chart, resolve_fate_check])
-def test_a_chaos_factor_off_the_table_is_refused(load_engine: None, resolve: Callable[[str, int], FateResult]) -> None:
+def test_a_chaos_factor_off_the_table_is_refused(resolve: Callable[[str, int], FateResult]) -> None:
     with pytest.raises(KeyError, match="Unknown chaos_factor 99"):
         resolve("likely", 99)

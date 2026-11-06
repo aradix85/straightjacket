@@ -197,14 +197,14 @@ def tick_threat_clock(
 def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent], list[ClockFillResult]]:
     if game.narrative.scene_count % gm().pacing.npc_agency_interval != 0:
         return [], [], []
-    _defaults = eng().ai_text.narrator_defaults
+    defaults = eng().ai_text.narrator_defaults
     actions: list[str] = []
     clock_events: list[ClockEvent] = []
     fill_results: list[ClockFillResult] = []
     for npc in game.npcs:
         if npc.status != "active" or not npc.agenda:
             continue
-        actions.append(_defaults["npc_agency_action_template"].format(npc_name=npc.name, agenda=npc.agenda))
+        actions.append(defaults["npc_agency_action_template"].format(npc_name=npc.name, agenda=npc.agenda))
         npc_norms = {normalize_for_match(npc.name)} | {normalize_for_match(a) for a in npc.aliases}
         for clock in game.world.clocks:
             if clock.clock_type not in gm().pacing.npc_agency_clock_types:

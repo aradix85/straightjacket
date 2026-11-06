@@ -19,12 +19,12 @@ def _game_with(*assets: str) -> GameState:
     return game
 
 
-def test_an_enabled_ability_with_an_add_becomes_an_option(load_engine: None) -> None:
+def test_an_enabled_ability_with_an_add_becomes_an_option() -> None:
     options = {o.id: o for o in roll_bonuses(_game_with("companion/combat_bot"))}
     assert options["companion/combat_bot#0"].add == 1
 
 
-def test_a_disabled_ability_is_offered_only_after_an_upgrade(load_engine: None) -> None:
+def test_a_disabled_ability_is_offered_only_after_an_upgrade() -> None:
     game = _game_with("companion/banshee")
     assert "companion/banshee#1" not in {o.id for o in roll_bonuses(game)}
     enable_next_ability(game, "companion/banshee")
@@ -32,7 +32,7 @@ def test_a_disabled_ability_is_offered_only_after_an_upgrade(load_engine: None) 
     assert (option.add, option.momentum_on_hit) == (1, 1)
 
 
-def test_a_connection_offers_its_aid(load_engine: None) -> None:
+def test_a_connection_offers_its_aid() -> None:
     game = _game_with()
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=0)
@@ -41,7 +41,7 @@ def test_a_connection_offers_its_aid(load_engine: None) -> None:
     assert (option.add, option.momentum_on_hit) == (1, 1)
 
 
-def test_a_bonded_connection_aids_with_more(load_engine: None) -> None:
+def test_a_bonded_connection_aids_with_more() -> None:
     game = _game_with()
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", ticks=40, status="bonded")
@@ -50,14 +50,14 @@ def test_a_bonded_connection_aids_with_more(load_engine: None) -> None:
     assert (option.add, option.momentum_on_hit) == (2, 1)
 
 
-def test_a_bonus_not_on_offer_raises(load_engine: None) -> None:
+def test_a_bonus_not_on_offer_raises() -> None:
     with pytest.raises(ValueError, match="combat_bot#7"):
         chosen_bonus(_game_with("companion/combat_bot"), "companion/combat_bot#7")
 
 
 @pytest.mark.parametrize(("dice", "momentum_after"), [([3, 9, 9], 2), ([6, 1, 1], 3)])
 def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, dice: list[int], momentum_after: int
+    monkeypatch: pytest.MonkeyPatch, dice: list[int], momentum_after: int
 ) -> None:
     game = _game_with()
     game.progress_tracks.append(
@@ -65,7 +65,7 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     )
     game.resources.meters["momentum"] = 2
     sequence = list(dice)
-    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda low, high: sequence.pop(0))
+    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda _low, _high: sequence.pop(0))
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     brain.bonus_id = "connection:npc_1"
     game.last_turn_snapshot = game.snapshot()
@@ -74,12 +74,12 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     assert game.resources.meters["momentum"] == momentum_after
 
 
-def test_momentum_tied_to_another_move_is_not_granted_with_the_add(load_engine: None) -> None:
+def test_momentum_tied_to_another_move_is_not_granted_with_the_add() -> None:
     option = next(o for o in roll_bonuses(_game_with("companion/combat_bot")) if o.id == "companion/combat_bot#0")
     assert (option.add, option.momentum_on_hit) == (1, 0)
 
 
-def test_bare_ids_and_paths_as_the_creation_stores_them_are_found(load_engine: None) -> None:
+def test_bare_ids_and_paths_as_the_creation_stores_them_are_found() -> None:
     game = make_game_state(setting_id="starforged")
     game.paths = ["ace"]
     game.assets = ["combat_bot"]

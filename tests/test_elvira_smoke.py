@@ -37,7 +37,7 @@ def _mock_direct_runner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     monkeypatch.setattr(runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(runner, "check_configured_models", lambda: None)
     monkeypatch.setattr(runner, "get_provider", _provider)
-    monkeypatch.setattr(ai_helpers, "provider_named", lambda name: _provider())
+    monkeypatch.setattr(ai_helpers, "provider_named", lambda _name: _provider())
     monkeypatch.setattr(runner, "selectable_settings", lambda: ["starforged"])
     monkeypatch.setattr(runner, "available_styles", lambda: ["explorer"])
 
@@ -50,9 +50,7 @@ def _scenario_run(name: str, turns: int) -> SessionLog:
     return session
 
 
-def test_a_scenario_with_fixed_results_plays_to_its_aim(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_a_scenario_with_fixed_results_plays_to_its_aim(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _mock_direct_runner(monkeypatch, tmp_path)
     session = _scenario_run("miss", 3)
     assert session.scenario["missed"] == []
@@ -62,7 +60,7 @@ def test_a_scenario_with_fixed_results_plays_to_its_aim(
 
 
 def test_a_scenario_that_starts_at_a_game_over_plays_the_successor(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     _mock_direct_runner(monkeypatch, tmp_path)
     session = _scenario_run("succession", 1)
@@ -71,26 +69,20 @@ def test_a_scenario_that_starts_at_a_game_over_plays_the_successor(
     assert session.turns[0].error == ""
 
 
-def test_a_threat_on_the_vow_advances_on_a_miss(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_a_threat_on_the_vow_advances_on_a_miss(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _mock_direct_runner(monkeypatch, tmp_path)
     emit_engine_log(monkeypatch, threats)
     session = _scenario_run("threat_advance", 2)
     assert session.scenario["missed"] == []
 
 
-def test_a_scenario_plays_the_setting_it_names(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_a_scenario_plays_the_setting_it_names(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _mock_direct_runner(monkeypatch, tmp_path)
     session = _scenario_run("bond", 1)
     assert session.config["game"]["setting_id"] == "classic"
 
 
-def test_elvira_plays_a_short_session_end_to_end(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_elvira_plays_a_short_session_end_to_end(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _mock_direct_runner(monkeypatch, tmp_path)
     monkeypatch.setattr(runner, "CORRECTION_TEST_INTERVAL", 2)
 
@@ -119,9 +111,7 @@ def test_elvira_plays_a_short_session_end_to_end(
     assert {"narrator", "opening_setup", "brain"} <= {str(e["role"]) for e in session.turns[0].token_usage}
 
 
-def test_elvira_websocket_mode_plays_through_the_real_server(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_elvira_websocket_mode_plays_through_the_real_server(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     users = tmp_path / "users"
     users.mkdir()
     for target in (
@@ -132,7 +122,7 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
     monkeypatch.setattr(ws_runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(ws_runner, "check_configured_models", lambda: None)
     monkeypatch.setattr(ws_runner, "get_provider", _provider)
-    monkeypatch.setattr(ai_helpers, "provider_named", lambda name: _provider())
+    monkeypatch.setattr(ai_helpers, "provider_named", lambda _name: _provider())
     monkeypatch.setattr(handlers, "get_provider", _provider)
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
@@ -168,12 +158,10 @@ def test_event_capture_keeps_only_the_configured_prefixes() -> None:
     assert capture.lines == ["[Bonus] Ace: +1", "[Chain] Develop Your Relationship"]
 
 
-def test_a_failed_load_back_is_reported_not_raised(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_a_failed_load_back_is_reported_not_raised(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _mock_direct_runner(monkeypatch, tmp_path)
 
-    def broken_load(username: str, name: str) -> tuple[object, list[object]]:
+    def broken_load(_username: str, _name: str) -> tuple[object, list[object]]:
         msg = "UNIQUE constraint failed: threads.id"
         raise RuntimeError(msg)
 
@@ -218,9 +206,7 @@ def test_repeated_engine_warnings_become_one_counted_problem() -> None:
     assert "Engine ERROR: [DB] sync failed" in problems
 
 
-def test_elvira_installs_the_ruleset_answers_when_she_starts(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_elvira_installs_the_ruleset_answers_when_she_starts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _mock_direct_runner(monkeypatch, tmp_path)
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
     bot_cfg["session"]["max_turns"] = 1

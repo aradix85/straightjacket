@@ -15,27 +15,33 @@ from tests._mocks import MockProvider, make_test_game
 
 
 class TestIsDialogBranch:
-    def test_explicit_dialog_move(self) -> None:
+    @staticmethod
+    def test_explicit_dialog_move() -> None:
         brain = make_brain_result(move="dialog")
         assert is_dialog_branch(brain) is True
 
-    def test_ask_the_oracle(self) -> None:
+    @staticmethod
+    def test_ask_the_oracle() -> None:
         brain = make_brain_result(move="ask_the_oracle")
         assert is_dialog_branch(brain) is True
 
-    def test_dialog_only_flag_with_action_move(self) -> None:
+    @staticmethod
+    def test_dialog_only_flag_with_action_move() -> None:
         brain = make_brain_result(move="combat/clash", dialog_only=True)
         assert is_dialog_branch(brain) is True
 
-    def test_action_move_without_flag_is_not_dialog(self) -> None:
+    @staticmethod
+    def test_action_move_without_flag_is_not_dialog() -> None:
         brain = make_brain_result(move="combat/clash", dialog_only=False)
         assert is_dialog_branch(brain) is False
 
-    def test_world_shaping_is_the_rulesets_move_and_rolls(self) -> None:
+    @staticmethod
+    def test_world_shaping_is_the_rulesets_move_and_rolls() -> None:
         brain = make_brain_result(move="world_shaping", dialog_only=False)
         assert is_dialog_branch(brain) is False
 
-    def test_only_asking_the_oracle_asks_the_oracle(self) -> None:
+    @staticmethod
+    def test_only_asking_the_oracle_asks_the_oracle() -> None:
         assert asks_the_oracle("ask_the_oracle") is True
         assert asks_the_oracle("dialog") is False
 
@@ -63,7 +69,8 @@ class TestEngineMemoriesWithoutRoll:
 
 
 class TestMoveCategoriesCoverage:
-    def test_every_implemented_move_has_real_category(self) -> None:
+    @staticmethod
+    def test_every_implemented_move_has_real_category() -> None:
         outcomes = rules().get_raw("move_outcomes")
         engine_moves = rules().engine_moves
 
@@ -75,25 +82,29 @@ class TestMoveCategoriesCoverage:
             "Add them to engine/move_categories.yaml under the appropriate bucket."
         )
 
-    def test_unknown_move_returns_other(self) -> None:
+    @staticmethod
+    def test_unknown_move_returns_other() -> None:
         assert action_kind("nonexistent/fake_move") == "other"
 
 
 class TestProcessTurnGuard:
-    def test_raises_when_game_over(self) -> None:
+    @staticmethod
+    def test_raises_when_game_over() -> None:
         game = make_test_game()
         game.end_reason = "death"
 
         with pytest.raises(RuntimeError, match="game_over=True"):
             process_turn(provider=MockProvider(), game=game, player_message="anything", stream=None)
 
-    def test_does_not_raise_when_game_active(self) -> None:
+    @staticmethod
+    def test_does_not_raise_when_game_active() -> None:
         game = make_test_game()
         assert game.game_over is False
 
 
 class TestExecuteRollStatNoneRejected:
-    def test_action_roll_with_stat_none_raises(self) -> None:
+    @staticmethod
+    def test_action_roll_with_stat_none_raises() -> None:
         game = make_test_game()
         game.setting_id = "classic"
         brain = make_brain_result(move="adventure/face_danger", stat="none", dialog_only=False)
@@ -102,7 +113,8 @@ class TestExecuteRollStatNoneRejected:
         with pytest.raises(ValueError, match="named no stat"):
             roll_move(game, brain, None)
 
-    def test_action_roll_with_real_stat_succeeds(self) -> None:
+    @staticmethod
+    def test_action_roll_with_real_stat_succeeds() -> None:
         game = make_test_game()
         game.setting_id = "classic"
         brain = make_brain_result(move="adventure/face_danger", stat="wits", dialog_only=False)

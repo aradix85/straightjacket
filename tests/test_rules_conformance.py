@@ -71,7 +71,7 @@ def _yaml_momentum(effects: list[str]) -> int | None:
     return total
 
 
-def test_unconditional_momentum_matches_the_rulebooks(load_engine: None) -> None:
+def test_unconditional_momentum_matches_the_rulebooks() -> None:
     table = yaml.safe_load((REPO / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8"))
     found = set()
     for setting in ("starforged", "classic"):
@@ -108,13 +108,13 @@ def test_unconditional_momentum_matches_the_rulebooks(load_engine: None) -> None
     ],
 )
 def test_fate_check_follows_mythic_2e(
-    load_engine: None, dice: tuple[int, int], odds: str, chaos: int, expected: str, monkeypatch: pytest.MonkeyPatch
+    dice: tuple[int, int], odds: str, chaos: int, expected: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     fix_dice(monkeypatch, *dice)
     assert resolve_fate_check(odds, chaos).answer == expected
 
 
-def test_fate_check_random_event_needs_doubles_within_chaos(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fate_check_random_event_needs_doubles_within_chaos(monkeypatch: pytest.MonkeyPatch) -> None:
     fix_dice(monkeypatch, *(4, 4))
     assert resolve_fate_check("fifty_fifty", 5).random_event_triggered
     fix_dice(monkeypatch, *(6, 6))
@@ -123,7 +123,7 @@ def test_fate_check_random_event_needs_doubles_within_chaos(load_engine: None, m
     assert not resolve_fate_check("fifty_fifty", 5).random_event_triggered
 
 
-def test_fate_chart_has_the_mythic_2e_shape(load_engine: None) -> None:
+def test_fate_chart_has_the_mythic_2e_shape() -> None:
     chart = load_mythic()["fate_chart"]
     rows = [[cell["yes"] for cell in chart[odds]] for odds in chart]
     assert chart["fifty_fifty"][4]["yes"] == 50
@@ -131,15 +131,13 @@ def test_fate_chart_has_the_mythic_2e_shape(load_engine: None) -> None:
     assert all([row[cf] for row in rows] == sorted((row[cf] for row in rows), reverse=True) for cf in range(9))
 
 
-def test_event_focus_table_is_mythic_2e(load_engine: None) -> None:
+def test_event_focus_table_is_mythic_2e() -> None:
     table = [(row["min"], row["max"], row["focus"]) for row in load_mythic()["event_focus"]]
     assert table == MYTHIC_2E_EVENT_FOCUS
 
 
 @pytest.mark.parametrize(("roll", "expected"), [(10, "expected"), (6, "expected"), (3, "altered"), (4, "interrupt")])
-def test_scene_test_follows_mythic_2e(
-    load_engine: None, roll: int, expected: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_scene_test_follows_mythic_2e(roll: int, expected: str, monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 5
     game.narrative.keyed_scenes = []
@@ -148,7 +146,7 @@ def test_scene_test_follows_mythic_2e(
 
 
 @pytest.mark.parametrize(("setting", "expected"), [("classic", 1), ("starforged", 2)])
-def test_secure_an_advantage_weak_hit_follows_each_rulebook(load_engine: None, setting: str, expected: int) -> None:
+def test_secure_an_advantage_weak_hit_follows_each_rulebook(setting: str, expected: int) -> None:
     game = make_game_state(setting_id=setting)
     game.resources.meters["momentum"] = 0
     resolve_move_outcome(
@@ -171,9 +169,7 @@ def test_secure_an_advantage_weak_hit_follows_each_rulebook(load_engine: None, s
         ("classic", 3, "MISS", (3, 1)),
     ],
 )
-def test_endure_harm_follows_each_rulebook(
-    load_engine: None, setting: str, health: int, result: str, expected: tuple[int, int]
-) -> None:
+def test_endure_harm_follows_each_rulebook(setting: str, health: int, result: str, expected: tuple[int, int]) -> None:
     game = make_game_state(setting_id=setting)
     game.resources.meters["health"] = health
     game.resources.meters["momentum"] = 2
@@ -183,9 +179,7 @@ def test_endure_harm_follows_each_rulebook(
 
 
 @pytest.mark.parametrize(("vow_rank", "expected_ticks"), [("formidable", 2), ("dangerous", 1), ("troublesome", 0)])
-def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
-    load_engine: None, vow_rank: str, expected_ticks: int
-) -> None:
+def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(vow_rank: str, expected_ticks: int) -> None:
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(
         game, "quest/fulfill_your_vow", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
@@ -203,9 +197,7 @@ def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
         ("WEAK_HIT", "troublesome", 0),
     ],
 )
-def test_classic_fulfill_your_vow_marks_experience_by_rank(
-    load_engine: None, result: str, vow_rank: str, expected_xp: int
-) -> None:
+def test_classic_fulfill_your_vow_marks_experience_by_rank(result: str, vow_rank: str, expected_xp: int) -> None:
     game = make_game_state(setting_id="classic")
     outcome = resolve_move_outcome(
         game, "quest/fulfill_your_vow", result, target_npc_id=None, aided_by=None, match=False
@@ -215,7 +207,7 @@ def test_classic_fulfill_your_vow_marks_experience_by_rank(
     assert all(track.ticks == 0 for track in game.campaign.legacy.values())
 
 
-def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> None:
+def test_develop_your_relationship_marks_two_bonds_ticks() -> None:
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(
         game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
@@ -225,7 +217,7 @@ def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> N
 
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged"])
-def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id: str) -> None:
+def test_a_strike_marks_progress_on_the_open_fight(setting_id: str) -> None:
     game = make_game_state(setting_id=setting_id)
     game.progress_tracks.append(make_progress_track(id="combat_raider", name="Raider", track_type="combat"))
     outcome = resolve_move_outcome(game, "combat/strike", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
@@ -233,7 +225,7 @@ def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id
     assert game.progress_tracks[-1].ticks > 0
 
 
-def test_every_move_that_marks_progress_names_its_track_category(load_engine: None) -> None:
+def test_every_move_that_marks_progress_names_its_track_category() -> None:
     outcomes = yaml.safe_load((REPO / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8"))["move_outcomes"]
     marking = sorted(
         move for move, results in outcomes.items() if re.search(r"'(mark_progress|milestone)\b", str(results))
@@ -243,7 +235,7 @@ def test_every_move_that_marks_progress_names_its_track_category(load_engine: No
     assert set(categories.values()) <= set(rules().get_raw("track_types_by_category"))
 
 
-def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
+def test_make_a_connection_gives_no_momentum() -> None:
     game = make_game_state(setting_id="starforged")
     game.resources.meters["momentum"] = 2
     resolve_move_outcome(
@@ -252,7 +244,7 @@ def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
     assert game.resources.meters["momentum"] == 2
 
 
-def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_engine: None) -> None:
+def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box() -> None:
     game = make_game_state(setting_id="starforged")
     game.campaign.xp = 0
     track = game.campaign.legacy["quests"]
@@ -264,16 +256,16 @@ def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_e
     assert game.campaign.xp == 3
 
 
-def test_clocks_use_blades_sizes(load_engine: None) -> None:
+def test_clocks_use_blades_sizes() -> None:
     assert gm().clocks.default_segments in (4, 6, 8)
     assert gm().opening.clock_segments in (4, 6, 8)
 
 
-def test_mythic_lists_hold_an_entry_at_most_three_times(load_engine: None) -> None:
+def test_mythic_lists_hold_an_entry_at_most_three_times() -> None:
     assert gm().random_events.list_weight_max == 3
 
 
-def test_meaning_tables_have_the_mythic_2e_shape(load_engine: None) -> None:
+def test_meaning_tables_have_the_mythic_2e_shape() -> None:
     tables = load_mythic()["meaning_tables"]
     pairs = [
         tables["actions"]["verbs"],
@@ -287,11 +279,11 @@ def test_meaning_tables_have_the_mythic_2e_shape(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize(("roll", "expected"), [(1, 1), (4, 1), (5, 2), (7, 2), (8, 3), (9, 3)])
-def test_adventure_crafter_theme_priority(load_engine: None, roll: int, expected: int) -> None:
+def test_adventure_crafter_theme_priority(roll: int, expected: int) -> None:
     assert lookup_theme_priority(roll, ThemeAlternation(next_is_4=True)) == expected
 
 
-def test_adventure_crafter_theme_priority_ten_alternates_between_four_and_five(load_engine: None) -> None:
+def test_adventure_crafter_theme_priority_ten_alternates_between_four_and_five() -> None:
     alternation = ThemeAlternation(next_is_4=True)
     assert {lookup_theme_priority(10, alternation) for _ in range(2)} == {4, 5}
 
@@ -301,7 +293,7 @@ def _covers_one_to_hundred(ranges: list[tuple[int, int]]) -> bool:
     return cells == list(range(1, 101))
 
 
-def test_adventure_crafter_tables_are_complete(load_engine: None) -> None:
+def test_adventure_crafter_tables_are_complete() -> None:
     data = load_ac_data()
     themes = {theme for point in data["plot_points"] for theme in point["themes"]}
     assert themes == {"action", "tension", "mystery", "social", "personal"}
@@ -318,7 +310,7 @@ def test_adventure_crafter_tables_are_complete(load_engine: None) -> None:
         assert _covers_one_to_hundred([(r["min"], r["max"]) for r in rows])
 
 
-def test_adventure_crafter_conclusion_and_none_ranges(load_engine: None) -> None:
+def test_adventure_crafter_conclusion_and_none_ranges() -> None:
     points = {p["name"]: p["themes"] for p in load_ac_data()["plot_points"]}
     assert all((r["min"], r["max"]) == (1, 8) for r in points["Conclusion"].values())
     assert all((r["min"], r["max"]) == (9, 24) for r in points["None"].values())
@@ -337,7 +329,7 @@ class _ScriptedRng(random.Random):
 THEMES = ["action", "tension", "mystery", "social", "personal"]
 
 
-def test_turning_point_always_has_five_slots_and_at_most_three_none(load_engine: None) -> None:
+def test_turning_point_always_has_five_slots_and_at_most_three_none() -> None:
     for seed in range(200):
         narrative = make_game_state().narrative
         points = roll_turning_point(random.Random(seed), THEMES, narrative).plot_points
@@ -345,14 +337,14 @@ def test_turning_point_always_has_five_slots_and_at_most_three_none(load_engine:
         assert sum(1 for p in points if p.special_range == "none") <= 3
 
 
-def test_a_fourth_none_is_rerolled(load_engine: None) -> None:
+def test_a_fourth_none_is_rerolled() -> None:
     rolls = [5] + [1, 10] * 4 + [1, 50, 1, 60]
     points = roll_turning_point(_ScriptedRng(*rolls), THEMES, make_game_state().narrative).plot_points
     assert [p.special_range for p in points].count("none") == 3
     assert [p.name for p in points[-2:]] == [lookup_plot_point(THEMES[0], roll).name for roll in (50, 60)]
 
 
-def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
+def test_conclusion_on_a_new_plotline_counts_as_none() -> None:
     rolls = [5, 1, 1] + [1, 50] * 4
     narrative = make_game_state().narrative
     turning_point = roll_turning_point(_ScriptedRng(*rolls), THEMES, narrative)
@@ -363,11 +355,11 @@ def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
 
 def _price_dice(monkeypatch: pytest.MonkeyPatch, *dice: int) -> None:
     rolls = list(dice)
-    monkeypatch.setattr("straightjacket.engine.setting.loader.random.randint", lambda low, high: rolls.pop(0))
+    monkeypatch.setattr("straightjacket.engine.setting.loader.random.randint", lambda _low, _high: rolls.pop(0))
 
 
 @pytest.mark.parametrize("setting", ["starforged", "classic"])
-def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str) -> None:
+def test_pay_the_price_rolls_the_official_table(setting: str) -> None:
     data = json.loads((REPO / "data" / f"{setting}.json").read_text(encoding="utf-8"))
     rows = [
         re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", r["text"]).strip()
@@ -384,7 +376,7 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
         assert all(any(part.startswith(row) for row in rows) for part in rolled.split("; "))
 
 
-def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pay_the_price_harm_costs_health(monkeypatch: pytest.MonkeyPatch) -> None:
     _price_dice(monkeypatch, 75)
     game = make_game_state(setting_id="starforged")
     game.resources.meters["health"] = 4
@@ -394,9 +386,7 @@ def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.
     assert game.resources.meters["health"] == 3
 
 
-def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(monkeypatch: pytest.MonkeyPatch) -> None:
     _price_dice(monkeypatch, 96, 82, 45)
     game = make_game_state(setting_id="starforged")
     game.resources.meters["spirit"] = 4
@@ -406,18 +396,14 @@ def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
     assert game.resources.meters["spirit"] == 3
 
 
-def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(monkeypatch: pytest.MonkeyPatch) -> None:
     _price_dice(monkeypatch, 99, 42, 42)
     result = make_outcome()
     pay_the_price(make_game_state(setting_id="classic"), result)
     assert labels_of(result.consequences) == ["Pay the Price: made worse: A new danger or foe is revealed."]
 
 
-def test_classic_roll_again_tells_the_next_result_made_worse(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_classic_roll_again_tells_the_next_result_made_worse(monkeypatch: pytest.MonkeyPatch) -> None:
     _price_dice(monkeypatch, 1, 60)
     game = make_game_state(setting_id="classic")
     game.resources.meters["health"] = 4
@@ -429,7 +415,7 @@ def test_classic_roll_again_tells_the_next_result_made_worse(
 
 @pytest.mark.parametrize(("setting", "pays"), [("classic", True), ("starforged", False)])
 def test_enter_the_fray_miss_pays_the_price_only_in_classic(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, setting: str, pays: bool
+    monkeypatch: pytest.MonkeyPatch, setting: str, pays: bool
 ) -> None:
     rolled = record_price_tables(monkeypatch)
     resolve_move_outcome(
@@ -447,9 +433,7 @@ def test_enter_the_fray_miss_pays_the_price_only_in_classic(
 @pytest.mark.parametrize(
     ("result", "position"), [("STRONG_HIT", "in_control"), ("WEAK_HIT", "bad_spot"), ("MISS", "bad_spot")]
 )
-def test_every_enter_the_fray_result_sets_who_is_in_control(
-    load_engine: None, setting: str, result: str, position: str
-) -> None:
+def test_every_enter_the_fray_result_sets_who_is_in_control(setting: str, result: str, position: str) -> None:
     outcome = resolve_move_outcome(
         make_game_state(setting_id=setting),
         "combat/enter_the_fray",
@@ -464,7 +448,7 @@ def test_every_enter_the_fray_result_sets_who_is_in_control(
 KNOWN_MATCH_GAPS: set[tuple[str, str, str]] = set()
 
 
-def test_every_match_clause_is_modelled_or_known(load_engine: None) -> None:
+def test_every_match_clause_is_modelled_or_known() -> None:
     table = yaml.safe_load((REPO / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8"))
     unmodelled = set()
     for setting in ("starforged", "classic"):
@@ -490,16 +474,14 @@ def test_every_match_clause_is_modelled_or_known(load_engine: None) -> None:
         ("scene_challenge/secure_an_advantage", "MISS", True, 0, 2),
     ],
 )
-def test_scene_challenge_match_outcomes(
-    load_engine: None, move: str, result: str, match: bool, progress: int, clock: int
-) -> None:
+def test_scene_challenge_match_outcomes(move: str, result: str, match: bool, progress: int, clock: int) -> None:
     outcome = resolve_move_outcome(
         make_game_state(setting_id="starforged"), move, result, aided_by=None, match=match, target_npc_id=None
     )
     assert (outcome.progress_marks, outcome.clock_fills) == (progress, clock)
 
 
-def test_test_your_relationship_marks_progress_on_a_connection_without_a_bond(load_engine: None) -> None:
+def test_test_your_relationship_marks_progress_on_a_connection_without_a_bond() -> None:
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous")
@@ -512,9 +494,7 @@ def test_test_your_relationship_marks_progress_on_a_connection_without_a_bond(lo
     assert action.outcome.legacy_fixed_ticks == 0
 
 
-def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     game.progress_tracks.append(
@@ -523,7 +503,7 @@ def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
         )
     )
     dice = [6, 1, 2]
-    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda low, high: dice.pop(0))
+    monkeypatch.setattr("straightjacket.engine.ruleset.rolls.random.randint", lambda _low, _high: dice.pop(0))
     roll = RollResult(4, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
     brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
     action = resolve_action_consequences(game, brain, roll, "risky")
@@ -531,7 +511,7 @@ def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
     assert action.outcome.legacy_fixed_ticks == 2
 
 
-def test_a_chain_without_a_connection_is_skipped(load_engine: None) -> None:
+def test_a_chain_without_a_connection_is_skipped() -> None:
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     roll = RollResult(4, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
@@ -545,7 +525,7 @@ def test_a_chain_without_a_connection_is_skipped(load_engine: None) -> None:
     [("STRONG_HIT", "Make a Discovery", 2, False), ("MISS", "Confront Chaos", 1, False)],
 )
 def test_explore_a_waypoint_match_chains_an_oracle_move(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str, move_name: str, ticks: int, pays: bool
+    monkeypatch: pytest.MonkeyPatch, result: str, move_name: str, ticks: int, pays: bool
 ) -> None:
     rolled = record_price_tables(monkeypatch)
     game = make_game_state(setting_id="starforged")
@@ -557,9 +537,7 @@ def test_explore_a_waypoint_match_chains_an_oracle_move(
 
 
 @pytest.mark.parametrize(("rank", "expected"), [("dangerous", "formidable"), ("epic", "epic")])
-def test_develop_your_relationship_match_raises_the_connection_rank(
-    load_engine: None, rank: str, expected: str
-) -> None:
+def test_develop_your_relationship_match_raises_the_connection_rank(rank: str, expected: str) -> None:
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
     track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank=rank, ticks=0)
@@ -579,13 +557,13 @@ def test_develop_your_relationship_match_raises_the_connection_rank(
         ("seal_bond", "needs a target NPC"),
     ],
 )
-def test_an_npc_effect_without_a_target_raises(load_engine: None, effect: str, message: str) -> None:
+def test_an_npc_effect_without_a_target_raises(effect: str, message: str) -> None:
     with pytest.raises(ValueError, match=message):
         apply_effects(make_game_state(setting_id="starforged"), parse_effects([effect]), target_npc_id=None)
 
 
 @pytest.mark.parametrize("effect", ["bond +1", "raise_connection_rank"])
-def test_a_connection_effect_on_an_npc_without_a_connection_raises(load_engine: None, effect: str) -> None:
+def test_a_connection_effect_on_an_npc_without_a_connection_raises(effect: str) -> None:
     game = make_game_state(setting_id="starforged")
     game.npcs = [make_npc(id="npc_1", name="Mira")]
     with pytest.raises(ValueError, match="needs a connection with Mira"):
@@ -603,7 +581,7 @@ def test_a_connection_effect_on_an_npc_without_a_connection_raises(load_engine: 
         ("classic", "relationship/forge_a_bond", True),
     ],
 )
-def test_which_moves_act_on_an_npc(load_engine: None, setting: str, move: str, acts: bool) -> None:
+def test_which_moves_act_on_an_npc(setting: str, move: str, acts: bool) -> None:
     assert acts_on_an_npc(make_game_state(setting_id=setting), move) is acts
 
 
@@ -618,9 +596,7 @@ def test_which_moves_act_on_an_npc(load_engine: None, setting: str, move: str, a
         ("delve", "suffer/endure_stress", "shaken", "corrupted"),
     ],
 )
-def test_lasting_harm_uses_each_rulebooks_names(
-    load_engine: None, setting: str, move: str, first: str, lasting: str
-) -> None:
+def test_lasting_harm_uses_each_rulebooks_names(setting: str, move: str, first: str, lasting: str) -> None:
     game = make_game_state(setting_id=setting)
     track = "health" if move.endswith("harm") else "spirit"
     game.resources.meters[track] = 0
@@ -629,12 +605,12 @@ def test_lasting_harm_uses_each_rulebooks_names(
     assert lasting in game.impacts
 
 
-def test_delve_faces_death_with_the_classic_move(load_engine: None) -> None:
+def test_delve_faces_death_with_the_classic_move() -> None:
     params = move_outcome_config(make_game_state(setting_id="delve"), "suffer/endure_harm")["params"]
     assert params["threshold_move"] == "suffer/face_death"
 
 
-def test_sundered_isles_discovers_from_its_own_table(load_engine: None) -> None:
+def test_sundered_isles_discovers_from_its_own_table() -> None:
     table = get_moves("sundered_isles")["exploration/make_a_discovery"].tables["make_a_discovery"]
     own = {row.text for row in table.rows}
     game = make_game_state(setting_id="sundered_isles")
@@ -646,9 +622,7 @@ def test_sundered_isles_discovers_from_its_own_table(load_engine: None) -> None:
         assert set(found.split(": ", 1)[1].removeprefix("made worse: ").split("; ")) <= own
 
 
-def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(monkeypatch: pytest.MonkeyPatch) -> None:
     worse = get_moves("starforged")["combat/take_decisive_action"].tables["take_decisive_action"].rows[0].text
     rolled = record_price_tables(monkeypatch)
     fix_dice(monkeypatch, 10)
@@ -664,9 +638,7 @@ def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
 
 
 @pytest.mark.parametrize(("setting", "clue"), [("starforged", True), ("sundered_isles", True), ("classic", False)])
-def test_gather_information_rolls_a_story_clue_where_the_move_has_one(
-    load_engine: None, setting: str, clue: bool
-) -> None:
+def test_gather_information_rolls_a_story_clue_where_the_move_has_one(setting: str, clue: bool) -> None:
     for result in ("STRONG_HIT", "WEAK_HIT"):
         game = make_game_state(setting_id=setting)
         outcome = resolve_move_outcome(
@@ -675,7 +647,7 @@ def test_gather_information_rolls_a_story_clue_where_the_move_has_one(
         assert any(c.startswith("Story Clue: ") for c in labels_of(outcome.consequences)) is clue
 
 
-def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine: None) -> None:
+def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site() -> None:
     game = make_game_state(setting_id="delve")
     brain = make_brain_result(move="delve/escape_the_depths")
     for _ in range(30):
@@ -687,9 +659,7 @@ def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine:
 
 
 @pytest.mark.parametrize(("iron", "wits", "rolled"), [(3, 1, ("wits", 1)), (1, 2, ("iron", 1))])
-def test_mending_your_own_wounds_rolls_the_lower_stat(
-    load_engine: None, iron: int, wits: int, rolled: tuple[str, int]
-) -> None:
+def test_mending_your_own_wounds_rolls_the_lower_stat(iron: int, wits: int, rolled: tuple[str, int]) -> None:
     game = make_game_state(setting_id="starforged")
     game.last_turn_snapshot = game.snapshot()
     game.stats.update(iron=iron, wits=wits)
@@ -697,7 +667,7 @@ def test_mending_your_own_wounds_rolls_the_lower_stat(
     assert (roll.stat_name, roll.stat_value) == rolled
 
 
-def test_an_engine_chosen_roll_keeps_a_lowest_way_low(load_engine: None) -> None:
+def test_an_engine_chosen_roll_keeps_a_lowest_way_low() -> None:
     game = make_game_state(setting_id="classic")
     game.stats.update(iron=3, wits=1)
     assert best_roll_option(game, get_moves("classic")["adventure/heal"]) == ("wits", 1)

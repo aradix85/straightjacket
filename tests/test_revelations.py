@@ -79,9 +79,7 @@ def _director_reasons(monkeypatch: pytest.MonkeyPatch) -> list[tuple[bool, str |
     return reasons
 
 
-def test_a_revelation_lands_on_its_keyed_scene_and_the_narrator_must_tell_it(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_revelation_lands_on_its_keyed_scene_and_the_narrator_must_tell_it(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(_revelation("r1", 1), scene=3)
     _add_trigger(game)
     provider = TurnProvider(_ACT)
@@ -96,9 +94,7 @@ def test_a_revelation_lands_on_its_keyed_scene_and_the_narrator_must_tell_it(
     assert game.last_turn_snapshot.revelation.id == "r1"
 
 
-def test_a_failure_holds_the_revelation_to_the_next_turn_that_does_not_fail(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_failure_holds_the_revelation_to_the_next_turn_that_does_not_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(_revelation("r1", 1), scene=3)
     _add_trigger(game)
     provider = TurnProvider(_ACT)
@@ -114,7 +110,7 @@ def test_a_failure_holds_the_revelation_to_the_next_turn_that_does_not_fail(
 
 @pytest.mark.parametrize("source", ["", _SOURCE])
 def test_a_revelation_whose_trigger_does_not_fire_lands_at_the_end_of_its_act_and_calls_the_director(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, source: str
+    monkeypatch: pytest.MonkeyPatch, source: str
 ) -> None:
     game = _game(_revelation("r1", 1, source), scene=5)
     if source:
@@ -135,7 +131,7 @@ def test_a_revelation_whose_trigger_does_not_fire_lands_at_the_end_of_its_act_an
 
 
 def test_a_trigger_that_fires_before_its_act_lands_the_revelation_once_its_act_begins(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     game = _game(_revelation("r2", 2), scene=6)
     provider = TurnProvider(_ACT)
@@ -149,7 +145,7 @@ def test_a_trigger_that_fires_before_its_act_lands_the_revelation_once_its_act_b
     assert _revealed(game) == ["r2"]
 
 
-def test_a_dialog_turn_lands_a_ready_revelation(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_dialog_turn_lands_a_ready_revelation(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(_revelation("r1", 1, ""), scene=7)
     provider = TurnProvider(_TALK)
 
@@ -160,7 +156,7 @@ def test_a_dialog_turn_lands_a_ready_revelation(load_engine: None, monkeypatch: 
     assert _revealed(game) == ["r1"]
 
 
-def test_a_move_without_a_roll_lands_a_ready_revelation(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_move_without_a_roll_lands_a_ready_revelation(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(_revelation("r1", 1, ""), scene=7)
     milestone = brain_answer(
         move="quest/reach_a_milestone", stat="none", location_change=None, target_track="vow_background"
@@ -174,9 +170,7 @@ def test_a_move_without_a_roll_lands_a_ready_revelation(load_engine: None, monke
     assert _revealed(game) == ["r1"]
 
 
-def test_ready_revelations_land_one_turn_at_a_time_the_oldest_first(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ready_revelations_land_one_turn_at_a_time_the_oldest_first(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(_revelation("r1", 1, ""), _revelation("r2", 2), scene=8)
     provider = TurnProvider(_ACT)
 
@@ -189,9 +183,7 @@ def test_ready_revelations_land_one_turn_at_a_time_the_oldest_first(
     assert _revealed(game) == ["r1", "r2"]
 
 
-def test_a_momentum_burn_that_turns_a_miss_into_a_hit_lands_the_revelation(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_momentum_burn_that_turns_a_miss_into_a_hit_lands_the_revelation(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(_revelation("r1", 1, ""), scene=7)
     provider = TurnProvider(_ACT)
 
@@ -206,7 +198,7 @@ def test_a_momentum_burn_that_turns_a_miss_into_a_hit_lands_the_revelation(
 
 @pytest.mark.parametrize("source", ["input_misread", "state_error"])
 def test_a_correction_tells_the_turns_revelation_again_and_marks_it_once(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, source: str
+    monkeypatch: pytest.MonkeyPatch, source: str
 ) -> None:
     def _hit(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> Any:
         return score_action_roll(6, 1, 2, stat_name, stat_value, move, momentum, adds)

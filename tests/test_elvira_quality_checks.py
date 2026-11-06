@@ -12,7 +12,7 @@ def _seen_moving(old: str, new: str) -> list[str]:
     return check_npc_spatial_consistency(game, before, "The tide turns.")
 
 
-def test_a_reworded_place_is_the_same_place(load_engine: None) -> None:
+def test_a_reworded_place_is_the_same_place() -> None:
     assert (
         _seen_moving("A narrow quay in a harbor; the harbor's name is unknown.", "A narrow quay in an unnamed harbor")
         == []
@@ -20,7 +20,7 @@ def test_a_reworded_place_is_the_same_place(load_engine: None) -> None:
     assert _seen_moving("Cargo deck", "cargo deck ") == []
 
 
-def test_an_npc_who_moves_unseen_is_reported(load_engine: None) -> None:
+def test_an_npc_who_moves_unseen_is_reported() -> None:
     for old, new in [
         ("Saltmarrow docks", "Saltmarrow harbourmaster's office"),
         ("Cargo deck of the Ashfall", "Bridge of the Ashfall"),

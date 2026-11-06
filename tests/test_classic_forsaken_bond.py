@@ -66,9 +66,7 @@ def _meet_mira(
     return labels_of(game.narrative.session_log[-1].consequences), provider.prompts[-1]
 
 
-def test_a_vow_sworn_with_a_bonds_aid_tests_the_bond_once_when_they_next_meet(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_vow_sworn_with_a_bonds_aid_tests_the_bond_once_when_they_next_meet(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _bonded_library(monkeypatch)
     vow = _swear(game, "connection:npc_1")
     assert vow.vowed_to == "npc_1"
@@ -81,7 +79,7 @@ def test_a_vow_sworn_with_a_bonds_aid_tests_the_bond_once_when_they_next_meet(
     assert TESTED not in _meet_mira(game, monkeypatch, "WEAK_HIT")[0]
 
 
-def test_a_missed_test_after_a_forsaken_vow_clears_the_bond(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_missed_test_after_a_forsaken_vow_clears_the_bond(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _bonded_library(monkeypatch)
     _forsake(game, _swear(game, "connection:npc_1"))
     labels, _prompt = _meet_mira(game, monkeypatch, "MISS")
@@ -89,7 +87,7 @@ def test_a_missed_test_after_a_forsaken_vow_clears_the_bond(load_engine: None, m
     assert answers().closeness(game, "npc_1") == 0
 
 
-def test_a_vow_sworn_without_a_bonds_aid_asks_no_test(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_vow_sworn_without_a_bonds_aid_asks_no_test(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _bonded_library(monkeypatch)
     vow = _swear(game, None)
     assert vow.vowed_to is None
@@ -97,9 +95,7 @@ def test_a_vow_sworn_without_a_bonds_aid_asks_no_test(load_engine: None, monkeyp
     assert TESTED not in _meet_mira(game, monkeypatch, "WEAK_HIT")[0]
 
 
-def test_the_players_own_test_of_the_bond_is_the_test_the_vow_asks(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_the_players_own_test_of_the_bond_is_the_test_the_vow_asks(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _bonded_library(monkeypatch)
     vow = _swear(game, "connection:npc_1")
     _forsake(game, vow)
@@ -108,7 +104,7 @@ def test_the_players_own_test_of_the_bond_is_the_test_the_vow_asks(
     assert vow.vowed_to is None
 
 
-def test_an_action_aimed_at_them_tests_the_bond_too(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_an_action_aimed_at_them_tests_the_bond_too(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _bonded_library(monkeypatch)
     _forsake(game, _swear(game, "connection:npc_1"))
     labels, _prompt = _meet_mira(game, monkeypatch, "STRONG_HIT", move="adventure/face_danger", stat="wits")
@@ -116,16 +112,14 @@ def test_an_action_aimed_at_them_tests_the_bond_too(load_engine: None, monkeypat
     assert labels[tested + 1] == "follow-up move Test Your Bond: STRONG_HIT"
 
 
-def test_a_test_of_the_bond_the_brain_names_but_plays_as_dialog_still_tests_it(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_test_of_the_bond_the_brain_names_but_plays_as_dialog_still_tests_it(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _bonded_library(monkeypatch)
     _forsake(game, _swear(game, "connection:npc_1"))
     labels, _prompt = _meet_mira(game, monkeypatch, "WEAK_HIT", move="relationship/test_your_bond", dialog_only=True)
     assert TESTED in labels
 
 
-def test_a_bond_gone_before_they_meet_asks_no_test(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_bond_gone_before_they_meet_asks_no_test(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _bonded_library(monkeypatch)
     vow = _swear(game, "connection:npc_1")
     _forsake(game, vow)
@@ -134,9 +128,7 @@ def test_a_bond_gone_before_they_meet_asks_no_test(load_engine: None, monkeypatc
     assert vow.vowed_to is None
 
 
-def test_the_vow_follows_the_person_when_two_npcs_turn_out_to_be_one(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_the_vow_follows_the_person_when_two_npcs_turn_out_to_be_one(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _bonded_library(monkeypatch)
     vow = _swear(game, "connection:npc_1")
     mira, archivist = game.npcs[0], make_npc(id="npc_2", name="The archivist", status="active")
@@ -146,7 +138,7 @@ def test_the_vow_follows_the_person_when_two_npcs_turn_out_to_be_one(
     assert connection_track(game, "npc_2") is not None
 
 
-def test_starforged_asks_no_bond_test_for_a_forsaken_vow(load_engine: None) -> None:
+def test_starforged_asks_no_bond_test_for_a_forsaken_vow() -> None:
     game = create_game(
         "starforged",
         location="Hearthwood",

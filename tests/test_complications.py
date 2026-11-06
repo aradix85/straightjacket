@@ -38,9 +38,7 @@ def _complication(name: str = "A beacon calls the raiders", filled: int = 0) -> 
 
 
 @pytest.mark.parametrize(("setting", "move"), WEAK_HIT_MOVES)
-def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(
-    load_engine: None, setting: str, move: str
-) -> None:
+def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(setting: str, move: str) -> None:
     game = _game(setting)
     outcome = resolve_move_outcome(game, move, "WEAK_HIT", target_npc_id="npc_1", aided_by=None, match=False)
     [clock] = open_complications(game)
@@ -52,16 +50,14 @@ def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(
 
 
 @pytest.mark.parametrize(("setting", "move"), WEAK_HIT_MOVES)
-def test_a_strong_hit_starts_no_complication(load_engine: None, setting: str, move: str) -> None:
+def test_a_strong_hit_starts_no_complication(setting: str, move: str) -> None:
     game = _game(setting)
     resolve_move_outcome(game, move, "STRONG_HIT", target_npc_id="npc_1", aided_by=None, match=False)
     assert game.world.clocks == []
 
 
-def test_without_a_story_complication_table_a_meaning_pair_names_the_danger(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(move_effects, "roll_meaning_table", lambda table: ("Oppose", "Plans"))
+def test_without_a_story_complication_table_a_meaning_pair_names_the_danger(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(move_effects, "roll_meaning_table", lambda _table: ("Oppose", "Plans"))
     game = _game("classic")
     resolve_move_outcome(
         game, "adventure/gather_information", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
@@ -69,7 +65,7 @@ def test_without_a_story_complication_table_a_meaning_pair_names_the_danger(
     assert [c.name for c in open_complications(game)] == ["Oppose Plans"]
 
 
-def test_the_emergent_clock_cap_leaves_the_complication_without_a_clock(load_engine: None) -> None:
+def test_the_emergent_clock_cap_leaves_the_complication_without_a_clock() -> None:
     game = _game()
     cap = gm().clocks.max_open_emergent
     game.world.clocks = [make_clock(name=f"Event {i}", creation_source=f"random_event:x:{i}") for i in range(cap)]
@@ -81,7 +77,7 @@ def test_the_emergent_clock_cap_leaves_the_complication_without_a_clock(load_eng
     assert not any(c.startswith("complication_clock") for c in labels_of(outcome.consequences))
 
 
-def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one(load_engine: None) -> None:
+def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one() -> None:
     game = _game()
     game.world.clocks = [_complication(filled=1)]
     outcome = resolve_move_outcome(game, "adventure/compel", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False)
@@ -90,7 +86,7 @@ def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one(
     assert not any(c.startswith("complication_clock") for c in labels_of(outcome.consequences))
 
 
-def test_a_complication_clock_fills_every_scene_and_strikes_when_full(load_engine: None) -> None:
+def test_a_complication_clock_fills_every_scene_and_strikes_when_full() -> None:
     game = _game()
     game.world.clocks = [_complication()]
     for scene in range(1, 4):
@@ -105,7 +101,7 @@ def test_a_complication_clock_fills_every_scene_and_strikes_when_full(load_engin
 
 @pytest.mark.parametrize(("result", "averted"), [("STRONG_HIT", True), ("WEAK_HIT", True), ("MISS", False)])
 def test_a_hit_aimed_at_a_complication_heads_it_off(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str, averted: bool
+    monkeypatch: pytest.MonkeyPatch, result: str, averted: bool
 ) -> None:
     game = library_game()
     game.world.clocks.append(_complication(filled=1))
@@ -119,7 +115,7 @@ def test_a_hit_aimed_at_a_complication_heads_it_off(
     assert ("complication_averted A beacon calls the raiders" in told) is averted
 
 
-def test_a_fired_or_unknown_complication_cannot_be_headed_off(load_engine: None) -> None:
+def test_a_fired_or_unknown_complication_cannot_be_headed_off() -> None:
     game = _game()
     fired = _complication(filled=4)
     fired.fired = True
@@ -131,7 +127,7 @@ def test_a_fired_or_unknown_complication_cannot_be_headed_off(load_engine: None)
     assert game.world.clocks == [fired]
 
 
-def test_the_brain_sees_open_complications_and_may_aim_at_one(load_engine: None) -> None:
+def test_the_brain_sees_open_complications_and_may_aim_at_one() -> None:
     game = _game()
     fired = _complication(name="Old danger", filled=4)
     fired.fired = True

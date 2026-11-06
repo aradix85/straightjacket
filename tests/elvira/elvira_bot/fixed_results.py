@@ -41,7 +41,7 @@ def fixed_result(result: str) -> Generator[None]:
     challenge_faces = range(1, rules().dice.challenge_die + 1)
 
     def action(
-        d1: int, c1: int, c2: int, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
+        _d1: int, _c1: int, _c2: int, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
     ) -> RollResult:
         candidates = [
             score_action(a, x, y, stat_name, stat_value, move, held_momentum, adds)
@@ -49,7 +49,7 @@ def fixed_result(result: str) -> Generator[None]:
         ]
         return _pick(result, candidates, f"{move} with {stat_name} {stat_value}")
 
-    def progress(c1: int, c2: int, track_name: str, filled_boxes: int, move: str) -> RollResult:
+    def progress(_c1: int, _c2: int, track_name: str, filled_boxes: int, move: str) -> RollResult:
         candidates = [
             score_progress(x, y, track_name, filled_boxes, move)
             for x, y in itertools.product(challenge_faces, challenge_faces)

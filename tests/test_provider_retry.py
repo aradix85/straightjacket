@@ -78,20 +78,20 @@ def waits(monkeypatch: pytest.MonkeyPatch) -> list[float]:
 @pytest.mark.parametrize(
     "failure", [ConnectionError("reset"), APITimeoutError("Request timed out.")], ids=["connection", "timeout"]
 )
-def test_a_connection_error_is_retried_whatever_its_message_says(load_engine: None, failure: Exception) -> None:
+def test_a_connection_error_is_retried_whatever_its_message_says(failure: Exception) -> None:
     provider = _Scripted(failure, AIResponse(content="OK", stop_reason="complete"))
     assert create_with_retry(provider, _spec()).content == "OK"
     assert provider.calls == 2
 
 
-def test_a_connection_error_on_every_attempt_makes_the_ai_unavailable(load_engine: None) -> None:
+def test_a_connection_error_on_every_attempt_makes_the_ai_unavailable() -> None:
     provider = _Scripted(ConnectionError("permanent"), ConnectionError("permanent"))
     with pytest.raises(AIUnavailableError) as raised:
         create_with_retry(provider, _spec(max_retries=1))
     assert isinstance(raised.value.__cause__, ConnectionError)
 
 
-def test_a_refusal_is_retried(load_engine: None) -> None:
+def test_a_refusal_is_retried() -> None:
     provider = _Scripted(
         AIResponse(content="", stop_reason="refusal"), AIResponse(content="The door holds.", stop_reason="complete")
     )
@@ -99,14 +99,14 @@ def test_a_refusal_is_retried(load_engine: None) -> None:
     assert (result.content, provider.calls) == ("The door holds.", 2)
 
 
-def test_a_persistent_refusal_raises_after_the_last_attempt(load_engine: None) -> None:
+def test_a_persistent_refusal_raises_after_the_last_attempt() -> None:
     provider = _Scripted(*(AIResponse(content="", stop_reason="refusal") for _ in range(3)))
     with pytest.raises(AIUnavailableError, match="model refused on every attempt"):
         create_with_retry(provider, _spec(max_retries=2))
     assert provider.calls == 3
 
 
-def test_retry_after_is_honoured_and_capped(load_engine: None, waits: list[float]) -> None:
+def test_retry_after_is_honoured_and_capped(waits: list[float]) -> None:
     provider = _Scripted(
         _RateLimitedError("7"), _RateLimitedError("600"), AIResponse(content="ok", stop_reason="complete")
     )
@@ -118,10 +118,11 @@ class _StreamFails:
     def __init__(self, refuses: bool) -> None:
         self.refuses = refuses
 
-    def create_message(self, spec: AICallSpec) -> AIResponse:
+    @staticmethod
+    def create_message(_spec: AICallSpec) -> AIResponse:
         return AIResponse(content="Recovered without streaming.", stop_reason="complete")
 
-    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+    def stream_message(self, _spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
         on_text("Half a sent")
         if self.refuses:
             return AIResponse(content="Half a sent", stop_reason="refusal")
@@ -130,8 +131,8 @@ class _StreamFails:
 
 
 @pytest.mark.parametrize("refuses", [False, True], ids=["dropped", "refused"])
-def test_a_failed_stream_falls_back_to_a_normal_call_and_is_not_complete(load_engine: None, refuses: bool) -> None:
-    stream = SentenceStream(lambda text: None)
+def test_a_failed_stream_falls_back_to_a_normal_call_and_is_not_complete(refuses: bool) -> None:
+    stream = SentenceStream(lambda _text: None)
     response = stream_with_retry(_StreamFails(refuses), _spec(), stream)
     assert response.content == "Recovered without streaming."
     assert stream.failed

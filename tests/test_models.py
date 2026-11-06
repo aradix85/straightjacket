@@ -21,12 +21,12 @@ from tests._helpers import (
 )
 
 
-def test_the_action_score_stops_at_its_cap(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_action_score_stops_at_its_cap(monkeypatch: pytest.MonkeyPatch) -> None:
     fix_dice(monkeypatch, 6, 1, 1)
     assert roll_action("edge", 3, "adventure/face_danger", 0, 3).action_score == rules().dice.action_score_max
 
 
-def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: None) -> None:
+def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift() -> None:
     game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
@@ -39,7 +39,7 @@ def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: N
     assert npc.disposition == "neutral"
 
 
-def test_test_bond_disposition_shift(load_engine: None) -> None:
+def test_test_bond_disposition_shift() -> None:
     game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
@@ -99,7 +99,7 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
     assert clock_events == []
 
 
-def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
+def test_autonomous_clocks_skip_npc_owned() -> None:
     random.seed(0)
     game = make_game_state()
     clock = make_clock(
@@ -129,7 +129,7 @@ def test_story_blueprint_triggered_director_phases_snapshot() -> None:
     assert game.narrative.story_blueprint.triggered_director_phases == ["setup"]
 
 
-def test_phase_trigger_dedup(load_engine: None) -> None:
+def test_phase_trigger_dedup() -> None:
     game = make_game_state()
     game.narrative.scene_count = 12
     bp = StoryBlueprint(

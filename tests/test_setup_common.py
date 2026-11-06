@@ -20,7 +20,7 @@ def _setup(*npcs: dict[str, Any]) -> dict[str, Any]:
     return {"npcs": list(npcs), "memory_updates": [], "location": "Dock", "scene_context": ""}
 
 
-def test_an_opening_registers_neither_the_player_nor_a_known_npc_again(load_engine: None) -> None:
+def test_an_opening_registers_neither_the_player_nor_a_known_npc_again() -> None:
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Kira", status="deceased")]
     apply_opening_setup(
@@ -31,14 +31,14 @@ def test_an_opening_registers_neither_the_player_nor_a_known_npc_again(load_engi
     assert [(n.id, n.name) for n in game.npcs] == [("npc_1", "Kira"), ("npc_2", "Borin")]
 
 
-def test_an_opening_does_not_split_a_known_npc_by_a_shorter_name(load_engine: None) -> None:
+def test_an_opening_does_not_split_a_known_npc_by_a_shorter_name() -> None:
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Maren Silk", description="A smuggler.")]
     apply_opening_setup(game, _setup(_npc("Maren", "A smuggler", "neutral")), label="OpeningSetup")
     assert [n.name for n in game.npcs] == ["Maren Silk"]
 
 
-def test_seed_opening_memories_matches_and_skips(load_engine: None) -> None:
+def test_seed_opening_memories_matches_and_skips() -> None:
     game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 1
     game.npcs = [make_npc(id="npc_1", name="Captain Ashwood")]
@@ -52,7 +52,7 @@ def test_seed_opening_memories_matches_and_skips(load_engine: None) -> None:
     assert len(game.npcs[0].memory) == 1
 
 
-def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and_time(load_engine: None) -> None:
+def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and_time() -> None:
     game = make_game_state(player_name="Hero")
     game.world.clocks = [make_clock(name="Engine clock")]
     game.world.time_of_day = "morning"
@@ -65,7 +65,7 @@ def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and
     assert game.world.time_of_day == "morning"
 
 
-def test_opening_setup_schema_leaves_clocks_and_time_to_the_engine(load_engine: None) -> None:
+def test_opening_setup_schema_leaves_clocks_and_time_to_the_engine() -> None:
     properties = get_opening_setup_schema()["properties"]
     assert "clocks" not in properties
     assert "time_of_day" not in properties

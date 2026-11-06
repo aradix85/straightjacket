@@ -10,7 +10,7 @@ from tests._helpers import make_game_state, record_price_tables
 
 
 @pytest.fixture
-def game(load_engine: None) -> GameState:
+def game() -> GameState:
     g = make_game_state()
     g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     g.setting_id = "starforged"
@@ -18,6 +18,7 @@ def game(load_engine: None) -> GameState:
 
 
 class TestParseEffect:
+    @staticmethod
     @pytest.mark.parametrize(
         ("effect_str", "expected_type", "expected_value", "expected_target"),
         [
@@ -36,18 +37,20 @@ class TestParseEffect:
             ("pay_the_price", "pay_the_price", 0, ""),
         ],
     )
-    def test_parse_effect(self, effect_str: str, expected_type: str, expected_value: int, expected_target: str) -> None:
+    def test_parse_effect(effect_str: str, expected_type: str, expected_value: int, expected_target: str) -> None:
         e = parse_effect(effect_str)
         assert e.type == expected_type
         assert e.value == expected_value
         if expected_target:
             assert e.target == expected_target
 
-    def test_parse_effect_unknown_raises(self) -> None:
+    @staticmethod
+    def test_parse_effect_unknown_raises() -> None:
         with pytest.raises(ValueError, match="xyzzy"):
             parse_effect("xyzzy")
 
-    def test_parse_effects_list(self) -> None:
+    @staticmethod
+    def test_parse_effects_list() -> None:
         effects = parse_effects(["momentum +1", "position in_control"])
         assert len(effects) == 2
         assert effects[0].type == "momentum"
@@ -55,6 +58,7 @@ class TestParseEffect:
 
 
 class TestApplyEffects:
+    @staticmethod
     @pytest.mark.parametrize(
         ("effect", "track", "start", "expected", "cons_fragment"),
         [
@@ -67,7 +71,7 @@ class TestApplyEffects:
         ],
     )
     def test_resource_change(
-        self, game: GameState, effect: str, track: str, start: int, expected: int, cons_fragment: str
+        game: GameState, effect: str, track: str, start: int, expected: int, cons_fragment: str
     ) -> None:
         game.resources.meters[track] = start
         result = apply_effects(game, parse_effects([effect]))
@@ -75,21 +79,25 @@ class TestApplyEffects:
         if cons_fragment:
             assert cons_fragment in labels_of(result.consequences)
 
-    def test_momentum_clamped_to_max(self, game: GameState) -> None:
+    @staticmethod
+    def test_momentum_clamped_to_max(game: GameState) -> None:
         game.resources.meters["momentum"] = 9
         apply_effects(game, parse_effects(["momentum +2"]))
         assert game.resources.meters["momentum"] == 10
 
-    def test_momentum_clamped_to_floor(self, game: GameState) -> None:
+    @staticmethod
+    def test_momentum_clamped_to_floor(game: GameState) -> None:
         game.resources.meters["momentum"] = -5
         apply_effects(game, parse_effects(["momentum -2"]))
         assert game.resources.meters["momentum"] == -6
 
-    def test_health_clamped_to_max_no_consequence(self, game: GameState) -> None:
+    @staticmethod
+    def test_health_clamped_to_max_no_consequence(game: GameState) -> None:
         result = apply_effects(game, parse_effects(["health +1"]))
         assert game.resources.meters["health"] == 5
         assert not any("health" in c for c in labels_of(result.consequences))
 
+    @staticmethod
     @pytest.mark.parametrize(
         ("effect", "attr", "expected"),
         [
@@ -99,27 +107,31 @@ class TestApplyEffects:
             ("fill_clock 2", "clock_fills", 2),
         ],
     )
-    def test_result_fields(self, game: GameState, effect: str, attr: str, expected: object) -> None:
+    def test_result_fields(game: GameState, effect: str, attr: str, expected: object) -> None:
         result = apply_effects(game, parse_effects([effect]))
         assert getattr(result, attr) == expected
 
-    def test_next_move_bonus_waits_for_the_next_roll(self, game: GameState) -> None:
+    @staticmethod
+    def test_next_move_bonus_waits_for_the_next_roll(game: GameState) -> None:
         result = apply_effects(game, parse_effects(["next_move_bonus +1"]))
         assert game.resources.next_move_bonus == 1
         assert "next move +1" in labels_of(result.consequences)
 
-    def test_no_effects_change_nothing(self, game: GameState) -> None:
+    @staticmethod
+    def test_no_effects_change_nothing(game: GameState) -> None:
         before = game.resources.snapshot()
         result = apply_effects(game, [])
         assert game.resources.snapshot() == before
         assert labels_of(result.consequences) == []
 
-    def test_multiple_effects(self, game: GameState) -> None:
+    @staticmethod
+    def test_multiple_effects(game: GameState) -> None:
         result = apply_effects(game, parse_effects(["momentum +2", "position in_control"]))
         assert game.resources.meters["momentum"] == 4
         assert result.combat_position == "in_control"
 
-    def test_suffer_move_picks_highest_track(self, game: GameState) -> None:
+    @staticmethod
+    def test_suffer_move_picks_highest_track(game: GameState) -> None:
         game.resources.meters["health"] = 5
         game.resources.meters["spirit"] = 3
         game.resources.meters["supply"] = 2
@@ -129,7 +141,8 @@ class TestApplyEffects:
 
 
 class TestEndureHarm:
-    def test_a_strong_hit_takes_back_health(self, game: GameState) -> None:
+    @staticmethod
+    def test_a_strong_hit_takes_back_health(game: GameState) -> None:
         game.resources.meters["health"] = 3
         result = resolve_move_outcome(
             game, "suffer/endure_harm", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
@@ -137,20 +150,23 @@ class TestEndureHarm:
         assert game.resources.meters["health"] == 4
         assert "health +1" in labels_of(result.consequences)
 
-    def test_a_strong_hit_at_full_health_takes_momentum(self, game: GameState) -> None:
+    @staticmethod
+    def test_a_strong_hit_at_full_health_takes_momentum(game: GameState) -> None:
         result = resolve_move_outcome(
             game, "suffer/endure_harm", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
         )
         assert game.resources.meters["momentum"] == 3
         assert "momentum +1" in labels_of(result.consequences)
 
-    def test_a_weak_hit_exchanges_momentum_for_health(self, game: GameState) -> None:
+    @staticmethod
+    def test_a_weak_hit_exchanges_momentum_for_health(game: GameState) -> None:
         game.resources.meters["health"] = 3
         game.resources.meters["momentum"] = 4
         resolve_move_outcome(game, "suffer/endure_harm", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False)
         assert (game.resources.meters["health"], game.resources.meters["momentum"]) == (4, 3)
 
-    def test_a_miss_above_zero_costs_more_health(self, game: GameState) -> None:
+    @staticmethod
+    def test_a_miss_above_zero_costs_more_health(game: GameState) -> None:
         game.resources.meters["health"] = 3
         resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, aided_by=None, match=False)
         assert game.resources.meters["health"] == 2
@@ -169,12 +185,14 @@ def test_face_death_returns_on_a_strong_hit_and_dies_on_a_miss(
 
 
 class TestHeal:
-    def test_a_strong_hit_heals_its_full_amount(self, game: GameState) -> None:
+    @staticmethod
+    def test_a_strong_hit_heals_its_full_amount(game: GameState) -> None:
         game.resources.meters["health"] = 2
         resolve_move_outcome(game, "recover/heal", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
         assert game.resources.meters["health"] == 5
 
-    def test_a_weak_hit_heals_at_a_cost_of_momentum(self, game: GameState) -> None:
+    @staticmethod
+    def test_a_weak_hit_heals_at_a_cost_of_momentum(game: GameState) -> None:
         game.resources.meters["health"] = 2
         game.resources.meters["momentum"] = 5
         resolve_move_outcome(game, "recover/heal", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False)
@@ -182,6 +200,7 @@ class TestHeal:
 
 
 class TestResolveOutcome:
+    @staticmethod
     @pytest.mark.parametrize(
         ("move", "result_type", "check_fn"),
         [
@@ -190,61 +209,69 @@ class TestResolveOutcome:
                 "STRONG_HIT",
                 lambda g, r: g.resources.meters["momentum"] == 3 and "momentum +1" in labels_of(r.consequences),
             ),
-            ("adventure/gather_information", "STRONG_HIT", lambda g, r: g.resources.meters["momentum"] == 4),
-            ("quest/swear_an_iron_vow", "STRONG_HIT", lambda g, r: g.resources.meters["momentum"] == 4),
+            ("adventure/gather_information", "STRONG_HIT", lambda g, _r: g.resources.meters["momentum"] == 4),
+            ("quest/swear_an_iron_vow", "STRONG_HIT", lambda g, _r: g.resources.meters["momentum"] == 4),
         ],
     )
     def test_simple_outcomes(
-        self, game: GameState, move: str, result_type: str, check_fn: Callable[[GameState, OutcomeResult], bool]
+        game: GameState, move: str, result_type: str, check_fn: Callable[[GameState, OutcomeResult], bool]
     ) -> None:
         result = resolve_move_outcome(game, move, result_type, target_npc_id=None, aided_by=None, match=False)
         assert check_fn(game, result)
 
+    @staticmethod
     @pytest.mark.parametrize("move", ["adventure/face_danger", "recover/heal", "recover/resupply"])
-    def test_a_miss_pays_the_price(self, game: GameState, monkeypatch: pytest.MonkeyPatch, move: str) -> None:
+    def test_a_miss_pays_the_price(game: GameState, monkeypatch: pytest.MonkeyPatch, move: str) -> None:
         rolled = record_price_tables(monkeypatch)
         resolve_move_outcome(game, move, "MISS", target_npc_id=None, aided_by=None, match=False)
         assert rolled == ["Pay the Price"]
 
-    def test_strike_strong_hit_position(self, game: GameState) -> None:
+    @staticmethod
+    def test_strike_strong_hit_position(game: GameState) -> None:
         result = resolve_move_outcome(
             game, "combat/strike", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
         )
         assert result.combat_position == "in_control"
         assert result.progress_marks == 2
 
-    def test_strike_weak_hit_bad_spot(self, game: GameState) -> None:
+    @staticmethod
+    def test_strike_weak_hit_bad_spot(game: GameState) -> None:
         result = resolve_move_outcome(game, "combat/strike", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False)
         assert result.combat_position == "bad_spot"
         assert result.progress_marks == 2
 
-    def test_enter_fray_strong_hit(self, game: GameState) -> None:
+    @staticmethod
+    def test_enter_fray_strong_hit(game: GameState) -> None:
         result = resolve_move_outcome(
             game, "combat/enter_the_fray", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
         )
         assert game.resources.meters["momentum"] == 4
         assert result.combat_position == "in_control"
 
-    def test_endure_stress_handler(self, game: GameState) -> None:
+    @staticmethod
+    def test_endure_stress_handler(game: GameState) -> None:
         game.resources.meters["spirit"] = 3
         resolve_move_outcome(game, "suffer/endure_stress", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
         assert game.resources.meters["spirit"] == 4
 
-    def test_scene_challenge_face_danger_weak_hit(self, game: GameState) -> None:
+    @staticmethod
+    def test_scene_challenge_face_danger_weak_hit(game: GameState) -> None:
         result = resolve_move_outcome(
             game, "scene_challenge/face_danger", "WEAK_HIT", target_npc_id=None, aided_by=None, match=False
         )
         assert result.progress_marks == 1
         assert result.clock_fills == 1
 
+    @staticmethod
     @pytest.mark.parametrize("move", ["adventure/gather_information", "adventure/compel"])
-    def test_weak_hit_names_its_complication(self, game: GameState, move: str) -> None:
+    def test_weak_hit_names_its_complication(game: GameState, move: str) -> None:
         weak = resolve_move_outcome(game, move, "WEAK_HIT", target_npc_id=None, aided_by=None, match=False)
         strong = resolve_move_outcome(game, move, "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)
         kind = move.split("/")[1]
         assert f"complication {kind}" in labels_of(weak.consequences)
         assert not any(c.startswith("complication") for c in labels_of(strong.consequences))
 
-    def test_unknown_move_raises(self, game: GameState) -> None:
+    @staticmethod
+    def test_unknown_move_raises(game: GameState) -> None:
         with pytest.raises(ValueError, match="No outcome config"):
             resolve_move_outcome(game, "nonexistent/move", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False)

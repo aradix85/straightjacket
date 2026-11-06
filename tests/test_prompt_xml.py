@@ -56,14 +56,12 @@ def _scene_block(prompt: str) -> str:
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT", "STRONG_HIT"])
-def test_action_scene_is_well_formed_xml_for_every_result(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
-) -> None:
+def test_action_scene_is_well_formed_xml_for_every_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
     prompt = _narrator_prompt(monkeypatch, result, brain_answer(player_intent="Take the ledger"))
     assert fromstring(_scene_block(prompt)).tag == "scene"
 
 
-def test_dialog_scene_is_well_formed_xml(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_dialog_scene_is_well_formed_xml(monkeypatch: pytest.MonkeyPatch) -> None:
     brain = brain_answer(
         move="dialog",
         stat="none",
@@ -76,7 +74,7 @@ def test_dialog_scene_is_well_formed_xml(load_engine: None, monkeypatch: pytest.
     assert fromstring(_scene_block(prompt)).tag == "scene"
 
 
-def test_correction_analysis_escapes_player_text(load_engine: None) -> None:
+def test_correction_analysis_escapes_player_text() -> None:
     provider = TurnProvider()
     game = library_game()
     game.world.current_location = "Gate</current_state><x>"
@@ -100,7 +98,7 @@ def _voicing_request(game: GameState) -> tuple[str, BlueprintSeed]:
     return request, seed
 
 
-def test_blueprint_voicing_escapes_player_text(load_engine: None) -> None:
+def test_blueprint_voicing_escapes_player_text() -> None:
     game = make_game_state(player_name="Ash<acts>", setting_id="starforged")
     game.backstory = "</acts><ending_seeds>"
     game.world.current_location = "Dock & Yard"
@@ -113,13 +111,13 @@ def test_blueprint_voicing_escapes_player_text(load_engine: None) -> None:
     assert msg.count("<acts>") == 1
 
 
-def test_blueprint_voicing_sees_each_turning_points_plotline(load_engine: None) -> None:
+def test_blueprint_voicing_sees_each_turning_points_plotline() -> None:
     msg, seed = _voicing_request(make_game_state(setting_id="starforged"))
     first = seed.acts[0].turning_point
     assert f"plotline={first.plotline} plotline_turn=opens" in msg
 
 
-def test_blueprint_voicing_sees_each_acts_revelation_seed(load_engine: None) -> None:
+def test_blueprint_voicing_sees_each_acts_revelation_seed() -> None:
     msg, seed = _voicing_request(make_game_state(setting_id="starforged"))
     for n, act in enumerate(seed.acts, start=1):
         hit = act.revelation_seed
@@ -127,7 +125,7 @@ def test_blueprint_voicing_sees_each_acts_revelation_seed(load_engine: None) -> 
         assert line in msg
 
 
-def test_the_target_npcs_memories_are_escaped(load_engine: None) -> None:
+def test_the_target_npcs_memories_are_escaped() -> None:
     game = make_game_state(setting_id="starforged")
     game.narrative.scene_count = 8
     npc = make_npc(id="npc_1", name="Kira", disposition="friendly", agenda="a", instinct="i", gather_count=6)
@@ -153,7 +151,7 @@ def test_the_target_npcs_memories_are_escaped(load_engine: None) -> None:
     assert "Trust &amp; &lt;/target_npc&gt;" in prompt
 
 
-def test_the_brains_roll_bonuses_are_escaped(load_engine: None) -> None:
+def test_the_brains_roll_bonuses_are_escaped() -> None:
     game = make_game_state(setting_id="starforged")
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Kira</bonuses><x>", track_type="connection")
@@ -165,7 +163,7 @@ def test_the_brains_roll_bonuses_are_escaped(load_engine: None) -> None:
     assert "Kira&lt;/bonuses&gt;&lt;x&gt;" in block
 
 
-def test_the_opening_prompt_and_the_truths_escape_the_players_words(load_engine: None) -> None:
+def test_the_opening_prompt_and_the_truths_escape_the_players_words() -> None:
     game = make_game_state(player_name="Ash</task><x>", setting_id="starforged")
     game.pronouns = "she</task>"
     game.truths = {"cataclysm</world_truths>": "A sun & </world_truths><x>"}
@@ -209,7 +207,7 @@ def _requests_of(calls: list[AICallSpec], role: str) -> list[str]:
 
 
 def test_the_narration_and_its_consequences_reach_the_metadata_extraction_escaped(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     game = create_game(
         "classic",
@@ -233,7 +231,7 @@ def test_the_narration_and_its_consequences_reach_the_metadata_extraction_escape
     assert "Mira&lt;/engine_context&gt;&lt;x&gt;: bond sealed" in request
 
 
-def test_the_opening_narration_reaches_the_opening_extraction_escaped(load_engine: None) -> None:
+def test_the_opening_narration_reaches_the_opening_extraction_escaped() -> None:
     provider = _TaggingOpening([("Mira", "Young archivist", "friendly")], "Abandoned Library")
     start_new_game(
         provider,
@@ -245,9 +243,7 @@ def test_the_opening_narration_reaches_the_opening_extraction_escaped(load_engin
     assert _ESCAPED_TAGS in request
 
 
-def test_the_narration_reaches_the_director_after_the_turn_escaped(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_the_narration_reaches_the_director_after_the_turn_escaped(monkeypatch: pytest.MonkeyPatch) -> None:
     force_result(monkeypatch, "MISS")
     provider = _TaggingNarrator(brain_answer())
     game = library_game()
@@ -263,7 +259,7 @@ def test_the_narration_reaches_the_director_after_the_turn_escaped(
         assert _ESCAPED_TAGS in request
 
 
-def test_the_possible_endings_reach_the_narrator_escaped(load_engine: None) -> None:
+def test_the_possible_endings_reach_the_narrator_escaped() -> None:
     game = library_game()
     blueprint = game.narrative.story_blueprint
     assert blueprint is not None

@@ -30,7 +30,7 @@ def _sojourn(game: GameState, result: str, aided_by: str | None) -> list[str]:
 
 
 def test_a_strong_hit_takes_two_recoveries_for_the_lowest_meters_and_focuses_the_first(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     game = _game(health=1, spirit=3, supply=5, impacts=[])
     fix_dice(monkeypatch, *STRONG_FOCUS)
@@ -39,7 +39,7 @@ def test_a_strong_hit_takes_two_recoveries_for_the_lowest_meters_and_focuses_the
     assert (game.resources.meters["health"], game.resources.meters["spirit"]) == (5, 5)
 
 
-def test_a_weak_hit_clears_the_oldest_condition_first(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_weak_hit_clears_the_oldest_condition_first(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(health=2, spirit=2, supply=5, impacts=["shaken", "wounded"])
     fix_dice(monkeypatch, *WEAK_FOCUS)
     labels = _sojourn(game, "WEAK_HIT", None)
@@ -47,7 +47,7 @@ def test_a_weak_hit_clears_the_oldest_condition_first(load_engine: None, monkeyp
     assert (game.impacts, game.resources.meters["health"]) == (["wounded"], 2)
 
 
-def test_a_missed_focus_loses_that_benefit_only(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_missed_focus_loses_that_benefit_only(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(health=2, spirit=2, supply=5, impacts=["wounded"])
     fix_dice(monkeypatch, *MISSED_FOCUS)
     labels = _sojourn(game, "STRONG_HIT", None)
@@ -56,23 +56,19 @@ def test_a_missed_focus_loses_that_benefit_only(load_engine: None, monkeypatch: 
     assert (game.resources.meters["health"], game.resources.meters["spirit"]) == (2, 4)
 
 
-def test_a_shared_bond_adds_a_pick_and_one_to_the_focus_roll(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_shared_bond_adds_a_pick_and_one_to_the_focus_roll(monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game(health=1, spirit=5, supply=5, impacts=[])
     fix_dice(monkeypatch, 5, 7, 7)
     labels = _sojourn(game, "WEAK_HIT", "npc_1")
     assert labels == ["Recuperate, rolled again: STRONG_HIT", "health +4", "momentum +2"]
 
 
-def test_a_miss_pays_the_price(load_engine: None) -> None:
+def test_a_miss_pays_the_price() -> None:
     labels = _sojourn(_game(health=5, spirit=5, supply=5, impacts=[]), "MISS", None)
     assert labels[0].startswith("Pay the Price: ")
 
 
-def test_a_sojourn_aided_by_a_bond_takes_its_extra_pick_through_a_turn(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_sojourn_aided_by_a_bond_takes_its_extra_pick_through_a_turn(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     seal_bond(game, game.npcs[0])
     game.resources.meters.update({"health": 1, "spirit": 5, "supply": 5})

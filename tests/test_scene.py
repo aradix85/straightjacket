@@ -70,7 +70,7 @@ def _altered(monkeypatch: pytest.MonkeyPatch, adjustment_roll: int) -> list[str]
     return setup.adjustments
 
 
-def test_an_altered_scene_makes_one_of_the_six_adjustments(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_an_altered_scene_makes_one_of_the_six_adjustments(monkeypatch: pytest.MonkeyPatch) -> None:
     made = [_altered(monkeypatch, roll) for roll in range(1, 7)]
     assert all(len(adjustments) == 1 for adjustments in made)
     assert {adjustments[0] for adjustments in made} == {
@@ -83,7 +83,7 @@ def test_an_altered_scene_makes_one_of_the_six_adjustments(load_engine: None, mo
     }
 
 
-def test_an_altered_scene_can_make_two_adjustments(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_an_altered_scene_can_make_two_adjustments(monkeypatch: pytest.MonkeyPatch) -> None:
     adjustments = _altered(monkeypatch, 7)
     assert len(adjustments) == 2
     assert "make_2_adjustments" not in adjustments

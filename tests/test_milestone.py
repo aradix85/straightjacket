@@ -63,7 +63,7 @@ def _swear_answer() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged"])
-def test_reach_a_milestone_is_offered_only_while_a_vow_is_active(load_engine: None, setting_id: str) -> None:
+def test_reach_a_milestone_is_offered_only_while_a_vow_is_active(setting_id: str) -> None:
     game = _game(setting_id)
     assert MILESTONE in available_moves(game)
     for track in game.progress_tracks:
@@ -72,9 +72,7 @@ def test_reach_a_milestone_is_offered_only_while_a_vow_is_active(load_engine: No
     assert MILESTONE not in available_moves(game)
 
 
-def test_a_milestone_marks_the_named_vow_by_its_rank_without_a_roll(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_milestone_marks_the_named_vow_by_its_rank_without_a_roll(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     provider = TurnProvider(_swear_answer())
     vow = _swear(monkeypatch, game, provider)
@@ -103,9 +101,7 @@ def test_a_milestone_marks_the_named_vow_by_its_rank_without_a_roll(
     assert any(f"<consequence>{sentence}</consequence>" in prompt for sentence in told)
 
 
-def test_a_milestone_is_told_and_remembered_as_a_move_not_a_dialog(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_milestone_is_told_and_remembered_as_a_move_not_a_dialog(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     provider = TurnProvider(_swear_answer())
     vow = _swear(monkeypatch, game, provider)
@@ -132,7 +128,7 @@ def test_a_milestone_is_told_and_remembered_as_a_move_not_a_dialog(
     assert game.narrative.narration_history[-1].prompt_summary == get_prompt("history_unrolled_move", intent=intent)
 
 
-def test_a_milestone_with_several_vows_must_name_its_vow(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_milestone_with_several_vows_must_name_its_vow(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     provider = TurnProvider(_swear_answer())
     _swear(monkeypatch, game, provider)
@@ -142,7 +138,7 @@ def test_a_milestone_with_several_vows_must_name_its_vow(load_engine: None, monk
         process_turn(provider, game, "That is real progress", stream=None)
 
 
-def test_a_dialog_turn_marks_no_milestone(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_dialog_turn_marks_no_milestone(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     provider = TurnProvider(_swear_answer())
     vow = _swear(monkeypatch, game, provider)
@@ -155,9 +151,7 @@ def test_a_dialog_turn_marks_no_milestone(load_engine: None, monkeypatch: pytest
 
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged"])
-def test_a_vow_is_fulfilled_after_its_milestones(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, setting_id: str
-) -> None:
+def test_a_vow_is_fulfilled_after_its_milestones(monkeypatch: pytest.MonkeyPatch, setting_id: str) -> None:
     game = _game(setting_id)
     provider = TurnProvider(_swear_answer())
     vow = _swear(monkeypatch, game, provider)
@@ -184,9 +178,7 @@ def test_a_vow_is_fulfilled_after_its_milestones(
         assert game.campaign.legacy["quests"].ticks == quests["quests"] + rules().legacy.ticks_by_rank[vow.rank]
 
 
-def test_a_state_correction_retells_a_milestone_as_a_move_without_a_roll(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_state_correction_retells_a_milestone_as_a_move_without_a_roll(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     background = next(t for t in game.progress_tracks if t.id == "vow_background")
     force_result(monkeypatch, "STRONG_HIT")
@@ -201,7 +193,7 @@ def test_a_state_correction_retells_a_milestone_as_a_move_without_a_roll(
     assert background.ticks == rules().progress.ticks_per_mark[background.rank]
 
 
-def test_a_turn_corrected_into_a_milestone_keeps_no_roll(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_turn_corrected_into_a_milestone_keeps_no_roll(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     background = next(t for t in game.progress_tracks if t.id == "vow_background")
     force_result(monkeypatch, "STRONG_HIT")

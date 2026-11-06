@@ -14,7 +14,7 @@ from tests.elvira.elvira_bot.ws_runner import WsClient
 
 
 @pytest.fixture
-def game(load_engine: None) -> GameState:
+def game() -> GameState:
     g = make_game_state(
         player_name="Elvira",
         setting_id="starforged",
@@ -68,16 +68,19 @@ def test_a_turn_record_keeps_the_state_and_the_npcs_in_play(game: GameState) -> 
 
 
 class TestInvariants:
-    def test_clean_game_no_violations(self, game: GameState) -> None:
+    @staticmethod
+    def test_clean_game_no_violations(game: GameState) -> None:
         violations = assert_game_state(game, turn=1)
         assert violations == []
 
-    def test_catches_bad_health(self, game: GameState) -> None:
+    @staticmethod
+    def test_catches_bad_health(game: GameState) -> None:
         game.resources.meters["health"] = -1
         violations = assert_game_state(game, turn=1)
         assert any("health" in v for v in violations)
 
-    def test_catches_bad_disposition(self, game: GameState) -> None:
+    @staticmethod
+    def test_catches_bad_disposition(game: GameState) -> None:
         game.npcs[0].disposition = "invalid"
         violations = assert_game_state(game, turn=1)
         assert any("disposition" in v for v in violations)

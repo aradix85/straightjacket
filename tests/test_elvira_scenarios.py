@@ -32,24 +32,24 @@ def test_every_configured_scenario_names_known_targets() -> None:
         check_expectations(spec)
 
 
-def test_an_unknown_target_is_refused(load_engine: None) -> None:
+def test_an_unknown_target_is_refused() -> None:
     with pytest.raises(ValueError, match="dragon_slain"):
         prepare_scenario(make_game_state(), {"expect": ["dragon_slain"]})
 
 
-def test_momentum_can_be_set_to_its_maximum(load_engine: None) -> None:
+def test_momentum_can_be_set_to_its_maximum() -> None:
     game = make_game_state()
     prepare_scenario(game, {"expect": ["burn_offered"], "resources": {"momentum": "max", "health": 0}})
     assert game.resources.meters["momentum"] == max_momentum(game)
     assert game.resources.meters["health"] == 0
 
 
-def test_a_meter_the_ruleset_lacks_is_refused(load_engine: None) -> None:
+def test_a_meter_the_ruleset_lacks_is_refused() -> None:
     with pytest.raises(KeyError, match="helth"):
         prepare_scenario(make_game_state(), {"expect": ["burn_offered"], "resources": {"helth": 0}})
 
 
-def test_the_story_completes_on_the_next_scene(load_engine: None) -> None:
+def test_the_story_completes_on_the_next_scene() -> None:
     game = make_game_state()
     game.narrative.story_blueprint = make_blueprint(
         acts=[make_act(scene_range=[1, 5]), make_act(scene_range=[6, 10]), make_act(scene_range=[11, 15])]
@@ -62,21 +62,21 @@ def test_the_story_completes_on_the_next_scene(load_engine: None) -> None:
     assert game.narrative.story_blueprint.story_complete
 
 
-def test_combat_opens_a_track_and_a_position(load_engine: None) -> None:
+def test_combat_opens_a_track_and_a_position() -> None:
     game = make_game_state()
     prepare_scenario(game, {"expect": ["combat"], "combat": True})
     assert game.world.combat_position == "in_control"
     assert any(t.track_type == "combat" and t.status == "active" for t in game.progress_tracks)
 
 
-def test_an_open_clock_is_one_segment_from_full(load_engine: None) -> None:
+def test_an_open_clock_is_one_segment_from_full() -> None:
     game = make_game_state()
     game.world.clocks = [make_clock(name="Storm", segments=6, filled=1)]
     prepare_scenario(game, {"expect": ["clock_fired"], "clock_nearly_full": True})
     assert game.world.clocks[0].filled == 5
 
 
-def test_a_bond_scenario_keeps_one_companion_and_seals_a_bond_with_them(load_engine: None) -> None:
+def test_a_bond_scenario_keeps_one_companion_and_seals_a_bond_with_them() -> None:
     game = library_game()
     game.npcs.append(make_npc(id="npc_9", name="Tamsin", status="active"))
     notes = prepare_scenario(game, {"expect": ["bond_sealed"], "companion": True, "bonded": True})
@@ -85,9 +85,7 @@ def test_a_bond_scenario_keeps_one_companion_and_seals_a_bond_with_them(load_eng
     assert get_npc_bond(game, "npc_1") == 10
 
 
-def test_a_forsaken_bond_scenario_makes_the_vow_to_the_companion_and_fills_a_threat_on_it(
-    load_engine: None,
-) -> None:
+def test_a_forsaken_bond_scenario_makes_the_vow_to_the_companion_and_fills_a_threat_on_it() -> None:
     game = library_game()
     spec = {"expect": ["bond_tested"], "companion": True, "bonded": True, "vow_to_companion": True}
     prepare_scenario(game, {**spec, "threat_on_vow": {"origin": "pc_negative", "menace": "full"}})
@@ -96,7 +94,7 @@ def test_a_forsaken_bond_scenario_makes_the_vow_to_the_companion_and_fills_a_thr
     assert (vow.vowed_to, threat.linked_vow_id, threat.menace_full) == ("npc_1", vow.id, True)
 
 
-def test_a_threat_scenario_takes_only_a_menace_it_knows(load_engine: None) -> None:
+def test_a_threat_scenario_takes_only_a_menace_it_knows() -> None:
     with pytest.raises(KeyError, match="half"):
         prepare_scenario(
             library_game(),
@@ -105,7 +103,7 @@ def test_a_threat_scenario_takes_only_a_menace_it_knows(load_engine: None) -> No
 
 
 def test_the_coverage_counts_what_the_engine_logs_for_bonds_threats_and_forsaken_vows(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     game = library_game()
     coverage = Coverage()
@@ -136,7 +134,7 @@ def test_the_coverage_counts_what_the_engine_logs_for_bonds_threats_and_forsaken
     assert {"bond_sealed", "threat_advanced", "vow_forsaken", "bond_tested"} <= set(coverage.exercised())
 
 
-def test_the_coverage_counts_a_vow_played_to_its_fulfilment(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_coverage_counts_a_vow_played_to_its_fulfilment(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     spec = load_config(ELVIRA_CONFIG)["scenarios"]["vow_fulfilment"]
     prepare_scenario(game, {"expect": spec["expect"], "vow_boxes": spec["vow_boxes"]})
@@ -166,19 +164,19 @@ def test_the_coverage_counts_a_vow_played_to_its_fulfilment(load_engine: None, m
     assert "dialog" in coverage.exercised()
 
 
-def test_the_compact_record_of_a_turn_names_what_the_engine_logged(load_engine: None) -> None:
+def test_the_compact_record_of_a_turn_names_what_the_engine_logged() -> None:
     record = TurnRecord(engine_log=EngineLogRecord(move="quest/reach_a_milestone", result="unrolled_move"))
     compact = record.to_compact_dict()
     assert compact["result"] == "unrolled_move"
     assert compact["move"] == "quest/reach_a_milestone"
 
 
-def test_every_configured_scenario_fixes_only_results_the_ruleset_rolls(load_engine: None) -> None:
+def test_every_configured_scenario_fixes_only_results_the_ruleset_rolls() -> None:
     for spec in load_config(ELVIRA_CONFIG)["scenarios"].values():
         check_results(spec["results"] if "results" in spec else [])
 
 
-def test_a_result_the_ruleset_does_not_roll_is_refused(load_engine: None) -> None:
+def test_a_result_the_ruleset_does_not_roll_is_refused() -> None:
     with pytest.raises(ValueError, match="CRITICAL_HIT"):
         prepare_scenario(make_game_state(), {"expect": ["result:MISS"], "results": ["MISS", "CRITICAL_HIT"]})
 
@@ -192,41 +190,39 @@ def test_each_turn_takes_its_own_fixed_result_and_later_turns_roll_freely() -> N
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT", "STRONG_HIT"])
 @pytest.mark.parametrize("stat_value", [1, 3])
-def test_a_fixed_result_comes_out_of_every_action_roll_without_a_match(
-    load_engine: None, result: str, stat_value: int
-) -> None:
+def test_a_fixed_result_comes_out_of_every_action_roll_without_a_match(result: str, stat_value: int) -> None:
     with fixed_result(result):
         rolled = [rolls.roll_action("edge", stat_value, "adventure/face_danger", 2, 0) for _ in range(40)]
     assert {r.result for r in rolled} == {result}
     assert not any(r.match for r in rolled)
 
 
-def test_a_fixed_result_comes_out_of_a_progress_roll(load_engine: None) -> None:
+def test_a_fixed_result_comes_out_of_a_progress_roll() -> None:
     with fixed_result("STRONG_HIT"):
         roll = rolls.roll_progress("Find the archive", 10, "quest/fulfill_your_vow")
     assert (roll.result, roll.match) == ("STRONG_HIT", False)
 
 
-def test_a_fixed_result_takes_a_match_only_when_no_other_dice_give_it(load_engine: None) -> None:
+def test_a_fixed_result_takes_a_match_only_when_no_other_dice_give_it() -> None:
     top = rules().dice.challenge_die
     with fixed_result("MISS"):
         roll = rolls.roll_progress("Find the archive", rules().progress.boxes, "quest/fulfill_your_vow")
     assert (roll.result, roll.c1, roll.c2, roll.match) == ("MISS", top, top, True)
 
 
-def test_a_fixed_result_no_dice_can_give_is_refused(load_engine: None) -> None:
+def test_a_fixed_result_no_dice_can_give_is_refused() -> None:
     with fixed_result("STRONG_HIT"), pytest.raises(ValueError, match="no dice give"):
         rolls.roll_progress("Find the archive", 0, "quest/fulfill_your_vow")
 
 
-def test_the_dice_roll_freely_after_a_fixed_turn(load_engine: None) -> None:
+def test_the_dice_roll_freely_after_a_fixed_turn() -> None:
     score_action = rolls.score_action_roll
     with fixed_result("MISS"):
         assert rolls.score_action_roll is not score_action
     assert rolls.score_action_roll is score_action
 
 
-def test_a_scenario_can_start_at_a_game_over(load_engine: None) -> None:
+def test_a_scenario_can_start_at_a_game_over() -> None:
     game = make_game_state()
     notes = prepare_scenario(game, {"expect": ["succession"], "game_over": "death"})
     assert game.game_over
@@ -272,7 +268,7 @@ def test_the_report_says_when_no_miss_was_audited() -> None:
     assert "No misses audited." in _audit_lines(slog)
 
 
-def test_a_scenario_gives_each_turn_its_own_directive_and_repeats_the_last(load_engine: None) -> None:
+def test_a_scenario_gives_each_turn_its_own_directive_and_repeats_the_last() -> None:
     scenarios = load_config(ELVIRA_CONFIG)["scenarios"]
     for spec in scenarios.values():
         for key in spec.get("directive", []):

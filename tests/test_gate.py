@@ -1,5 +1,3 @@
-import pytest
-
 from straightjacket.engine.gamemaster.stance_gate import compute_npc_gate, resolve_npc_stance
 from straightjacket.engine.models import (
     GameState,
@@ -16,9 +14,6 @@ from tests._helpers import (
     make_npc,
     make_progress_track,
 )
-
-pytestmark = pytest.mark.usefixtures("load_engine")
-
 
 _DEFAULT_SECRETS: tuple[str, ...] = ("Kira is smuggling forbidden tech",)
 

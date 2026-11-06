@@ -40,7 +40,8 @@ class AnthropicProvider:
             final = stream.get_final_message()
         return self._response(final)
 
-    def _request(self, spec: AICallSpec) -> dict[str, Any]:
+    @staticmethod
+    def _request(spec: AICallSpec) -> dict[str, Any]:
         create_kwargs: dict[str, Any] = {
             "model": spec.model,
             "max_tokens": spec.max_tokens,
@@ -83,7 +84,8 @@ class AnthropicProvider:
 
         return create_kwargs
 
-    def _response(self, response: Any) -> AIResponse:
+    @staticmethod
+    def _response(response: Any) -> AIResponse:
         content = ""
         parsed_tool_calls = []
         for block in response.content:

@@ -26,8 +26,8 @@ def call_correction_brain(
 ) -> dict[str, Any]:
     lang = narration_language()
 
-    _defaults = eng().ai_text.narrator_defaults
-    _trunc = eng().truncations
+    defaults = eng().ai_text.narrator_defaults
+    trunc = eng().truncations
 
     def _npc_line(n: NpcData) -> str:
         return get_prompt(
@@ -36,10 +36,10 @@ def call_correction_brain(
             npc=_xe(n.name),
             aliases=get_prompt("correction_npc_aliases", aliases=_xe(",".join(n.aliases))) if n.aliases else "",
             disposition=n.disposition,
-            description=_xe(n.description[: _trunc.log_xlong]),
+            description=_xe(n.description[: trunc.log_xlong]),
         )
 
-    npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or _defaults["no_npcs"]
+    npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or defaults["no_npcs"]
 
     roll = snap.roll
     roll_summary = (
@@ -55,7 +55,7 @@ def call_correction_brain(
             c2=str(roll.c2),
         )
         if roll
-        else _defaults["no_roll"].format(result=game.narrative.session_log[-1].result)
+        else defaults["no_roll"].format(result=game.narrative.session_log[-1].result)
     )
 
     w = game.world
@@ -65,12 +65,12 @@ def call_correction_brain(
         input=_xe(snap.player_input),
         move=brain.move,
         stat=brain.stat,
-        intent=_xe(brain.player_intent[: _trunc.prompt_short]),
+        intent=_xe(brain.player_intent[: trunc.prompt_short]),
         roll=roll_summary,
-        preview=str(_trunc.narration_preview),
-        narration=_xe(narration[: _trunc.narration_preview]),
+        preview=str(trunc.narration_preview),
+        narration=_xe(narration[: trunc.narration_preview]),
         location=_xe(w.current_location),
-        context=_xe(w.current_scene_context[: _trunc.prompt_short]),
+        context=_xe(w.current_scene_context[: trunc.prompt_short]),
         time=w.time_of_day,
         npcs=npc_lines,
     )
@@ -85,7 +85,7 @@ def call_correction_brain(
         cached_system_prefix="",
         **sampling_params("correction"),
     )
-    log(f"[Correction] Analysing: {correction_text[: _trunc.log_long]}")
+    log(f"[Correction] Analysing: {correction_text[: trunc.log_long]}")
     try:
         response = create_with_retry(provider, spec)
         result: dict[str, Any] = json.loads(response.content)

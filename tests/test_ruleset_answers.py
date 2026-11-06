@@ -35,16 +35,16 @@ def test_without_installed_answers_the_game_master_cannot_ask(monkeypatch: pytes
         ("opening", "opening"),
     ],
 )
-def test_a_result_reaches_the_game_master_as_its_outcome(load_engine: None, result: str, outcome: str) -> None:
+def test_a_result_reaches_the_game_master_as_its_outcome(result: str, outcome: str) -> None:
     assert questions.outcome_of(result) == outcome
 
 
-def test_a_label_the_ruleset_does_not_know_raises(load_engine: None) -> None:
+def test_a_label_the_ruleset_does_not_know_raises() -> None:
     with pytest.raises(KeyError):
         questions.outcome_of("MATCH")
 
 
-def test_the_narrator_is_told_the_rulesets_own_result_names(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_narrator_is_told_the_rulesets_own_result_names(monkeypatch: pytest.MonkeyPatch) -> None:
     names = answers.results_by_outcome()
     assert names == {"success": "STRONG_HIT", "partial": "WEAK_HIT", "failure": "MISS"}
     assert names["success"] in prompt_blocks.task_action()
@@ -56,7 +56,7 @@ def test_the_narrator_is_told_the_rulesets_own_result_names(load_engine: None, m
         assert not any(name in told for name in names.values())
 
 
-def test_the_ruleset_says_which_threats_are_active_and_which_overcome(load_engine: None) -> None:
+def test_the_ruleset_says_which_threats_are_active_and_which_overcome() -> None:
     game = make_game_state(player_name="Test")
     active = make_threat(id="t_active", name="Raiders")
     storm = make_threat(id="t_storm", name="Storm", status="overcome")
@@ -66,7 +66,7 @@ def test_the_ruleset_says_which_threats_are_active_and_which_overcome(load_engin
     assert [t.id for t in overcome_threats(game)] == ["t_storm", "t_wolves"]
 
 
-def test_a_vow_fulfilled_against_a_pressing_threat_tells_it_overcome_once(load_engine: None) -> None:
+def test_a_vow_fulfilled_against_a_pressing_threat_tells_it_overcome_once() -> None:
     game = make_game_state(player_name="Test")
     game.progress_tracks = [
         make_progress_track(id="vow_storm", name="Calm the storm"),
@@ -86,7 +86,7 @@ def test_a_vow_fulfilled_against_a_pressing_threat_tells_it_overcome_once(load_e
 @pytest.mark.parametrize(
     ("value", "level"), [(0, "critical"), (1, "critical"), (2, "low"), (3, "steady"), (5, "steady")]
 )
-def test_strain_is_a_level_per_meter(load_engine: None, value: int, level: str) -> None:
+def test_strain_is_a_level_per_meter(value: int, level: str) -> None:
     game = make_game_state(player_name="Test")
     game.resources.meters["health"] = value
     assert answers.strain(game) == [level, "steady", "steady"]
@@ -100,9 +100,7 @@ def test_strain_is_a_level_per_meter(load_engine: None, value: int, level: str) 
         ("adventure/face_danger", "STRONG_HIT", False),
     ],
 )
-def test_an_advantage_is_gained_by_a_hit_on_an_advantage_move(
-    load_engine: None, move: str, result: str, gained: bool
-) -> None:
+def test_an_advantage_is_gained_by_a_hit_on_an_advantage_move(move: str, result: str, gained: bool) -> None:
     game = make_game_state(player_name="Test")
     game.narrative.session_log.append(make_scene_log_entry(scene=1, move=move, result=result))
     assert answers.gained_advantage(game) is gained
@@ -116,11 +114,11 @@ def test_an_advantage_is_gained_by_a_hit_on_an_advantage_move(
         ("dialog", False),
     ],
 )
-def test_only_the_information_moves_gather_information(load_engine: None, move: str, gathers: bool) -> None:
+def test_only_the_information_moves_gather_information(move: str, gathers: bool) -> None:
     assert answers.gathers_information(move) is gathers
 
 
-def test_closeness_is_the_connection_s_filled_boxes(load_engine: None) -> None:
+def test_closeness_is_the_connection_s_filled_boxes() -> None:
     game = make_game_state(player_name="Test")
     game.npcs = [make_npc(id="npc_1", name="Kira")]
     game.progress_tracks.append(
@@ -130,7 +128,7 @@ def test_closeness_is_the_connection_s_filled_boxes(load_engine: None) -> None:
     assert answers.closeness(game, "npc_2") == 0
 
 
-def test_a_danger_is_open_while_its_threat_is_active_and_not_full(load_engine: None) -> None:
+def test_a_danger_is_open_while_its_threat_is_active_and_not_full() -> None:
     game = make_game_state(player_name="Test")
     full = make_threat(id="t_full", name="Full")
     full.menace_ticks = full.max_menace_ticks
@@ -141,7 +139,7 @@ def test_a_danger_is_open_while_its_threat_is_active_and_not_full(load_engine: N
     assert dangers["t_full"].progress == menace_total_boxes(full)
 
 
-def test_the_game_master_s_time_for_a_place_change_is_its_own(load_engine: None) -> None:
+def test_the_game_master_s_time_for_a_place_change_is_its_own() -> None:
     assert resolve_time_progression("combat/strike", has_location_change=True) == gm().location.change_time
     assert resolve_time_progression("recover/resupply", has_location_change=False) == "moderate"
     assert resolve_time_progression("quest/swear_an_iron_vow", has_location_change=False) == "short"

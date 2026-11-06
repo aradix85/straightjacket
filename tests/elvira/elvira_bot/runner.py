@@ -340,7 +340,7 @@ def run_session(bot_cfg: dict[str, Any], auto_override: bool = False, turns_over
 
 
 def _setup_game(
-    provider: AIProvider, username: str, game_cfg: dict[str, Any], auto_mode: bool, slog: SessionLog
+    provider: AIProvider, username: str, game_cfg: dict[str, Any], auto_mode: bool, _slog: SessionLog
 ) -> tuple[GameState, str, list[dict[str, Any]]]:
     if not auto_mode and game_cfg["load_existing"]:
         save_name = game_cfg["save_name"]
@@ -689,7 +689,7 @@ def _play_correction_turn(
     game: GameState,
     narration: str,
     turn: int,
-    persona: str,
+    _persona: str,
     slog: SessionLog,
 ) -> tuple[GameState, str, TurnRecord, bool]:
     print(f"  [CORRECTION TEST] Sending ## correction at turn {turn}")

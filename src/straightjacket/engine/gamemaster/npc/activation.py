@@ -9,8 +9,8 @@ from straightjacket.engine.models import BrainResult, GameState, NpcData
 
 
 def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
-    _tf = gm().tf_idf
-    min_tok = _tf.token_min_length
+    tfidf_cfg = gm().tf_idf
+    min_tok = tfidf_cfg.token_min_length
 
     def _tokenize(text: str) -> list[str]:
         return [w for w in text.lower().split() if len(w) >= min_tok and w.isalpha()]
@@ -27,7 +27,7 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
             " ".join(npc.aliases),
         ]
 
-        parts.extend(m.event for m in npc.memory[-_tf.memory_window :])
+        parts.extend(m.event for m in npc.memory[-tfidf_cfg.memory_window :])
         docs[npc_id] = _tokenize(" ".join(parts))
 
     query_tokens = _tokenize(query_text)
@@ -52,8 +52,8 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
         return {t: (count / doc_len) * idf[t] for t, count in tf.items()}
 
     query_vec = _tfidf_vector(query_tokens)
-    _q_sumsq = sum(v * v for v in query_vec.values())
-    query_norm = math.sqrt(_q_sumsq) if _q_sumsq > 0 else 1.0
+    q_sumsq = sum(v * v for v in query_vec.values())
+    query_norm = math.sqrt(q_sumsq) if q_sumsq > 0 else 1.0
 
     scores = {}
     for npc_id, tokens in docs.items():
@@ -61,8 +61,8 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
             scores[npc_id] = 0.0
             continue
         doc_vec = _tfidf_vector(tokens)
-        _d_sumsq = sum(v * v for v in doc_vec.values())
-        doc_norm = math.sqrt(_d_sumsq) if _d_sumsq > 0 else 1.0
+        d_sumsq = sum(v * v for v in doc_vec.values())
+        doc_norm = math.sqrt(d_sumsq) if d_sumsq > 0 else 1.0
 
         dot = sum(query_vec.get(t, 0) * doc_vec.get(t, 0) for t in set(query_vec) | set(doc_vec))
         scores[npc_id] = dot / (query_norm * doc_norm)
@@ -71,14 +71,14 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
 
 
 def _build_story_text(brain: BrainResult, game: GameState) -> str:
-    _tf = gm().tf_idf
+    tf = gm().tf_idf
     scan_parts = [
         brain.player_intent,
         brain.approach,
         game.world.current_scene_context,
         game.world.current_location,
     ]
-    scan_parts.extend(s.summary for s in game.narrative.session_log[-_tf.session_window :])
+    scan_parts.extend(s.summary for s in game.narrative.session_log[-tf.session_window :])
     return " ".join(scan_parts)
 
 
@@ -94,31 +94,31 @@ def _score_npc(
     tfidf: float,
     game: GameState,
 ) -> float:
-    _scores = gm().activation_scores
-    _tf = gm().tf_idf
+    scores = gm().activation_scores
+    tf = gm().tf_idf
     score = 0.0
 
     if npc.id == target_id:
-        score += _scores.target
+        score += scores.target
 
     if _mentioned(npc.name, player_input, story_text):
-        score += _scores.name_match
+        score += scores.name_match
     elif any(_mentioned(word, player_input, story_text) for word in proper_name_words(npc)):
-        score += _scores.name_part
+        score += scores.name_part
 
     if any(_mentioned(alias, player_input, story_text) for alias in npc.aliases):
-        score += _scores.alias_match
+        score += scores.alias_match
 
-    if tfidf > _tf.score_floor:
-        score += min(_tf.memory_score_cap, tfidf * _tf.memory_score_multiplier)
+    if tfidf > tf.score_floor:
+        score += min(tf.memory_score_cap, tfidf * tf.memory_score_multiplier)
 
     npc_desc = (npc.description + " " + npc.agenda).lower()
     if game.world.current_location and game.world.current_location.lower() in npc_desc:
-        score += _scores.location_match
+        score += scores.location_match
 
-    recent_scenes = [m.scene for m in npc.memory[-_tf.recency_window :]]
-    if recent_scenes and max(recent_scenes) >= game.narrative.scene_count - _tf.recency_offset:
-        score += _scores.recent_interaction
+    recent_scenes = [m.scene for m in npc.memory[-tf.recency_window :]]
+    if recent_scenes and max(recent_scenes) >= game.narrative.scene_count - tf.recency_offset:
+        score += scores.recent_interaction
 
     return score
 
@@ -126,14 +126,14 @@ def _score_npc(
 def _cap_activated_overflow(
     activated: list[NpcData], mentioned: list[NpcData], target_id: str | None, game: GameState
 ) -> tuple[list[NpcData], list[NpcData]]:
-    _max_activated = gm().npc.max_activated
-    if len(activated) <= _max_activated:
+    max_activated = gm().npc.max_activated
+    if len(activated) <= max_activated:
         return activated, mentioned
 
     target_npc = find_npc(game, target_id) if target_id else None
     non_target = [n for n in activated if n is not target_npc]
     non_target.sort(key=lambda n: answers().closeness(game, n.id), reverse=True)
-    overflow = non_target[_max_activated - (1 if target_npc else 0) :]
+    overflow = non_target[max_activated - (1 if target_npc else 0) :]
     activated = [n for n in activated if n not in overflow]
     mentioned = [*mentioned, *overflow]
     return activated, mentioned

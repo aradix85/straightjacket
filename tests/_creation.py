@@ -157,7 +157,7 @@ class TurnProvider(ScriptedProvider):
 
 
 def fixed_roll(result: str) -> Callable[[str, int, str, int, int], RollResult]:
-    def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
+    def _roll(stat_name: str, stat_value: int, move: str, _momentum: int, _adds: int) -> RollResult:
         return RollResult(
             d1=1,
             c1=4,

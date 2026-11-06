@@ -99,7 +99,7 @@ def test_a_consequence_without_a_sentence_of_its_own_is_not_told_as_one(cons: Co
     assert resolve_consequence_sentence(cons, "Ash", "Kira", "") == ""
 
 
-def test_an_impact_is_labelled_and_told_by_its_rulesets_label(load_engine: None) -> None:
+def test_an_impact_is_labelled_and_told_by_its_rulesets_label() -> None:
     game = _game()
     game.resources.meters["health"] = 0
     game.impacts = ["wounded"]

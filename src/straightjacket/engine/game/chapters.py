@@ -60,13 +60,13 @@ def start_new_chapter(provider: AIProvider, game: GameState) -> str:
     _prepare_npcs_for_new_chapter(game)
 
     threads = chapter_summary.unresolved_threads
-    _chap = gm().chapter
-    _defaults = eng().ai_text.narrator_defaults
+    chap = gm().chapter
+    defaults = eng().ai_text.narrator_defaults
     if threads:
-        threads_text = "; ".join(threads[: _chap.scene_context_threads_max])
-        game.world.current_scene_context = _defaults["new_chapter_threads_template"].format(threads=threads_text)
+        threads_text = "; ".join(threads[: chap.scene_context_threads_max])
+        game.world.current_scene_context = defaults["new_chapter_threads_template"].format(threads=threads_text)
     else:
-        game.world.current_scene_context = _defaults["new_chapter_blank"]
+        game.world.current_scene_context = defaults["new_chapter_blank"]
 
     narration, setup_data = _generate_chapter_opening(provider, game)
 
@@ -168,11 +168,11 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
             npc.status = "background"
             log(f"[Campaign] Retired NPC to background at chapter boundary: {npc.name} (low-engagement filler)")
 
-    _chap_cfg = gm().chapter
+    chap_cfg = gm().chapter
     for npc in game.npcs:
-        if len(npc.memory) > _chap_cfg.npc_memories_kept:
+        if len(npc.memory) > chap_cfg.npc_memories_kept:
             scored = sorted(npc.memory, key=lambda m: (m.importance, m.scene), reverse=True)
-            npc.memory = sorted(scored[: _chap_cfg.npc_memories_kept], key=lambda m: m.scene)
+            npc.memory = sorted(scored[: chap_cfg.npc_memories_kept], key=lambda m: m.scene)
         consolidate_memory(npc)
 
 

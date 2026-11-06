@@ -27,18 +27,18 @@ from tests._helpers import known_asset, make_game_state
         ({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1, "luck": 0}, "must be edge"),
     ],
 )
-def test_validate_stats_rejects_invalid(load_engine: None, stats: dict[str, int], error_match: str) -> None:
+def test_validate_stats_rejects_invalid(stats: dict[str, int], error_match: str) -> None:
     with pytest.raises(ValueError, match=error_match):
         validate_stats(stats, "starforged")
 
 
 @pytest.mark.parametrize("setting_id", ["classic", "delve", "starforged", "sundered_isles"])
-def test_every_setting_takes_its_stats_from_its_datasworn_rules(load_engine: None, setting_id: str) -> None:
+def test_every_setting_takes_its_stats_from_its_datasworn_rules(setting_id: str) -> None:
     assert list(stat_descriptions(setting_id)) == ["edge", "heart", "iron", "shadow", "wits"]
     validate_stats({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1}, setting_id)
 
 
-def test_an_expansion_takes_the_stats_of_its_ruleset(load_engine: None) -> None:
+def test_an_expansion_takes_the_stats_of_its_ruleset() -> None:
     assert stat_descriptions("delve") == stat_descriptions("classic")
     assert stat_descriptions("sundered_isles") == stat_descriptions("starforged")
     assert stat_descriptions("classic")["edge"] != stat_descriptions("starforged")["edge"]
@@ -53,14 +53,14 @@ def test_an_expansion_takes_the_stats_of_its_ruleset(load_engine: None) -> None:
         ("I seek redemption", 5),
     ],
 )
-def test_a_new_game_starts_its_chaos_factor_from_the_vow(load_engine: None, vow: str, expected: int) -> None:
+def test_a_new_game_starts_its_chaos_factor_from_the_vow(vow: str, expected: int) -> None:
     game = create_game(
         "starforged", location="Drift Station", npcs=[], stats=(3, 2, 2, 1, 1), player_name="Kael", background_vow=vow
     )
     assert game.world.chaos_factor == expected
 
 
-def test_swear_background_vow(load_engine: None) -> None:
+def test_swear_background_vow() -> None:
     game = make_game_state(player_name="Test")
     swear_background_vow(game, "Find my sister", "extreme")
     assert len(game.progress_tracks) == 1
@@ -71,13 +71,13 @@ def test_swear_background_vow(load_engine: None) -> None:
     assert game.narrative.threads[0].weight == 2
 
 
-def test_swear_background_vow_custom_rank(load_engine: None) -> None:
+def test_swear_background_vow_custom_rank() -> None:
     game = make_game_state(player_name="Test")
     swear_background_vow(game, "Minor task", "troublesome")
     assert game.progress_tracks[0].rank == "troublesome"
 
 
-def test_a_background_vow_without_a_rank_takes_the_default_rank(load_engine: None) -> None:
+def test_a_background_vow_without_a_rank_takes_the_default_rank() -> None:
     game = make_game_state(player_name="Test")
     swear_background_vow(game, "Quest", "")
     assert game.progress_tracks[0].rank == rules().creation.background_vow_default_rank
@@ -101,13 +101,13 @@ def test_setting_creation_flow(setting: str, expected_flags: dict[str, bool]) ->
         assert getattr(flow, flag) is expected
 
 
-def test_build_creation_options_has_stat_constraints(load_engine: None) -> None:
+def test_build_creation_options_has_stat_constraints() -> None:
     opts = build_creation_options()
     assert opts["stat_constraints"] == {"target_sum": 9, "min": 1, "max": 3}
     assert all(s["stats"] == ["edge", "heart", "iron", "shadow", "wits"] for s in opts["settings"])
 
 
-def test_build_creation_options_has_creation_defaults(load_engine: None) -> None:
+def test_build_creation_options_has_creation_defaults() -> None:
     opts = build_creation_options()
     cd = opts["creation_defaults"]
     assert cd["pronoun_options"] == ["he/him", "she/her", "they/them"]
@@ -115,27 +115,27 @@ def test_build_creation_options_has_creation_defaults(load_engine: None) -> None
     assert "epic" in cd["vow_ranks"]
 
 
-def test_build_creation_options_settings_have_truths(load_engine: None) -> None:
+def test_build_creation_options_settings_have_truths() -> None:
     opts = build_creation_options()
     sf = next(s for s in opts["settings"] if s["id"] == "starforged")
     assert len(sf["truths"]) > 0
     assert "options" in sf["truths"][0]
 
 
-def test_build_creation_options_settings_have_backstory(load_engine: None) -> None:
+def test_build_creation_options_settings_have_backstory() -> None:
     opts = build_creation_options()
     sf = next(s for s in opts["settings"] if s["id"] == "starforged")
     assert len(sf["backstory_prompts"]) > 0
 
 
-def test_build_creation_options_settings_have_name_tables(load_engine: None) -> None:
+def test_build_creation_options_settings_have_name_tables() -> None:
     opts = build_creation_options()
     sf = next(s for s in opts["settings"] if s["id"] == "starforged")
     assert list(sf["name_tables"])[:2] == ["given_name", "family_name"]
     assert len(sf["name_tables"]["given_name"]) > 0
 
 
-def test_every_setting_offers_a_known_tone_as_its_default(load_engine: None) -> None:
+def test_every_setting_offers_a_known_tone_as_its_default() -> None:
     opts = build_creation_options()
     tones = [tone["id"] for tone in opts["tones"]]
     assert tones == gm().story.tones
@@ -147,14 +147,14 @@ def test_every_setting_offers_a_known_tone_as_its_default(load_engine: None) -> 
     }
 
 
-def test_build_creation_options_settings_have_starting_assets(load_engine: None) -> None:
+def test_build_creation_options_settings_have_starting_assets() -> None:
     opts = build_creation_options()
     cats = {s["id"]: {a["category"] for a in s["starting_assets"]} for s in opts["settings"]}
     assert cats["starforged"] == {"Companion Assets", "Module Assets", "Command Vehicle Assets"}
     assert cats["classic"] == {"Path Assets", "Companion Assets", "Combat Talent Assets", "Ritual Assets"}
 
 
-def test_classic_takes_three_assets_of_any_kind_and_starforged_two_paths_and_one_more(load_engine: None) -> None:
+def test_classic_takes_three_assets_of_any_kind_and_starforged_two_paths_and_one_more() -> None:
     opts = build_creation_options()
     assert {s["id"]: (s["max_paths"], s["max_starting_assets"]) for s in opts["settings"]} == {
         "classic": (0, 3),
@@ -163,13 +163,13 @@ def test_classic_takes_three_assets_of_any_kind_and_starforged_two_paths_and_one
     }
 
 
-def test_build_creation_options_classic_no_backstory(load_engine: None) -> None:
+def test_build_creation_options_classic_no_backstory() -> None:
     opts = build_creation_options()
     cl = next(s for s in opts["settings"] if s["id"] == "classic")
     assert len(cl["backstory_prompts"]) == 0
 
 
-def test_build_creation_options_sends_what_the_creation_form_reads(load_engine: None) -> None:
+def test_build_creation_options_sends_what_the_creation_form_reads() -> None:
     opts = build_creation_options()
     sf = next(s for s in opts["settings"] if s["id"] == "starforged")
     assert set(sf) == {
@@ -213,15 +213,13 @@ _VALID_PAYLOAD = {"player_name": "Kael", "truths": {}, "tone": "pulp"}
         ("starforged", {"player_name": ""}, "player_name'\\] is empty"),
     ],
 )
-def test_validate_creation_rejects_invalid(
-    load_engine: None, setting: str, payload: dict[str, object], error_match: str
-) -> None:
+def test_validate_creation_rejects_invalid(setting: str, payload: dict[str, object], error_match: str) -> None:
     pkg = load_package(setting)
     with pytest.raises(ValueError, match=error_match):
         validate_creation({**_VALID_PAYLOAD, **payload}, pkg)
 
 
-def test_validate_creation_valid_passes(load_engine: None) -> None:
+def test_validate_creation_valid_passes() -> None:
     validate_creation({**_VALID_PAYLOAD, "truths": {"x": "y"}, "tone": "cozy"}, load_package("starforged"))
 
 
@@ -251,14 +249,12 @@ _CHARACTER = {
         ("starforged", {"stats": {"edge": 3}}, "Stats must be"),
     ],
 )
-def test_make_character_rejects_invalid(
-    load_engine: None, setting: str, payload: dict[str, object], error_match: str
-) -> None:
+def test_make_character_rejects_invalid(setting: str, payload: dict[str, object], error_match: str) -> None:
     with pytest.raises(ValueError, match=error_match):
         make_character({**_CHARACTER, **payload}, load_package(setting))
 
 
-def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None:
+def test_a_character_takes_its_concept_from_its_paths() -> None:
     pkg = load_package("starforged")
     character = make_character({**_CHARACTER, "paths": ["ace", "explorer"], "background_vow_rank": "epic"}, pkg)
     own = load_ruleset("starforged").setting_file
@@ -267,7 +263,7 @@ def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None
     assert character.background_vow_rank == "epic"
 
 
-def test_a_classic_character_takes_the_paths_among_its_three_assets(load_engine: None) -> None:
+def test_a_classic_character_takes_the_paths_among_its_three_assets() -> None:
     character = make_character({**_CHARACTER, "assets": ["hawk", "alchemist", "archer"]}, load_package("classic"))
     assert (character.paths, character.assets, character.concept) == (["alchemist"], ["hawk", "archer"], "Alchemist")
 
@@ -289,7 +285,7 @@ def _take_up(vow_subject: str) -> Any:
     return game
 
 
-def test_a_new_game_and_a_successor_take_up_a_character_alike(load_engine: None) -> None:
+def test_a_new_game_and_a_successor_take_up_a_character_alike() -> None:
     game = _take_up("my sister")
     assert (game.player_name, game.setting_id, game.paths) == ("Kael", "starforged", ["ace"])
     assert game.stats == _CHARACTER["stats"]
@@ -299,7 +295,7 @@ def test_a_new_game_and_a_successor_take_up_a_character_alike(load_engine: None)
     ]
 
 
-def test_a_character_without_a_vow_subject_puts_no_one_on_the_characters_list(load_engine: None) -> None:
+def test_a_character_without_a_vow_subject_puts_no_one_on_the_characters_list() -> None:
     assert _take_up("").narrative.characters_list == []
 
 
@@ -312,11 +308,9 @@ def test_a_character_without_a_vow_subject_puts_no_one_on_the_characters_list(lo
         ("unknown_move", "failure", "neutral", "frustrated_setback"),
     ],
 )
-def test_derive_memory_emotion(
-    load_engine: None, move: str, outcome: str, disposition: str, expected_fragment: str
-) -> None:
+def test_derive_memory_emotion(move: str, outcome: str, disposition: str, expected_fragment: str) -> None:
     assert expected_fragment in derive_memory_emotion(move, outcome, disposition)
 
 
-def test_derive_memory_emotion_recovery_strong(load_engine: None) -> None:
+def test_derive_memory_emotion_recovery_strong() -> None:
     assert "devoted" in derive_memory_emotion("suffer/endure_harm", "success", "loyal")

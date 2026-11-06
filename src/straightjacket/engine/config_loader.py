@@ -202,8 +202,8 @@ def narration_language() -> str:
 
 
 def _cluster_for_role(role: str) -> ClusterConfig:
-    _c = cfg()
-    return _c.ai.clusters[_c.ai.role_cluster[role]]
+    c = cfg()
+    return c.ai.clusters[c.ai.role_cluster[role]]
 
 
 def provider_for_role(role: str) -> str:

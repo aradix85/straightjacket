@@ -55,7 +55,7 @@ def _game() -> Any:
 
 
 def test_the_judge_sees_the_move_text_the_previous_narration_and_what_is_established(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     judge, seen = _judge_with_capture(monkeypatch)
     verdict = judge.judge_turn(
@@ -82,7 +82,7 @@ def test_the_judge_sees_the_move_text_the_previous_narration_and_what_is_establi
     assert "A trader behind a shut door." not in user
 
 
-def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_judge_marks_a_dialog_turn_as_having_no_move(monkeypatch: pytest.MonkeyPatch) -> None:
     judge, seen = _judge_with_capture(monkeypatch)
     judge.judge_turn(
         {"max_tokens": 200, "extra_body": {}},
@@ -102,7 +102,7 @@ def test_the_judge_marks_a_dialog_turn_as_having_no_move(load_engine: None, monk
     assert _p("judge_result_dialog") in user
 
 
-def test_the_judge_names_a_move_without_a_roll(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_judge_names_a_move_without_a_roll(monkeypatch: pytest.MonkeyPatch) -> None:
     judge, seen = _judge_with_capture(monkeypatch)
     judge.judge_turn(
         {"max_tokens": 200, "extra_body": {}},
@@ -123,7 +123,7 @@ def test_the_judge_names_a_move_without_a_roll(load_engine: None, monkeypatch: p
 
 
 def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_it_came_across(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     judge, seen = _judge_with_capture(monkeypatch)
     prompt = '<scene>\n<revelation weight="high">The harbourmaster sold the maps.</revelation>\n</scene>'
@@ -147,9 +147,7 @@ def test_the_judge_sees_the_revelation_the_narrator_was_given_and_says_whether_i
     assert "The harbourmaster sold the maps." in seen[0].messages[0]["content"]
 
 
-def test_the_judge_sees_the_consequences_the_narrator_was_told_to_show(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_the_judge_sees_the_consequences_the_narrator_was_told_to_show(monkeypatch: pytest.MonkeyPatch) -> None:
     judge, seen = _judge_with_capture(monkeypatch)
     prompt = (
         "<scene>\n<consequence>They agree, but on a condition Talan &amp; kin will have to meet.</consequence>"

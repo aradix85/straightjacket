@@ -26,7 +26,8 @@ class RecordingWebSocket(WebSocket):
         self.client_state = WebSocketState.CONNECTED
         self.application_state = WebSocketState.CONNECTED
 
-    async def _client_leaves(self) -> Message:
+    @staticmethod
+    async def _client_leaves() -> Message:
         return {"type": "websocket.disconnect", "code": 1000}
 
     async def _record(self, message: Message) -> None:

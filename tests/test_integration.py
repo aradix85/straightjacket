@@ -47,7 +47,7 @@ _TALK = brain_answer(
 )
 
 
-def test_turn_action_produces_narration(load_engine: None) -> None:
+def test_turn_action_produces_narration() -> None:
     provider = TurnProvider(_SEARCH)
     game = library_game()
     initial_scene = game.narrative.scene_count
@@ -77,7 +77,7 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
     assert {"brain", "narrator", "narrator_metadata"} <= {call.log_role for call in provider.calls}
 
 
-def test_an_npc_the_narration_leaves_out_was_not_in_the_scene(load_engine: None) -> None:
+def test_an_npc_the_narration_leaves_out_was_not_in_the_scene() -> None:
     game = library_game()
     mira = game.npcs[0]
     game.world.current_scene_context = "conversation at Abandoned Library with Mira"
@@ -88,7 +88,7 @@ def test_an_npc_the_narration_leaves_out_was_not_in_the_scene(load_engine: None)
     assert "Mira" not in game.world.current_scene_context
 
 
-def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine: None) -> None:
+def test_a_turn_ends_the_act_at_its_last_scene_without_the_director() -> None:
     game = library_game()
     game.narrative.story_blueprint = make_blueprint(
         central_conflict="x",
@@ -116,7 +116,7 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
     assert get_current_act(game).act_number == 2
 
 
-def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: None) -> None:
+def test_a_journey_is_started_once_and_then_continued_by_its_id() -> None:
     journey = brain_answer(move="adventure/undertake_a_journey", location_change=None)
     provider = TurnProvider(
         {**journey, "track_name": "To the ridge"},
@@ -135,7 +135,7 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: Non
 
 @pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
 def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_develops_by_rank(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
+    monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
     game = create_game(
         "starforged",
@@ -170,7 +170,7 @@ def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_devel
     assert (roll.move, roll.stat_name) == ("connection/develop_your_relationship", "dangerous")
 
 
-def test_turn_dialog_skips_roll(load_engine: None) -> None:
+def test_turn_dialog_skips_roll() -> None:
     provider = TurnProvider(_TALK)
     game = library_game()
     narration, roll, _burn_info, _director_ctx = process_turn(provider, game, "I talk to Mira", stream=None)
@@ -182,7 +182,7 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
 
 
 def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_is_told(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
 
@@ -202,9 +202,7 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
     assert (threat.status, vow.status) == ("resolved", "failed")
 
 
-def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(monkeypatch: pytest.MonkeyPatch) -> None:
     force_result(monkeypatch, "WEAK_HIT")
     monkeypatch.setattr(move_outcome, "roll_action", fixed_roll("MISS"))
     game = library_game()
@@ -218,9 +216,7 @@ def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
     assert "follow-up move Endure Harm: MISS" in labels_of(game.narrative.session_log[-1].consequences)
 
 
-def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
     monkeypatch.setattr(move_outcome, "roll_action", fixed_roll("MISS"))
     game = library_game()
@@ -238,7 +234,7 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
     assert "FINAL_SCENE" in prompt
 
 
-def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_turn_consequences_applied_on_miss(monkeypatch: pytest.MonkeyPatch) -> None:
     rolled = record_price_tables(monkeypatch)
     game = library_game()
 
@@ -248,7 +244,7 @@ def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytes
     assert labels_of(result.consequences)
 
 
-def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_scene_test_produces_three_types(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     game.world.chaos_factor = 9
 
@@ -260,7 +256,7 @@ def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.
     assert [scene_type(roll) for roll in (10, 9, 8)] == ["expected", "altered", "interrupt"]
 
 
-def test_dialog_prompt_contains_world_and_character(load_engine: None) -> None:
+def test_dialog_prompt_contains_world_and_character() -> None:
     game = library_game()
     brain = make_brain_result(
         move="dialog",
@@ -275,7 +271,7 @@ def test_dialog_prompt_contains_world_and_character(load_engine: None) -> None:
     assert "dialog" in prompt
 
 
-def test_action_prompt_contains_result_and_position(load_engine: None) -> None:
+def test_action_prompt_contains_result_and_position() -> None:
     game = library_game()
     brain = make_brain_result(
         move="adventure/face_danger",
@@ -312,7 +308,7 @@ def test_action_prompt_contains_result_and_position(load_engine: None) -> None:
     assert "Search" in prompt or "search" in prompt
 
 
-def test_narrator_system_prompt_includes_constraints(load_engine: None) -> None:
+def test_narrator_system_prompt_includes_constraints() -> None:
     game = library_game()
     game.preferences.content_lines = "no spiders"
 
@@ -326,7 +322,7 @@ def test_narrator_system_prompt_includes_constraints(load_engine: None) -> None:
     assert "<character_state" not in cached_prefix
 
 
-def test_correction_brain_parses_response(load_engine: None) -> None:
+def test_correction_brain_parses_response() -> None:
     provider = TurnProvider()
     game = library_game()
 
@@ -425,7 +421,7 @@ def test_story_completion_triggers() -> None:
     assert act.act_number == 2
 
 
-def test_correction_state_ops_npc_edit(load_engine: None) -> None:
+def test_correction_state_ops_npc_edit() -> None:
     game = library_game()
     original_name = game.npcs[0].name
 
@@ -448,7 +444,7 @@ def test_correction_state_ops_npc_edit(load_engine: None) -> None:
     assert game.npcs[0].name == original_name
 
 
-def test_correction_state_ops_npc_rename(load_engine: None) -> None:
+def test_correction_state_ops_npc_rename() -> None:
     game = library_game()
 
     apply_correction_ops(
@@ -469,7 +465,7 @@ def test_correction_state_ops_npc_rename(load_engine: None) -> None:
     assert "Mira" in game.npcs[0].aliases
 
 
-def test_correction_state_ops_location_edit(load_engine: None) -> None:
+def test_correction_state_ops_location_edit() -> None:
     game = library_game()
 
     apply_correction_ops(
@@ -489,7 +485,7 @@ def test_correction_state_ops_location_edit(load_engine: None) -> None:
     assert game.world.current_location == "The Dark Tower"
 
 
-def test_correction_state_ops_npc_split(load_engine: None) -> None:
+def test_correction_state_ops_npc_split() -> None:
     game = library_game()
     count_before = len(game.npcs)
 
@@ -525,9 +521,7 @@ def _op(op: str, **fields: object) -> dict[str, object]:
     return {**base, **fields}
 
 
-def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(monkeypatch: pytest.MonkeyPatch) -> None:
     warnings: list[str] = []
     monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     game = library_game()
@@ -536,7 +530,7 @@ def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
     assert warnings == ["[Correction] npc_edit: Mira keeps its name, the analysis gave an empty one"]
 
 
-def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole(load_engine: None) -> None:
+def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole() -> None:
     game = library_game()
     game.npcs[0].description = "A tall woman who guards the totem of the dead king"
     apply_correction_ops(game, [_op("npc_edit", npc_id="npc_1", fields={"status": "deceased"})])
@@ -544,10 +538,8 @@ def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole(load_e
     assert game.npcs[0].description == "A tall woman who guards the totem of the dead king"
 
 
-def test_a_split_without_a_name_rolls_one_and_numbers_the_npc(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(ops, "roll_oracle_name", lambda game: "Bren Hollow")
+def test_a_split_without_a_name_rolls_one_and_numbers_the_npc(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ops, "roll_oracle_name", lambda _game: "Bren Hollow")
     game = library_game()
     game.npcs[0].last_location = "Abandoned Library"
     ops.apply_correction_ops(game, [_op("npc_split", npc_id="npc_1")])
@@ -569,7 +561,7 @@ _UNAPPLICABLE_OPS = [
 
 @pytest.mark.parametrize("op", _UNAPPLICABLE_OPS)
 def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, op: dict[str, object]
+    monkeypatch: pytest.MonkeyPatch, op: dict[str, object]
 ) -> None:
     warnings: list[str] = []
     monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
@@ -581,11 +573,11 @@ def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
     assert warning.startswith(f"[Correction] {op['op']} skipped: ")
 
 
-def test_every_correction_op_the_analysis_is_offered_is_applied_above(load_engine: None) -> None:
+def test_every_correction_op_the_analysis_is_offered_is_applied_above() -> None:
     assert sorted(str(op["op"]) for op in _UNAPPLICABLE_OPS) == sorted(eng().correction.ops)
 
 
-def test_description_match_catches_identity_reveal(load_engine: None) -> None:
+def test_description_match_catches_identity_reveal() -> None:
     game = library_game()
 
     match = description_match_existing_npc(
@@ -597,13 +589,13 @@ def test_description_match_catches_identity_reveal(load_engine: None) -> None:
     assert match.name == "Mira"
 
 
-def test_description_match_rejects_short_descriptions(load_engine: None) -> None:
+def test_description_match_rejects_short_descriptions() -> None:
     game = library_game()
     match = description_match_existing_npc(game, "Short", "stranger")
     assert match is None
 
 
-def test_merge_npc_identity_updates_clock_owner(load_engine: None) -> None:
+def test_merge_npc_identity_updates_clock_owner() -> None:
     game = library_game()
     game.world.clocks = [
         make_clock(name="Mira's scheme", clock_type="scheme", owner_kind="npc", owner_id="Mira"),
@@ -613,7 +605,7 @@ def test_merge_npc_identity_updates_clock_owner(load_engine: None) -> None:
     assert game.world.clocks[0].owner_id == "Captain Voss"
 
 
-def test_correction_state_ops_npc_merge(load_engine: None) -> None:
+def test_correction_state_ops_npc_merge() -> None:
     game = library_game()
     source = make_npc(
         id="npc_3",
@@ -630,7 +622,7 @@ def test_correction_state_ops_npc_merge(load_engine: None) -> None:
     assert "Stranger" in target.aliases, "source name should become alias"
 
 
-def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> None:
+def test_dialog_turn_runs_npc_agency_on_interval_scene() -> None:
     provider = TurnProvider(_TALK)
     game = library_game()
     for npc in game.npcs:

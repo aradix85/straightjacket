@@ -35,7 +35,7 @@ def _next_chapter(game: GameState, provider: OpeningProvider | None = None) -> s
     return start_new_chapter(provider or OpeningProvider([], "Ring Dock"), game)
 
 
-def test_a_new_chapter_keeps_the_character_and_the_clocks(load_engine: None) -> None:
+def test_a_new_chapter_keeps_the_character_and_the_clocks() -> None:
     game = _game()
     meters = {"health": 2, "spirit": 3, "supply": 1, "momentum": 7}
     game.resources.meters.update(meters)
@@ -46,7 +46,7 @@ def test_a_new_chapter_keeps_the_character_and_the_clocks(load_engine: None) -> 
     assert [c.to_dict() for c in game.world.clocks][: len(clocks)] == clocks
 
 
-def test_a_new_chapter_keeps_what_carries_over(load_engine: None) -> None:
+def test_a_new_chapter_keeps_what_carries_over() -> None:
     game = _game()
     game.threats = [make_threat(id="t1", name="Old threat")]
     game.impacts = ["wounded"]
@@ -62,7 +62,7 @@ def test_a_new_chapter_keeps_what_carries_over(load_engine: None) -> None:
     assert game.impacts == ["wounded"]
 
 
-def test_a_new_chapter_restarts_what_belongs_to_one_chapter(load_engine: None) -> None:
+def test_a_new_chapter_restarts_what_belongs_to_one_chapter() -> None:
     game = _game()
     game.world.chaos_factor = 7
     game.world.time_of_day = "evening"
@@ -89,7 +89,7 @@ def test_a_new_chapter_restarts_what_belongs_to_one_chapter(load_engine: None) -
     assert snapshot_after is None
 
 
-def test_a_new_chapter_drops_only_the_old_adventures_keyed_scenes(load_engine: None) -> None:
+def test_a_new_chapter_drops_only_the_old_adventures_keyed_scenes() -> None:
     game = _game()
     game.narrative.keyed_scenes = []
     for source in ("ac:Old Plot Point", "clock:The flood rises:2", "random_event:pc_negative:npc_1"):
@@ -104,7 +104,7 @@ def test_a_new_chapter_drops_only_the_old_adventures_keyed_scenes(load_engine: N
     assert {"clock:The flood rises:2", "random_event:pc_negative:npc_1"} <= sources
 
 
-def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none(load_engine: None) -> None:
+def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none() -> None:
     class _NoVoicing(OpeningProvider):
         @override
         def create_message(self, spec: AICallSpec) -> AIResponse:
@@ -118,7 +118,7 @@ def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none(load_engine: None) 
     assert game.narrative.story_blueprint is None
 
 
-def test_at_a_chapter_boundary_an_npc_without_a_part_in_the_story_steps_back(load_engine: None) -> None:
+def test_at_a_chapter_boundary_an_npc_without_a_part_in_the_story_steps_back() -> None:
     game = _game()
     cap = gm().chapter.npc_memories_kept
     major = make_npc(id="npc_7", name="Major", status="active", agenda="serious goal")
@@ -134,7 +134,7 @@ def test_at_a_chapter_boundary_an_npc_without_a_part_in_the_story_steps_back(loa
     assert len(next(n for n in game.npcs if n.name == "Major").memory) <= cap
 
 
-def test_a_created_game_moves_into_its_next_chapter(load_engine: None) -> None:
+def test_a_created_game_moves_into_its_next_chapter() -> None:
     game = _game()
     game.npcs[0].agenda = "keep her ship"
     mark_legacy(game, "quests", "epic")
@@ -160,7 +160,7 @@ def test_a_created_game_moves_into_its_next_chapter(load_engine: None) -> None:
     assert assert_game_state(game, turn=1) == []
 
 
-def test_a_chapter_opening_registers_its_people_and_place_beside_a_lore_figure(load_engine: None) -> None:
+def test_a_chapter_opening_registers_its_people_and_place_beside_a_lore_figure() -> None:
     game = _game()
     game.npcs.append(make_npc(id="npc_2", name="The Founder", status="lore"))
     _next_chapter(game, OpeningProvider([("Dace Orrin", "A dockhand.", "neutral")], "Ring Dock"))
@@ -168,7 +168,7 @@ def test_a_chapter_opening_registers_its_people_and_place_beside_a_lore_figure(l
     assert sorted(n.name for n in game.npcs) == ["Dace Orrin", "Kira Vance", "The Founder"]
 
 
-def test_a_game_that_is_over_cannot_start_a_chapter(load_engine: None) -> None:
+def test_a_game_that_is_over_cannot_start_a_chapter() -> None:
     game = _game()
     game.end_reason = "death"
     with pytest.raises(RuntimeError, match="succession"):
@@ -181,7 +181,7 @@ def _ending_game() -> GameState:
     return g
 
 
-def test_generate_epilogue_returns_narration(load_engine: None) -> None:
+def test_generate_epilogue_returns_narration() -> None:
     provider = MockProvider("The journey ended quietly.")
     g = _ending_game()
     g.world.current_location = "Tavern"
@@ -189,21 +189,21 @@ def test_generate_epilogue_returns_narration(load_engine: None) -> None:
     assert "ended quietly" in narration
 
 
-def test_generate_epilogue_strips_epilogue_header(load_engine: None) -> None:
+def test_generate_epilogue_strips_epilogue_header() -> None:
     provider = MockProvider("# Epilogue\n\nThe story ends here.")
     g = _ending_game()
     narration = generate_epilogue(provider, g)
     assert "Epilogue" not in narration.split("\n")[0]
 
 
-def test_generate_epilogue_raises_on_empty_narration(load_engine: None) -> None:
+def test_generate_epilogue_raises_on_empty_narration() -> None:
     provider = MockProvider("")
     g = _ending_game()
     with pytest.raises(AIUnavailableError, match="empty narration"):
         generate_epilogue(provider, g)
 
 
-def test_generate_epilogue_raises_when_cleanup_leaves_nothing(load_engine: None) -> None:
+def test_generate_epilogue_raises_when_cleanup_leaves_nothing() -> None:
     provider = MockProvider("```json\n{}\n```")
     g = _ending_game()
     with pytest.raises(AIUnavailableError, match="empty narration after cleanup"):

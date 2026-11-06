@@ -128,18 +128,18 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
         try:
             response = provider.create_message(spec)
         except Exception as e:
-            _retry_cfg = eng().retry
+            retry_cfg = eng().retry
             status_code = getattr(e, "status_code", None)
             is_connection_error = any("Connection" in cls.__name__ for cls in type(e).__mro__)
-            is_retryable_status = status_code in _retry_cfg.retryable_http_codes
+            is_retryable_status = status_code in retry_cfg.retryable_http_codes
             if attempt >= spec.max_retries or not (is_retryable_status or is_connection_error):
                 msg = f"{spec.log_role}: {type(e).__name__}: {e}"
                 raise AIUnavailableError(msg) from e
             retry_after = _retry_after_seconds(e)
             wait = (
-                min(retry_after, _retry_cfg.max_retry_after_seconds)
+                min(retry_after, retry_cfg.max_retry_after_seconds)
                 if retry_after is not None
-                else _retry_cfg.backoff_base**attempt
+                else retry_cfg.backoff_base**attempt
             )
             error_desc = f"HTTP {status_code}" if status_code else str(e)[: eng().truncations.log_medium]
             log(f"[AI] {error_desc}, retry {attempt + 1}/{spec.max_retries} in {wait}s", level="warning")

@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.06.3"
+version = "2026.11.06.4"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -31,7 +31,6 @@ ignore = [
     "if-else-block-instead-of-dict-get",          # wants dict.get with a fallback; domain config raises on a miss
     "suspicious-non-cryptographic-random-usage",  # the dice use random, and the tests patch random
     # taken up in later releases, one group at a time:
-    "ARG",
     "FBT",
     "any-type",
     "compare-to-empty-string",
@@ -39,7 +38,6 @@ ignore = [
     "global-statement",
     "literal-membership",
     "magic-value-comparison",
-    "no-self-use",
     "print",
     "private-member-access",
     "too-many-arguments",
@@ -50,7 +48,6 @@ ignore = [
     "too-many-public-methods",
     "too-many-return-statements",
     "too-many-statements",
-    "used-dummy-variable",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -113,7 +110,7 @@ enable_error_code = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-usefixtures = ["_ruleset_answers", "_no_backoff_wait", "_reset_random"]
+usefixtures = ["_ruleset_answers", "_no_backoff_wait", "_reset_random", "load_engine"]
 asyncio_mode = "strict"
 
 [tool.coverage.run]

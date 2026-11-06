@@ -77,7 +77,7 @@ def _fate(answer: str) -> FateResult:
 def counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     calls: list[str] = []
 
-    def _resolve(game: Any, odds: str) -> FateResult:
+    def _resolve(_game: Any, odds: str) -> FateResult:
         calls.append(odds)
         return _fate("yes")
 
@@ -85,7 +85,7 @@ def counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return calls
 
 
-def test_odds_follow_base_score_and_npc_disposition(load_engine: None) -> None:
+def test_odds_follow_base_score_and_npc_disposition() -> None:
     game = _game()
     assert fact_odds(game, FactRequest(fact_type="locked", about="here")) == "fifty_fifty"
     assert fact_odds(game, FactRequest(fact_type="occupied", about="here")) == "unlikely"
@@ -93,12 +93,12 @@ def test_odds_follow_base_score_and_npc_disposition(load_engine: None) -> None:
     assert fact_odds(game, FactRequest(fact_type="alert", about="npc_1")) == "unlikely"
 
 
-def test_an_unknown_fact_type_raises(load_engine: None) -> None:
+def test_an_unknown_fact_type_raises() -> None:
     with pytest.raises(KeyError):
         fact_odds(_game(), FactRequest(fact_type="haunted", about="here"))
 
 
-def test_a_resolved_fact_is_stored_and_reused(load_engine: None, counted_fate: list[str]) -> None:
+def test_a_resolved_fact_is_stored_and_reused(counted_fate: list[str]) -> None:
     game = _game()
     first = resolve_fact(game, FactRequest(fact_type="alert", about="npc_2"))
     second = resolve_fact(game, FactRequest(fact_type="alert", about="npc_2"))
@@ -110,7 +110,7 @@ def test_a_resolved_fact_is_stored_and_reused(load_engine: None, counted_fate: l
     assert first.location == "Abandoned Library"
 
 
-def test_a_fixed_seed_gives_the_same_answer(load_engine: None) -> None:
+def test_a_fixed_seed_gives_the_same_answer() -> None:
     answers = []
     for _ in range(2):
         game = _game()
@@ -119,7 +119,7 @@ def test_a_fixed_seed_gives_the_same_answer(load_engine: None) -> None:
     assert answers[0] == answers[1]
 
 
-def test_moving_clears_the_facts_and_staying_keeps_them(load_engine: None) -> None:
+def test_moving_clears_the_facts_and_staying_keeps_them() -> None:
     game = _game()
     game.world.facts = [_fact("locked")]
     update_location(game, "the abandoned library")
@@ -128,14 +128,14 @@ def test_moving_clears_the_facts_and_staying_keeps_them(load_engine: None) -> No
     assert game.world.facts == []
 
 
-def test_a_chapter_start_clears_the_facts(load_engine: None) -> None:
+def test_a_chapter_start_clears_the_facts() -> None:
     game = _game()
     game.world.facts = [_fact("locked")]
     start_new_chapter(OpeningProvider([], "Ring Dock"), game)
     assert game.world.facts == []
 
 
-def test_a_succession_clears_the_facts(load_engine: None) -> None:
+def test_a_succession_clears_the_facts() -> None:
     game = _game()
     game.world.facts = [_fact("locked")]
     game.end_reason = "death"
@@ -145,7 +145,7 @@ def test_a_succession_clears_the_facts(load_engine: None) -> None:
     assert game.world.facts == []
 
 
-def test_a_location_correction_clears_the_facts(load_engine: None) -> None:
+def test_a_location_correction_clears_the_facts() -> None:
     game = _game()
     game.world.facts = [_fact("locked")]
     apply_correction_ops(game, [{"op": "location_edit", "value": "Abandoned Library"}])
@@ -154,7 +154,7 @@ def test_a_location_correction_clears_the_facts(load_engine: None) -> None:
     assert game.world.facts == []
 
 
-def test_a_hit_clears_only_the_types_that_say_so(load_engine: None) -> None:
+def test_a_hit_clears_only_the_types_that_say_so() -> None:
     game = _game()
     locked, alert = _fact("locked"), _fact("alert", about="npc_2")
     game.world.facts = [locked, alert]
@@ -165,7 +165,7 @@ def test_a_hit_clears_only_the_types_that_say_so(load_engine: None) -> None:
     assert game.world.facts == [alert]
 
 
-def test_a_hit_does_not_settle_a_no(load_engine: None) -> None:
+def test_a_hit_does_not_settle_a_no() -> None:
     game = _game()
     nothing_useful = _fact("useful", answer="no")
     game.world.facts = [nothing_useful]
@@ -174,7 +174,7 @@ def test_a_hit_does_not_settle_a_no(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize("answer", ["no", "exceptional_no"])
-def test_a_hit_overrules_what_a_search_miss_would_settle(load_engine: None, answer: str) -> None:
+def test_a_hit_overrules_what_a_search_miss_would_settle(answer: str) -> None:
     game = _game()
     nothing_useful, open_door = _fact("useful", answer=answer), _fact("locked", answer="no")
     game.world.facts = [nothing_useful, open_door]
@@ -183,7 +183,7 @@ def test_a_hit_overrules_what_a_search_miss_would_settle(load_engine: None, answ
 
 
 @pytest.mark.parametrize(("answer", "outcome"), [("no", "failure"), ("yes", "success")])
-def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, outcome: str) -> None:
+def test_a_miss_or_a_yes_is_not_overruled(answer: str, outcome: str) -> None:
     game = _game()
     useful = _fact("useful", answer=answer)
     game.world.facts = [useful]
@@ -191,14 +191,14 @@ def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, outcom
     assert game.world.facts == [useful]
 
 
-def test_remembered_facts_come_back_only_at_their_own_place(load_engine: None) -> None:
+def test_remembered_facts_come_back_only_at_their_own_place() -> None:
     game = _game()
     here, elsewhere = _fact("locked"), _fact("useful", location="Harbor Market")
     remember_facts(game, [here, elsewhere])
     assert game.world.facts == [here]
 
 
-def test_the_odds_of_every_fact_type_are_read_for_its_subject(load_engine: None) -> None:
+def test_the_odds_of_every_fact_type_are_read_for_its_subject() -> None:
     game = _game()
     cfg = gm().fact_resolution
     scale = [entry["odds"] for entry in gm().fate.likelihood_rules.score_to_odds]
@@ -207,7 +207,7 @@ def test_the_odds_of_every_fact_type_are_read_for_its_subject(load_engine: None)
         assert fact_odds(game, FactRequest(fact_type=name, about=about)) in scale, name
 
 
-def test_a_doublet_queues_a_random_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_doublet_queues_a_random_event(monkeypatch: pytest.MonkeyPatch) -> None:
     _chart_rolls(monkeypatch, 55)
     drain_pending_events()
     resolve_fact(_game(), FactRequest(fact_type="locked", about="here"))
@@ -215,7 +215,7 @@ def test_a_doublet_queues_a_random_event(load_engine: None, monkeypatch: pytest.
     assert [e.source for e in events] == ["fate_doublet"]
 
 
-def test_the_brain_schema_offers_only_known_types_and_subjects(load_engine: None) -> None:
+def test_the_brain_schema_offers_only_known_types_and_subjects() -> None:
     facts = get_brain_output_schema(["adventure/face_danger"], [], [], ["npc_1"], [], [], [])["properties"][
         "undetermined_facts"
     ]
@@ -242,13 +242,13 @@ def _brain(**overrides: Any) -> dict[str, Any]:
     return brain_answer(**{**forcing, **overrides})
 
 
-def test_the_brain_rejects_a_fact_about_an_unknown_npc(load_engine: None) -> None:
+def test_the_brain_rejects_a_fact_about_an_unknown_npc() -> None:
     content = json.dumps(_brain(undetermined_facts=[{"fact_type": "alert", "about": "npc_9"}]))
     with pytest.raises(AIUnavailableError, match="cannot be about"):
         call_brain(MockProvider(response_content=content), _game(), "I slip past the guard")
 
 
-def test_the_brain_rejects_a_progress_roll_on_a_track_of_another_kind(load_engine: None) -> None:
+def test_the_brain_rejects_a_progress_roll_on_a_track_of_another_kind() -> None:
     game = _game()
     game.progress_tracks.append(
         new_track(track_id="expedition_ridge", name="Cross the ridge", track_type="expedition", rank="dangerous")
@@ -258,7 +258,7 @@ def test_the_brain_rejects_a_progress_roll_on_a_track_of_another_kind(load_engin
         call_brain(MockProvider(response_content=content), game, "I fulfill my vow")
 
 
-def test_the_brain_prompt_lists_the_fact_types(load_engine: None) -> None:
+def test_the_brain_prompt_lists_the_fact_types() -> None:
     provider = MockProvider(response_content=json.dumps(_brain()))
     call_brain(provider, _game(), "I force the vault door")
     system = provider.calls[0]["system"]
@@ -276,9 +276,8 @@ def _force(monkeypatch: pytest.MonkeyPatch, result: str, scene_roll: int = 10) -
     monkeypatch.setattr(turn, "check_scene", _scene_with_fixed_roll)
 
 
-def test_the_turn_resolves_facts_at_the_place_it_moves_to(
-    load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
-) -> None:
+@pytest.mark.usefixtures("counted_fate")
+def test_the_turn_resolves_facts_at_the_place_it_moves_to(monkeypatch: pytest.MonkeyPatch) -> None:
     _force(monkeypatch, "MISS")
     provider = TurnProvider(_brain(location_change={"name": "Archive Vault", "kind": "location"}))
     game = _game()
@@ -290,9 +289,8 @@ def test_the_turn_resolves_facts_at_the_place_it_moves_to(
     assert '<fact about="Archive Vault" answer="yes">' in provider.prompts[-1]
 
 
-def test_a_hit_clears_the_fact_but_the_narrator_still_gets_it(
-    load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
-) -> None:
+@pytest.mark.usefixtures("counted_fate")
+def test_a_hit_clears_the_fact_but_the_narrator_still_gets_it(monkeypatch: pytest.MonkeyPatch) -> None:
     _force(monkeypatch, "STRONG_HIT")
     provider = TurnProvider(_brain())
     game = _game()
@@ -302,7 +300,7 @@ def test_a_hit_clears_the_fact_but_the_narrator_still_gets_it(
     assert "<facts>" in provider.prompts[-1]
 
 
-def test_a_doublet_event_reaches_the_same_turn(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_doublet_event_reaches_the_same_turn(monkeypatch: pytest.MonkeyPatch) -> None:
     _force(monkeypatch, "MISS")
     _chart_rolls(monkeypatch, 55)
     provider = TurnProvider(_brain())
@@ -311,9 +309,8 @@ def test_a_doublet_event_reaches_the_same_turn(load_engine: None, monkeypatch: p
     assert "<random_event" in provider.prompts[-1]
 
 
-def test_an_interrupt_event_is_shown_once(
-    load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
-) -> None:
+@pytest.mark.usefixtures("counted_fate")
+def test_an_interrupt_event_is_shown_once(monkeypatch: pytest.MonkeyPatch) -> None:
     _force(monkeypatch, "MISS", scene_roll=2)
     provider = TurnProvider(_brain(undetermined_facts=[]))
     process_turn(provider, _game(), "I force the vault door", stream=None)
@@ -323,12 +320,11 @@ def test_an_interrupt_event_is_shown_once(
     assert "<random_event" not in prompt
 
 
-def test_an_oracle_question_covered_by_a_fact_skips_the_oracle_roll(
-    load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
-) -> None:
+@pytest.mark.usefixtures("counted_fate")
+def test_an_oracle_question_covered_by_a_fact_skips_the_oracle_roll(monkeypatch: pytest.MonkeyPatch) -> None:
     _force(monkeypatch, "MISS")
 
-    def _no_oracle(game: Any) -> str:
+    def _no_oracle(_game: Any) -> str:
         msg = "the oracle table must not be rolled"
         raise AssertionError(msg)
 
@@ -349,7 +345,7 @@ def test_an_oracle_question_covered_by_a_fact_skips_the_oracle_roll(
 
 
 def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
-    load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
+    counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _force(monkeypatch, "MISS")
     provider = TurnProvider(_brain())
@@ -366,7 +362,7 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
 
 
 def _nothing_useful_search(monkeypatch: pytest.MonkeyPatch, result: str) -> TurnProvider:
-    monkeypatch.setattr(facts, "resolve_fate", lambda game, odds: _fate("no"))
+    monkeypatch.setattr(facts, "resolve_fate", lambda _game, _odds: _fate("no"))
     _force(monkeypatch, result)
     return TurnProvider(
         _brain(move="adventure/gather_information", undetermined_facts=[{"fact_type": "useful", "about": "here"}])
@@ -375,7 +371,7 @@ def _nothing_useful_search(monkeypatch: pytest.MonkeyPatch, result: str) -> Turn
 
 @pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
 def test_a_search_that_hits_is_not_told_that_nothing_useful_is_here(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str
+    monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
     provider = _nothing_useful_search(monkeypatch, result)
     game = _game()
@@ -386,7 +382,7 @@ def test_a_search_that_hits_is_not_told_that_nothing_useful_is_here(
     assert [f.fact_type for f in game.world.facts] == (["useful"] if result == "MISS" else [])
 
 
-def test_a_burn_to_a_hit_overrules_nothing_useful(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_burn_to_a_hit_overrules_nothing_useful(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _nothing_useful_search(monkeypatch, "MISS")
     game = _game()
     _n, _r, offer, _d = process_turn(provider, game, "I search the shelves", stream=None)
@@ -398,9 +394,7 @@ def test_a_burn_to_a_hit_overrules_nothing_useful(load_engine: None, monkeypatch
     assert game.world.facts == []
 
 
-def test_a_correction_reuses_the_facts_of_the_turn(
-    load_engine: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_correction_reuses_the_facts_of_the_turn(counted_fate: list[str], monkeypatch: pytest.MonkeyPatch) -> None:
     _force(monkeypatch, "MISS")
     provider = TurnProvider(_brain())
     game = _game()
@@ -415,7 +409,7 @@ def test_a_correction_reuses_the_facts_of_the_turn(
     assert game.last_turn_snapshot.facts == first
 
 
-def test_facts_survive_a_save_round_trip(load_engine: None) -> None:
+def test_facts_survive_a_save_round_trip() -> None:
     game = _game()
     game.world.facts = [_fact("locked"), _fact("alert", about="npc_2")]
     assert GameState.from_dict(game.to_dict()).world.facts == game.world.facts
@@ -439,9 +433,9 @@ def test_fact_resolution_yaml_with_a_wrong_value_refuses_to_load(
 
 @pytest.mark.parametrize(("answer", "target"), [("no", None), ("yes", "npc_1")])
 def test_a_target_that_is_not_present_leaves_the_scene(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, answer: str, target: str | None
+    monkeypatch: pytest.MonkeyPatch, answer: str, target: str | None
 ) -> None:
-    monkeypatch.setattr(facts, "resolve_fate", lambda game, odds: _fate(answer))
+    monkeypatch.setattr(facts, "resolve_fate", lambda _game, _odds: _fate(answer))
     _force(monkeypatch, "WEAK_HIT")
     provider = TurnProvider(
         _brain(

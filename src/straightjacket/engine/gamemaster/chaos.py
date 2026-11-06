@@ -19,13 +19,13 @@ def tick_chaos(world: WorldState, direction: int) -> None:
 
 
 def update_chaos_factor(game: GameState, outcome: str, target_npc_id: str | None) -> None:
-    _c = gm().chaos
-    if outcome in _c.adjust_by_outcome:
-        tick_chaos(game.world, _c.adjust_by_outcome[outcome])
+    c = gm().chaos
+    if outcome in c.adjust_by_outcome:
+        tick_chaos(game.world, c.adjust_by_outcome[outcome])
     elif outcome == "dialog" and target_npc_id:
         npc = find_npc(game, target_npc_id)
         if npc:
-            if npc.disposition in _c.dialog_raising_dispositions:
-                tick_chaos(game.world, _c.adjust_dialog_hostile)
-            elif npc.disposition in _c.dialog_lowering_dispositions:
-                tick_chaos(game.world, _c.adjust_dialog_friendly)
+            if npc.disposition in c.dialog_raising_dispositions:
+                tick_chaos(game.world, c.adjust_dialog_hostile)
+            elif npc.disposition in c.dialog_lowering_dispositions:
+                tick_chaos(game.world, c.adjust_dialog_friendly)

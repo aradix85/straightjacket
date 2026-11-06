@@ -20,12 +20,12 @@ from straightjacket.i18n import t
 
 
 def _status_resources_line(game: GameState) -> str:
-    _defaults = eng().ai_text.narrator_defaults
+    defaults = eng().ai_text.narrator_defaults
     meters = game.resources.meters
     return t(
         "status.resources",
         name=game.player_name,
-        location=game.world.current_location or _defaults["unknown_location"],
+        location=game.world.current_location or defaults["unknown_location"],
         time=t(f"time.{game.world.time_of_day}"),
         **{
             meter: describe_by_threshold(meters[meter], levels)
@@ -164,7 +164,7 @@ def build_creation_options() -> dict[str, Any]:
         flow = pkg.creation_flow
         if flow.has_truths:
             raw_truths = pkg.data.truths()
-            _trunc = eng().truncations
+            trunc = eng().truncations
             for truth_id, truth_data in raw_truths.items():
                 options = []
 
@@ -172,8 +172,8 @@ def build_creation_options() -> dict[str, Any]:
                     summary_text = opt["summary"] if "summary" in opt else opt["description"]
                     options.append(
                         {
-                            "summary": str(summary_text)[: _trunc.prompt_medium],
-                            "description": str(opt["description"])[: _trunc.prompt_medium],
+                            "summary": str(summary_text)[: trunc.prompt_medium],
+                            "description": str(opt["description"])[: trunc.prompt_medium],
                         }
                     )
 

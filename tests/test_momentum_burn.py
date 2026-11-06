@@ -1,5 +1,6 @@
 import asyncio
 import copy
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -41,14 +42,16 @@ def _turn_then_burn(provider: TurnProvider, game: GameState) -> tuple[GameState,
     return game, narration, director
 
 
-def test_burn_keeps_the_location_and_scene_count_of_the_turn(load_engine: None, forced_miss: None) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_burn_keeps_the_location_and_scene_count_of_the_turn() -> None:
     game, _narration, _director = _turn_then_burn(TurnProvider(brain_answer()), library_game())
 
     assert game.world.current_location == "Archive Vault"
     assert game.narrative.scene_count == 2
 
 
-def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(load_engine: None, forced_miss: None) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn() -> None:
     provider = TurnProvider(brain_answer())
     game, narration, _director = _turn_then_burn(provider, library_game())
 
@@ -61,7 +64,8 @@ def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(load_engin
     assert "<momentum_burn>" in provider.prompts[-1]
 
 
-def test_burn_keeps_the_track_the_turn_created(load_engine: None, forced_miss: None) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_burn_keeps_the_track_the_turn_created() -> None:
     brain = brain_answer(move="quest/swear_an_iron_vow", stat="heart", track_name="Recover the codex")
     game, _narration, _director = _turn_then_burn(TurnProvider(brain), library_game())
 
@@ -69,7 +73,8 @@ def test_burn_keeps_the_track_the_turn_created(load_engine: None, forced_miss: N
     assert [t.name for t in vows] == ["Keep the archive whole", "Recover the codex"]
 
 
-def test_burn_updates_the_turn_snapshot(load_engine: None, forced_miss: None) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_burn_updates_the_turn_snapshot() -> None:
     game, narration, _director = _turn_then_burn(TurnProvider(brain_answer()), library_game())
 
     snap = game.last_turn_snapshot
@@ -81,7 +86,8 @@ def test_burn_updates_the_turn_snapshot(load_engine: None, forced_miss: None) ->
     assert game.resources.meters["momentum"] == rules().momentum.start + 1
 
 
-def test_burn_runs_scene_end_bookkeeping_exactly_once(load_engine: None, forced_miss: None) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_burn_runs_scene_end_bookkeeping_exactly_once() -> None:
     reference = library_game()
     _n, _r, _o, _d = process_turn(
         TurnProvider(brain_answer()), reference, "I slip past Mira into the archive vault", stream=None
@@ -93,7 +99,7 @@ def test_burn_runs_scene_end_bookkeeping_exactly_once(load_engine: None, forced_
     assert [t.weight for t in game.narrative.threads] == [t.weight for t in reference.narrative.threads]
 
 
-def test_restore_reverts_changes_inside_the_story_lists(load_engine: None) -> None:
+def test_restore_reverts_changes_inside_the_story_lists() -> None:
     game = library_game()
     snap = game.snapshot()
     game.narrative.threads[0].weight = 3
@@ -107,7 +113,8 @@ def test_restore_reverts_changes_inside_the_story_lists(load_engine: None) -> No
     assert game.narrative.characters_list[0].weight == 1
 
 
-def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(load_engine: None, forced_miss: None) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_a_burn_at_the_history_cap_keeps_the_earlier_entries() -> None:
     game = library_game()
     cap = gm().pacing.max_narration_history
     game.narrative.narration_history = [
@@ -123,16 +130,15 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(load_engine: None, 
     assert check_turn_replacement(before, game, narration, 2, "momentum burn", keeps_location=True) == []
 
 
-def test_new_player_input_withdraws_a_pending_burn_offer(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_new_player_input_withdraws_a_pending_burn_offer(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     _n, _r, offer, _d = process_turn(TurnProvider(brain_answer()), game, "I slip into the vault", stream=None)
     session = new_session()
     session.game = game
     session.pending_burn = offer
 
-    def failing_turn(provider: Any, g: Any, text: str, config: Any, stream: Any) -> Any:
+    def failing_turn(_provider: Any, _g: Any, _text: str, _config: Any, _stream: Any) -> Any:
         msg = "narrator: test"
         raise AIUnavailableError(msg)
 
@@ -202,8 +208,9 @@ def _types(ws: RecordingWebSocket) -> list[str]:
     return [m["type"] for m in ws.sent]
 
 
+@pytest.mark.usefixtures("forced_miss")
 def test_a_game_over_turn_offers_the_burn_before_it_announces_the_end(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     session, ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
 
@@ -216,9 +223,8 @@ def test_a_game_over_turn_offers_the_burn_before_it_announces_the_end(
     assert (len(session.game.campaign.predecessors), session.game.campaign.pending_succession) == (1, True)
 
 
-def test_a_burn_that_saves_the_character_leaves_no_predecessor(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_a_burn_that_saves_the_character_leaves_no_predecessor(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     session, ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
 
     asyncio.run(handlers.handle_burn_momentum(session, ws, {"accept": True}))
@@ -231,8 +237,9 @@ def test_a_burn_that_saves_the_character_leaves_no_predecessor(
     assert saved.to_dict() == game.to_dict()
 
 
+@pytest.mark.usefixtures("forced_miss")
 def test_a_burn_that_does_not_save_the_character_archives_them_once(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     session, ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_PRESS_ON))
 
@@ -246,9 +253,8 @@ def test_a_burn_that_does_not_save_the_character_archives_them_once(
     assert _types(ws)[-2:] == ["game_over", "turn_complete"]
 
 
-def test_a_failed_burn_is_rolled_back_and_offered_again(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_a_failed_burn_is_rolled_back_and_offered_again(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     provider = _FlakyNarrator(_HEAL)
     session, _ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, provider)
     offer = session.pending_burn
@@ -263,8 +269,9 @@ def test_a_failed_burn_is_rolled_back_and_offered_again(
     assert session.game.to_dict() == before
 
 
+@pytest.mark.usefixtures("forced_miss")
 def test_a_game_that_is_over_answers_input_and_corrections_with_what_stands(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     session, _ws, provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
     before, calls = session.game.to_dict(), len(provider.calls)
@@ -282,8 +289,9 @@ def test_a_game_that_is_over_answers_input_and_corrections_with_what_stands(
     assert (session.game.to_dict(), len(provider.calls)) == (before, calls)
 
 
+@pytest.mark.usefixtures("forced_miss")
 def test_a_reload_drops_a_standing_burn_and_shows_the_end_while_a_reconnect_offers_it_again(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     session, _ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
     monkeypatch.setattr(server, "active_session", session)
@@ -299,7 +307,7 @@ def test_a_reload_drops_a_standing_burn_and_shows_the_end_while_a_reconnect_offe
 
 
 def test_a_correction_that_replays_the_turn_into_death_prepares_the_succession_once(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     force_result(monkeypatch, "STRONG_HIT")
     session = _session(monkeypatch, tmp_path, TurnProvider(_HEAL, _PRESS_ON))
@@ -320,9 +328,8 @@ def test_a_correction_that_replays_the_turn_into_death_prepares_the_succession_o
     assert len(session.game.campaign.predecessors) == 1
 
 
-def test_a_failed_correction_leaves_the_burn_offer_standing(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_a_failed_correction_leaves_the_burn_offer_standing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     provider = _FlakyNarrator(_PRESS_ON)
     session = _session(monkeypatch, tmp_path, provider)
     _play(session, "I slip into the vault")
@@ -337,9 +344,8 @@ def test_a_failed_correction_leaves_the_burn_offer_standing(
     assert session.pending_burn is offer
 
 
-def test_retiring_withdraws_a_standing_burn_offer(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-) -> None:
+@pytest.mark.usefixtures("forced_miss")
+def test_retiring_withdraws_a_standing_burn_offer(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     session = _session(monkeypatch, tmp_path, TurnProvider(_PRESS_ON))
     _play(session, "I slip into the vault")
     assert session.pending_burn is not None
@@ -350,8 +356,9 @@ def test_retiring_withdraws_a_standing_burn_offer(
     assert (session.pending_burn, _types(ws)) == (None, ["game_over"])
 
 
+@pytest.mark.usefixtures("forced_miss")
 def test_what_the_player_chose_between_a_turn_and_its_burn_or_correction_stays(
-    load_engine: None, forced_miss: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     session = _session(monkeypatch, tmp_path, TurnProvider(_PRESS_ON))
     session.game.campaign.xp = 10

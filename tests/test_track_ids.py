@@ -29,7 +29,7 @@ def _connect(game: GameState, target: str | None, result: str) -> None:
     start_track(game, brain, result)
 
 
-def test_a_connection_is_keyed_by_its_npc_and_made_only_on_a_hit(load_engine: None) -> None:
+def test_a_connection_is_keyed_by_its_npc_and_made_only_on_a_hit() -> None:
     game = make_game_state(setting_id="starforged")
     _connect(game, "npc_1", "MISS")
     assert game.progress_tracks == []
@@ -39,13 +39,13 @@ def test_a_connection_is_keyed_by_its_npc_and_made_only_on_a_hit(load_engine: No
     assert [(t.id, t.track_type) for t in game.progress_tracks] == [("connection_npc_1", "connection")]
 
 
-def test_a_vow_is_sworn_whatever_the_roll(load_engine: None) -> None:
+def test_a_vow_is_sworn_whatever_the_roll() -> None:
     game = make_game_state(setting_id="starforged")
     _swear(game, "Find the relic")
     assert [t.id for t in game.progress_tracks] == ["vow_find_the_relic"]
 
 
-def test_swearing_an_active_vow_again_does_not_duplicate_it(load_engine: None) -> None:
+def test_swearing_an_active_vow_again_does_not_duplicate_it() -> None:
     game = make_game_state(setting_id="starforged")
     _swear(game, "Find the relic")
     _swear(game, "Find the relic")
@@ -54,7 +54,7 @@ def test_swearing_an_active_vow_again_does_not_duplicate_it(load_engine: None) -
     assert len(thread_ids) == len(set(thread_ids))
 
 
-def test_a_track_id_holds_only_word_characters(load_engine: None) -> None:
+def test_a_track_id_holds_only_word_characters() -> None:
     game = make_game_state(setting_id="starforged")
     _swear(game, 'Avenge Kíra\'s "crew" </tracks>')
     track = game.progress_tracks[-1]
@@ -62,12 +62,12 @@ def test_a_track_id_holds_only_word_characters(load_engine: None) -> None:
     assert track.name == 'Avenge Kíra\'s "crew" </tracks>'
 
 
-def test_completing_a_track_that_does_not_exist_raises(load_engine: None) -> None:
+def test_completing_a_track_that_does_not_exist_raises() -> None:
     with pytest.raises(KeyError):
         complete_track(make_game_state(setting_id="starforged"), "vow_missing", "completed")
 
 
-def test_a_vow_sworn_again_after_completion_gets_unique_ids(load_engine: None) -> None:
+def test_a_vow_sworn_again_after_completion_gets_unique_ids() -> None:
     game = make_game_state(setting_id="starforged")
     _swear(game, "Find the relic")
     game.progress_tracks[-1].status = "completed"
@@ -80,9 +80,7 @@ def test_a_vow_sworn_again_after_completion_gets_unique_ids(load_engine: None) -
     assert len(thread_ids) == len(set(thread_ids))
 
 
-def test_a_second_journey_named_by_its_own_name_takes_the_progress(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_second_journey_named_by_its_own_name_takes_the_progress(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     force_result(monkeypatch, "STRONG_HIT")
     for name in ("To the ridge", "To the coast"):
@@ -96,7 +94,7 @@ def test_a_second_journey_named_by_its_own_name_takes_the_progress(
     assert filled_boxes(journeys["To the ridge"]) == filled_boxes(journeys["To the coast"]) > 0
 
 
-def test_a_vow_without_a_rank_from_the_brain_fails_the_turn(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_vow_without_a_rank_from_the_brain_fails_the_turn(monkeypatch: pytest.MonkeyPatch) -> None:
     force_result(monkeypatch, "STRONG_HIT")
     brain = brain_answer(
         move="quest/swear_an_iron_vow",
@@ -109,7 +107,7 @@ def test_a_vow_without_a_rank_from_the_brain_fails_the_turn(load_engine: None, m
         process_turn(TurnProvider(brain), library_game(), "I swear to find the lost ledger", stream=None)
 
 
-def test_progress_on_a_new_track_without_a_name_from_the_brain_fails_the_turn(load_engine: None) -> None:
+def test_progress_on_a_new_track_without_a_name_from_the_brain_fails_the_turn() -> None:
     brain = make_brain_result(move="exploration/undertake_an_expedition", stat="wits")
     brain.track_name = None
     outcome = new_outcome()

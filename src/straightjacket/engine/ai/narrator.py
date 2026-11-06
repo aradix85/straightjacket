@@ -75,7 +75,7 @@ def call_opening_setup(provider: AIProvider, narration: str, game: GameState) ->
     lang = narration_language()
 
     system = get_prompt("opening_setup_extractor", lang=lang)
-    _defaults = eng().ai_text.narrator_defaults
+    defaults = eng().ai_text.narrator_defaults
 
     prompt = get_prompt(
         "opening_setup_request",
@@ -84,7 +84,7 @@ def call_opening_setup(provider: AIProvider, narration: str, game: GameState) ->
         genre=_xa(game.setting_genre),
         tone=_xa(game.setting_tone),
         description=_xe(game.setting_description),
-        location=_xe(game.world.current_location or _defaults["unknown_location"]),
+        location=_xe(game.world.current_location or defaults["unknown_location"]),
     )
 
     spec = AICallSpec(
@@ -154,15 +154,15 @@ def call_narrator_metadata(
 
     cb = content_boundaries_block(game)
     system = f"{system_base}\n{cb}" if cb else system_base
-    _defaults = eng().ai_text.narrator_defaults
+    defaults = eng().ai_text.narrator_defaults
 
     prompt = get_prompt(
         "narrator_metadata_request",
         narration=_xe(narration),
         player_name=_xe(game.player_name),
-        known_npcs="\n".join(npc_refs) if npc_refs else _defaults["no_npcs"],
-        location=_xe(game.world.current_location or _defaults["unknown_location"]),
-        time=game.world.time_of_day or _defaults["unknown_time"],
+        known_npcs="\n".join(npc_refs) if npc_refs else defaults["no_npcs"],
+        location=_xe(game.world.current_location or defaults["unknown_location"]),
+        time=game.world.time_of_day or defaults["unknown_time"],
         engine_context=mechanical_ctx,
     )
 

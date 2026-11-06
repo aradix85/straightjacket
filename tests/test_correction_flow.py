@@ -45,7 +45,7 @@ def _played_game(provider: TurnProvider, monkeypatch: pytest.MonkeyPatch) -> Gam
     return game
 
 
-def test_correction_input_misread_full_flow(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_correction_input_misread_full_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _provider(_MISREAD, _SHOVE, _TALK)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
@@ -65,9 +65,7 @@ def test_correction_input_misread_full_flow(load_engine: None, monkeypatch: pyte
     assert snapshot_after.player_input == "I talk to Mira instead"
 
 
-def test_correction_to_dialog_does_not_roll_even_with_a_stat(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_correction_to_dialog_does_not_roll_even_with_a_stat(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _provider(_MISREAD, _SHOVE, {**_TALK, "stat": "heart", "dialog_only": False})
     game = _played_game(provider, monkeypatch)
     narration, _offer, _director_ctx = process_correction(
@@ -78,7 +76,7 @@ def test_correction_to_dialog_does_not_roll_even_with_a_stat(
     assert game.narrative.session_log[-1].result == "dialog"
 
 
-def test_correction_state_error_full_flow(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_correction_state_error_full_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     assert game.npcs[0].disposition == "friendly"
@@ -92,9 +90,7 @@ def test_correction_state_error_full_flow(load_engine: None, monkeypatch: pytest
     assert game.narrative.session_log[-1].summary.startswith("[corrected]")
 
 
-def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
@@ -109,9 +105,7 @@ def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
     assert '<position level="desperate" effect="limited"/>' in retold
 
 
-def test_a_state_correction_does_not_tell_a_clock_that_filled_after_the_turn(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_state_correction_does_not_tell_a_clock_that_filled_after_the_turn(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     game.narrative.session_log[-1].clock_events.append(
@@ -123,9 +117,7 @@ def test_a_state_correction_does_not_tell_a_clock_that_filled_after_the_turn(
     assert "A storm gathers" not in provider.prompts[-1]
 
 
-def test_a_state_correction_extracts_with_the_turns_world_addition(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_state_correction_extracts_with_the_turns_world_addition(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
@@ -133,7 +125,7 @@ def test_a_state_correction_extracts_with_the_turns_world_addition(
     game.last_turn_snapshot.brain.world_addition = "A rope hangs from the gallery"
     seen: list[str] = []
 
-    def capture(game: GameState, metadata: dict[str, Any], *, scene_present_ids: set[str], world_addition: str) -> None:
+    def capture(_game: GameState, _metadata: dict[str, Any], *, world_addition: str, **_kwargs: object) -> None:
         seen.append(world_addition)
 
     monkeypatch.setattr(finalization, "apply_narrator_metadata", capture)
@@ -143,7 +135,7 @@ def test_a_state_correction_extracts_with_the_turns_world_addition(
 
 
 def test_a_state_correction_retells_what_the_turn_told_without_moving_npc_clocks_again(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     provider = _provider(_LOYAL, _SHOVE)
     game = library_game()
@@ -164,9 +156,7 @@ def test_a_state_correction_retells_what_the_turn_told_without_moving_npc_clocks
     assert "Hide the ledger from the wardens" in provider.prompts[-1]
 
 
-def test_a_state_correction_retells_the_turns_events_and_filled_clocks(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_state_correction_retells_the_turns_events_and_filled_clocks(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     snap = game.last_turn_snapshot
@@ -189,7 +179,7 @@ def test_a_state_correction_retells_the_turns_events_and_filled_clocks(
     assert "Smoke fills the stacks" in retold
 
 
-def test_a_snapshot_without_a_played_turn_is_refused(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_snapshot_without_a_played_turn_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = _provider(_LOYAL, _SHOVE)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
@@ -198,7 +188,7 @@ def test_a_snapshot_without_a_played_turn_is_refused(load_engine: None, monkeypa
         process_correction(provider, game, "Mira should be loyal")
 
 
-def test_a_game_without_a_played_turn_has_nothing_to_correct(load_engine: None) -> None:
+def test_a_game_without_a_played_turn_has_nothing_to_correct() -> None:
     provider = _provider(_MISREAD, _SHOVE)
     with pytest.raises(ValueError, match="No turn to correct"):
         process_correction(provider, library_game(), "Fix something")

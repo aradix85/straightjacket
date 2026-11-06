@@ -21,7 +21,7 @@ def _opening_game() -> GameState:
     return g
 
 
-def test_build_new_game_prompt_renders_with_full_state(load_engine: None) -> None:
+def test_build_new_game_prompt_renders_with_full_state() -> None:
     g = _opening_game()
     out = build_new_game_prompt(g)
     assert '<scene type="opening">' in out
@@ -32,7 +32,7 @@ def test_build_new_game_prompt_renders_with_full_state(load_engine: None) -> Non
     assert "Driftworks Station" in out
 
 
-def test_build_new_game_prompt_leaves_out_pronouns_and_paths_the_character_lacks(load_engine: None) -> None:
+def test_build_new_game_prompt_leaves_out_pronouns_and_paths_the_character_lacks() -> None:
     g = _opening_game()
     g.pronouns = ""
     g.paths = []
@@ -42,14 +42,14 @@ def test_build_new_game_prompt_leaves_out_pronouns_and_paths_the_character_lacks
     assert "<vow>find the lost archive</vow>" in out
 
 
-def test_build_new_game_prompt_escapes_xml_in_player_name(load_engine: None) -> None:
+def test_build_new_game_prompt_escapes_xml_in_player_name() -> None:
     g = _opening_game()
     g.player_name = "Aria <hack> & Co"
     out = build_new_game_prompt(g)
     assert 'name="Aria &lt;hack&gt; &amp; Co"' in out
 
 
-def test_build_epilogue_prompt_renders(load_engine: None) -> None:
+def test_build_epilogue_prompt_renders() -> None:
     g = _opening_game()
     g.narrative.story_blueprint = make_blueprint(
         central_conflict="The archive holds a lethal truth",
@@ -69,14 +69,14 @@ def test_build_epilogue_prompt_renders(load_engine: None) -> None:
     assert "Kira" in out
 
 
-def test_an_epilogue_without_a_story_to_end_raises(load_engine: None) -> None:
+def test_an_epilogue_without_a_story_to_end_raises() -> None:
     g = _opening_game()
     g.narrative.story_blueprint = None
     with pytest.raises(ValueError, match="blueprint"):
         build_epilogue_prompt(g)
 
 
-def test_build_new_chapter_prompt_renders_with_active_npcs(load_engine: None) -> None:
+def test_build_new_chapter_prompt_renders_with_active_npcs() -> None:
     g = _opening_game()
     g.campaign.chapter_number = 2
     g.npcs = [
@@ -88,7 +88,7 @@ def test_build_new_chapter_prompt_renders_with_active_npcs(load_engine: None) ->
     assert 'aliases="K"' in out
 
 
-def test_build_new_chapter_prompt_includes_background_npcs(load_engine: None) -> None:
+def test_build_new_chapter_prompt_includes_background_npcs() -> None:
     g = _opening_game()
     g.npcs = [
         make_npc(id="npc_1", name="Active", disposition="friendly", description="A"),
@@ -99,7 +99,7 @@ def test_build_new_chapter_prompt_includes_background_npcs(load_engine: None) ->
     assert "Background" in out
 
 
-def test_build_new_chapter_prompt_carries_the_engine_record(load_engine: None) -> None:
+def test_build_new_chapter_prompt_carries_the_engine_record() -> None:
     g = _opening_game()
     g.campaign.campaign_history = [
         ChapterSummary(

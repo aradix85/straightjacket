@@ -19,8 +19,6 @@ from tests._helpers import (
     make_progress_track,
 )
 
-pytestmark = pytest.mark.usefixtures("load_engine")
-
 
 def _npc(disposition: str = "neutral") -> NpcData:
     return make_npc(

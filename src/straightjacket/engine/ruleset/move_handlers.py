@@ -72,7 +72,7 @@ def _suffer_weak_hit(game: GameState, params: dict[str, Any], blocked: bool, res
 
 
 def apply_suffer_handler(
-    game: GameState, move_key: str, roll_result: str, params: dict[str, Any], match: bool
+    game: GameState, move_key: str, roll_result: str, params: dict[str, Any], _match: bool
 ) -> OutcomeResult:
     result = new_outcome()
     track = params["track"]
@@ -116,7 +116,7 @@ def _roll_endure_table(game: GameState, move_key: str, params: dict[str, Any], r
         _TABLE_TRIGGERS[rule.trigger](game, params, result)
 
 
-def _face_the_threshold(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
+def _face_the_threshold(_game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
     result.follow_up_moves.append(params["threshold_move"])
 
 
@@ -125,11 +125,11 @@ def _face_the_threshold_in_a_fight(game: GameState, params: dict[str, Any], resu
         _face_the_threshold(game, params, result)
 
 
-def _start_dying(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
+def _start_dying(game: GameState, _params: dict[str, Any], _result: OutcomeResult) -> None:
     start_dying_clock(game)
 
 
-def _forsake_the_newest_vow(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
+def _forsake_the_newest_vow(game: GameState, _params: dict[str, Any], result: OutcomeResult) -> None:
     vows = [t for t in game.progress_tracks if t.track_type == "vow" and t.status == "active"]
     if vows:
         forsake_vow(game, vows[-1], result)
@@ -169,7 +169,7 @@ def _return_with_a_vow(game: GameState, params: dict[str, Any], result: OutcomeR
 
 
 def apply_threshold_handler(
-    game: GameState, move_key: str, roll_result: str, params: dict[str, Any], match: bool
+    game: GameState, _move_key: str, roll_result: str, params: dict[str, Any], _match: bool
 ) -> OutcomeResult:
     result = new_outcome()
     if roll_result == "WEAK_HIT":
@@ -180,7 +180,7 @@ def apply_threshold_handler(
 
 
 def apply_recovery_handler(
-    game: GameState, move_key: str, roll_result: str, params: dict[str, Any], match: bool
+    game: GameState, _move_key: str, roll_result: str, params: dict[str, Any], match: bool
 ) -> OutcomeResult:
     result = new_outcome()
     track = params["track"]

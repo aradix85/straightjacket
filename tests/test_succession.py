@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def aria(load_engine: None) -> GameState:
+def aria() -> GameState:
     g = create_game(
         "starforged",
         location="Hearthwood",
@@ -121,7 +121,7 @@ def test_run_inheritance_rolls_outcomes(
         def __init__(self, values: list[int]) -> None:
             self.values = iter(values * 20)
 
-        def randint(self, a: int, b: int) -> int:
+        def randint(self, _a: int, _b: int) -> int:
             return next(self.values)
 
     monkeypatch.setattr(rolls_mod, "random", _Dice(dice_values))
@@ -236,7 +236,7 @@ def test_carryover_keeps_only_the_connections_of_every_track_it_is_given(aria: G
     assert [t.id for t in kept_tracks] == ["connection_npc_1"]
 
 
-def test_a_classic_successor_keeps_the_people_but_not_the_bonds(load_engine: None) -> None:
+def test_a_classic_successor_keeps_the_people_but_not_the_bonds() -> None:
     game = library_game()
     mira = game.npcs[0]
     seal_bond(game, mira)
@@ -303,7 +303,8 @@ def test_prepare_succession_rejects_double_call(aria: GameState) -> None:
         prepare_succession(aria)
 
 
-def test_prepare_succession_archives_the_recorded_reason(aria: GameState) -> None:
+@pytest.mark.usefixtures("aria")
+def test_prepare_succession_archives_the_recorded_reason() -> None:
     for reason in END_REASONS:
         g = make_game_state(setting_id="starforged")
         g.campaign.legacy["quests"].ticks = 4
@@ -321,7 +322,7 @@ def test_prepare_succession_archives_the_recorded_reason(aria: GameState) -> Non
         ("suffer/face_desolation", "despair"),
     ],
 )
-def test_a_miss_at_the_threshold_records_why_the_game_ended(load_engine: None, move: str, reason: str) -> None:
+def test_a_miss_at_the_threshold_records_why_the_game_ended(move: str, reason: str) -> None:
     g = make_game_state(setting_id="classic" if move.startswith("suffer/") else "starforged")
     g.resources.meters["health"], g.resources.meters["spirit"] = 0, 0
     resolve_move_outcome(g, move, "MISS", target_npc_id=None, aided_by=None, match=False)

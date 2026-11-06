@@ -16,7 +16,8 @@ def _stance_bucket_values() -> set[str]:
 
 
 class TestMoveCategoriesSymmetry:
-    def test_stance_move_buckets_covers_every_category(self) -> None:
+    @staticmethod
+    def test_stance_move_buckets_covers_every_category() -> None:
         cats = _all_categories()
         mapping_keys = set(gm().stance_move_buckets.mapping.keys())
         missing = cats - mapping_keys
@@ -26,7 +27,8 @@ class TestMoveCategoriesSymmetry:
             "Every move_category value must map to a stance bucket — otherwise NPC stance resolution KeyErrors."
         )
 
-    def test_stance_move_buckets_has_no_extra_keys(self) -> None:
+    @staticmethod
+    def test_stance_move_buckets_has_no_extra_keys() -> None:
         cats = _all_categories()
         mapping_keys = set(gm().stance_move_buckets.mapping.keys())
         extra = mapping_keys - cats
@@ -35,7 +37,8 @@ class TestMoveCategoriesSymmetry:
             "Either remove the mapping entry or add the category to move_categories.yaml."
         )
 
-    def test_position_resolver_baselines_cover_every_category(self) -> None:
+    @staticmethod
+    def test_position_resolver_baselines_cover_every_category() -> None:
         cats = _all_categories()
         baselines = set(gm().position_resolver.move_baselines.keys())
         missing = cats - baselines
@@ -45,7 +48,8 @@ class TestMoveCategoriesSymmetry:
             "producing wrong dice difficulty for whole move classes."
         )
 
-    def test_stance_matrix_buckets_cover_stance_move_buckets_values(self) -> None:
+    @staticmethod
+    def test_stance_matrix_buckets_cover_stance_move_buckets_values() -> None:
         bucket_values = _stance_bucket_values()
         matrix = gm().stance_matrix
         for disposition, bond_levels in matrix.items():
@@ -57,7 +61,8 @@ class TestMoveCategoriesSymmetry:
                     "(disposition, bond_level) cell of stance_matrix."
                 )
 
-    def test_memory_emotions_covers_every_non_dialog_combination(self) -> None:
+    @staticmethod
+    def test_memory_emotions_covers_every_non_dialog_combination() -> None:
         cats = _all_categories()
         results = set(rules().get_raw("result_outcomes").values())
         base = gm().memory_emotions.base
@@ -71,22 +76,26 @@ class TestMoveCategoriesSymmetry:
             f"memory_emotions.base missing keys: {missing}. Every (category, result) combination must be present."
         )
 
-    def test_memory_result_text_covers_every_non_dialog_combination(self) -> None:
+    @staticmethod
+    def test_memory_result_text_covers_every_non_dialog_combination() -> None:
         cats = _all_categories()
         results = set(rules().get_raw("result_outcomes").values())
         result_text = gm().get_raw("memory_result_text")
         missing = [f"{cat}_{res}" for cat in cats for res in results if f"{cat}_{res}" not in result_text]
         assert missing == [], f"memory_result_text missing keys: {missing}."
 
-    def test_memory_emotions_has_dialog_key(self) -> None:
+    @staticmethod
+    def test_memory_emotions_has_dialog_key() -> None:
         assert "dialog" in gm().memory_emotions.base, "memory_emotions.base must contain 'dialog' key for dialog turns."
 
-    def test_memory_result_text_has_dialog_key(self) -> None:
+    @staticmethod
+    def test_memory_result_text_has_dialog_key() -> None:
         assert "dialog" in gm().get_raw("memory_result_text"), "memory_result_text must contain 'dialog' key."
 
 
 class TestEveryMoveResolvesEndToEnd:
-    def test_every_move_has_a_kind_with_a_stance_bucket_and_a_position_baseline(self) -> None:
+    @staticmethod
+    def test_every_move_has_a_kind_with_a_stance_bucket_and_a_position_baseline() -> None:
         all_moves: set[str] = set()
         for sid in list_packages():
             all_moves.update(get_moves(sid).keys())
@@ -100,7 +109,8 @@ class TestEveryMoveResolvesEndToEnd:
 
 
 class TestMoveOutcomesCoverage:
-    def test_every_action_roll_move_has_outcome_config(self) -> None:
+    @staticmethod
+    def test_every_action_roll_move_has_outcome_config() -> None:
         action_roll_moves: set[str] = set()
         for sid in list_packages():
             for move_id, move in get_moves(sid).items():
@@ -118,7 +128,8 @@ class TestMoveOutcomesCoverage:
             "otherwise resolve_move_outcome crashes mid-turn."
         )
 
-    def test_no_orphan_outcome_entries(self) -> None:
+    @staticmethod
+    def test_no_orphan_outcome_entries() -> None:
         all_known_moves: set[str] = set()
         for sid in list_packages():
             all_known_moves.update(get_moves(sid).keys())

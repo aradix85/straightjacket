@@ -99,7 +99,7 @@ def openai_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
     def fake_client(**kwargs: Any) -> SimpleNamespace:
         endpoint.init_args = kwargs
 
-        def get(path: str, cast_to: Any) -> Any:
+        def get(path: str, **_kwargs: object) -> Any:
             endpoint.listing_paths.append(path)
             return endpoint.listing
 
@@ -110,7 +110,8 @@ def openai_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
 
 
 class TestAnthropicProvider:
-    def test_maps_text_tool_use_stop_reason_and_usage(self, anthropic_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_maps_text_tool_use_stop_reason_and_usage(anthropic_endpoint: _FakeEndpoint) -> None:
         anthropic_endpoint.response = SimpleNamespace(
             content=[
                 SimpleNamespace(type="text", text="Hello "),
@@ -126,9 +127,8 @@ class TestAnthropicProvider:
         assert result.stop_reason == "tool_use"
         assert result.usage == {"input_tokens": 11, "output_tokens": 7, "cache_read_tokens": 0}
 
-    def test_request_carries_system_sampling_schema_and_converted_tools(
-        self, anthropic_endpoint: _FakeEndpoint
-    ) -> None:
+    @staticmethod
+    def test_request_carries_system_sampling_schema_and_converted_tools(anthropic_endpoint: _FakeEndpoint) -> None:
         anthropic_endpoint.response = _anthropic_reply()
         schema = {"title": "brain_output", "type": "object"}
         spec = _spec(temperature=0.5, top_p=0.9, json_schema=schema, tools=[_tool()])
@@ -149,12 +149,14 @@ class TestAnthropicProvider:
             }
         ]
 
-    def test_unset_options_are_not_sent(self, anthropic_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_unset_options_are_not_sent(anthropic_endpoint: _FakeEndpoint) -> None:
         anthropic_endpoint.response = _anthropic_reply()
         _anthropic().create_message(_spec())
         assert set(anthropic_endpoint.calls[0]) == {"model", "max_tokens", "system", "messages"}
 
-    def test_max_tokens_is_truncated(self, anthropic_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_max_tokens_is_truncated(anthropic_endpoint: _FakeEndpoint) -> None:
         anthropic_endpoint.response = SimpleNamespace(
             content=[SimpleNamespace(type="text", text="cut")], stop_reason="max_tokens", usage=_anthropic_usage()
         )
@@ -162,7 +164,8 @@ class TestAnthropicProvider:
         assert result.stop_reason == "truncated"
         assert result.tool_calls == []
 
-    def test_base_url_only_when_configured(self, anthropic_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_base_url_only_when_configured(anthropic_endpoint: _FakeEndpoint) -> None:
         _anthropic()
         assert anthropic_endpoint.init_args == {"api_key": "k", "max_retries": 0, "timeout": 30}
         provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30, api_base="http://localhost:9")
@@ -185,7 +188,8 @@ def _openai_response(
 
 
 class TestOpenAICompatibleProvider:
-    def test_maps_content_tool_calls_stop_reason_and_usage(self, openai_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_maps_content_tool_calls_stop_reason_and_usage(openai_endpoint: _FakeEndpoint) -> None:
         call = SimpleNamespace(id="c1", function=SimpleNamespace(name="query_npc", arguments='{"npc_id": "npc_2"}'))
         openai_endpoint.response = _openai_response("Narration", "tool_calls", [call])
         result = _openai().create_message(_spec())
@@ -194,7 +198,8 @@ class TestOpenAICompatibleProvider:
         assert result.stop_reason == "tool_use"
         assert result.usage == {"input_tokens": 20, "output_tokens": 5}
 
-    def test_request_prepends_system_and_builds_schema_format(self, openai_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_request_prepends_system_and_builds_schema_format(openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response("{}", "stop", None)
         schema = {"title": "brain_output", "type": "object"}
         spec = _spec(temperature=0.7, top_p=0.95, json_schema=schema, tools=[_tool()])
@@ -211,24 +216,28 @@ class TestOpenAICompatibleProvider:
         }
         assert sent["tools"] == [_tool()]
 
-    def test_the_clusters_extra_body_reaches_the_request(self, openai_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_the_clusters_extra_body_reaches_the_request(openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response("ok", "stop", None)
         _openai().create_message(_spec(extra_body={"reasoning_effort": "none"}))
         assert openai_endpoint.calls[0]["extra_body"] == {"reasoning_effort": "none"}
 
-    def test_unset_options_are_not_sent(self, openai_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_unset_options_are_not_sent(openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response("ok", "stop", None)
         _openai().create_message(_spec())
         assert set(openai_endpoint.calls[0]) == {"model", "max_completion_tokens", "messages"}
 
-    def test_length_is_truncated_and_empty_content_is_empty_string(self, openai_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_length_is_truncated_and_empty_content_is_empty_string(openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response(None, "length", None)
         result = _openai().create_message(_spec())
         assert result.stop_reason == "truncated"
         assert result.content == ""
         assert result.tool_calls == []
 
-    def test_base_url_only_when_configured(self, openai_endpoint: _FakeEndpoint) -> None:
+    @staticmethod
+    def test_base_url_only_when_configured(openai_endpoint: _FakeEndpoint) -> None:
         _openai()
         assert openai_endpoint.init_args == {"api_key": "k", "max_retries": 0, "timeout": 30}
         provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30, api_base="http://localhost:9/v1")

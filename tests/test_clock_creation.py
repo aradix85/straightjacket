@@ -30,7 +30,7 @@ def _tp(plot_point_names: list[str]) -> TurningPoint:
     )
 
 
-def test_random_event_clock_spawns_for_mapped_focus(load_engine: None) -> None:
+def test_random_event_clock_spawns_for_mapped_focus() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("pc_negative")
 
@@ -45,7 +45,7 @@ def test_random_event_clock_spawns_for_mapped_focus(load_engine: None) -> None:
     assert clock.name == "Storm Approaches"
 
 
-def test_random_event_clock_skips_unmapped_focus(load_engine: None) -> None:
+def test_random_event_clock_skips_unmapped_focus() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("npc_action")
 
@@ -54,7 +54,7 @@ def test_random_event_clock_skips_unmapped_focus(load_engine: None) -> None:
     assert g.world.clocks == []
 
 
-def test_random_event_clock_progress_type_for_thread_moves(load_engine: None) -> None:
+def test_random_event_clock_progress_type_for_thread_moves() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("move_toward_thread", target_id="thread_1", target="The Pact")
 
@@ -64,7 +64,7 @@ def test_random_event_clock_progress_type_for_thread_moves(load_engine: None) ->
     assert clock.clock_type == "progress"
 
 
-def test_random_event_clock_dedups_same_target(load_engine: None) -> None:
+def test_random_event_clock_dedups_same_target() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("pc_negative", target_id="threat_1")
 
@@ -74,7 +74,7 @@ def test_random_event_clock_dedups_same_target(load_engine: None) -> None:
     assert len(g.world.clocks) == 1
 
 
-def test_ac_clock_spawns_for_mapped_plot_point(load_engine: None) -> None:
+def test_ac_clock_spawns_for_mapped_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["Time Limit"])
 
@@ -87,7 +87,7 @@ def test_ac_clock_spawns_for_mapped_plot_point(load_engine: None) -> None:
     assert clock.owner_kind == "world"
 
 
-def test_ac_clock_skips_unmapped_plot_point(load_engine: None) -> None:
+def test_ac_clock_skips_unmapped_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["A New Enemy"])
 
@@ -96,7 +96,7 @@ def test_ac_clock_skips_unmapped_plot_point(load_engine: None) -> None:
     assert g.world.clocks == []
 
 
-def test_ac_clock_dedups_same_plot_point(load_engine: None) -> None:
+def test_ac_clock_dedups_same_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["Time Limit"])
 
@@ -106,7 +106,7 @@ def test_ac_clock_dedups_same_plot_point(load_engine: None) -> None:
     assert len(g.world.clocks) == 1
 
 
-def test_emergent_clock_cap_shared_across_sources(load_engine: None) -> None:
+def test_emergent_clock_cap_shared_across_sources() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["Time Limit", "A Needed Resource Runs Out", "Impending Doom"])
     spawn_clocks_for_turning_point(g, tp)
@@ -123,14 +123,14 @@ def test_emergent_clock_cap_shared_across_sources(load_engine: None) -> None:
     assert len(g.world.clocks) == 5
 
 
-def test_spawned_clock_attaches_keyed_scenes(load_engine: None) -> None:
+def test_spawned_clock_attaches_keyed_scenes() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     spawn_clock_from_random_event(g, _re("pc_negative"))
 
     assert any(ks.source.startswith("clock:") for ks in g.narrative.keyed_scenes)
 
 
-def test_fill_handler_emits_tag_when_no_keyed_scene_attached(load_engine: None) -> None:
+def test_fill_handler_emits_tag_when_no_keyed_scene_attached() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     clock = make_clock(name="Storm", clock_type="threat", segments=4, filled=4)
     g.world.clocks.append(clock)
@@ -143,7 +143,7 @@ def test_fill_handler_emits_tag_when_no_keyed_scene_attached(load_engine: None) 
     assert "Storm" in fill.tag_text
 
 
-def test_fill_handler_suppressed_when_keyed_scene_attached(load_engine: None) -> None:
+def test_fill_handler_suppressed_when_keyed_scene_attached() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     clock = make_clock(name="Storm", clock_type="threat", segments=4, filled=4)
     g.world.clocks.append(clock)
@@ -163,7 +163,7 @@ def test_fill_handler_suppressed_when_keyed_scene_attached(load_engine: None) ->
     assert fill is None
 
 
-def test_fill_handler_progress_clock_completes_linked_track(load_engine: None) -> None:
+def test_fill_handler_progress_clock_completes_linked_track() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     track = make_progress_track(id="track_1", name="The Bridge", track_type="vow", rank="dangerous")
     track.status = "active"
@@ -177,7 +177,7 @@ def test_fill_handler_progress_clock_completes_linked_track(load_engine: None) -
     assert track.status == "completed"
 
 
-def test_fill_handler_unknown_clock_type_raises(load_engine: None) -> None:
+def test_fill_handler_unknown_clock_type_raises() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     clock = make_clock(name="Strange", clock_type="unmapped", segments=4, filled=4)
 

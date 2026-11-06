@@ -8,6 +8,17 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.06.4] — 2026-11-06
+
+Unused arguments and self, the fifth step of the user's request: ruff's rules on unused arguments (ARG), methods that never use `self`, and underscored names that are used leave the later groups.
+
+- `load_engine`, which 922 tests asked for only to install the real configuration, runs for every test from `[tool.pytest.ini_options]` `usefixtures`, and the tests no longer name it; the other fixtures a test needs only for what they set up are named in `pytest.mark.usefixtures`.
+- An argument a function must take but does not read starts with an underscore: the effect and move handlers that share one signature in `ruleset/move_effects.py` and `ruleset/move_handlers.py`, and the tests' fakes; a fake the engine calls by keyword takes the arguments it ignores as `**_kwargs`.
+- A method that never reads `self` is a static method: the provider adapters' request and response builders and the test methods in classes; the two identical `client` fixtures of `tests/test_web.py` are one at module level.
+- A local name that starts with an underscore but is read lost the underscore, ruff's own rewrite; three that then shadowed or misnamed another value have names of their own (`tfidf_cfg` in `gamemaster/npc/activation.py`, `weights` in `gamemaster/npc/memory.py`, `texts` in `ai/brain.py`). Two test modules that still marked `load_engine` no longer do.
+
+Quality gate: 1896 tests, coverage 96.09% to 96.13%, mypy clean on 266 files, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: nothing the game does changes.
+
 ## [2026.11.06.3] — 2026-11-06
 
 Exception messages, the fourth step of the user's request: ruff's rules on how an exception is raised (EM, and TRY003 on long messages) leave the later groups. Every message is built in a variable before the `raise`, ruff's own rewrite, in `src/`, the tests, and Elvira.

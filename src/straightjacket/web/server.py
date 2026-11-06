@@ -107,11 +107,11 @@ async def _takeover_existing_session(ws: WebSocket) -> None:
             await active_session.active_ws.close()
         except (WebSocketDisconnect, RuntimeError, OSError) as e:
             log(f"[Web] takeover notify on old ws failed: {e}", level="debug")
-    _rl = eng().rate_limit
-    for _ in range(_rl.warn_probe_max_tries):
+    rl = eng().rate_limit
+    for _ in range(rl.warn_probe_max_tries):
         if not active_session.processing:
             break
-        await asyncio.sleep(_rl.warn_probe_poll_seconds)
+        await asyncio.sleep(rl.warn_probe_poll_seconds)
     active_session.active_ws = ws
 
 

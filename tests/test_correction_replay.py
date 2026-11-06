@@ -40,7 +40,7 @@ def _turn_then_correct(provider: TurnProvider) -> tuple[Any, Any, str, Any]:
     return before, game, narration, offer
 
 
-def test_a_misread_correction_keeps_the_dice_and_scores_the_new_stat(load_engine: None, dice: dict[str, int]) -> None:
+def test_a_misread_correction_keeps_the_dice_and_scores_the_new_stat(dice: dict[str, int]) -> None:
     before, game, _narration, _offer = _turn_then_correct(TurnProvider(brain_answer(), brain_answer(stat="iron")))
 
     assert before.narrative.session_log[-1].result == "WEAK_HIT"
@@ -52,16 +52,15 @@ def test_a_misread_correction_keeps_the_dice_and_scores_the_new_stat(load_engine
     assert dice["rolls"] == 1
 
 
-def test_a_misread_correction_with_the_same_stat_keeps_its_result(load_engine: None, dice: dict[str, int]) -> None:
+@pytest.mark.usefixtures("dice")
+def test_a_misread_correction_with_the_same_stat_keeps_its_result() -> None:
     _before, game, _narration, _offer = _turn_then_correct(TurnProvider(brain_answer(), brain_answer()))
 
     last = game.narrative.session_log[-1]
     assert (last.move, last.result) == ("adventure/face_danger", "WEAK_HIT")
 
 
-def test_a_misread_correction_keeps_the_scene_and_carries_the_correction_to_the_narrator(
-    load_engine: None, dice: dict[str, int]
-) -> None:
+def test_a_misread_correction_keeps_the_scene_and_carries_the_correction_to_the_narrator(dice: dict[str, int]) -> None:
     dice["scene_roll"] = 2
     provider = TurnProvider(brain_answer(), brain_answer(stat="iron"))
     _turn_then_correct(provider)
@@ -71,7 +70,8 @@ def test_a_misread_correction_keeps_the_scene_and_carries_the_correction_to_the_
     assert "<correction_context>" in provider.prompts[-1]
 
 
-def test_a_corrected_miss_can_offer_a_burn(load_engine: None, dice: dict[str, int]) -> None:
+@pytest.mark.usefixtures("dice")
+def test_a_corrected_miss_can_offer_a_burn() -> None:
     _before, _game_after, _narration, offer = _turn_then_correct(
         TurnProvider(brain_answer(), brain_answer(stat="iron"))
     )
@@ -80,7 +80,8 @@ def test_a_corrected_miss_can_offer_a_burn(load_engine: None, dice: dict[str, in
     assert offer.new_result == "WEAK_HIT"
 
 
-def test_elvira_accepts_a_replayed_turn_and_a_burn(load_engine: None, dice: dict[str, int]) -> None:
+@pytest.mark.usefixtures("dice")
+def test_elvira_accepts_a_replayed_turn_and_a_burn() -> None:
     before, game, narration, offer = _turn_then_correct(TurnProvider(brain_answer(), brain_answer(stat="iron")))
     assert check_turn_replacement(before, game, narration, 1, "correction", keeps_location=False) == []
 

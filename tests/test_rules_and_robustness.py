@@ -54,7 +54,7 @@ def test_compel_strong_hit_does_not_mark_bond() -> None:
         assert not [effect for effect in outcomes[key]["strong_hit"] if effect.startswith("bond")], key
 
 
-def test_momentum_reset_follows_impacts_and_stops_at_reset_floor(load_engine: None) -> None:
+def test_momentum_reset_follows_impacts_and_stops_at_reset_floor() -> None:
     impacts = ["wounded", "shaken", "unprepared", "doomed"]
     for marked, expected in {0: 2, 1: 1, 2: 0, 3: 0, 4: 0}.items():
         game = make_game_state(impacts=impacts[:marked])
@@ -67,7 +67,7 @@ def _reflect_on_npc_1(game: GameState) -> None:
     apply_director_guidance(game, make_director_guidance(npc_reflections=keyed_reflections(make_npc_reflection())))
 
 
-def test_reflection_for_deceased_npc_is_rejected(load_engine: None) -> None:
+def test_reflection_for_deceased_npc_is_rejected() -> None:
     npc = _profiled_npc("deceased", needs_reflection=True)
     game = _game_with(npc)
     before = len(npc.memory)
@@ -75,7 +75,7 @@ def test_reflection_for_deceased_npc_is_rejected(load_engine: None) -> None:
     assert len(npc.memory) == before
 
 
-def test_reflection_for_npc_the_engine_did_not_select_is_rejected(load_engine: None) -> None:
+def test_reflection_for_npc_the_engine_did_not_select_is_rejected() -> None:
     npc = _profiled_npc("active", needs_reflection=False)
     game = _game_with(npc)
     before = len(npc.memory)
@@ -83,7 +83,7 @@ def test_reflection_for_npc_the_engine_did_not_select_is_rejected(load_engine: N
     assert len(npc.memory) == before
 
 
-def test_reflection_for_an_npc_the_game_does_not_know_is_rejected(load_engine: None) -> None:
+def test_reflection_for_an_npc_the_game_does_not_know_is_rejected() -> None:
     npc = _profiled_npc("active", needs_reflection=True)
     game = _game_with(npc)
     apply_director_guidance(
@@ -92,7 +92,7 @@ def test_reflection_for_an_npc_the_game_does_not_know_is_rejected(load_engine: N
     assert [m for m in npc.memory if m.type == "reflection"] == []
 
 
-def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_engine: None) -> None:
+def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased() -> None:
     game = make_game_state(setting_id="classic")
     game.npcs = []
     metadata = {
@@ -107,7 +107,7 @@ def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_eng
     assert mara.status == "deceased"
 
 
-def test_a_figure_matched_by_description_keeps_the_named_npc_name(load_engine: None) -> None:
+def test_a_figure_matched_by_description_keeps_the_named_npc_name() -> None:
     game = make_game_state()
     game.world.current_location = "quarry road"
     game.npcs = [
@@ -138,7 +138,7 @@ def test_a_figure_matched_by_description_keeps_the_named_npc_name(load_engine: N
     assert "Warden archer" in hale.aliases
 
 
-def test_an_npc_called_by_part_of_its_name_stays_one_npc(load_engine: None) -> None:
+def test_an_npc_called_by_part_of_its_name_stays_one_npc() -> None:
     game = make_game_state()
     game.npcs = [make_npc(id="npc_1", name="Kira Vance", description="A pilot.")]
     metadata = {
@@ -154,7 +154,7 @@ def test_an_npc_called_by_part_of_its_name_stays_one_npc(load_engine: None) -> N
 
 
 @pytest.mark.parametrize(("label", "count"), [("Second deckhand", 2), ("Lunging deckhand", 1)])
-def test_an_npc_the_engine_named_is_matched_only_by_its_own_label(load_engine: None, label: str, count: int) -> None:
+def test_an_npc_the_engine_named_is_matched_only_by_its_own_label(label: str, count: int) -> None:
     game = make_game_state(setting_id="classic")
     nerissa = make_npc(id="npc_4", name="Nerissa Ashcroft", name_rolled=True, aliases=["Lunging deckhand"])
     game.npcs = [nerissa]
@@ -180,7 +180,7 @@ def _detail(npc_id: str, full_name: str) -> dict[str, Any]:
     }
 
 
-def test_a_name_revealed_for_an_unnamed_figure_is_taken(load_engine: None) -> None:
+def test_a_name_revealed_for_an_unnamed_figure_is_taken() -> None:
     game = make_game_state()
     memory = [make_memory(scene=1, event="A voice on the comm", emotional_weight="neutral", importance=3)]
     game.npcs = [make_npc(id="npc_2", name="Unnamed woman on the comm", status="lore", memory=memory)]
@@ -190,7 +190,7 @@ def test_a_name_revealed_for_an_unnamed_figure_is_taken(load_engine: None) -> No
     assert "Unnamed woman on the comm" in kestrel.aliases
 
 
-def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(load_engine: None) -> None:
+def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once() -> None:
     game = library_game()
     seed = assemble_blueprint_seed_from_ac(random.Random(1), game)
     blueprint = crafter().adventure_crafter.blueprint

@@ -28,7 +28,7 @@ def _duel(result: str, boasts: list[str]) -> tuple[int, int, list[str]]:
     )
 
 
-def test_a_strong_hit_takes_momentum_and_up_to_two_boasts(load_engine: None) -> None:
+def test_a_strong_hit_takes_momentum_and_up_to_two_boasts() -> None:
     momentum, health, consequences = _duel("STRONG_HIT", ["bloody_yourself", "to_the_death"])
     assert momentum == 3
     assert health == -1
@@ -36,7 +36,7 @@ def test_a_strong_hit_takes_momentum_and_up_to_two_boasts(load_engine: None) -> 
     assert any("to the death" in c for c in consequences)
 
 
-def test_a_weak_hit_gives_momentum_only_for_one_boast(load_engine: None) -> None:
+def test_a_weak_hit_gives_momentum_only_for_one_boast() -> None:
     assert _duel("WEAK_HIT", [])[0] == 0
     momentum, _health, consequences = _duel("WEAK_HIT", ["hold_no_iron", "bare_yourself"])
     assert momentum == 1
@@ -44,19 +44,19 @@ def test_a_weak_hit_gives_momentum_only_for_one_boast(load_engine: None) -> None
     assert not any("bare yourself" in c for c in consequences)
 
 
-def test_a_miss_ignores_boasts(load_engine: None) -> None:
+def test_a_miss_ignores_boasts() -> None:
     _momentum, _health, consequences = _duel("MISS", ["to_the_death"])
     assert not any("to the death" in c for c in consequences)
 
 
-def test_the_brain_offers_the_boasts_of_the_rules(load_engine: None) -> None:
+def test_the_brain_offers_the_boasts_of_the_rules() -> None:
     boasts = get_brain_output_schema([_MOVE], [], [], [], [], [], [])["properties"]["boasts"]
     assert boasts["items"]["enum"] == sorted(rules().boasts.options)
     assert len(boasts["items"]["enum"]) == 5
     assert boasts["maxItems"] == 2
 
 
-def test_the_brain_rejects_an_unknown_boast(load_engine: None) -> None:
+def test_the_brain_rejects_an_unknown_boast() -> None:
     content = json.dumps(brain_answer(location_change=None, boasts=["fight_naked"]))
     with pytest.raises(AIUnavailableError, match="boasts"):
         call_brain(MockProvider(response_content=content), make_game_state(setting_id="classic"), "I challenge him")

@@ -28,7 +28,7 @@ def _starforged() -> Any:
     ],
 )
 def test_what_a_turn_rolls_with_or_plays_as_dialog(
-    load_engine: None, move: str, stat: str, dialog_only: bool, rolled: tuple[str, int] | None
+    move: str, stat: str, dialog_only: bool, rolled: tuple[str, int] | None
 ) -> None:
     game = create_game(
         "starforged",
@@ -46,14 +46,14 @@ def test_what_a_turn_rolls_with_or_plays_as_dialog(
     assert (None if roll is None else (roll.stat_name, roll.stat_value)) == rolled
 
 
-def test_a_stat_the_brain_names_for_a_meter_move_is_ignored(load_engine: None) -> None:
+def test_a_stat_the_brain_names_for_a_meter_move_is_ignored() -> None:
     game = _starforged()
     game.resources.meters["supply"] = 2
     outcome = roll_move(game, make_brain_result(move="exploration/set_a_course", stat="wits"), None)
     assert (outcome.roll.stat_name, outcome.roll.stat_value) == ("supply", 2)
 
 
-def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(load_engine: None) -> None:
+def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection() -> None:
     game = _starforged()
     game.npcs = [make_npc(id="npc_1", name="Vex")]
     track = new_track(track_id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
@@ -64,7 +64,7 @@ def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(lo
     assert (outcome.roll.stat_name, outcome.roll.stat_value) == ("dangerous", 2)
 
 
-def test_a_connection_without_a_bond_gives_develop_your_relationship_nothing_to_roll(load_engine: None) -> None:
+def test_a_connection_without_a_bond_gives_develop_your_relationship_nothing_to_roll() -> None:
     game = _starforged()
     game.progress_tracks.append(
         new_track(track_id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")

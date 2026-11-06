@@ -19,21 +19,24 @@ def _game(setting: str = "starforged", combat_position: str = "") -> GameState:
 
 
 class TestCombatTrackCompletion:
-    def test_complete_combat_track_clears_position(self) -> None:
+    @staticmethod
+    def test_complete_combat_track_clears_position() -> None:
         game = _game(combat_position="in_control")
         game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=20))
         complete_track(game, "c1", "completed")
         assert game.progress_tracks[0].status == "completed"
         assert game.world.combat_position == ""
 
-    def test_fail_combat_track_clears_position(self) -> None:
+    @staticmethod
+    def test_fail_combat_track_clears_position() -> None:
         game = _game(combat_position="bad_spot")
         game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=8))
         complete_track(game, "c1", "failed")
         assert game.progress_tracks[0].status == "failed"
         assert game.world.combat_position == ""
 
-    def test_complete_vow_does_not_clear_position(self) -> None:
+    @staticmethod
+    def test_complete_vow_does_not_clear_position() -> None:
         game = _game(combat_position="in_control")
         game.progress_tracks.append(make_progress_track(id="v1", name="Vow", track_type="vow", ticks=40))
         complete_track(game, "v1", "completed")
@@ -41,7 +44,8 @@ class TestCombatTrackCompletion:
 
 
 class TestAvailableMovesStatusFilter:
-    def test_completed_vow_excludes_fulfill(self, load_engine: None) -> None:
+    @staticmethod
+    def test_completed_vow_excludes_fulfill() -> None:
         game = _game()
         game.progress_tracks.append(
             make_progress_track(id="v1", name="Old Vow", track_type="vow", ticks=40, status="completed")
@@ -49,7 +53,8 @@ class TestAvailableMovesStatusFilter:
         move_keys = set(available_moves(game))
         assert "quest/fulfill_your_vow" not in move_keys
 
-    def test_failed_combat_track_excludes_decisive(self, load_engine: None) -> None:
+    @staticmethod
+    def test_failed_combat_track_excludes_decisive() -> None:
         game = _game(combat_position="in_control")
         game.progress_tracks.append(
             make_progress_track(id="c1", name="Fight", track_type="combat", ticks=20, status="failed")
@@ -57,7 +62,8 @@ class TestAvailableMovesStatusFilter:
         move_keys = set(available_moves(game))
         assert "combat/take_decisive_action" not in move_keys
 
-    def test_completed_expedition_excludes_finish(self, load_engine: None) -> None:
+    @staticmethod
+    def test_completed_expedition_excludes_finish() -> None:
         game = _game()
         game.progress_tracks.append(
             make_progress_track(id="e1", name="Journey", track_type="expedition", ticks=40, status="completed")
@@ -65,7 +71,8 @@ class TestAvailableMovesStatusFilter:
         move_keys = set(available_moves(game))
         assert "exploration/finish_an_expedition" not in move_keys
 
-    def test_completed_scene_challenge_excludes_moves(self, load_engine: None) -> None:
+    @staticmethod
+    def test_completed_scene_challenge_excludes_moves() -> None:
         game = _game()
         game.progress_tracks.append(
             make_progress_track(id="sc1", name="Escape", track_type="scene_challenge", ticks=40, status="completed")
@@ -75,25 +82,29 @@ class TestAvailableMovesStatusFilter:
 
 
 class TestTracksStatus:
-    def test_no_tracks(self) -> None:
+    @staticmethod
+    def test_no_tracks() -> None:
         game = _game()
         result = build_tracks_status(game)
         assert "no active" in result.lower() or "No active" in result
 
-    def test_vow_track_shown(self) -> None:
+    @staticmethod
+    def test_vow_track_shown() -> None:
         game = _game()
         game.progress_tracks.append(make_progress_track(id="v1", name="Iron Vow", track_type="vow", ticks=20))
         result = build_tracks_status(game)
         assert "Iron Vow" in result
 
-    def test_combat_track_shows_position(self) -> None:
+    @staticmethod
+    def test_combat_track_shows_position() -> None:
         game = _game(combat_position="in_control")
         game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12))
         result = build_tracks_status(game)
         assert "Fight" in result
         assert "in control" in result
 
-    def test_completed_track_not_shown(self) -> None:
+    @staticmethod
+    def test_completed_track_not_shown() -> None:
         game = _game()
         game.progress_tracks.append(
             make_progress_track(id="v1", name="Done Vow", track_type="vow", ticks=40, status="completed")
@@ -101,14 +112,16 @@ class TestTracksStatus:
         result = build_tracks_status(game)
         assert "Done Vow" not in result
 
-    def test_a_bonded_connection_is_shown_as_a_bond(self) -> None:
+    @staticmethod
+    def test_a_bonded_connection_is_shown_as_a_bond() -> None:
         game = _game()
         game.progress_tracks.append(
             make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", status="bonded")
         )
         assert build_tracks_status(game) == t("status.track_bonded", name="Mira")
 
-    def test_every_track_type_of_the_ruleset_has_its_line(self, load_engine: None) -> None:
+    @staticmethod
+    def test_every_track_type_of_the_ruleset_has_its_line() -> None:
         track_types = set(rules().get_raw("track_types_by_category").values())
         assert {f"status.track_{track_type}" for track_type in track_types} <= set(all_strings())
 
@@ -148,7 +161,7 @@ def test_progress_track_filled_boxes() -> None:
     assert filled_boxes(t) == 4
 
 
-def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
+def test_progress_roll_uses_track_boxes() -> None:
     track = make_progress_track(id="v1", name="Find the artifact", track_type="vow", rank="dangerous", ticks=24)
     assert filled_boxes(track) == 6
     roll = roll_progress(track.name, filled_boxes(track), "quest/fulfill_your_vow")
@@ -157,7 +170,7 @@ def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
     assert roll.d1 == 0
 
 
-def test_find_progress_track(load_engine: None) -> None:
+def test_find_progress_track() -> None:
     game = _game()
     game.progress_tracks = [
         make_progress_track(id="v1", name="Find Kira", track_type="vow", ticks=8),

@@ -49,35 +49,41 @@ def _game_with_threat() -> GameState:
 
 
 class TestThreatData:
-    def test_menace_per_mark_dangerous(self) -> None:
+    @staticmethod
+    def test_menace_per_mark_dangerous() -> None:
         t = make_threat(rank="dangerous")
         assert menace_per_mark(t) == 8
 
-    def test_menace_per_mark_epic(self) -> None:
+    @staticmethod
+    def test_menace_per_mark_epic() -> None:
         t = make_threat(rank="epic")
         assert menace_per_mark(t) == 1
 
-    def test_advance_menace(self) -> None:
+    @staticmethod
+    def test_advance_menace() -> None:
         t = make_threat(rank="dangerous", menace_ticks=0)
         added = advance_menace(t, 1)
         assert added == 8
         assert t.menace_ticks == 8
         assert menace_boxes(t) == 2
 
-    def test_advance_menace_clamped(self) -> None:
+    @staticmethod
+    def test_advance_menace_clamped() -> None:
         t = make_threat(rank="dangerous", menace_ticks=36)
         added = advance_menace(t, 1)
         assert added == 4
         assert t.menace_ticks == 40
         assert t.menace_full
 
-    def test_menace_full_property(self) -> None:
+    @staticmethod
+    def test_menace_full_property() -> None:
         t = make_threat(menace_ticks=40)
         assert t.menace_full
         t2 = make_threat(menace_ticks=39)
         assert not t2.menace_full
 
-    def test_serialization_round_trip(self) -> None:
+    @staticmethod
+    def test_serialization_round_trip() -> None:
         t = make_threat(
             id="t1",
             name="Plague",
@@ -95,7 +101,8 @@ class TestThreatData:
 
 
 class TestThreatSnapshotRestore:
-    def test_threats_restored_on_snapshot(self) -> None:
+    @staticmethod
+    def test_threats_restored_on_snapshot() -> None:
         game = _game_with_threat()
         snap = game.snapshot()
 
@@ -109,7 +116,8 @@ class TestThreatSnapshotRestore:
         assert game.threats[0].menace_ticks == 0
         assert game.threats[0].name == "The Beast Awakens"
 
-    def test_to_dict_from_dict_round_trip(self) -> None:
+    @staticmethod
+    def test_to_dict_from_dict_round_trip() -> None:
         game = _game_with_threat()
         advance_menace(game.threats[0], 1)
         d = game.to_dict()
@@ -120,27 +128,31 @@ class TestThreatSnapshotRestore:
 
 
 class TestMenaceOnMiss:
-    def test_advance_on_miss(self, load_engine: None) -> None:
+    @staticmethod
+    def test_advance_on_miss() -> None:
         game = _game_with_threat()
         events = advance_menace_on_miss(game)
         assert len(events) == 1
         assert events[0].threat_name == "The Beast Awakens"
         assert game.threats[0].menace_ticks == 8
 
-    def test_no_advance_when_vow_completed(self, load_engine: None) -> None:
+    @staticmethod
+    def test_no_advance_when_vow_completed() -> None:
         game = _game_with_threat()
         game.progress_tracks[0].status = "completed"
         events = advance_menace_on_miss(game)
         assert events == []
         assert game.threats[0].menace_ticks == 0
 
-    def test_no_advance_when_threat_resolved(self, load_engine: None) -> None:
+    @staticmethod
+    def test_no_advance_when_threat_resolved() -> None:
         game = _game_with_threat()
         game.threats[0].status = "resolved"
         events = advance_menace_on_miss(game)
         assert events == []
 
-    def test_menace_full_event(self, load_engine: None) -> None:
+    @staticmethod
+    def test_menace_full_event() -> None:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 36
         events = advance_menace_on_miss(game)
@@ -150,22 +162,23 @@ class TestMenaceOnMiss:
 
 
 class TestAdvanceById:
-    def test_a_random_event_marks_the_configured_menace(self, load_engine: None) -> None:
+    @staticmethod
+    def test_a_random_event_marks_the_configured_menace() -> None:
         game = _game_with_threat()
         advance_threat_by_id(game, "threat_beast")
         threat = game.threats[0]
         assert threat.menace_ticks == rules().threats.menace_on_random_event * menace_per_mark(threat)
 
-    def test_advance_nonexistent_changes_nothing(self, load_engine: None) -> None:
+    @staticmethod
+    def test_advance_nonexistent_changes_nothing() -> None:
         game = _game_with_threat()
         advance_threat_by_id(game, "nonexistent")
         assert game.threats[0].menace_ticks == 0
 
 
 class TestAdvancesReachTheNarrator:
-    def test_an_autonomous_tick_waits_for_the_next_turn_as_off_screen(
-        self, load_engine: None, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    @staticmethod
+    def test_an_autonomous_tick_waits_for_the_next_turn_as_off_screen(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr("straightjacket.engine.ruleset.threats.random.random", lambda: 0.0)
         game = _game_with_threat()
         threats.tick_autonomous_threats(game)
@@ -177,14 +190,16 @@ class TestAdvancesReachTheNarrator:
             game, threat_events=[event]
         )
 
-    def test_a_random_event_advance_is_told_in_its_own_turn(self, load_engine: None) -> None:
+    @staticmethod
+    def test_a_random_event_advance_is_told_in_its_own_turn() -> None:
         game = _game_with_threat()
         advance_threat_by_id(game, "threat_beast")
         [event] = take_pending_threat_events(game)
         assert event.source == "random_event"
         assert "offscreen" not in dialog_prompt(game, threat_events=[event])
 
-    def test_delve_tells_what_the_threat_does_from_its_category(self, load_engine: None) -> None:
+    @staticmethod
+    def test_delve_tells_what_the_threat_does_from_its_category() -> None:
         rows = {row.text for row in load_package("delve").oracle_table("threat/rampaging_creature").rows}
         game = _game_with_threat()
         game.setting_id = "delve"
@@ -197,26 +212,30 @@ class TestAdvancesReachTheNarrator:
 
 
 class TestThreatsStatus:
-    def test_active_threats_shown(self, load_engine: None) -> None:
+    @staticmethod
+    def test_active_threats_shown() -> None:
         game = _game_with_threat()
         text = build_threats_status(game)
         assert "Beast Awakens" in text
         assert "distant" in text
 
-    def test_high_menace_shown(self, load_engine: None) -> None:
+    @staticmethod
+    def test_high_menace_shown() -> None:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 36
         text = build_threats_status(game)
         assert "tipping point" in text
 
-    def test_no_threats(self, load_engine: None) -> None:
+    @staticmethod
+    def test_no_threats() -> None:
         game = make_game_state()
         text = build_threats_status(game)
         assert "No active threats" in text
 
 
 class TestResolveForsakeVow:
-    def test_menace_full_fails_vow(self, load_engine: None) -> None:
+    @staticmethod
+    def test_menace_full_fails_vow() -> None:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
         events = resolve_full_menace(game, make_outcome())
@@ -225,7 +244,8 @@ class TestResolveForsakeVow:
         assert game.progress_tracks[0].status == "failed"
         assert game.threats[0].status == "resolved"
 
-    def test_menace_full_damages_spirit(self, load_engine: None) -> None:
+    @staticmethod
+    def test_menace_full_damages_spirit() -> None:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
         old_spirit = game.resources.meters["spirit"]
@@ -235,7 +255,8 @@ class TestResolveForsakeVow:
         assert labels_of(result.consequences) == ['forsake the vow "Hunt the beast"', "spirit -2"]
         assert result.follow_up_moves == []
 
-    def test_classic_forsakes_through_endure_stress(self, load_engine: None) -> None:
+    @staticmethod
+    def test_classic_forsakes_through_endure_stress() -> None:
         game = _game_with_threat()
         game.setting_id = "classic"
         game.progress_tracks[0].rank = "formidable"
@@ -245,7 +266,8 @@ class TestResolveForsakeVow:
         assert result.follow_up_moves == ["suffer/endure_stress"]
         assert labels_of(result.consequences) == ['forsake the vow "Hunt the beast"', "spirit -3"]
 
-    def test_menace_full_deactivates_thread(self, load_engine: None) -> None:
+    @staticmethod
+    def test_menace_full_deactivates_thread() -> None:
         game = _game_with_threat()
         game.narrative.threads.append(
             make_thread(
@@ -261,7 +283,8 @@ class TestResolveForsakeVow:
         resolve_full_menace(game, make_outcome())
         assert not game.narrative.threads[0].active
 
-    def test_menace_not_full_no_effect(self, load_engine: None) -> None:
+    @staticmethod
+    def test_menace_not_full_no_effect() -> None:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 30
         events = resolve_full_menace(game, make_outcome())
@@ -269,14 +292,16 @@ class TestResolveForsakeVow:
         assert game.progress_tracks[0].status == "active"
         assert game.threats[0].status == "active"
 
-    def test_resolved_threat_skipped(self, load_engine: None) -> None:
+    @staticmethod
+    def test_resolved_threat_skipped() -> None:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
         game.threats[0].status = "resolved"
         events = resolve_full_menace(game, make_outcome())
         assert events == []
 
-    def test_menace_full_vow_already_gone(self, load_engine: None) -> None:
+    @staticmethod
+    def test_menace_full_vow_already_gone() -> None:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
         game.progress_tracks[0].status = "completed"
@@ -293,18 +318,21 @@ class TestResolveForsakeVow:
 
 
 class TestVowCompletionResolveThreat:
-    def test_vow_completed_resolves_threat_as_overcome(self) -> None:
+    @staticmethod
+    def test_vow_completed_resolves_threat_as_overcome() -> None:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 20
         complete_track(game, "vow_hunt", "completed")
         assert game.threats[0].status == "overcome"
 
-    def test_vow_failed_resolves_threat_as_resolved(self) -> None:
+    @staticmethod
+    def test_vow_failed_resolves_threat_as_resolved() -> None:
         game = _game_with_threat()
         complete_track(game, "vow_hunt", "failed")
         assert game.threats[0].status == "resolved"
 
-    def test_non_vow_track_does_not_touch_threats(self) -> None:
+    @staticmethod
+    def test_non_vow_track_does_not_touch_threats() -> None:
         game = _game_with_threat()
         game.progress_tracks.append(make_progress_track(id="combat_1", name="Fight", track_type="combat", ticks=20))
         complete_track(game, "combat_1", "completed")
@@ -312,7 +340,8 @@ class TestVowCompletionResolveThreat:
 
 
 class TestAVowSwornAgainstAThreat:
-    def test_swearing_a_vow_against_a_threat_links_them(self, load_engine: None) -> None:
+    @staticmethod
+    def test_swearing_a_vow_against_a_threat_links_them() -> None:
         game = make_game_state(player_name="Hero", setting_id="starforged")
         game.threats.append(make_threat(id="threat_ac_1", name="The Hollow Choir"))
         brain = make_brain_result(
@@ -328,7 +357,8 @@ class TestAVowSwornAgainstAThreat:
         assert vow.name == "Silence the Hollow Choir"
         assert [e.threat_id for e in advance_menace_on_miss(game)] == ["threat_ac_1"]
 
-    def test_a_vow_sworn_without_a_threat_links_none(self, load_engine: None) -> None:
+    @staticmethod
+    def test_a_vow_sworn_without_a_threat_links_none() -> None:
         game = make_game_state(player_name="Hero", setting_id="starforged")
         game.threats.append(make_threat(id="threat_ac_1"))
         brain = make_brain_result(
@@ -338,7 +368,8 @@ class TestAVowSwornAgainstAThreat:
         assert vow_against(game, game.threats[0]) is None
         assert advance_menace_on_miss(game) == []
 
-    def test_the_brain_sees_threats_and_may_name_one_without_a_vow(self, load_engine: None) -> None:
+    @staticmethod
+    def test_the_brain_sees_threats_and_may_name_one_without_a_vow() -> None:
         game = _game_with_threat()
         game.threats.append(make_threat(id="threat_ac_1", name="The Hollow Choir"))
         provider = TurnProvider(brain_answer(target_threat="threat_ac_1"))
@@ -352,6 +383,7 @@ class TestAVowSwornAgainstAThreat:
 
 
 class TestAdvanceAThreatInClassic:
+    @staticmethod
     @pytest.mark.parametrize(
         ("tens", "units", "marks", "told"),
         [
@@ -361,7 +393,7 @@ class TestAdvanceAThreatInClassic:
         ],
     )
     def test_every_advance_rolls_delves_table(
-        self, load_engine: None, monkeypatch: pytest.MonkeyPatch, tens: int, units: int, marks: int, told: str
+        monkeypatch: pytest.MonkeyPatch, tens: int, units: int, marks: int, told: str
     ) -> None:
         game = _game_with_threat()
         game.setting_id = "classic"
@@ -370,7 +402,8 @@ class TestAdvanceAThreatInClassic:
         assert game.threats[0].menace_ticks == marks * menace_per_mark(game.threats[0])
         assert event.development == told
 
-    def test_a_match_exposes_a_surprising_aspect(self, load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    @staticmethod
+    def test_a_match_exposes_a_surprising_aspect(monkeypatch: pytest.MonkeyPatch) -> None:
         game = _game_with_threat()
         game.setting_id = "classic"
         fix_dice(monkeypatch, 5, 5)
@@ -378,7 +411,8 @@ class TestAdvanceAThreatInClassic:
         [event] = take_pending_threat_events(game)
         assert event.development.endswith(rules().threats.advance_a_threat["classic"].match)
 
-    def test_starforged_keeps_its_one_mark_until_its_own_clocks(self, load_engine: None) -> None:
+    @staticmethod
+    def test_starforged_keeps_its_one_mark_until_its_own_clocks() -> None:
         game = _game_with_threat()
         [event] = advance_menace_on_miss(game)
         assert game.threats[0].menace_ticks == rules().threats.menace_on_miss * menace_per_mark(game.threats[0])

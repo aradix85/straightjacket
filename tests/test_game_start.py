@@ -31,7 +31,7 @@ def _creation() -> dict[str, Any]:
     return creation
 
 
-def test_start_new_game_happy_path(load_engine: None) -> None:
+def test_start_new_game_happy_path() -> None:
     provider = _provider()
     creation = _creation()
     game, narration = start_new_game(provider, creation)
@@ -43,7 +43,7 @@ def test_start_new_game_happy_path(load_engine: None) -> None:
     assert narration == OPENING_TEXT
 
 
-def test_start_new_game_empty_background_vow_raises(load_engine: None) -> None:
+def test_start_new_game_empty_background_vow_raises() -> None:
     provider = _provider()
     creation = _creation()
     creation["background_vow"] = ""
@@ -51,7 +51,7 @@ def test_start_new_game_empty_background_vow_raises(load_engine: None) -> None:
         start_new_game(provider, creation)
 
 
-def test_start_new_game_empty_player_name_raises(load_engine: None) -> None:
+def test_start_new_game_empty_player_name_raises() -> None:
     provider = _provider()
     creation = _creation()
     creation["player_name"] = ""
@@ -59,7 +59,7 @@ def test_start_new_game_empty_player_name_raises(load_engine: None) -> None:
         start_new_game(provider, creation)
 
 
-def test_start_new_game_invalid_stats_raises(load_engine: None) -> None:
+def test_start_new_game_invalid_stats_raises() -> None:
     provider = _provider()
     creation = _creation()
     creation["stats"] = {"edge": 1, "heart": 1, "iron": 1, "shadow": 1, "wits": 1}
@@ -67,7 +67,7 @@ def test_start_new_game_invalid_stats_raises(load_engine: None) -> None:
         start_new_game(provider, creation)
 
 
-def test_start_new_game_seeds_background_vow_track(load_engine: None) -> None:
+def test_start_new_game_seeds_background_vow_track() -> None:
     provider = _provider()
     game, _ = start_new_game(provider, _creation())
     vow_tracks = [t for t in game.progress_tracks if t.id == "vow_background"]
@@ -75,21 +75,21 @@ def test_start_new_game_seeds_background_vow_track(load_engine: None) -> None:
     assert vow_tracks[0].rank == "epic"
 
 
-def test_start_new_game_creates_opening_clock(load_engine: None) -> None:
+def test_start_new_game_creates_opening_clock() -> None:
     provider = _provider()
     game, _ = start_new_game(provider, _creation())
     assert len(game.world.clocks) >= 1
     assert any(c.name == "Find the lost archive" for c in game.world.clocks)
 
 
-def test_start_new_game_seeds_thread_for_vow(load_engine: None) -> None:
+def test_start_new_game_seeds_thread_for_vow() -> None:
     provider = _provider()
     game, _ = start_new_game(provider, _creation())
     vow_threads = [t for t in game.narrative.threads if t.id == "thread_background_vow"]
     assert len(vow_threads) == 1
 
 
-def test_start_new_game_keeps_the_content_lines(load_engine: None) -> None:
+def test_start_new_game_keeps_the_content_lines() -> None:
     provider = _provider()
     creation = _creation()
     creation["content_lines"] = "no spiders, no body horror"
@@ -97,7 +97,7 @@ def test_start_new_game_keeps_the_content_lines(load_engine: None) -> None:
     assert game.preferences.content_lines == "no spiders, no body horror"
 
 
-def test_the_ranks_run_from_troublesome_to_epic_in_every_rank_table(load_engine: None) -> None:
+def test_the_ranks_run_from_troublesome_to_epic_in_every_rank_table() -> None:
     assert ranks() == ["troublesome", "dangerous", "formidable", "extreme", "epic"]
     assert list(rules().legacy.ticks_by_rank) == ranks()
     assert list(rules().legacy.experience_by_rank) == ranks()
@@ -105,7 +105,7 @@ def test_the_ranks_run_from_troublesome_to_epic_in_every_rank_table(load_engine:
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged", "sundered_isles"])
 def test_a_created_game_plays_a_turn_in_every_playable_setting(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, setting_id: str
+    monkeypatch: pytest.MonkeyPatch, setting_id: str
 ) -> None:
     game = create_game(
         setting_id,

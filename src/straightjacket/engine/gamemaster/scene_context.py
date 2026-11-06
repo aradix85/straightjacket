@@ -17,11 +17,11 @@ def generate_scene_context(
     outcome: str,
     activated_npc_names: list[str],
 ) -> str:
-    _defaults = eng().ai_text.narrator_defaults
-    _npc_max = eng().prompt_display.memory_npcs_max
+    defaults = eng().ai_text.narrator_defaults
+    npc_max = eng().prompt_display.memory_npcs_max
     move = brain.move
-    location = game.world.current_location or _defaults["unknown_location"]
-    npc_summary = ", ".join(activated_npc_names[:_npc_max]) if activated_npc_names else _defaults["no_npcs_nearby"]
+    location = game.world.current_location or defaults["unknown_location"]
+    npc_summary = ", ".join(activated_npc_names[:npc_max]) if activated_npc_names else defaults["no_npcs_nearby"]
 
     if is_dialog_branch(brain):
         return gm().scene_context.dialog.format(location=location, npc_summary=npc_summary)

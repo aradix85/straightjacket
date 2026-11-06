@@ -297,14 +297,14 @@ def _check_edit_distance_variant(
     if not ext_words or not new_words_sorted or len(ext_words) != len(new_words_sorted):
         return
 
-    _fm = gm().fuzzy_match
-    _desc_word_min = _fm.description_word_min_length
+    fm = gm().fuzzy_match
+    desc_word_min = fm.description_word_min_length
     exact = 0
     near = 0
     for nw, ew in zip(new_words_sorted, ext_words, strict=True):
         if nw == ew:
             exact += 1
-        elif len(nw) >= _desc_word_min and len(ew) >= _desc_word_min and edit_distance_le1(nw, ew):
+        elif len(nw) >= desc_word_min and len(ew) >= desc_word_min and edit_distance_le1(nw, ew):
             near += 1
         else:
             return
@@ -332,8 +332,8 @@ def fuzzy_match_existing_npc(game: GameState, new_name: str) -> tuple[NpcData | 
     new_words_raw = set(new_norm.split())
     new_words = _strip_titles(new_words_raw, titles)
 
-    _fuzzy = gm().fuzzy_match
-    _npc_match = gm().npc_matching
+    fuzzy = gm().fuzzy_match
+    npc_match = gm().npc_matching
 
     best = _FuzzyMatch(npc=None, score=0, match_type=None)
 
@@ -343,18 +343,16 @@ def fuzzy_match_existing_npc(game: GameState, new_name: str) -> tuple[NpcData | 
 
         name_norm = normalize_for_match(npc.name)
         if new_norm in name_norm or name_norm in new_norm:
-            _check_substring_match(new_norm, npc, best, _fuzzy.min_word_length)
+            _check_substring_match(new_norm, npc, best, fuzzy.min_word_length)
             continue
 
-        early = _check_alias_match(new_norm, npc, best, _fuzzy.min_word_length)
+        early = _check_alias_match(new_norm, npc, best, fuzzy.min_word_length)
         if early is not None:
             return early
 
-        _check_word_overlap(
-            new_norm, new_words, npc, best, titles, _fuzzy.min_word_length, _fuzzy.exact_dedup_threshold
-        )
+        _check_word_overlap(new_norm, new_words, npc, best, titles, fuzzy.min_word_length, fuzzy.exact_dedup_threshold)
 
-        _check_edit_distance_variant(new_norm, npc, best, titles, _fuzzy.min_word_length, _npc_match.stt_alias_bonus)
+        _check_edit_distance_variant(new_norm, npc, best, titles, fuzzy.min_word_length, npc_match.stt_alias_bonus)
 
     if best.npc:
         log(

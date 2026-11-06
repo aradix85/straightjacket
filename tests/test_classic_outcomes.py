@@ -17,7 +17,7 @@ def _bonded(game: GameState) -> GameState:
 
 
 @pytest.mark.parametrize(("result", "marks"), [("STRONG_HIT", 2), ("WEAK_HIT", 1)])
-def test_classic_strike_inflicts_one_harm_more_on_a_strong_hit(load_engine: None, result: str, marks: int) -> None:
+def test_classic_strike_inflicts_one_harm_more_on_a_strong_hit(result: str, marks: int) -> None:
     outcome = resolve_move_outcome(
         library_game(), "combat/strike", result, target_npc_id=None, aided_by=None, match=False
     )
@@ -28,9 +28,7 @@ def test_classic_strike_inflicts_one_harm_more_on_a_strong_hit(load_engine: None
     ("setting", "labels"),
     [("classic", ["momentum -2", "obstacle"]), ("starforged", ["obstacle"])],
 )
-def test_a_missed_vow_meets_an_obstacle_and_classic_presses_on(
-    load_engine: None, setting: str, labels: list[str]
-) -> None:
+def test_a_missed_vow_meets_an_obstacle_and_classic_presses_on(setting: str, labels: list[str]) -> None:
     game = make_game_state(setting_id=setting)
     outcome = resolve_move_outcome(
         game, "quest/swear_an_iron_vow", "MISS", target_npc_id=None, aided_by=None, match=False
@@ -38,7 +36,7 @@ def test_a_missed_vow_meets_an_obstacle_and_classic_presses_on(
     assert labels_of(outcome.consequences) == labels
 
 
-def test_classic_test_your_bond_asks_loyalty_on_a_weak_hit(load_engine: None) -> None:
+def test_classic_test_your_bond_asks_loyalty_on_a_weak_hit() -> None:
     game = _bonded(library_game())
     outcome = resolve_move_outcome(
         game, "relationship/test_your_bond", "WEAK_HIT", target_npc_id="npc_1", aided_by=None, match=False
@@ -47,7 +45,7 @@ def test_classic_test_your_bond_asks_loyalty_on_a_weak_hit(load_engine: None) ->
     assert connection_track(game, "npc_1") is not None
 
 
-def test_a_missed_test_of_a_classic_bond_clears_it(load_engine: None) -> None:
+def test_a_missed_test_of_a_classic_bond_clears_it() -> None:
     game = _bonded(library_game())
     outcome = resolve_move_outcome(
         game, "relationship/test_your_bond", "MISS", target_npc_id="npc_1", aided_by=None, match=False
@@ -58,13 +56,13 @@ def test_a_missed_test_of_a_classic_bond_clears_it(load_engine: None) -> None:
     assert answers().closeness(game, "npc_1") == 0
 
 
-def test_test_your_bond_is_offered_only_with_a_bond(load_engine: None) -> None:
+def test_test_your_bond_is_offered_only_with_a_bond() -> None:
     game = library_game()
     assert "relationship/test_your_bond" not in available_moves(game)
     assert "relationship/test_your_bond" in available_moves(_bonded(game))
 
 
-def test_a_cleared_bond_can_be_sealed_again(load_engine: None) -> None:
+def test_a_cleared_bond_can_be_sealed_again() -> None:
     game = _bonded(library_game())
     resolve_move_outcome(game, "relationship/test_your_bond", "MISS", target_npc_id="npc_1", aided_by=None, match=False)
     assert not [t for t in game.progress_tracks if t.track_type == "connection"]
@@ -73,7 +71,7 @@ def test_a_cleared_bond_can_be_sealed_again(load_engine: None) -> None:
     assert connection_track(game, "npc_1") is not None
 
 
-def test_the_brain_may_not_test_a_bond_with_someone_who_shares_none(load_engine: None) -> None:
+def test_the_brain_may_not_test_a_bond_with_someone_who_shares_none() -> None:
     game = _bonded(library_game())
     game.npcs.append(make_npc(id="npc_2", name="Orla"))
     provider = TurnProvider(brain_answer(move="relationship/test_your_bond", stat="heart", target_npc="npc_2"))

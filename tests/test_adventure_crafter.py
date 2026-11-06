@@ -288,7 +288,7 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
 
     rolls = iter([1] + [1, 1] * 5)
 
-    def fake_randint(a: int, b: int) -> int:
+    def fake_randint(_a: int, _b: int) -> int:
         return next(rolls)
 
     monkeypatch.setattr(rng, "randint", fake_randint)

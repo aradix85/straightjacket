@@ -8,7 +8,7 @@ def _memory(npc: NpcData) -> tuple[NpcData, MemoryEntry]:
     return npc, make_memory(event="Saw the player leave", emotional_weight="calm", importance=2, scene=1)
 
 
-def test_an_npc_the_narration_leaves_behind_keeps_its_place(load_engine: None) -> None:
+def test_an_npc_the_narration_leaves_behind_keeps_its_place() -> None:
     game = make_game_state()
     game.world.current_location = "Glacier ridge trail"
     edda = make_npc(id="npc_1", name="Edda Varn")
@@ -19,7 +19,7 @@ def test_an_npc_the_narration_leaves_behind_keeps_its_place(load_engine: None) -
     assert edda.memory[-1].event == "Saw the player leave"
 
 
-def test_an_npc_the_narration_names_moves_along(load_engine: None) -> None:
+def test_an_npc_the_narration_names_moves_along() -> None:
     game = make_game_state()
     game.world.current_location = "Glacier ridge trail"
     edda = make_npc(id="npc_1", name="Edda Varn")
@@ -29,14 +29,14 @@ def test_an_npc_the_narration_names_moves_along(load_engine: None) -> None:
     assert edda.last_location == "Glacier ridge trail"
 
 
-def test_a_name_counts_as_a_whole_word_or_an_alias(load_engine: None) -> None:
+def test_a_name_counts_as_a_whole_word_or_an_alias() -> None:
     tomas = make_npc(id="npc_2", name="Tomas Reed", aliases=["the smith"])
     assert not named_in(tomas, "A crate of tomatoes waits by the door.")
     assert named_in(tomas, "Tomas waves from the forge.")
     assert named_in(tomas, "The smith looks up.")
 
 
-def test_the_scene_holds_its_target_and_whom_the_narration_names(load_engine: None) -> None:
+def test_the_scene_holds_its_target_and_whom_the_narration_names() -> None:
     game = make_game_state()
     game.npcs = [
         make_npc(id="npc_1", name="Edda Varn"),

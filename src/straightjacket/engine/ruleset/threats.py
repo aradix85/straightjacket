@@ -147,11 +147,11 @@ def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
 
 
 def tick_autonomous_threats(game: GameState) -> None:
-    _cfg = rules().threats
+    cfg = rules().threats
     for threat in game.threats:
-        if threat.status != "active" or threat.menace_full or random.random() >= _cfg.autonomous_tick_chance:
+        if threat.status != "active" or threat.menace_full or random.random() >= cfg.autonomous_tick_chance:
             continue
-        event = _advance(game, threat, _cfg.autonomous_tick_marks, "autonomous")
+        event = _advance(game, threat, cfg.autonomous_tick_marks, "autonomous")
         if event is not None:
             game.world.pending_threat_events.append(event)
 

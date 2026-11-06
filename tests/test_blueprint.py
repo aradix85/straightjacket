@@ -42,7 +42,7 @@ def _turning_point(*plot_points: tuple[str, str | None]) -> TurningPoint:
     )
 
 
-def test_assemble_blueprint_seed_from_ac_is_deterministic_with_fixed_rng(load_engine: None) -> None:
+def test_assemble_blueprint_seed_from_ac_is_deterministic_with_fixed_rng() -> None:
     seed_a = assemble_blueprint_seed_from_ac(
         random.Random(42), make_game_state(player_name="A", setting_id="starforged")
     )
@@ -55,14 +55,14 @@ def test_assemble_blueprint_seed_from_ac_is_deterministic_with_fixed_rng(load_en
     assert [a.turning_point for a in seed_a.acts] == [a.turning_point for a in seed_b.acts]
 
 
-def test_every_act_gets_its_own_turning_point(load_engine: None) -> None:
+def test_every_act_gets_its_own_turning_point() -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     assert [a.phase for a in seed.acts] == list(crafter().adventure_crafter.blueprint.act_phases)
     assert len({id(a.turning_point) for a in seed.acts}) == len(seed.acts)
 
 
-def test_assemble_blueprint_seed_from_ac_seeds_plotlines(load_engine: None) -> None:
+def test_assemble_blueprint_seed_from_ac_seeds_plotlines() -> None:
     game = make_game_state(player_name="Hero", setting_id="starforged")
     assert game.narrative.plotlines_list == []
 
@@ -71,9 +71,7 @@ def test_assemble_blueprint_seed_from_ac_seeds_plotlines(load_engine: None) -> N
     assert any(p.status == "advancement" for p in game.narrative.plotlines_list)
 
 
-def test_each_acts_revelation_is_seeded_from_its_own_turning_point(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_each_acts_revelation_is_seeded_from_its_own_turning_point(monkeypatch: pytest.MonkeyPatch) -> None:
     turning_points = [
         _turning_point(("Conclusion", "conclusion"), ("An Unrelated Detail", None), ("The Plot Thickens", None)),
         _turning_point(("A Quiet Morning", None), ("Another Quiet Morning", None)),
@@ -93,7 +91,7 @@ def test_each_acts_revelation_is_seeded_from_its_own_turning_point(
     assert has_keyed_scene_from(game.narrative, "ac:The Plot Thickens")
 
 
-def test_scene_ranges_evenly_split_covers_full_range(load_engine: None) -> None:
+def test_scene_ranges_evenly_split_covers_full_range() -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     total = list(eng().scene_range_default)
@@ -101,7 +99,7 @@ def test_scene_ranges_evenly_split_covers_full_range(load_engine: None) -> None:
     assert seed.acts[-1].scene_range[1] == total[1]
 
 
-def test_materialize_blueprint_uses_seed_phases_and_scene_ranges(load_engine: None) -> None:
+def test_materialize_blueprint_uses_seed_phases_and_scene_ranges() -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     bp = materialize_blueprint(seed, _voicing(act_count=len(seed.acts)))
@@ -110,7 +108,7 @@ def test_materialize_blueprint_uses_seed_phases_and_scene_ranges(load_engine: No
     assert [a.scene_range for a in bp.acts] == [list(a.scene_range) for a in seed.acts]
 
 
-def test_materialize_blueprint_uses_voicing_for_setting_fields(load_engine: None) -> None:
+def test_materialize_blueprint_uses_voicing_for_setting_fields() -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     bp = materialize_blueprint(seed, _voicing(act_count=len(seed.acts)))
@@ -124,7 +122,7 @@ def test_materialize_blueprint_uses_voicing_for_setting_fields(load_engine: None
     assert bp.acts[0].transition_trigger == "t"
 
 
-def test_materialize_blueprint_gives_each_act_its_revelation(load_engine: None) -> None:
+def test_materialize_blueprint_gives_each_act_its_revelation() -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     bp = materialize_blueprint(seed, _voicing(act_count=len(seed.acts)))
@@ -138,21 +136,21 @@ def test_materialize_blueprint_gives_each_act_its_revelation(load_engine: None) 
     assert bp.possible_endings[0].description == "end 1"
 
 
-def test_materialize_blueprint_raises_on_act_count_mismatch(load_engine: None) -> None:
+def test_materialize_blueprint_raises_on_act_count_mismatch() -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     with pytest.raises(ValueError, match="acts"):
         materialize_blueprint(seed, _voicing(act_count=len(seed.acts) + 1))
 
 
-def test_materialize_blueprint_raises_on_revelation_count_mismatch(load_engine: None) -> None:
+def test_materialize_blueprint_raises_on_revelation_count_mismatch() -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     with pytest.raises(ValueError, match="revelations"):
         materialize_blueprint(seed, _voicing(act_count=len(seed.acts), revelations=len(seed.acts) - 1))
 
 
-def test_blueprint_seed_is_frozen_dataclass(load_engine: None) -> None:
+def test_blueprint_seed_is_frozen_dataclass() -> None:
     seed = assemble_blueprint_seed_from_ac(random.Random(7), make_game_state(setting_id="starforged"))
 
     assert isinstance(seed, BlueprintSeed)

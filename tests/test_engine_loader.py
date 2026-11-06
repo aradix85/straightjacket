@@ -11,18 +11,18 @@ from straightjacket.engine.ruleset import config as ruleset_config
 from tests._helpers import change_config
 
 
-def test_miss_clock_ticks_cover_every_position(load_engine: None) -> None:
+def test_miss_clock_ticks_cover_every_position() -> None:
     assert set(gm().clocks.miss_ticks_by_position) == set(gm().effect_resolver.position_weights)
 
 
-def test_npc_status_groups_name_only_known_statuses(load_engine: None) -> None:
+def test_npc_status_groups_name_only_known_statuses() -> None:
     groups = gm().npc_status_groups
     known = set(gm().enums.npc_statuses)
     for group in fields(groups):
         assert set(getattr(groups, group.name)) <= known, group.name
 
 
-def test_dice_sizes_cover_the_tables_they_roll(load_engine: None) -> None:
+def test_dice_sizes_cover_the_tables_they_roll() -> None:
     dice = gm().mythic_dice
     mythic = load_mythic()
     assert max(row["max"] for row in mythic["event_focus"]) == dice.event_focus_die

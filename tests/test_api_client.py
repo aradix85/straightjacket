@@ -25,7 +25,7 @@ class _FakeAdapter:
         self.specs.append(spec)
         return AIResponse(content=self.name)
 
-    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+    def stream_message(self, spec: AICallSpec, _on_text: Callable[[str], None]) -> AIResponse:
         return self.create_message(spec)
 
     def list_models(self) -> list[str]:
@@ -78,7 +78,7 @@ def two_providers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, 
     monkeypatch.setattr(config_loader, "_CONFIG_PATH", config_file)
     monkeypatch.setattr(config_loader, "_cfg", None)
     adapters = {"fast": _FakeAdapter("fast", ["model-a"]), "prose": _FakeAdapter("prose", ["model-b"])}
-    monkeypatch.setattr(api_client, "build_adapter", lambda name, pc: adapters[name])
+    monkeypatch.setattr(api_client, "build_adapter", lambda name, _pc: adapters[name])
     return adapters
 
 
@@ -110,13 +110,14 @@ def test_each_role_is_routed_to_its_clusters_provider(two_providers: dict[str, _
     assert [s.log_role for s in two_providers["fast"].specs] == ["brain"]
 
 
-def test_call_without_a_known_role_raises(two_providers: dict[str, _FakeAdapter]) -> None:
+@pytest.mark.usefixtures("two_providers")
+def test_call_without_a_known_role_raises() -> None:
     with pytest.raises(KeyError):
         api_client.get_provider().create_message(_spec(""))
 
 
 def test_a_call_with_a_schema_carries_the_schema_at_the_end_of_its_last_message(
-    load_engine: None, two_providers: dict[str, _FakeAdapter]
+    two_providers: dict[str, _FakeAdapter],
 ) -> None:
     schema = {"type": "object", "required": ["move"], "properties": {"move": {"type": "string"}}}
     api_client.get_provider().create_message(_spec("brain", json_schema=schema))
@@ -127,15 +128,16 @@ def test_a_call_with_a_schema_carries_the_schema_at_the_end_of_its_last_message(
     assert sent.json_schema == schema
 
 
-def test_a_call_without_a_schema_is_sent_unchanged(load_engine: None, two_providers: dict[str, _FakeAdapter]) -> None:
+def test_a_call_without_a_schema_is_sent_unchanged(two_providers: dict[str, _FakeAdapter]) -> None:
     provider = api_client.get_provider()
     provider.create_message(_spec("brain"))
-    provider.stream_message(_spec("brain"), lambda text: None)
+    provider.stream_message(_spec("brain"), lambda _text: None)
     specs = two_providers["fast"].specs
     assert [(s.system, s.messages[-1]["content"]) for s in specs] == [("You are the Brain.", "hi")] * 2
 
 
-def test_startup_check_passes_when_every_model_is_offered(two_providers: dict[str, _FakeAdapter]) -> None:
+@pytest.mark.usefixtures("two_providers")
+def test_startup_check_passes_when_every_model_is_offered() -> None:
     api_client.check_configured_models()
 
 

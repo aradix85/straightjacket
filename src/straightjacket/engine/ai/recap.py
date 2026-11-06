@@ -11,11 +11,11 @@ from straightjacket.engine.story_state import get_current_act
 
 def call_recap(provider: AIProvider, game: GameState) -> str:
     lang = narration_language()
-    _defaults = eng().ai_text.narrator_defaults
-    _limits = eng().recap_limits
+    defaults = eng().ai_text.narrator_defaults
+    limits = eng().recap_limits
     log_text = "; ".join(
         get_prompt("block_session_log_entry", scene=str(s.scene), summary=s.rich_summary or s.summary, result=s.result)
-        for s in game.narrative.session_log[-_limits.recap_log_window :]
+        for s in game.narrative.session_log[-limits.recap_log_window :]
     )
 
     npc_text = (
@@ -24,12 +24,12 @@ def call_recap(provider: AIProvider, game: GameState) -> str:
             for n in game.npcs
             if n.status == "active" and n.introduced
         )
-        or _defaults["no_npcs"]
+        or defaults["no_npcs"]
     )
 
     recent_narrations = get_prompt("recap_narration_separator").join(
-        entry.narration[: _limits.recap_narration_truncate]
-        for entry in game.narrative.narration_history[-_limits.recap_narration_window :]
+        entry.narration[: limits.recap_narration_truncate]
+        for entry in game.narrative.narration_history[-limits.recap_narration_window :]
     )
 
     arc_info = ""
@@ -50,8 +50,8 @@ def call_recap(provider: AIProvider, game: GameState) -> str:
             chapter=str(game.campaign.chapter_number),
             chapters=str(len(game.campaign.campaign_history) + 1),
         )
-        for ch in game.campaign.campaign_history[-_limits.recap_campaign_history_window :]:
-            summary = ch.summary[: _limits.recap_campaign_summary_truncate]
+        for ch in game.campaign.campaign_history[-limits.recap_campaign_history_window :]:
+            summary = ch.summary[: limits.recap_campaign_summary_truncate]
             campaign_info += "\n" + get_prompt("recap_campaign_previous", title=ch.title, summary=summary)
 
     request = get_prompt(
@@ -83,5 +83,5 @@ def call_recap(provider: AIProvider, game: GameState) -> str:
         return create_with_retry(provider, spec).content
     except Exception as e:
         log(f"[Recap] Failed: {e}", level="warning")
-        result: str = _defaults["recap_fallback"].format(player_name=game.player_name)
+        result: str = defaults["recap_fallback"].format(player_name=game.player_name)
         return result

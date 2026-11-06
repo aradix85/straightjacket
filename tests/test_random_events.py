@@ -64,7 +64,7 @@ def _target(monkeypatch: pytest.MonkeyPatch, game: GameState, focus: str) -> tup
     return event.target, event.target_id
 
 
-def test_target_npc_focus_selects_from_characters(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_target_npc_focus_selects_from_characters(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.characters_list = [
         make_character_entry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
@@ -74,7 +74,7 @@ def test_target_npc_focus_selects_from_characters(load_engine: None, monkeypatch
     assert target_id == "c1"
 
 
-def test_target_thread_focus_selects_from_threads(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_target_thread_focus_selects_from_threads(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.threads = [
         make_thread(id="t1", name="Find the vault", weight=1, active=True, source="creation", thread_type="vow"),
@@ -84,14 +84,14 @@ def test_target_thread_focus_selects_from_threads(load_engine: None, monkeypatch
     assert target_id == "t1"
 
 
-def test_target_empty_list_returns_empty(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_target_empty_list_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     name, target_id = _target(monkeypatch, game, "npc_action")
     assert name == ""
     assert target_id == ""
 
 
-def test_target_pc_focus_no_target(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_target_pc_focus_no_target(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.characters_list = [
         make_character_entry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
@@ -102,7 +102,7 @@ def test_target_pc_focus_no_target(load_engine: None, monkeypatch: pytest.Monkey
     assert name2 == ""
 
 
-def test_target_respects_weight(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_target_respects_weight(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.characters_list = [
         make_character_entry(id="c1", name="Rare", weight=1, active=True, entry_type="npc"),
@@ -117,7 +117,7 @@ def test_target_respects_weight(load_engine: None, monkeypatch: pytest.MonkeyPat
     assert counts["Common"] > counts["Rare"]
 
 
-def test_target_skips_inactive(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_target_skips_inactive(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.narrative.threads = [
         make_thread(id="t1", name="Closed", weight=3, active=False, source="creation", thread_type="vow"),
@@ -150,7 +150,7 @@ def test_generate_random_event_empty_lists() -> None:
     assert event.meaning_action != ""
 
 
-def test_fate_doublet_generates_random_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fate_doublet_generates_random_event(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 5
     game.narrative.characters_list = [
@@ -166,7 +166,7 @@ def test_fate_doublet_generates_random_event(load_engine: None, monkeypatch: pyt
     assert event.focus != ""
 
 
-def test_fate_no_doublet_no_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fate_no_doublet_no_event(monkeypatch: pytest.MonkeyPatch) -> None:
     fix_dice(monkeypatch, 34)
     result = resolve_fate_chart("fifty_fifty", chaos_factor=5)
     assert result.random_event_triggered is False
@@ -241,6 +241,6 @@ def test_random_event_roundtrip() -> None:
     assert restored.source == "fate_doublet"
 
 
-def test_an_unknown_meaning_table_is_refused(load_engine: None) -> None:
+def test_an_unknown_meaning_table_is_refused() -> None:
     with pytest.raises(KeyError, match="Unknown meaning table 'colours'"):
         roll_meaning_table("colours")

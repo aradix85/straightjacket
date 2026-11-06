@@ -168,7 +168,7 @@ def pay_the_price(game: GameState, result: OutcomeResult) -> None:
                 _apply_effect(game, parse_effect(rule.effect), result, None)
 
 
-def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None) -> None:
     adjust_momentum(game, effect.value)
     result.consequences.append(consequence("momentum_change", n=effect.value))
 
@@ -202,47 +202,51 @@ def _apply_clear_bond_effect(
     log(f"[Bond] {npc.name}: bond cleared")
 
 
-def _apply_told_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+def _apply_told_effect(_game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None) -> None:
     result.consequences.append(consequence(effect.type))
 
 
 def _apply_mark_progress_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     result.progress_marks += effect.value
     result.consequences.append(consequence("mark_progress", n=effect.value))
 
 
-def _apply_milestone_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+def _apply_milestone_effect(
+    _game: GameState, _effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
+) -> None:
     result.progress_marks += 1
     result.consequences.append(consequence("milestone"))
 
 
 def _apply_pay_the_price_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    game: GameState, _effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     pay_the_price(game, result)
 
 
 def _apply_story_complication_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    game: GameState, _effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     roll_story_complication(game, result)
 
 
 def _apply_next_move_bonus_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     game.resources.next_move_bonus += effect.value
     result.consequences.append(consequence("next_move_bonus", n=effect.value))
 
 
-def _apply_position_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+def _apply_position_effect(
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
+) -> None:
     result.combat_position = effect.target
 
 
 def _apply_suffer_move_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     _apply_generic_suffer(game, abs(effect.value), result)
 
@@ -279,13 +283,13 @@ def _apply_raise_connection_rank_effect(
 
 
 def _apply_chain_move_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     result.chained_move = effect.target
 
 
 def _apply_legacy_reward_lower_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     result.legacy_track = effect.target
     result.legacy_rank_shift = -1
@@ -293,7 +297,7 @@ def _apply_legacy_reward_lower_effect(
 
 
 def _apply_legacy_ticks_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     result.legacy_track = effect.target
     result.legacy_fixed_ticks = effect.value
@@ -301,25 +305,25 @@ def _apply_legacy_ticks_effect(
 
 
 def _apply_legacy_reward_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     result.legacy_track = effect.target
     result.consequences.append(consequence("legacy_reward", track=effect.target))
 
 
 def _apply_experience_by_rank_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     result.experience_rank_shift = effect.value
     result.consequences.append(consequence("experience_reward"))
 
 
-def _apply_boasts_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+def _apply_boasts_effect(_game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None) -> None:
     result.boast_slots = effect.value
 
 
 def _apply_fill_clock_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     result.clock_fills += effect.value
     result.consequences.append(consequence("clock_fill", n=effect.value))
@@ -335,7 +339,7 @@ def _complication_danger(game: GameState) -> str:
 
 
 def _apply_complication_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    game: GameState, effect: MoveEffect, result: OutcomeResult, _target: NpcData | None
 ) -> None:
     result.consequences.append(consequence("complication", kind=effect.target))
     clock = spawn_complication_clock(game, effect.target, _complication_danger(game))
@@ -352,7 +356,7 @@ def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResul
 
 
 def _apply_disposition_shift_effect(
-    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+    _game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
     target = _required_target(effect, target)
     shifts = gm().get_raw("disposition_shifts")

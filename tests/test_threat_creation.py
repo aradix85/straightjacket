@@ -35,7 +35,7 @@ def _tp(plot_point_names: list[str]) -> TurningPoint:
     )
 
 
-def test_random_event_threat_spawns_for_mapped_focus(load_engine: None) -> None:
+def test_random_event_threat_spawns_for_mapped_focus() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("pc_negative", target_id="")
 
@@ -49,7 +49,7 @@ def test_random_event_threat_spawns_for_mapped_focus(load_engine: None) -> None:
     assert threat.name == "Betray Faith"
 
 
-def test_random_event_threat_skips_unmapped_focus(load_engine: None) -> None:
+def test_random_event_threat_skips_unmapped_focus() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("npc_positive", target_id="npc_kira")
 
@@ -58,7 +58,7 @@ def test_random_event_threat_skips_unmapped_focus(load_engine: None) -> None:
     assert g.threats == []
 
 
-def test_random_event_threat_dedup_per_focus_target(load_engine: None) -> None:
+def test_random_event_threat_dedup_per_focus_target() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("npc_negative", target_id="npc_kira")
 
@@ -68,7 +68,7 @@ def test_random_event_threat_dedup_per_focus_target(load_engine: None) -> None:
     assert len(g.threats) == 1
 
 
-def test_random_event_threat_respects_the_threat_cap(load_engine: None) -> None:
+def test_random_event_threat_respects_the_threat_cap() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     for n in range(3):
         spawn_danger_from_random_event(g, _re("pc_negative", target_id=f"t_{n}"))
@@ -83,7 +83,7 @@ def test_random_event_threat_respects_the_threat_cap(load_engine: None) -> None:
     assert len(g.threats) == 4
 
 
-def test_ac_threat_spawns_for_mapped_plot_point(load_engine: None) -> None:
+def test_ac_threat_spawns_for_mapped_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["A New Enemy"])
 
@@ -97,7 +97,7 @@ def test_ac_threat_spawns_for_mapped_plot_point(load_engine: None) -> None:
     assert threat.name != ""
 
 
-def test_ac_threat_skips_unmapped_plot_point(load_engine: None) -> None:
+def test_ac_threat_skips_unmapped_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["Suspicion", "An Opposing Story"])
 
@@ -106,7 +106,7 @@ def test_ac_threat_skips_unmapped_plot_point(load_engine: None) -> None:
     assert g.threats == []
 
 
-def test_ac_threat_dedup_skips_same_plot_point_twice(load_engine: None) -> None:
+def test_ac_threat_dedup_skips_same_plot_point_twice() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp1 = _tp(["Hunted"])
     tp2 = _tp(["Hunted"])
@@ -117,7 +117,7 @@ def test_ac_threat_dedup_skips_same_plot_point_twice(load_engine: None) -> None:
     assert len(g.threats) == 1
 
 
-def test_ac_threat_cap_blocks_after_max(load_engine: None) -> None:
+def test_ac_threat_cap_blocks_after_max() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["A New Enemy", "Hidden Threat", "Enemies", "Hunted", "A Problem Returns"])
 
@@ -126,7 +126,7 @@ def test_ac_threat_cap_blocks_after_max(load_engine: None) -> None:
     assert len(g.threats) == 3
 
 
-def test_ac_threat_uses_datasworn_cascade_on_delve(load_engine: None) -> None:
+def test_ac_threat_uses_datasworn_cascade_on_delve() -> None:
     g = make_game_state(player_name="Hero", setting_id="delve")
     _random.seed(42)
     tp = _tp(["A New Enemy"])
@@ -138,16 +138,14 @@ def test_ac_threat_uses_datasworn_cascade_on_delve(load_engine: None) -> None:
     assert " — " in description, f"Delve cascade expected two steps in description, got {description!r}"
 
 
-def test_a_delve_threat_takes_the_category_its_cascade_rolled(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_delve_threat_takes_the_category_its_cascade_rolled(monkeypatch: pytest.MonkeyPatch) -> None:
     fix_dice(monkeypatch, 45, 1)
     g = make_game_state(player_name="Hero", setting_id="delve")
     spawn_dangers_for_turning_point(g, _tp(["A New Enemy"]))
     assert g.threats[0].category == "rampaging_creature"
 
 
-def test_a_cascade_row_that_rolls_twice_gives_both_results(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_cascade_row_that_rolls_twice_gives_both_results(monkeypatch: pytest.MonkeyPatch) -> None:
     fix_dice(monkeypatch, 95, 5, 65, 1)
     g = make_game_state(player_name="Hero", setting_id="delve")
     spawn_dangers_for_turning_point(g, _tp(["A New Enemy"]))
@@ -157,7 +155,7 @@ def test_a_cascade_row_that_rolls_twice_gives_both_results(load_engine: None, mo
     assert "Scheming Leader" in threat.description
 
 
-def test_emergent_threats_cap_is_shared_across_ac_and_random_event(load_engine: None) -> None:
+def test_emergent_threats_cap_is_shared_across_ac_and_random_event() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     for n in range(2):
         spawn_danger_from_random_event(g, _re("pc_negative", target_id=f"t_{n}"))
@@ -170,7 +168,7 @@ def test_emergent_threats_cap_is_shared_across_ac_and_random_event(load_engine: 
     assert len(g.threats) == 3
 
 
-def test_setup_threat_does_not_count_against_emergent_cap(load_engine: None) -> None:
+def test_setup_threat_does_not_count_against_emergent_cap() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     g.threats.append(make_threat(id="setup_threat_1", name="Setup", creation_source="setup"))
     g.threats.append(make_threat(id="setup_threat_2", name="Setup 2", creation_source="setup"))
@@ -181,7 +179,7 @@ def test_setup_threat_does_not_count_against_emergent_cap(load_engine: None) -> 
     assert len(g.threats) == 4
 
 
-def test_keyed_scene_threat_menace_fires_after_spawn(load_engine: None) -> None:
+def test_keyed_scene_threat_menace_fires_after_spawn() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     spawn_danger_from_random_event(g, _re("pc_negative", target_id="t_1"))
     assert len(g.threats) == 1

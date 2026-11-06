@@ -19,7 +19,7 @@ def _game() -> GameState:
     return game
 
 
-def test_a_recap_is_asked_with_the_story_so_far_and_returns_the_answer(load_engine: None) -> None:
+def test_a_recap_is_asked_with_the_story_so_far_and_returns_the_answer() -> None:
     game = _game()
     game.narrative.story_blueprint = make_blueprint(
         central_conflict="x",
@@ -39,7 +39,7 @@ def test_a_recap_is_asked_with_the_story_so_far_and_returns_the_answer(load_engi
         assert told in request
 
 
-def test_a_failed_recap_falls_back_to_the_engines_text(load_engine: None) -> None:
+def test_a_failed_recap_falls_back_to_the_engines_text() -> None:
     game = _game()
     fallback = eng().ai_text.narrator_defaults["recap_fallback"].format(player_name=game.player_name)
     assert call_recap(MockProvider(fail=True), game) == fallback

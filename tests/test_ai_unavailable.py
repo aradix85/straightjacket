@@ -15,12 +15,12 @@ from tests._helpers import make_game_state
 from tests._mocks import MockProvider, RecordingWebSocket
 
 
-def test_a_brain_failure_raises_instead_of_becoming_dialog(load_engine: None) -> None:
+def test_a_brain_failure_raises_instead_of_becoming_dialog() -> None:
     with pytest.raises(AIUnavailableError, match="brain"):
         call_brain(MockProvider(fail=True), make_game_state(setting_id="starforged"), "I look around")
 
 
-def test_an_empty_narration_raises(load_engine: None) -> None:
+def test_an_empty_narration_raises() -> None:
     with pytest.raises(AIUnavailableError, match="empty narration"):
         narrate_scene(MockProvider(response_content=""), make_game_state(setting_id="starforged"), "<scene/>")
 
@@ -34,7 +34,7 @@ class _NarratorDown(TurnProvider):
         return super().create_message(spec)
 
 
-def test_a_failed_turn_is_rolled_back_and_reported(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_failed_turn_is_rolled_back_and_reported(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     before = game.to_dict()
     session = new_session()
@@ -52,9 +52,7 @@ def test_a_failed_turn_is_rolled_back_and_reported(load_engine: None, monkeypatc
     assert session.processing is False
 
 
-def test_a_failed_state_correction_is_rolled_back_with_its_backstory(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_failed_state_correction_is_rolled_back_with_its_backstory(monkeypatch: pytest.MonkeyPatch) -> None:
     game = library_game()
     force_result(monkeypatch, "MISS")
     process_turn(TurnProvider(brain_answer()), game, "I leap the gorge", None)

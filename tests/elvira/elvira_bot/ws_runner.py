@@ -484,7 +484,7 @@ async def _play_turn(
 
 
 async def _play_correction(
-    client: WsClient, provider: AIProvider, game: GameState, turn: int, slog: SessionLog
+    client: WsClient, _provider: AIProvider, game: GameState, turn: int, slog: SessionLog
 ) -> tuple[str, TurnRecord]:
     corrections = [
         "I didn't mean to do that — I wanted to just observe, not act",
@@ -515,7 +515,7 @@ async def _play_correction(
 
 async def _handle_burn(
     client: WsClient,
-    provider: AIProvider,
+    _provider: AIProvider,
     game: GameState,
     burn_offer: dict[str, Any],
     burn_setting: str,

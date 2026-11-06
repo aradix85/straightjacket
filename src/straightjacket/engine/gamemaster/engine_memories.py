@@ -43,11 +43,11 @@ def generate_engine_memories(
     result_text = result_text_map[_memory_key(move, told_outcome)]
     move_verb = answers().action_phrase(move)
 
-    _pd = eng().prompt_display
-    _cons_max = _pd.memory_consequences_max
+    pd = eng().prompt_display
+    cons_max = pd.memory_consequences_max
 
     if consequences:
-        result_text += f" ({', '.join(consequences[:_cons_max])})"
+        result_text += f" ({', '.join(consequences[:cons_max])})"
 
     memories: list[tuple[NpcData, MemoryEntry]] = []
     for npc in game.npcs:
@@ -75,7 +75,7 @@ def generate_engine_memories(
             move_verb=move_verb,
             result_text=result_text,
             move=move,
-            consequences=", ".join(consequences[:_cons_max]),
+            consequences=", ".join(consequences[:cons_max]),
         )
 
         emotional = derive_memory_emotion(move, told_outcome, npc.disposition)

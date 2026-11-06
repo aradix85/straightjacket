@@ -46,7 +46,7 @@ def _reflections(schema: dict[str, Any]) -> Any:
     return schema["properties"]["npc_reflections"]
 
 
-def test_the_director_may_reflect_only_on_the_npcs_chosen_for_reflection(load_engine: None) -> None:
+def test_the_director_may_reflect_only_on_the_npcs_chosen_for_reflection() -> None:
     game = make_game_state()
     game.npcs = [
         make_npc(id="npc_1", name="Kira", needs_reflection=True, agenda="Hold the pass", instinct="Strikes first"),
@@ -61,7 +61,7 @@ def test_the_director_may_reflect_only_on_the_npcs_chosen_for_reflection(load_en
     assert "npc_id" not in reflections["properties"]["npc_1"]["properties"]
 
 
-def test_without_chosen_npcs_there_is_no_reflection_to_write(load_engine: None) -> None:
+def test_without_chosen_npcs_there_is_no_reflection_to_write() -> None:
     reflections = _reflections(get_director_output_schema([]))
     assert reflections["properties"] == {}
     assert reflections["required"] == []

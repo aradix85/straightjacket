@@ -20,18 +20,21 @@ def _game() -> GameState:
 
 
 class TestApplyImpact:
-    def test_apply_new_impact(self, load_engine: None) -> None:
+    @staticmethod
+    def test_apply_new_impact() -> None:
         game = _game()
         assert apply_impact(game, "wounded") is True
         assert "wounded" in game.impacts
 
-    def test_apply_duplicate_returns_false(self, load_engine: None) -> None:
+    @staticmethod
+    def test_apply_duplicate_returns_false() -> None:
         game = _game()
         apply_impact(game, "wounded")
         assert apply_impact(game, "wounded") is False
         assert game.impacts.count("wounded") == 1
 
-    def test_apply_unknown_impact_raises(self, load_engine: None) -> None:
+    @staticmethod
+    def test_apply_unknown_impact_raises() -> None:
         game = _game()
         with pytest.raises(KeyError, match="nonexistent_impact"):
             apply_impact(game, "nonexistent_impact")
@@ -39,7 +42,8 @@ class TestApplyImpact:
 
 
 class TestImpactsFromTheRules:
-    def test_each_ruleset_names_its_own_impacts(self, load_engine: None) -> None:
+    @staticmethod
+    def test_each_ruleset_names_its_own_impacts() -> None:
         assert "maimed" in get_impacts("classic")
         assert "permanently_harmed" not in get_impacts("classic")
         assert "permanently_harmed" in get_impacts("starforged")
@@ -48,13 +52,15 @@ class TestImpactsFromTheRules:
         assert get_impacts("starforged")["wounded"].prevents_recovery == ["health"]
         assert get_impacts("starforged")["traumatized"].permanent
 
-    def test_an_impact_another_ruleset_has_is_refused(self, load_engine: None) -> None:
+    @staticmethod
+    def test_an_impact_another_ruleset_has_is_refused() -> None:
         game = _game()
         game.setting_id = "classic"
         with pytest.raises(KeyError, match="permanently_harmed"):
             apply_impact(game, "permanently_harmed")
 
-    def test_every_impact_a_move_marks_is_its_rulesets_own(self, load_engine: None) -> None:
+    @staticmethod
+    def test_every_impact_a_move_marks_is_its_rulesets_own() -> None:
         outcomes = rules().get_raw("move_outcomes")
         for setting_id in list_packages():
             game = make_game_state(setting_id=setting_id)
@@ -69,17 +75,20 @@ class TestImpactsFromTheRules:
 
 
 class TestClearImpact:
-    def test_clear_active_impact(self, load_engine: None) -> None:
+    @staticmethod
+    def test_clear_active_impact() -> None:
         game = _game()
         apply_impact(game, "wounded")
         assert clear_impact(game, "wounded") is True
         assert "wounded" not in game.impacts
 
-    def test_clear_inactive_impact_returns_false(self, load_engine: None) -> None:
+    @staticmethod
+    def test_clear_inactive_impact_returns_false() -> None:
         game = _game()
         assert clear_impact(game, "wounded") is False
 
-    def test_cannot_clear_permanent_impact(self, load_engine: None) -> None:
+    @staticmethod
+    def test_cannot_clear_permanent_impact() -> None:
         game = _game()
         apply_impact(game, "permanently_harmed")
         assert clear_impact(game, "permanently_harmed") is False
@@ -87,30 +96,35 @@ class TestClearImpact:
 
 
 class TestMaxMomentum:
-    def test_no_impacts_keeps_base_max(self, load_engine: None) -> None:
+    @staticmethod
+    def test_no_impacts_keeps_base_max() -> None:
         assert max_momentum(_game()) == 10
 
-    def test_each_impact_reduces_max_by_one(self, load_engine: None) -> None:
+    @staticmethod
+    def test_each_impact_reduces_max_by_one() -> None:
         game = _game()
         apply_impact(game, "wounded")
         assert max_momentum(game) == 9
         apply_impact(game, "shaken")
         assert max_momentum(game) == 8
 
-    def test_momentum_gained_stops_at_the_lowered_max(self, load_engine: None) -> None:
+    @staticmethod
+    def test_momentum_gained_stops_at_the_lowered_max() -> None:
         game = _game()
         apply_impact(game, "wounded")
         game.resources.meters["momentum"] = 8
         adjust_momentum(game, 2)
         assert game.resources.meters["momentum"] == 9
 
-    def test_momentum_clamped_to_new_max(self, load_engine: None) -> None:
+    @staticmethod
+    def test_momentum_clamped_to_new_max() -> None:
         game = _game()
         game.resources.meters["momentum"] = 10
         apply_impact(game, "wounded")
         assert game.resources.meters["momentum"] == 9
 
-    def test_clear_restores_momentum_max(self, load_engine: None) -> None:
+    @staticmethod
+    def test_clear_restores_momentum_max() -> None:
         game = _game()
         apply_impact(game, "wounded")
         apply_impact(game, "shaken")
@@ -119,33 +133,39 @@ class TestMaxMomentum:
 
 
 class TestBlocksRecovery:
-    def test_wounded_blocks_health_recovery(self, load_engine: None) -> None:
+    @staticmethod
+    def test_wounded_blocks_health_recovery() -> None:
         game = _game()
         apply_impact(game, "wounded")
         assert blocks_recovery(game, "health") == "wounded"
 
-    def test_shaken_blocks_spirit_recovery(self, load_engine: None) -> None:
+    @staticmethod
+    def test_shaken_blocks_spirit_recovery() -> None:
         game = _game()
         apply_impact(game, "shaken")
         assert blocks_recovery(game, "spirit") == "shaken"
 
-    def test_unprepared_blocks_supply_recovery(self, load_engine: None) -> None:
+    @staticmethod
+    def test_unprepared_blocks_supply_recovery() -> None:
         game = _game()
         apply_impact(game, "unprepared")
         assert blocks_recovery(game, "supply") == "unprepared"
 
-    def test_no_impact_no_block(self, load_engine: None) -> None:
+    @staticmethod
+    def test_no_impact_no_block() -> None:
         game = _game()
         assert blocks_recovery(game, "health") == ""
 
-    def test_doomed_does_not_block_recovery(self, load_engine: None) -> None:
+    @staticmethod
+    def test_doomed_does_not_block_recovery() -> None:
         game = _game()
         apply_impact(game, "doomed")
         assert blocks_recovery(game, "health") == ""
 
 
 class TestImpactsSnapshotRestore:
-    def test_impacts_restored(self, load_engine: None) -> None:
+    @staticmethod
+    def test_impacts_restored() -> None:
         game = _game()
         apply_impact(game, "wounded")
         snap = game.snapshot()
@@ -157,7 +177,8 @@ class TestImpactsSnapshotRestore:
         assert game.impacts == ["wounded"]
         assert max_momentum(game) == 9
 
-    def test_impacts_round_trip(self, load_engine: None) -> None:
+    @staticmethod
+    def test_impacts_round_trip() -> None:
         game = _game()
         apply_impact(game, "doomed")
         apply_impact(game, "tormented")
@@ -168,12 +189,13 @@ class TestImpactsSnapshotRestore:
 
 
 class TestRecoveryHandlerClearsImpact:
+    @staticmethod
     @pytest.mark.parametrize(
         ("marked", "cleared", "spirit"),
         [("shaken", True, 3), ("wounded", False, 4)],
     )
     def test_the_impact_a_recovery_clears_is_the_one_its_rules_say_blocks_its_meter(
-        self, load_engine: None, marked: str, cleared: bool, spirit: int
+        marked: str, cleared: bool, spirit: int
     ) -> None:
         game = _game()
         game.resources.meters["spirit"] = 2
@@ -182,8 +204,9 @@ class TestRecoveryHandlerClearsImpact:
         assert (marked not in game.impacts) is cleared
         assert game.resources.meters["spirit"] == spirit
 
+    @staticmethod
     @pytest.mark.parametrize("wounded", [True, False])
-    def test_heal_clears_wounded_and_says_so_only_when_it_was_marked(self, load_engine: None, wounded: bool) -> None:
+    def test_heal_clears_wounded_and_says_so_only_when_it_was_marked(wounded: bool) -> None:
         game = _game()
         if wounded:
             apply_impact(game, "wounded")
@@ -195,7 +218,8 @@ class TestRecoveryHandlerClearsImpact:
 
 
 class TestImpactsStatus:
-    def test_impacts_shown_in_status(self, load_engine: None) -> None:
+    @staticmethod
+    def test_impacts_shown_in_status() -> None:
         game = _game()
         game.setting_id = "starforged"
         game.world.time_of_day = "evening"
@@ -205,7 +229,8 @@ class TestImpactsStatus:
         assert "wounded" in text
         assert "doomed" in text
 
-    def test_no_impacts_no_line(self, load_engine: None) -> None:
+    @staticmethod
+    def test_no_impacts_no_line() -> None:
         game = _game()
         game.world.time_of_day = "evening"
         text = build_narrative_status(game)
@@ -213,10 +238,12 @@ class TestImpactsStatus:
 
 
 class TestCharacterStatePromptTag:
-    def test_no_impacts_no_tag(self, load_engine: None) -> None:
+    @staticmethod
+    def test_no_impacts_no_tag() -> None:
         assert "character_state" not in build_new_game_prompt(_game())
 
-    def test_impacts_in_character_state(self, load_engine: None) -> None:
+    @staticmethod
+    def test_impacts_in_character_state() -> None:
         game = _game()
         game.world.time_of_day = "evening"
         apply_impact(game, "wounded")

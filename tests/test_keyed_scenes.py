@@ -262,14 +262,14 @@ def test_keyed_scene_serialization_roundtrip() -> None:
     assert restored.narrative_hint == "test hint"
 
 
-def test_a_keyed_scene_reaches_the_narrator(load_engine: None) -> None:
+def test_a_keyed_scene_reaches_the_narrator() -> None:
     game = _seed_game()
     setup = make_scene_setup(scene_type="keyed", narrative_hint="The cult moves at dawn.")
     block = dialog_prompt(game, scene_setup=setup)
     assert "<keyed_scene>The cult moves at dawn.</keyed_scene>" in block
 
 
-def test_a_keyed_scenes_hint_reaches_the_narrator_escaped(load_engine: None) -> None:
+def test_a_keyed_scenes_hint_reaches_the_narrator_escaped() -> None:
     game = _seed_game()
     setup = make_scene_setup(scene_type="keyed", narrative_hint="A & B < C")
     block = dialog_prompt(game, scene_setup=setup)

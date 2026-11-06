@@ -39,32 +39,32 @@ def _invoked(game: Any, brain: Any, events: list[Any], threat_events: list[Any])
     return invoked_threads(game, brain, events, threat_events)
 
 
-def test_a_roll_on_a_vow_invokes_the_thread_of_that_vow(load_engine: None) -> None:
+def test_a_roll_on_a_vow_invokes_the_thread_of_that_vow() -> None:
     brain = make_brain_result(move="quest/fulfill_your_vow", target_track="vow_kira")
     assert _invoked(_sworn_game(), brain, [], []) == ["thread_kira"]
 
 
-def test_a_move_that_touches_no_vow_invokes_no_thread(load_engine: None) -> None:
+def test_a_move_that_touches_no_vow_invokes_no_thread() -> None:
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     assert _invoked(_sworn_game(), brain, [], []) == []
 
 
-def test_a_dialog_turn_invokes_no_thread_by_its_move(load_engine: None) -> None:
+def test_a_dialog_turn_invokes_no_thread_by_its_move() -> None:
     brain = make_brain_result(move="quest/fulfill_your_vow", target_track="vow_kira", dialog_only=True)
     assert _invoked(_sworn_game(), brain, [], []) == []
 
 
-def test_a_milestone_invokes_the_thread_of_its_vow(load_engine: None) -> None:
+def test_a_milestone_invokes_the_thread_of_its_vow() -> None:
     brain = make_brain_result(move="quest/reach_a_milestone", stat="none", target_track="vow_bell")
     assert _invoked(_sworn_game(), brain, [], []) == ["thread_bell"]
 
 
-def test_a_random_event_about_a_thread_invokes_it(load_engine: None) -> None:
+def test_a_random_event_about_a_thread_invokes_it() -> None:
     brain = make_brain_result(move="dialog")
     assert _invoked(_sworn_game(), brain, [_event("thread_cult")], []) == ["thread_cult"]
 
 
-def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_engine: None) -> None:
+def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow() -> None:
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     advanced = ThreatEvent(
         threat_id="threat_tide",
@@ -77,7 +77,7 @@ def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_
     assert _invoked(_sworn_game(), brain, [_event("threat_tide")], []) == ["thread_bell"]
 
 
-def test_thread_weight_stops_at_the_list_maximum(load_engine: None) -> None:
+def test_thread_weight_stops_at_the_list_maximum() -> None:
     game = _sworn_game()
     for _ in range(gm().random_events.list_weight_max + 2):
         add_thread_weight(game, "thread_bell")

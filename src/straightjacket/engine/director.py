@@ -226,7 +226,7 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
 
 
 def _apply_profile_updates(npc: NpcData, ref: dict[str, Any]) -> None:
-    _trunc = eng().truncations
+    trunc = eng().truncations
     agenda = ref["agenda"].strip()
     instinct = ref["instinct"].strip()
     if agenda and not npc.agenda.strip():
@@ -240,21 +240,21 @@ def _apply_profile_updates(npc: NpcData, ref: dict[str, Any]) -> None:
     if updated_agenda and npc.agenda.strip():
         log(
             f"[Director] Agenda updated for {npc.name}: "
-            f"'{npc.agenda[: _trunc.log_xshort]}' → '{updated_agenda[: _trunc.log_xshort]}'"
+            f"'{npc.agenda[: trunc.log_xshort]}' → '{updated_agenda[: trunc.log_xshort]}'"
         )
         npc.agenda = updated_agenda
     updated_arc = ref["updated_arc"].strip()
     if updated_arc:
         log(
             f"[Director] Arc updated for {npc.name}: "
-            f"'{npc.arc[: _trunc.log_short]}' → '{updated_arc[: _trunc.log_short]}'"
+            f"'{npc.arc[: trunc.log_short]}' → '{updated_arc[: trunc.log_short]}'"
         )
         npc.arc = updated_arc
     updated_description = ref["updated_description"].strip()
     if updated_description:
         log(
             f"[Director] Description updated for {npc.name}: "
-            f"'{npc.description[: _trunc.log_short]}' → '{updated_description[: _trunc.log_short]}'"
+            f"'{npc.description[: trunc.log_short]}' → '{updated_description[: trunc.log_short]}'"
         )
         npc.description = updated_description
 

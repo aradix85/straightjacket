@@ -240,12 +240,12 @@ def _ask_brain(provider: AIProvider, spec: AICallSpec) -> tuple[str, BrainResult
 
 
 def call_brain(provider: AIProvider, game: GameState, player_message: str) -> BrainResult:
-    _brain_lang = narration_language()
+    brain_lang = narration_language()
 
     log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[: eng().truncations.log_long]}")
 
     system_variables = {
-        "lang": _brain_lang,
+        "lang": brain_lang,
         "world": world_tag(game),
         "content_boundaries_block": content_boundaries_block(game),
         "stats": _stats_block(game),
@@ -257,7 +257,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
     cached_prefix = get_prompt_prefix("brain_parser", "moves_block", **system_variables)
 
     w = game.world
-    _ai_text = eng().ai_text.narrator_defaults
+    texts = eng().ai_text.narrator_defaults
 
     npc_lines = []
     for n in _listed_npcs(game):
@@ -275,7 +275,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
     npc_block = (
         get_prompt("brain_npcs_wrapper", lines="\n".join(npc_lines))
         if npc_lines
-        else get_prompt("brain_npcs_none", none=_ai_text["no_npcs"])
+        else get_prompt("brain_npcs_none", none=texts["no_npcs"])
     )
 
     tracks_block = _build_tracks_block(game)
@@ -286,7 +286,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         "brain_user_message",
         location=_xe(w.current_location),
         context=_xe(w.current_scene_context),
-        time=w.time_of_day or _ai_text["unknown_time"],
+        time=w.time_of_day or texts["unknown_time"],
         stats=_build_stats_line(game),
         npcs=npc_block,
         tracks=tracks_block,

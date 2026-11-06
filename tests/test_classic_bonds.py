@@ -25,7 +25,7 @@ def _forge_a_bond(monkeypatch: pytest.MonkeyPatch, result: str) -> tuple[GameSta
 
 @pytest.mark.parametrize(("result", "own"), [("STRONG_HIT", "spirit +1"), ("WEAK_HIT", "bond_request")])
 def test_a_hit_on_classic_forge_a_bond_seals_the_bond_at_full_closeness(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str, own: str
+    monkeypatch: pytest.MonkeyPatch, result: str, own: str
 ) -> None:
     game, labels = _forge_a_bond(monkeypatch, result)
     track = connection_track(game, "npc_1")
@@ -36,14 +36,14 @@ def test_a_hit_on_classic_forge_a_bond_seals_the_bond_at_full_closeness(
     assert labels == ["Mira: bond sealed", "legacy reward (bonds)", own]
 
 
-def test_a_miss_on_classic_forge_a_bond_leaves_no_bond(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_miss_on_classic_forge_a_bond_leaves_no_bond(monkeypatch: pytest.MonkeyPatch) -> None:
     game, labels = _forge_a_bond(monkeypatch, "MISS")
     assert answers().closeness(game, "npc_1") == 0
     assert game.campaign.legacy["bonds"].ticks == 0
     assert "Mira: bond sealed" not in labels
 
 
-def test_a_classic_bond_aids_by_classics_rule(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_classic_bond_aids_by_classics_rule(monkeypatch: pytest.MonkeyPatch) -> None:
     game, _labels = _forge_a_bond(monkeypatch, "STRONG_HIT")
     option = next(o for o in roll_bonuses(game) if o.id == "connection:npc_1")
     assert (option.add, option.momentum_on_hit) == (1, 0)

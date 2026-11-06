@@ -70,7 +70,7 @@ def test_query_game_state_returns_threads_clocks_and_npcs_at_once() -> None:
     assert len(kira["recent_memories"]) == 2
 
 
-def test_query_game_state_shows_the_memories_the_reflection_block_shows(load_engine: None) -> None:
+def test_query_game_state_shows_the_memories_the_reflection_block_shows() -> None:
     game = _game_with_data()
     kira = game.npcs[0]
     kira.memory.append(make_memory(scene=4, event="Doubts the player", importance=6, type="reflection"))
@@ -80,7 +80,7 @@ def test_query_game_state_shows_the_memories_the_reflection_block_shows(load_eng
     assert all(m["event"] in block for m in shown)
 
 
-def test_query_game_state_leaves_out_dead_and_lore_npcs(load_engine: None) -> None:
+def test_query_game_state_leaves_out_dead_and_lore_npcs() -> None:
     game = make_game_state()
     game.npcs = [
         make_npc(id="npc_1", name="Mira", status="active"),
@@ -111,7 +111,7 @@ def test_an_unknown_tool_answers_with_an_error() -> None:
 
 
 def test_an_engine_fault_in_a_tool_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
-    def broken(game: GameState) -> dict[str, Any]:
+    def broken(_game: GameState) -> dict[str, Any]:
         msg = "missing"
         raise KeyError(msg)
 

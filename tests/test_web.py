@@ -34,7 +34,8 @@ from tests._helpers import (
 
 
 class TestSession:
-    def test_initial_state(self) -> None:
+    @staticmethod
+    def test_initial_state() -> None:
         s = new_session()
         assert s.player == ""
         assert s.game is None
@@ -42,7 +43,8 @@ class TestSession:
         assert s.chat_messages == []
         assert s.pending_burn is None
 
-    def test_append_chat(self) -> None:
+    @staticmethod
+    def test_append_chat() -> None:
         s = new_session()
         s.append_chat("user", "hello")
         s.append_chat("assistant", "world")
@@ -50,12 +52,14 @@ class TestSession:
         assert s.chat_messages[0] == {"role": "user", "content": "hello"}
         assert s.chat_messages[1] == {"role": "assistant", "content": "world"}
 
-    def test_append_chat_extra_fields(self) -> None:
+    @staticmethod
+    def test_append_chat_extra_fields() -> None:
         s = new_session()
         s.append_chat("assistant", "epilogue text", epilogue=True)
         assert s.chat_messages[0]["epilogue"] is True
 
-    def test_an_input_without_its_narration_is_the_orphan(self) -> None:
+    @staticmethod
+    def test_an_input_without_its_narration_is_the_orphan() -> None:
         s = new_session()
         assert s.orphan_input() is None
         s.append_chat("user", "action")
@@ -64,7 +68,8 @@ class TestSession:
         s.append_chat("user", "orphaned action")
         assert s.orphan_input() == "orphaned action"
 
-    def test_only_a_last_user_message_is_popped(self) -> None:
+    @staticmethod
+    def test_only_a_last_user_message_is_popped() -> None:
         s = new_session()
         s.append_chat("user", "first")
         s.append_chat("assistant", "response")
@@ -74,14 +79,16 @@ class TestSession:
         s.pop_last_user_message()
         assert [m["content"] for m in s.chat_messages] == ["first", "response"]
 
-    def test_the_last_narration_is_replaced_past_a_later_input(self) -> None:
+    @staticmethod
+    def test_the_last_narration_is_replaced_past_a_later_input() -> None:
         s = new_session()
         s.append_chat("assistant", "first")
         s.append_chat("user", "second")
         s.replace_last_assistant("replaced")
         assert [m["content"] for m in s.chat_messages] == ["replaced", "second"]
 
-    def test_clear_game(self) -> None:
+    @staticmethod
+    def test_clear_game() -> None:
         s = new_session()
         s.game = make_game_state(player_name="Test")
         s.chat_messages = [{"role": "assistant", "content": "x"}]
@@ -106,13 +113,15 @@ class TestSession:
 
 
 class TestHighlightDialog:
-    def test_no_quotes_unchanged(self) -> None:
+    @staticmethod
+    def test_no_quotes_unchanged() -> None:
         text = "The wind howled through the broken windows."
         assert highlight_dialog(text) == text
 
 
 class TestBuildNarrativeStatus:
-    def _game(self) -> GameState:
+    @staticmethod
+    def _game() -> GameState:
         game = make_game_state(
             player_name="Kael",
             character_concept="Scholar",
@@ -137,13 +146,13 @@ class TestBuildNarrativeStatus:
         ]
         return game
 
-    def test_the_status_tells_the_character_place_people_and_dangers_in_words(self, load_engine: None) -> None:
+    def test_the_status_tells_the_character_place_people_and_dangers_in_words(self) -> None:
         text = build_narrative_status(self._game())
         for told in ("Kael", "bruised", "shaken", "well-equipped", "Library", "Mira", "Ghost", "Doom"):
             assert told in text
         assert "Lore Figure" not in text
 
-    def test_the_status_names_the_act_of_the_story(self, load_engine: None) -> None:
+    def test_the_status_names_the_act_of_the_story(self) -> None:
         game = self._game()
         game.narrative.story_blueprint = make_blueprint(
             central_conflict="test",
@@ -155,7 +164,8 @@ class TestBuildNarrativeStatus:
 
 
 class TestBuildCreationOptions:
-    def test_every_playable_setting_offers_its_paths_by_id_and_title(self, load_engine: None) -> None:
+    @staticmethod
+    def test_every_playable_setting_offers_its_paths_by_id_and_title() -> None:
         settings = build_creation_options()["settings"]
         assert settings
         assert "delve" not in [s["id"] for s in settings]
@@ -164,10 +174,15 @@ class TestBuildCreationOptions:
             assert all(p["id"] and p["title"] for p in s["paths"])
 
 
+@pytest.fixture
+def client() -> TestClient:
+    return TestClient(app)
+
+
 @pytest.mark.usefixtures("_setup")
 class TestWebSocket:
     @pytest.fixture
-    def _setup(self, load_engine: None) -> None:
+    def _setup(self) -> None:
         active_session.player = ""
         active_session.game = None
         active_session.chat_messages = []
@@ -176,11 +191,8 @@ class TestWebSocket:
         active_session.pending_burn = None
         self.session = active_session
 
-    @pytest.fixture
-    def client(self) -> TestClient:
-        return TestClient(app)
-
-    def test_full_connection_flow(self, client: TestClient) -> None:
+    @staticmethod
+    def test_full_connection_flow(client: TestClient) -> None:
         with client.websocket_connect("/ws") as ws:
             msg = ws.receive_json()
             assert msg["type"] == "ui_strings"
@@ -220,7 +232,8 @@ class TestWebSocket:
             assert msg["type"] == "players_list"
             assert "ws_flow" not in msg["players"]
 
-    def test_reconnect_resends_player_state(self, client: TestClient) -> None:
+    @staticmethod
+    def test_reconnect_resends_player_state(client: TestClient) -> None:
         with client.websocket_connect("/ws") as ws1:
             ws1.receive_json()
             ws1.receive_json()
@@ -237,8 +250,9 @@ class TestWebSocket:
             ws2.send_json({"type": "delete_player", "name": "ws_recon"})
             ws2.receive_json()
 
+    @staticmethod
     def test_an_unexpected_handler_error_is_reported_and_the_connection_stays(
-        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+        client: TestClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         def broken(_player: str) -> list[dict[str, Any]]:
             msg = "boom"
@@ -255,6 +269,7 @@ class TestWebSocket:
             ws.send_json({"type": "delete_player", "name": "ws_broken"})
             assert ws.receive_json()["type"] == "players_list"
 
+    @staticmethod
     @pytest.mark.parametrize(
         ("origin", "host"),
         [
@@ -267,12 +282,13 @@ class TestWebSocket:
         ],
     )
     def test_a_page_from_this_machine_or_from_the_address_it_reaches_connects(
-        self, client: TestClient, origin: str | None, host: str
+        client: TestClient, origin: str | None, host: str
     ) -> None:
         headers = {"host": host, **({"origin": origin} if origin else {})}
         with client.websocket_connect("/ws", headers=headers) as ws:
             assert ws.receive_json()["type"] == "ui_strings"
 
+    @staticmethod
     @pytest.mark.parametrize(
         ("origin", "host"),
         [
@@ -283,7 +299,7 @@ class TestWebSocket:
             ("http://[::1", "localhost:8081"),
         ],
     )
-    def test_a_page_from_anywhere_else_is_refused(self, client: TestClient, origin: str, host: str) -> None:
+    def test_a_page_from_anywhere_else_is_refused(client: TestClient, origin: str, host: str) -> None:
         with (
             pytest.raises(WebSocketDisconnect),
             client.websocket_connect("/ws", headers={"host": host, "origin": origin}) as ws,
@@ -294,7 +310,7 @@ class TestWebSocket:
 @pytest.mark.usefixtures("_setup")
 class TestSuccessionWebSocket:
     @pytest.fixture
-    def _setup(self, load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def _setup(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         users = tmp_path / "users"
         users.mkdir()
         for target in (
@@ -310,11 +326,8 @@ class TestSuccessionWebSocket:
         active_session.pending_burn = None
         self.session = active_session
 
-    @pytest.fixture
-    def client(self) -> TestClient:
-        return TestClient(app)
-
-    def _seed_session(self, player: str = "ws_succ") -> None:
+    @staticmethod
+    def _seed_session(player: str = "ws_succ") -> None:
         create_user(player)
         game = make_game_state(
             player_name="Aria",
@@ -327,7 +340,8 @@ class TestSuccessionWebSocket:
         game.narrative.scene_count = 5
         save_game(game, player, [{"role": "assistant", "content": "..."}], "autosave")
 
-    def _drain_initial(self, ws: Any) -> None:
+    @staticmethod
+    def _drain_initial(ws: Any) -> None:
         ws.receive_json()
         ws.receive_json()
 

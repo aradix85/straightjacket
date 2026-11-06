@@ -29,7 +29,7 @@ def _game() -> GameState:
 
 
 @pytest.fixture
-def save_dir(tmp_path: Any, monkeypatch: pytest.MonkeyPatch, load_engine: None) -> Any:
+def save_dir(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> Any:
     for target in (
         "straightjacket.engine.config_loader.USERS_DIR",
         "straightjacket.engine.user_management.USERS_DIR",
@@ -38,7 +38,8 @@ def save_dir(tmp_path: Any, monkeypatch: pytest.MonkeyPatch, load_engine: None) 
     return tmp_path
 
 
-def test_a_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
+@pytest.mark.usefixtures("save_dir")
+def test_a_load_returns_exactly_what_was_saved() -> None:
     game = _game()
     game.npcs[0].arc = "Beginning to trust the player"
     game.npcs[0].aliases = [game.npcs[0].name]
@@ -53,18 +54,21 @@ def test_a_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
     assert loaded_msgs == msgs
 
 
-def test_load_nonexistent_returns_none(save_dir: Any) -> None:
+@pytest.mark.usefixtures("save_dir")
+def test_load_nonexistent_returns_none() -> None:
     game, msgs = load_game("tester", "nonexistent")
     assert game is None
     assert msgs == []
 
 
-def test_list_saves_empty(save_dir: Any) -> None:
+@pytest.mark.usefixtures("save_dir")
+def test_list_saves_empty() -> None:
     result = list_saves_with_info("empty_user")
     assert result == []
 
 
-def test_list_saves_with_saves(save_dir: Any) -> None:
+@pytest.mark.usefixtures("save_dir")
+def test_list_saves_with_saves() -> None:
     save_game(_game(), "lister", [], "save_a")
     save_game(_game(), "lister", [], "save_b")
     result = list_saves_with_info("lister")
@@ -74,18 +78,21 @@ def test_list_saves_with_saves(save_dir: Any) -> None:
     assert "save_b" in names
 
 
-def test_delete_save(save_dir: Any) -> None:
+@pytest.mark.usefixtures("save_dir")
+def test_delete_save() -> None:
     save_game(_game(), "deleter", [], "to_delete")
     delete_save("deleter", "to_delete")
     assert list_saves_with_info("deleter") == []
 
 
-def test_deleting_a_save_that_does_not_exist_changes_nothing(save_dir: Any) -> None:
+@pytest.mark.usefixtures("save_dir")
+def test_deleting_a_save_that_does_not_exist_changes_nothing() -> None:
     delete_save("nobody", "nope")
     assert not (get_save_dir("nobody") / "nope.json").exists()
 
 
-def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
+@pytest.mark.usefixtures("save_dir")
+def test_a_save_holds_the_time_the_state_and_the_chat() -> None:
     msgs = [{"role": "assistant", "content": "Narration.", "epilogue": True}]
     save_game(_game(), "tester", msgs, "keys")
     data = json.loads((get_save_dir("tester") / "keys.json").read_text(encoding="utf-8"))
@@ -93,7 +100,8 @@ def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
     assert data["chat_messages"] == msgs
 
 
-def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
+@pytest.mark.usefixtures("save_dir")
+def test_list_saves_skips_corrupt_files() -> None:
     save_game(_game(), "mixed", [], "good_save")
     save_root = get_save_dir("mixed")
 
@@ -108,28 +116,28 @@ def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
     assert names == {"good_save"}
 
 
-def test_a_save_missing_a_field_does_not_load(load_engine: None) -> None:
+def test_a_save_missing_a_field_does_not_load() -> None:
     data = starting_resources("starforged").to_dict()
     data.pop("next_move_bonus")
     with pytest.raises(ValueError, match=r"Resources: missing fields \['next_move_bonus'\]"):
         Resources.from_dict(data)
 
 
-def test_a_save_with_an_unknown_field_does_not_load(load_engine: None) -> None:
+def test_a_save_with_an_unknown_field_does_not_load() -> None:
     data = _game().to_dict()
     data["retired_field"] = 0
     with pytest.raises(ValueError, match=r"GameState: unknown fields \['retired_field'\]"):
         GameState.from_dict(data)
 
 
-def test_a_save_with_null_in_a_required_field_does_not_load(load_engine: None) -> None:
+def test_a_save_with_null_in_a_required_field_does_not_load() -> None:
     data = _game().to_dict()
     data["world"]["current_location"] = None
     with pytest.raises(ValueError, match="null where"):
         GameState.from_dict(data)
 
 
-def test_a_save_with_a_value_where_an_object_belongs_does_not_load(load_engine: None) -> None:
+def test_a_save_with_a_value_where_an_object_belongs_does_not_load() -> None:
     data = _game().to_dict()
     data["world"]["clocks"] = ["Doom"]
     with pytest.raises(ValueError, match="not an object"):
@@ -148,7 +156,7 @@ def test_a_save_with_a_value_where_an_object_belongs_does_not_load(load_engine: 
         GameState.from_dict(data)
 
 
-def test_a_snapshot_that_disagrees_on_the_blueprint_does_not_restore(load_engine: None) -> None:
+def test_a_snapshot_that_disagrees_on_the_blueprint_does_not_restore() -> None:
     game = _game()
     game.narrative.story_blueprint = make_blueprint()
     snap = game.snapshot()
@@ -157,7 +165,7 @@ def test_a_snapshot_that_disagrees_on_the_blueprint_does_not_restore(load_engine
         game.restore(snap)
 
 
-def test_a_snapshot_with_an_unknown_resource_does_not_restore(load_engine: None) -> None:
+def test_a_snapshot_with_an_unknown_resource_does_not_restore() -> None:
     game = _game()
     snap = game.snapshot()
     snap.resources["retired_meter"] = 3

@@ -6,7 +6,7 @@ from straightjacket.web.serializers import build_creation_options
 from tests._helpers import known_asset
 
 
-def test_path_and_asset_titles_are_the_datasworn_names(load_engine: None) -> None:
+def test_path_and_asset_titles_are_the_datasworn_names() -> None:
     for setting in build_creation_options()["settings"]:
         own = load_ruleset(setting["id"]).setting_file
         assert {p["title"] for p in setting["paths"]} == {a["name"] for a in own.assets_of("path")}
@@ -17,5 +17,5 @@ def test_path_and_asset_titles_are_the_datasworn_names(load_engine: None) -> Non
         )
 
 
-def test_an_oracle_tables_title_is_its_datasworn_name(load_engine: None) -> None:
+def test_an_oracle_tables_title_is_its_datasworn_name() -> None:
     assert get_moves("classic")["fate/pay_the_price"].tables["pay_the_price"].title == "Pay the Price"

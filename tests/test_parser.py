@@ -16,7 +16,7 @@ def _game() -> GameState:
     return game
 
 
-def test_strips_narrator_prefix(load_engine: None) -> None:
+def test_strips_narrator_prefix() -> None:
     game = _game()
     raw = "Narrator: The wind howled through the broken windows."
     result = parse_narrator_response(game, raw)
@@ -24,7 +24,7 @@ def test_strips_narrator_prefix(load_engine: None) -> None:
     assert "wind howled" in result
 
 
-def test_every_leaked_prompt_tag_of_the_parser_config_is_stripped_and_no_other_tag(load_engine: None) -> None:
+def test_every_leaked_prompt_tag_of_the_parser_config_is_stripped_and_no_other_tag() -> None:
     tags = eng().parser.leaked_prompt_tags
     assert "ledger" not in tags
     opened = "".join(f'<{tag} genre="fantasy">' for tag in tags)
@@ -33,7 +33,7 @@ def test_every_leaked_prompt_tag_of_the_parser_config_is_stripped_and_no_other_t
     assert result == "The tavern was quiet. <ledger>A debt.</ledger>"
 
 
-def test_strips_code_fences(load_engine: None) -> None:
+def test_strips_code_fences() -> None:
     game = _game()
     raw = 'The night was dark.\n```json\n{"scene_context": "dark"}\n```'
     result = parse_narrator_response(game, raw)
@@ -42,7 +42,7 @@ def test_strips_code_fences(load_engine: None) -> None:
     assert "night was dark" in result
 
 
-def test_strips_bold_bracket_annotations(load_engine: None) -> None:
+def test_strips_bold_bracket_annotations() -> None:
     game = _game()
     raw = "The blade struck true.\n**[CLOCK CREATED: Shadow Rising 0/6]**"
     result = parse_narrator_response(game, raw)
@@ -50,7 +50,7 @@ def test_strips_bold_bracket_annotations(load_engine: None) -> None:
     assert "blade struck" in result
 
 
-def test_strips_uppercase_bracket_annotations(load_engine: None) -> None:
+def test_strips_uppercase_bracket_annotations() -> None:
     game = _game()
     raw = "She ran.\n[THREAT: rising danger]\n[SCENE CONTEXT: dark alley]"
     result = parse_narrator_response(game, raw)
@@ -58,7 +58,7 @@ def test_strips_uppercase_bracket_annotations(load_engine: None) -> None:
     assert "[SCENE CONTEXT" not in result
 
 
-def test_strips_markdown_bold_italic(load_engine: None) -> None:
+def test_strips_markdown_bold_italic() -> None:
     game = _game()
     raw = "She said **hello** and *smiled* at the ***stranger***."
     result = parse_narrator_response(game, raw)
@@ -68,14 +68,14 @@ def test_strips_markdown_bold_italic(load_engine: None) -> None:
     assert "smiled" in result
 
 
-def test_strips_horizontal_rules(load_engine: None) -> None:
+def test_strips_horizontal_rules() -> None:
     game = _game()
     raw = "The scene ended.\n\n---\n\nA new beginning."
     result = parse_narrator_response(game, raw)
     assert "---" not in result
 
 
-def test_marks_npc_introduced_when_name_in_narration(load_engine: None) -> None:
+def test_marks_npc_introduced_when_name_in_narration() -> None:
     game = _game()
     game.npcs = [make_npc(id="npc_1", name="Mira Ashwood", introduced=False)]
     raw = "Mira Ashwood stood by the window, watching the rain."
@@ -83,7 +83,7 @@ def test_marks_npc_introduced_when_name_in_narration(load_engine: None) -> None:
     assert game.npcs[0].introduced is True
 
 
-def test_marks_npc_introduced_by_partial_name(load_engine: None) -> None:
+def test_marks_npc_introduced_by_partial_name() -> None:
     game = _game()
     game.npcs = [make_npc(id="npc_1", name="Captain Ashwood", introduced=False)]
     raw = "Ashwood nodded slowly, his hand on the hilt."
@@ -91,7 +91,7 @@ def test_marks_npc_introduced_by_partial_name(load_engine: None) -> None:
     assert game.npcs[0].introduced is True
 
 
-def test_does_not_mark_introduced_by_title_alone(load_engine: None) -> None:
+def test_does_not_mark_introduced_by_title_alone() -> None:
     game = _game()
     game.npcs = [make_npc(id="npc_1", name="Captain Jo", introduced=False)]
     raw = "The captain surveyed the field."
@@ -100,14 +100,14 @@ def test_does_not_mark_introduced_by_title_alone(load_engine: None) -> None:
     assert game.npcs[0].introduced is False
 
 
-def test_narration_without_prose_fails_like_an_empty_narration(load_engine: None) -> None:
+def test_narration_without_prose_fails_like_an_empty_narration() -> None:
     game = _game()
     raw = '```json\n{"location": "a dark room"}\n```\n**[SCENE CONTEXT: a dark room]**'
     with pytest.raises(AIUnavailableError, match="empty narration after cleanup"):
         parse_narrator_response(game, raw)
 
 
-def test_combined_cleanup(load_engine: None) -> None:
+def test_combined_cleanup() -> None:
     game = _game()
     raw = (
         "Narrator: The tavern was warm.\n\n"
@@ -124,7 +124,7 @@ def test_combined_cleanup(load_engine: None) -> None:
     assert "poured a drink" in result
 
 
-def test_a_complete_narration_ending_in_a_stray_fence_keeps_every_sentence(load_engine: None) -> None:
+def test_a_complete_narration_ending_in_a_stray_fence_keeps_every_sentence() -> None:
     raw = "The gate held against the storm all night. She turned away from it.\n```"
     narration = narrate_scene(MockProvider(response_content=raw), make_game_state(setting_id="starforged"), "<scene/>")
     assert narration == "The gate held against the storm all night. She turned away from it."

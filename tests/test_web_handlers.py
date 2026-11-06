@@ -51,7 +51,7 @@ def fake_ws() -> RecordingWebSocket:
 
 
 @pytest.fixture
-def session(load_engine: None) -> Session:
+def session() -> Session:
     return new_session()
 
 
@@ -81,12 +81,13 @@ def test_a_new_player_without_a_name_is_refused(
     assert list(users.iterdir()) == []
 
 
-def test_a_closed_connection_ends_a_handler_quietly(session: Session, users: Path) -> None:
+@pytest.mark.usefixtures("users")
+def test_a_closed_connection_ends_a_handler_quietly(session: Session) -> None:
     _run(handle_list_players(session, DroppedWebSocket(), {}))
 
 
 def test_handle_list_players_returns_list(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     _run(handle_list_players(session, fake_ws, {}))
@@ -95,23 +96,20 @@ def test_handle_list_players_returns_list(
     assert isinstance(fake_ws.sent[0]["players"], list)
 
 
-def test_handle_select_player_missing_name_errors(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_select_player_missing_name_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     _run(handle_select_player(session, fake_ws, {}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_a_refused_player_name_leaves_the_session_as_it_was(
-    session: Session, fake_ws: RecordingWebSocket, users: Path
-) -> None:
+@pytest.mark.usefixtures("users")
+def test_a_refused_player_name_leaves_the_session_as_it_was(session: Session, fake_ws: RecordingWebSocket) -> None:
     with pytest.raises(InvalidNameError):
         _run(handle_select_player(session, fake_ws, {"name": "../elsewhere"}))
     assert (session.player, fake_ws.sent) == (new_session().player, [])
 
 
 def test_handle_select_player_no_game_returns_creation_options(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
@@ -123,7 +121,7 @@ def test_handle_select_player_no_game_returns_creation_options(
 
 
 def test_handle_select_player_with_an_incompatible_save_offers_a_new_game(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
@@ -141,71 +139,61 @@ def test_handle_select_player_with_an_incompatible_save_offers_a_new_game(
     assert "creation_options" in selected
 
 
-def test_handle_start_game_when_processing_errors(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_start_game_when_processing_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.processing = True
     _run(handle_start_game(session, fake_ws, {"creation_data": {}}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_handle_start_game_malformed_creation_data_errors(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_start_game_malformed_creation_data_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     _run(handle_start_game(session, fake_ws, {"creation_data": "not a dict"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_handle_player_input_when_processing_errors(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_player_input_when_processing_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.processing = True
     _run(handle_player_input(session, fake_ws, {"text": "go north"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_handle_player_input_no_game_errors(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_player_input_no_game_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_player_input(session, fake_ws, {"text": "go north"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_handle_player_input_empty_text_silent(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_player_input_empty_text_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = make_game_state(player_name="Test", setting_id="starforged")
     _run(handle_player_input(session, fake_ws, {"text": "   "}))
     assert fake_ws.sent == []
 
 
-def test_handle_correction_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_correction_no_game_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_correction(session, fake_ws, {"text": "fix something"}))
     assert fake_ws.sent == []
 
 
-def test_handle_correction_processing_errors(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_correction_processing_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.processing = True
     _run(handle_correction(session, fake_ws, {"text": "x"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_handle_burn_momentum_no_pending_silent(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_burn_momentum_no_pending_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.pending_burn = None
     _run(handle_burn_momentum(session, fake_ws, {"accept": True}))
     assert fake_ws.sent == []
 
 
-def test_handle_save_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_save_no_game_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_save(session, fake_ws, {"name": "test"}))
     assert fake_ws.sent == []
 
 
-def test_handle_save_no_player_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_save_no_player_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.player = ""
     _run(handle_save(session, fake_ws, {"name": "test"}))
@@ -213,7 +201,7 @@ def test_handle_save_no_player_silent(load_engine: None, session: Session, fake_
 
 
 def test_handle_create_player_invalid_name_is_reported_and_creates_nothing(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
@@ -233,14 +221,14 @@ def test_a_save_under_an_unusable_name_writes_nothing(
     assert list(users.rglob("*.json")) == []
 
 
-def test_handle_load_no_player_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_load_no_player_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.player = ""
     _run(handle_load(session, fake_ws, {"name": "test"}))
     assert fake_ws.sent == []
 
 
 def test_handle_load_nonexistent_save_errors(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
@@ -249,62 +237,50 @@ def test_handle_load_nonexistent_save_errors(
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_handle_delete_save_no_player_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_delete_save_no_player_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.player = ""
     _run(handle_delete_save(session, fake_ws, {"name": "x"}))
     assert fake_ws.sent == []
 
 
-def test_handle_recap_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_recap_no_game_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_recap(session, fake_ws, {}))
     assert fake_ws.sent == []
 
 
-def test_handle_status_query_no_game_returns_no_game_status(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_status_query_no_game_returns_no_game_status(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_status_query(session, fake_ws, {}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
 
 
-def test_handle_status_query_with_game_returns_status(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_status_query_with_game_returns_status(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.game.world.time_of_day = "evening"
     _run(handle_status_query(session, fake_ws, {}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
 
 
-def test_handle_tracks_query_no_game_returns_status(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_tracks_query_no_game_returns_status(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_tracks_query(session, fake_ws, {}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
 
 
-def test_handle_threats_query_no_game_returns_status(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_threats_query_no_game_returns_status(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_threats_query(session, fake_ws, {}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
 
 
-def test_handle_advance_asset_no_game_returns_status(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_advance_asset_no_game_returns_status(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_advance_asset(session, fake_ws, {"asset_id": "x"}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
 
 
-def test_a_refused_advance_tells_the_player_why(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_a_refused_advance_tells_the_player_why(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = make_game_state(player_name="Hero", setting_id="starforged")
     session.game.campaign.xp = 10
     _run(handle_advance_asset(session, fake_ws, {"kind": "upgrade", "asset_id": "empath"}))
@@ -312,69 +288,57 @@ def test_a_refused_advance_tells_the_player_why(
     assert session.game.campaign.xp_spent == 0
 
 
-def test_handle_generate_epilogue_no_game_silent(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_generate_epilogue_no_game_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_generate_epilogue(session, fake_ws, {}))
     assert fake_ws.sent == []
 
 
-def test_handle_dismiss_epilogue_no_game_silent(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_dismiss_epilogue_no_game_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_dismiss_epilogue(session, fake_ws, {}))
     assert fake_ws.sent == []
 
 
-def test_handle_new_chapter_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_new_chapter_no_game_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_new_chapter(session, fake_ws, {}))
     assert fake_ws.sent == []
 
 
-def test_handle_retire_no_game_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_retire_no_game_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_retire(session, fake_ws, {}))
     assert fake_ws.sent == []
 
 
-def test_handle_start_succession_no_pending_errors(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_start_succession_no_pending_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = make_game_state(player_name="X", setting_id="starforged")
     session.game.campaign.pending_succession = False
     _run(handle_start_succession(session, fake_ws, {"creation_data": {}}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_handle_request_succession_creation_no_game_errors(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_request_succession_creation_no_game_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_request_succession_creation(session, fake_ws, {}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
 
 
-def test_handle_debug_state_no_game_returns_null_data(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_debug_state_no_game_returns_null_data(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = None
     _run(handle_debug_state(session, fake_ws, {}))
     assert any(m["type"] == "debug_state" for m in fake_ws.sent)
 
 
-def test_handle_debug_state_with_game_returns_state(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket
-) -> None:
+def test_handle_debug_state_with_game_returns_state(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.game = make_game_state(player_name="X", setting_id="starforged")
     _run(handle_debug_state(session, fake_ws, {}))
     assert any(m["type"] == "debug_state" for m in fake_ws.sent)
 
 
 def test_handle_list_saves_returns_list(
-    load_engine: None, session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
@@ -383,7 +347,7 @@ def test_handle_list_saves_returns_list(
     assert any(m["type"] == "saves_list" for m in fake_ws.sent)
 
 
-def test_handle_list_saves_no_player_silent(load_engine: None, session: Session, fake_ws: RecordingWebSocket) -> None:
+def test_handle_list_saves_no_player_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.player = ""
     _run(handle_list_saves(session, fake_ws, {}))
     assert fake_ws.sent == []
@@ -396,8 +360,9 @@ def _play_a_turn(session: Session, ws: RecordingWebSocket, monkeypatch: pytest.M
     assert ws.sent[-1] == {"type": "turn_complete"}
 
 
+@pytest.mark.usefixtures("users")
 def test_selecting_the_player_after_a_save_as_resumes_the_game_where_it_was_left(
-    session: Session, fake_ws: RecordingWebSocket, users: Path, monkeypatch: pytest.MonkeyPatch
+    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     session.player = "Kael"
     session.take_game(library_game(), [])
@@ -414,8 +379,9 @@ def test_selecting_the_player_after_a_save_as_resumes_the_game_where_it_was_left
     assert session.game.to_dict() == played
 
 
+@pytest.mark.usefixtures("users")
 def test_play_after_loading_a_save_goes_to_the_autosave_and_leaves_that_save_as_it_was(
-    session: Session, fake_ws: RecordingWebSocket, users: Path, monkeypatch: pytest.MonkeyPatch
+    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     session.player = "Kael"
     session.take_game(library_game(), [])

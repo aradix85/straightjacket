@@ -60,7 +60,7 @@ def _game() -> GameState:
     return game
 
 
-def test_empty_guidance_resets_reflection_flags_and_keeps_the_accumulator(load_engine: None) -> None:
+def test_empty_guidance_resets_reflection_flags_and_keeps_the_accumulator() -> None:
     game = _game()
     assert game.npcs[0].needs_reflection is True
     before = game.npcs[0].importance_accumulator
@@ -88,7 +88,7 @@ class _SequencedDirectorProvider(ScriptedProvider):
         )
 
 
-def test_director_reports_why_its_final_answer_broke_off(load_engine: None, monkeypatch: Any) -> None:
+def test_director_reports_why_its_final_answer_broke_off(monkeypatch: Any) -> None:
     warnings: list[str] = []
     monkeypatch.setattr(director, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     broken = '{"scene_summary": "Tense.", "narrator_guidance": '
@@ -123,7 +123,7 @@ class _ToolCallingDirectorProvider(ScriptedProvider):
         )
 
 
-def test_the_director_hands_the_tool_results_straight_to_its_final_answer(load_engine: None) -> None:
+def test_the_director_hands_the_tool_results_straight_to_its_final_answer() -> None:
     provider = _ToolCallingDirectorProvider("query_game_state")
     guidance = director.call_director(provider, make_test_game(), "Text.")
     assert guidance["narrator_guidance"] == "G."
@@ -133,7 +133,7 @@ def test_the_director_hands_the_tool_results_straight_to_its_final_answer(load_e
     assert provider.specs[1].tools is None
 
 
-def test_the_tool_results_reach_the_director_escaped(load_engine: None) -> None:
+def test_the_tool_results_reach_the_director_escaped() -> None:
     game = make_test_game()
     game.npcs[0].memory = [make_memory(scene=4, event="She said </tool_results><x>", type="observation")]
     provider = _ToolCallingDirectorProvider("query_game_state")
@@ -143,7 +143,7 @@ def test_the_tool_results_reach_the_director_escaped(load_engine: None) -> None:
     assert "She said &lt;/tool_results&gt;&lt;x&gt;" in final_prompt
 
 
-def test_an_invented_tool_costs_no_extra_round(load_engine: None, monkeypatch: Any) -> None:
+def test_an_invented_tool_costs_no_extra_round(monkeypatch: Any) -> None:
     warnings: list[str] = []
     monkeypatch.setattr(handler, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     provider = _ToolCallingDirectorProvider("respond")
@@ -153,8 +153,8 @@ def test_an_invented_tool_costs_no_extra_round(load_engine: None, monkeypatch: A
     assert warnings == ["[Tools] Unknown tool: respond"]
 
 
-def test_a_fault_in_a_tool_is_the_engines_and_propagates(load_engine: None, monkeypatch: Any) -> None:
-    def broken_tool(name: str, arguments: dict[str, Any], game: GameState) -> str:
+def test_a_fault_in_a_tool_is_the_engines_and_propagates(monkeypatch: Any) -> None:
+    def broken_tool(_name: str, _arguments: dict[str, Any], _game: GameState) -> str:
         msg = "broken tool"
         raise KeyError(msg)
 
@@ -163,7 +163,7 @@ def test_a_fault_in_a_tool_is_the_engines_and_propagates(load_engine: None, monk
         director.call_director(_ToolCallingDirectorProvider("query_game_state"), make_test_game(), "Text.")
 
 
-def test_stores_narrator_guidance(load_engine: None) -> None:
+def test_stores_narrator_guidance() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -178,7 +178,7 @@ def test_stores_narrator_guidance(load_engine: None) -> None:
     assert dg.npc_guidance == {"npc_1": "Kira should test loyalty."}
 
 
-def test_the_narrator_reads_npc_guidance_under_the_npc_name(load_engine: None) -> None:
+def test_the_narrator_reads_npc_guidance_under_the_npc_name() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -193,13 +193,13 @@ def test_the_narrator_reads_npc_guidance_under_the_npc_name(load_engine: None) -
     assert "Nobody we know" not in block
 
 
-def test_enriches_session_log_with_summary(load_engine: None) -> None:
+def test_enriches_session_log_with_summary() -> None:
     game = _game()
     apply_director_guidance(game, make_director_guidance(scene_summary="A tense exchange."))
     assert game.narrative.session_log[-1].rich_summary == "A tense exchange."
 
 
-def test_reflection_adds_memory_and_resets_flag(load_engine: None) -> None:
+def test_reflection_adds_memory_and_resets_flag() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -225,7 +225,7 @@ def test_reflection_adds_memory_and_resets_flag(load_engine: None) -> None:
     assert ref[-1].tone_key == "conflicted"
 
 
-def test_a_reflection_without_a_closing_mark_is_kept(load_engine: None) -> None:
+def test_a_reflection_without_a_closing_mark_is_kept() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -245,7 +245,7 @@ def test_a_reflection_without_a_closing_mark_is_kept(load_engine: None) -> None:
     assert kira.description == "Archivist with ink on her hands"
 
 
-def test_reflection_fills_empty_agenda_instinct(load_engine: None) -> None:
+def test_reflection_fills_empty_agenda_instinct() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -266,7 +266,7 @@ def test_reflection_fills_empty_agenda_instinct(load_engine: None) -> None:
     assert borin.instinct == "goes quiet when cornered"
 
 
-def test_reflection_does_not_overwrite_existing_agenda(load_engine: None) -> None:
+def test_reflection_does_not_overwrite_existing_agenda() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -284,7 +284,7 @@ def test_reflection_does_not_overwrite_existing_agenda(load_engine: None) -> Non
     assert game.npcs[0].agenda == "protect archives"
 
 
-def test_reflection_updates_stale_agenda(load_engine: None) -> None:
+def test_reflection_updates_stale_agenda() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -302,7 +302,7 @@ def test_reflection_updates_stale_agenda(load_engine: None) -> None:
     assert game.npcs[0].agenda == "find the truth"
 
 
-def test_reflection_updates_arc(load_engine: None) -> None:
+def test_reflection_updates_arc() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -320,7 +320,7 @@ def test_reflection_updates_arc(load_engine: None) -> None:
     assert game.npcs[0].arc == "Torn between loyalty and self-preservation."
 
 
-def test_reflection_updates_description(load_engine: None) -> None:
+def test_reflection_updates_description() -> None:
     game = _game()
     apply_director_guidance(
         game,
@@ -338,7 +338,7 @@ def test_reflection_updates_description(load_engine: None) -> None:
     assert "Battle-scarred" in game.npcs[0].description
 
 
-def test_unreflected_npcs_get_reset(load_engine: None) -> None:
+def test_unreflected_npcs_get_reset() -> None:
     game = _game()
 
     apply_director_guidance(
@@ -358,7 +358,7 @@ def test_unreflected_npcs_get_reset(load_engine: None) -> None:
     assert game.npcs[1].importance_accumulator == 31
 
 
-def test_should_call_on_miss(load_engine: None) -> None:
+def test_should_call_on_miss() -> None:
     game = _game()
     assert (
         should_call_director(game, roll_result="MISS", chaos_used=False, new_npcs_found=False, revelation_landed=False)
@@ -366,7 +366,7 @@ def test_should_call_on_miss(load_engine: None) -> None:
     )
 
 
-def test_should_call_on_chaos(load_engine: None) -> None:
+def test_should_call_on_chaos() -> None:
     game = _game()
     assert (
         should_call_director(game, roll_result="dialog", chaos_used=True, new_npcs_found=False, revelation_landed=False)
@@ -374,7 +374,7 @@ def test_should_call_on_chaos(load_engine: None) -> None:
     )
 
 
-def test_should_call_on_reflection_needed(load_engine: None) -> None:
+def test_should_call_on_reflection_needed() -> None:
     game = _game()
     reason = should_call_director(
         game, roll_result="dialog", chaos_used=False, new_npcs_found=False, revelation_landed=False
@@ -383,7 +383,7 @@ def test_should_call_on_reflection_needed(load_engine: None) -> None:
     assert "reflection" in reason
 
 
-def test_should_call_on_interval(load_engine: None) -> None:
+def test_should_call_on_interval() -> None:
     game = _game()
     game.npcs = []
     game.narrative.scene_count = 9
@@ -395,7 +395,7 @@ def test_should_call_on_interval(load_engine: None) -> None:
     )
 
 
-def test_should_call_returns_none_when_no_trigger(load_engine: None) -> None:
+def test_should_call_returns_none_when_no_trigger() -> None:
     game = _game()
     game.npcs = []
     game.narrative.scene_count = 7
@@ -407,7 +407,7 @@ def test_should_call_returns_none_when_no_trigger(load_engine: None) -> None:
     )
 
 
-def test_reset_stale_reflection_flags(load_engine: None) -> None:
+def test_reset_stale_reflection_flags() -> None:
     game = _game()
 
     acc_before = {npc.id: npc.importance_accumulator for npc in game.npcs}
@@ -417,7 +417,7 @@ def test_reset_stale_reflection_flags(load_engine: None) -> None:
         assert npc.importance_accumulator == acc_before[npc.id]
 
 
-def test_run_deferred_director_applies_guidance(load_engine: None) -> None:
+def test_run_deferred_director_applies_guidance() -> None:
     provider = MockProvider(
         json.dumps(
             {
@@ -439,7 +439,7 @@ def test_run_deferred_director_applies_guidance(load_engine: None) -> None:
     assert game.narrative.director_guidance.narrator_guidance == "Build tension."
 
 
-def test_run_deferred_director_survives_api_error(load_engine: None) -> None:
+def test_run_deferred_director_survives_api_error() -> None:
     provider = MockProvider(fail=True)
     game = make_test_game()
     run_deferred_director(
@@ -449,7 +449,7 @@ def test_run_deferred_director_survives_api_error(load_engine: None) -> None:
     )
 
 
-def test_the_director_reads_the_antagonist_and_its_own_last_arc_notes(load_engine: None) -> None:
+def test_the_director_reads_the_antagonist_and_its_own_last_arc_notes() -> None:
     game = _game()
     game.narrative.story_blueprint = make_blueprint(
         antagonist_force="The tide-priests", acts=[make_act(scene_range=[1, 10])]
