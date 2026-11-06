@@ -4,12 +4,11 @@ import pytest
 
 from straightjacket.engine.ai.brain import call_brain
 from straightjacket.engine.ai.provider_base import AIUnavailableError
-from straightjacket.engine.ai.schemas import get_brain_output_schema
 from straightjacket.engine.game.finalization import resolve_action_consequences
 from straightjacket.engine.models import RollResult, labels_of
 from straightjacket.engine.ruleset.config import rules
 from tests._creation import brain_answer
-from tests._helpers import make_brain_result, make_game_state
+from tests._helpers import brain_schema, make_brain_result, make_game_state
 from tests._mocks import MockProvider
 
 _MOVE = "relationship/draw_the_circle"
@@ -50,7 +49,7 @@ def test_a_miss_ignores_boasts() -> None:
 
 
 def test_the_brain_offers_the_boasts_of_the_rules() -> None:
-    boasts = get_brain_output_schema([_MOVE], [], [], [], [], [], [])["properties"]["boasts"]
+    boasts = brain_schema([_MOVE])["properties"]["boasts"]
     assert boasts["items"]["enum"] == sorted(rules().boasts.options)
     assert len(boasts["items"]["enum"]) == 5
     assert boasts["maxItems"] == 2

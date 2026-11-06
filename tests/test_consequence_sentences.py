@@ -159,9 +159,11 @@ def test_consequence_tags_in_prompt() -> None:
         game,
         _brain(),
         _roll("MISS"),
-        [consequence("track_loss", track="health", n=2), consequence("momentum_change", n=-3)],
-        [],
-        **action_prompt_kwargs(player_words="climb the wall", consequence_sentences=sentences),
+        **action_prompt_kwargs(
+            consequences=[consequence("track_loss", track="health", n=2), consequence("momentum_change", n=-3)],
+            player_words="climb the wall",
+            consequence_sentences=sentences,
+        ),
     )
     assert "<consequence>" in prompt
     assert "The hit is bad" in prompt
@@ -175,8 +177,6 @@ def test_no_consequence_tags_when_empty() -> None:
         game,
         _brain(),
         _roll("STRONG_HIT"),
-        [],
-        [],
         **action_prompt_kwargs(player_words="climb the wall"),
     )
     assert "</consequence>" not in prompt
@@ -189,8 +189,10 @@ def test_task_mentions_consequence_weaving() -> None:
         game,
         _brain(),
         _roll("MISS"),
-        [consequence("track_loss", track="health", n=1)],
-        [],
-        **action_prompt_kwargs(player_words="climb", consequence_sentences=["Pain flares."]),
+        **action_prompt_kwargs(
+            consequences=[consequence("track_loss", track="health", n=1)],
+            player_words="climb",
+            consequence_sentences=["Pain flares."],
+        ),
     )
     assert "<consequence>" in prompt.lower()

@@ -54,7 +54,7 @@ def _roll(result: str) -> RollResult:
 
 def _prompt(game: GameState, result: str, target: str | None = None) -> str:
     brain = make_brain_result(move="adventure/gather_information", stat="wits", target_npc=target)
-    return build_action_prompt(game, brain, _roll(result), [], [], **action_prompt_kwargs(player_words="search"))
+    return build_action_prompt(game, brain, _roll(result), **action_prompt_kwargs(player_words="search"))
 
 
 def test_an_information_miss_turns_useful_to_no() -> None:
@@ -78,9 +78,7 @@ def test_the_settled_facts_reach_the_narrator() -> None:
     game = _game()
     facts = settle_facts_by_miss(game, [], "adventure/gather_information", "failure")
     brain = make_brain_result(move="adventure/gather_information", stat="wits")
-    prompt = build_action_prompt(
-        game, brain, _roll("MISS"), [], [], **action_prompt_kwargs(player_words="search", facts=facts)
-    )
+    prompt = build_action_prompt(game, brain, _roll("MISS"), **action_prompt_kwargs(player_words="search", facts=facts))
     assert gm().fact_resolution.types["useful"].description in prompt
 
 
@@ -187,7 +185,7 @@ def test_everyone_present_withholds_on_a_miss(monkeypatch: pytest.MonkeyPatch, r
     game.npcs += [target, bystander]
     brain = make_brain_result(move="adventure/gather_information", stat="wits", target_npc="npc_1")
     prompt = build_action_prompt(
-        game, brain, _roll(result), [], [], **action_prompt_kwargs(player_words="ask", activated_npcs=[bystander])
+        game, brain, _roll(result), **action_prompt_kwargs(player_words="ask", activated_npcs=[bystander])
     )
     held = gm().information_gate.miss_stance.stance
     withheld = (

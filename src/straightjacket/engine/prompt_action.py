@@ -3,16 +3,10 @@ from collections.abc import Sequence
 from straightjacket.engine.gamemaster.questions import answers
 from straightjacket.engine.models import (
     BrainResult,
-    ClockFillResult,
     Consequence,
     GameState,
-    NpcData,
-    RandomEvent,
     ResolvedFact,
-    Revelation,
     RollResult,
-    SceneSetup,
-    ThreatEvent,
     labels_of,
 )
 from straightjacket.engine.prompt_blocks import (
@@ -23,6 +17,8 @@ from straightjacket.engine.prompt_blocks import (
 )
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.prompt_shared import (
+    PromptScene,
+    TurnEvents,
     _clock_filled_block,
     _consequence_tags,
     _director_block,
@@ -84,23 +80,16 @@ def build_action_prompt(
     game: GameState,
     brain: BrainResult,
     roll: RollResult,
-    consequences: list[Consequence],
-    npc_agency: list[str],
+    scene: PromptScene,
+    events: TurnEvents,
     *,
+    consequences: list[Consequence],
     consequence_sentences: Sequence[str],
-    player_words: str,
-    scene_setup: SceneSetup,
-    activated_npcs: Sequence[NpcData],
-    mentioned_npcs: Sequence[NpcData],
     position: str,
     effect: str,
-    random_events: Sequence[RandomEvent],
-    threat_events: Sequence[ThreatEvent],
-    clock_fill_results: Sequence[ClockFillResult],
     facts: Sequence[ResolvedFact],
-    revelation: Revelation | None,
 ) -> str:
-    context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
+    context_text = f"{scene.player_words} {brain.player_intent} {game.world.current_scene_context}"
 
     outcome = answers().outcome(roll.result)
     miss = outcome == "failure"
@@ -108,20 +97,18 @@ def build_action_prompt(
     npc = _npc_block(
         game, brain.target_npc, context_text=context_text, move_category=stance_cat, miss=miss, hit=not miss
     )
-    npcs_sect = _npcs_section(
-        game, brain, context_text, activated_npcs, mentioned_npcs, move_category=stance_cat, miss=miss
-    )
+    npcs_sect = _npcs_section(game, brain, context_text, scene, move_category=stance_cat, miss=miss)
 
     constraint = _build_result_constraint(roll, outcome, consequences) + _move_outcome_block(game, brain, roll)
     position_tag = get_prompt("block_position", level=_xa(position), effect=_xa(effect))
 
     flags = _flags_block(game)
-    agency = _npc_agency_block(npc_agency)
-    pacing = _pacing_block(game, scene_setup)
-    events_block = _random_events_block(random_events)
-    clock_block = _clock_filled_block(clock_fill_results)
+    agency = _npc_agency_block(events.npc_agency)
+    pacing = _pacing_block(game, scene.scene_setup)
+    events_block = _random_events_block(events.random_events)
+    clock_block = _clock_filled_block(events.clock_fill_results)
     director = "" if miss else _director_block(game)
-    threat_tags = _threat_events_block(threat_events)
+    threat_tags = _threat_events_block(events.threat_events)
 
     return get_prompt(
         "block_scene_action",
@@ -129,10 +116,10 @@ def build_action_prompt(
         header=_scene_header(game),
         intent=_xe(brain.player_intent),
         approach=_xe(brain.approach),
-        player_words=_player_words_tag(player_words),
+        player_words=_player_words_tag(scene.player_words),
         result=constraint,
         consequences=_consequence_tags(consequence_sentences),
-        revelation=_revelation_tag(revelation),
+        revelation=_revelation_tag(events.revelation),
         threats=threat_tags,
         clocks=f"\n{clock_block}" if clock_block else "",
         facts=_facts_block(facts),

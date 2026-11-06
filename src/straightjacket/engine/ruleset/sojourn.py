@@ -51,7 +51,7 @@ def apply_sojourn_handler(
     if not candidates:
         return result
     first, *rest = candidates
-    extra = _focus(game, move_key, params, first, aided_by, result)
+    extra = _focus(game, move_key, params, first, aided_by=aided_by, result=result)
     if extra is None:
         rest = [pick for pick in rest if pick.condition or not first.condition or pick.meter != first.meter]
     else:
@@ -86,6 +86,7 @@ def _focus(
     move_key: str,
     params: dict[str, Any],
     pick: _Pick,
+    *,
     aided_by: str | None,
     result: OutcomeResult,
 ) -> int | None:

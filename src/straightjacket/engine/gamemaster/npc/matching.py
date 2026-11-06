@@ -222,18 +222,17 @@ def _strip_titles(words: set[str] | list[str], titles: "frozenset[str]") -> set[
     return {w for w in words if w.rstrip(".") not in titles}
 
 
-def _check_substring_match(new_norm: str, npc: NpcData, best: _FuzzyMatch, min_word_length: int) -> None:
+def _check_substring_match(new_norm: str, npc: NpcData, best: _FuzzyMatch) -> None:
     shorter, longer = sorted((new_norm, normalize_for_match(npc.name)), key=len)
     whole_words = set(shorter.split()) <= set(longer.split())
-    if (len(shorter) >= min_word_length or whole_words) and len(shorter) > best.score:
+    if (len(shorter) >= gm().fuzzy_match.min_word_length or whole_words) and len(shorter) > best.score:
         best.score = len(shorter)
         best.npc = npc
         best.match_type = "identity"
 
 
-def _check_alias_match(
-    new_norm: str, npc: NpcData, best: _FuzzyMatch, min_word_length: int
-) -> tuple[NpcData, str] | None:
+def _check_alias_match(new_norm: str, npc: NpcData, best: _FuzzyMatch) -> tuple[NpcData, str] | None:
+    min_word_length = gm().fuzzy_match.min_word_length
     for alias in npc.aliases:
         alias_norm = normalize_for_match(alias)
         if alias_norm == new_norm:
@@ -247,15 +246,9 @@ def _check_alias_match(
     return None
 
 
-def _check_word_overlap(
-    new_norm: str,
-    new_words: set[str],
-    npc: NpcData,
-    best: _FuzzyMatch,
-    titles: "frozenset[str]",
-    min_word_length: int,
-    exact_dedup_threshold: float,
-) -> None:
+def _check_word_overlap(new_norm: str, new_words: set[str], npc: NpcData, best: _FuzzyMatch) -> None:
+    fuzzy = gm().fuzzy_match
+    titles = gm().name_titles
     name_norm = normalize_for_match(npc.name)
     name_words = _strip_titles(set(name_norm.split()), titles)
     alias_words: set[str] = set()
@@ -264,7 +257,7 @@ def _check_word_overlap(
     all_words = name_words | alias_words
 
     overlap = new_words & all_words
-    significant = [w for w in overlap if len(w) >= min_word_length]
+    significant = [w for w in overlap if len(w) >= fuzzy.min_word_length]
     if not significant:
         return
 
@@ -272,7 +265,7 @@ def _check_word_overlap(
         word = significant[0]
         name_ratio = len(word) / max(len(name_norm), 1)
         new_ratio = len(word) / max(len(new_norm), 1)
-        if max(name_ratio, new_ratio) < exact_dedup_threshold:
+        if max(name_ratio, new_ratio) < fuzzy.exact_dedup_threshold:
             return
 
     score = sum(len(w) for w in significant)
@@ -282,14 +275,8 @@ def _check_word_overlap(
         best.match_type = "identity"
 
 
-def _check_edit_distance_variant(
-    new_norm: str,
-    npc: NpcData,
-    best: _FuzzyMatch,
-    titles: "frozenset[str]",
-    min_word_length: int,
-    stt_alias_bonus: int,
-) -> None:
+def _check_edit_distance_variant(new_norm: str, npc: NpcData, best: _FuzzyMatch) -> None:
+    titles = gm().name_titles
     name_norm = normalize_for_match(npc.name)
     ext_words = sorted(_strip_titles(name_norm.split(), titles))
     new_words_sorted = sorted(_strip_titles(new_norm.split(), titles))
@@ -311,11 +298,11 @@ def _check_edit_distance_variant(
 
     if near < 1:
         return
-    accept = exact >= 1 or (len(new_words_sorted) == 1 and len(new_words_sorted[0]) >= min_word_length)
+    accept = exact >= 1 or (len(new_words_sorted) == 1 and len(new_words_sorted[0]) >= fm.min_word_length)
     if not accept:
         return
 
-    stt_score = sum(len(w) for w in new_words_sorted) + stt_alias_bonus
+    stt_score = sum(len(w) for w in new_words_sorted) + gm().npc_matching.stt_alias_bonus
     if stt_score > best.score:
         best.score = stt_score
         best.npc = npc
@@ -328,13 +315,7 @@ def fuzzy_match_existing_npc(game: GameState, new_name: str) -> tuple[NpcData | 
         return None, None
 
     new_norm = normalize_for_match(new_name)
-    titles = gm().name_titles
-    new_words_raw = set(new_norm.split())
-    new_words = _strip_titles(new_words_raw, titles)
-
-    fuzzy = gm().fuzzy_match
-    npc_match = gm().npc_matching
-
+    new_words = _strip_titles(set(new_norm.split()), gm().name_titles)
     best = _FuzzyMatch(npc=None, score=0, match_type=None)
 
     for npc in game.npcs:
@@ -343,16 +324,15 @@ def fuzzy_match_existing_npc(game: GameState, new_name: str) -> tuple[NpcData | 
 
         name_norm = normalize_for_match(npc.name)
         if new_norm in name_norm or name_norm in new_norm:
-            _check_substring_match(new_norm, npc, best, fuzzy.min_word_length)
+            _check_substring_match(new_norm, npc, best)
             continue
 
-        early = _check_alias_match(new_norm, npc, best, fuzzy.min_word_length)
+        early = _check_alias_match(new_norm, npc, best)
         if early is not None:
             return early
 
-        _check_word_overlap(new_norm, new_words, npc, best, titles, fuzzy.min_word_length, fuzzy.exact_dedup_threshold)
-
-        _check_edit_distance_variant(new_norm, npc, best, titles, fuzzy.min_word_length, npc_match.stt_alias_bonus)
+        _check_word_overlap(new_norm, new_words, npc, best)
+        _check_edit_distance_variant(new_norm, npc, best)
 
     if best.npc:
         log(

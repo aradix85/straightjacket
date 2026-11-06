@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from straightjacket.engine.ai.schemas import get_brain_output_schema
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.director import new_guidance
 from straightjacket.engine.gamemaster.world import new_world
@@ -35,6 +36,7 @@ from straightjacket.engine.models import (
 )
 from straightjacket.engine.models_story import PossibleEnding, Revelation, StoryAct, StoryBlueprint
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
+from straightjacket.engine.prompt_shared import PromptScene, TurnEvents
 from straightjacket.engine.ruleset import move_effects
 from straightjacket.engine.ruleset.legacy import new_campaign
 from straightjacket.engine.ruleset.meters import starting_resources
@@ -339,37 +341,47 @@ def make_npc_rename(**kwargs: Any) -> dict[str, Any]:
     return kwargs
 
 
+def _prompt_kwargs(overrides: dict[str, Any], **defaults: Any) -> dict[str, Any]:
+    scene: dict[str, Any] = {
+        "player_words": "",
+        "scene_setup": make_scene_setup(),
+        "activated_npcs": [],
+        "mentioned_npcs": [],
+    }
+    events: dict[str, Any] = {
+        "random_events": [],
+        "threat_events": [],
+        "clock_fill_results": [],
+        "npc_agency": [],
+        "revelation": None,
+    }
+    rest = dict(defaults)
+    for key, value in overrides.items():
+        target = scene if key in scene else events if key in events else rest
+        target[key] = value
+    return {"scene": PromptScene(**scene), "events": TurnEvents(**events), **rest}
+
+
 def action_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
-    kwargs.setdefault("consequence_sentences", [])
-    kwargs.setdefault("player_words", "")
-    kwargs.setdefault("scene_setup", make_scene_setup())
-    kwargs.setdefault("activated_npcs", [])
-    kwargs.setdefault("mentioned_npcs", [])
-    kwargs.setdefault("position", "risky")
-    kwargs.setdefault("effect", "standard")
-    kwargs.setdefault("random_events", [])
-    kwargs.setdefault("threat_events", [])
-    kwargs.setdefault("clock_fill_results", [])
-    kwargs.setdefault("facts", [])
-    kwargs.setdefault("revelation", None)
-    return kwargs
+    return _prompt_kwargs(
+        kwargs, consequences=[], consequence_sentences=[], position="risky", effect="standard", facts=[]
+    )
 
 
 def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
-    kwargs.setdefault("player_words", "")
-    kwargs.setdefault("scene_setup", make_scene_setup())
-    kwargs.setdefault("activated_npcs", [])
-    kwargs.setdefault("mentioned_npcs", [])
-    kwargs.setdefault("result", "dialog")
-    kwargs.setdefault("oracle_answer", "")
-    kwargs.setdefault("random_events", [])
-    kwargs.setdefault("threat_events", [])
-    kwargs.setdefault("consequence_texts", [])
-    kwargs.setdefault("clock_fill_results", [])
-    kwargs.setdefault("npc_agency", [])
-    kwargs.setdefault("facts", [])
-    kwargs.setdefault("revelation", None)
-    return kwargs
+    return _prompt_kwargs(kwargs, result="dialog", oracle_answer="", consequence_texts=[], facts=[])
+
+
+def brain_schema(move_keys: list[str], **choices: list[str]) -> dict[str, Any]:
+    lists: dict[str, list[str]] = {
+        "stat_names": [],
+        "bonus_ids": [],
+        "npc_ids": [],
+        "track_ids": [],
+        "clock_names": [],
+        "threat_ids": [],
+    }
+    return get_brain_output_schema(move_keys=move_keys, **(lists | choices))
 
 
 def dialog_prompt(game: Any, **kwargs: Any) -> str:

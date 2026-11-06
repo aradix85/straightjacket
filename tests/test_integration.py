@@ -295,8 +295,6 @@ def test_action_prompt_contains_result_and_position() -> None:
         game,
         brain,
         roll,
-        consequences=[],
-        npc_agency=[],
         **action_prompt_kwargs(
             consequence_sentences=["The tide shifts. Hero can feel it."],
             player_words="I search for hidden compartments",
@@ -331,7 +329,7 @@ def test_correction_brain_parses_response() -> None:
     brain = make_brain_result(move="combat/strike", stat="iron", player_intent="Attack the guard")
 
     result = call_correction_brain(
-        provider, game, "I didn't want to attack, just talk", snap, brain, "You swing your sword..."
+        provider, game, "I didn't want to attack, just talk", snap, brain=brain, narration="You swing your sword..."
     )
 
     assert "correction_source" in result

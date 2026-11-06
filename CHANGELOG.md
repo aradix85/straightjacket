@@ -8,6 +8,15 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.06.7] — 2026-11-06
+
+Positional arguments, the eighth step of the user's request: ruff's rule on more than five positional arguments leaves the later groups, at its default limit. The rule on more than five arguments in all is ignored for good, the user's choice, since keyword-only arguments name themselves at every call; a factory such as `new_npc` names every field it fills, as dataclass fields have no defaults (CONTRIBUTING.md, Code standards).
+
+- The narrator's two prompt builders take the scene they write in, the player's words, the scene setup, and the activated and mentioned NPCs, as one `PromptScene`, and what the turn told besides the move's result, its random events, threat events, filled clocks, NPC agency, and revelation, as one `TurnEvents` (`prompt_shared.py`). The turn keeps the `PromptScene` in its `SceneContext`, which no longer holds the ids of the prompt's NPCs beside it (`PromptScene.npc_ids`), hands the same `TurnEvents` to the prompt and to the snapshot, and a correction builds the `TurnEvents` from the snapshot.
+- The NPC fuzzy match's checks read their thresholds from the configuration where they use them (`gamemaster/npc/matching.py`); the other functions with more than five positional arguments, in `src/` and in Elvira, take the rest by keyword. Elvira's turn helper no longer has defaults its one caller always overrides, and three helpers of her WebSocket runner and one of her direct runner no longer take an argument they never used. The tests build the brain's schema through `tests/_helpers.py` → `brain_schema`.
+
+Quality gate: 1896 tests, coverage 96.06%, mypy clean on 267 files, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: nothing the game does changes and every prompt reads as before, mypy checks every changed call, and her smoke tests play both her runners.
+
 ## [2026.11.06.6] — 2026-11-06
 
 Module state and private access, the seventh step of the user's request: ruff's rules on the `global` statement, access to a private member, too many public methods, and too many boolean expressions leave the later groups.

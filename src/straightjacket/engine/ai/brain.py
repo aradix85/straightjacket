@@ -304,13 +304,13 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         "target_threat": [t.id for t in active_threats(game) if vow_against(game, t) is None],
     }
     schema = get_brain_output_schema(
-        move_keys,
-        list(stat_descriptions(game.setting_id)),
-        choices["bonus_id"],
-        choices["target_npc"],
-        choices["target_track"],
-        choices["target_clock"],
-        choices["target_threat"],
+        move_keys=move_keys,
+        stat_names=list(stat_descriptions(game.setting_id)),
+        bonus_ids=choices["bonus_id"],
+        npc_ids=choices["target_npc"],
+        track_ids=choices["target_track"],
+        clock_names=choices["target_clock"],
+        threat_ids=choices["target_threat"],
     )
     model = model_for_role("brain")
     params = sampling_params("brain")

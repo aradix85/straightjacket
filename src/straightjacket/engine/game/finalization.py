@@ -86,6 +86,7 @@ def apply_post_narration(
     provider: AIProvider,
     game: GameState,
     narration: str,
+    *,
     brain: BrainResult,
     outcome: str,
     scene_present_ids: set[str],

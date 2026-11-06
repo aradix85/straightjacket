@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.06.6"
+version = "2026.11.06.7"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -30,13 +30,12 @@ ignore = [
     "single-line-implicit-string-concatenation",  # conflicts with ruff format
     "if-else-block-instead-of-dict-get",          # wants dict.get with a fallback; domain config raises on a miss
     "suspicious-non-cryptographic-random-usage",  # the dice use random, and the tests patch random
+    "too-many-arguments",                         # the user's choice: keyword-only arguments name themselves
     # taken up in later releases, one group at a time:
     "any-type",
     "complex-structure",
-    "too-many-arguments",
     "too-many-branches",
     "too-many-locals",
-    "too-many-positional-arguments",
     "too-many-return-statements",
     "too-many-statements",
 ]

@@ -20,7 +20,9 @@ def dice(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
 
     def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> Any:
         counts["rolls"] += 1
-        return score_action_roll(3, 4, 6, stat_name, stat_value, move, momentum, adds)
+        return score_action_roll(
+            3, 4, 6, stat_name=stat_name, stat_value=stat_value, move=move, held_momentum=momentum, adds=adds
+        )
 
     def _scene(game: Any) -> Any:
         counts["scenes"] += 1

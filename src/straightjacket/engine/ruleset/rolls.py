@@ -30,18 +30,29 @@ def _rank(result: str) -> int:
 def roll_action(stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int) -> RollResult:
     d1 = random.randint(1, rules().dice.action_die)
     c1, c2 = _roll_challenge_dice()
-    return score_action_roll(d1, c1, c2, stat_name, stat_value, move, held_momentum, adds)
+    return score_action_roll(
+        d1, c1, c2, stat_name=stat_name, stat_value=stat_value, move=move, held_momentum=held_momentum, adds=adds
+    )
 
 
 def keep_action_dice(
-    earlier: RollResult, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
+    earlier: RollResult, *, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
 ) -> RollResult:
     d1 = earlier.d1 or random.randint(1, rules().dice.action_die)
-    return score_action_roll(d1, earlier.c1, earlier.c2, stat_name, stat_value, move, held_momentum, adds)
+    return score_action_roll(
+        d1,
+        earlier.c1,
+        earlier.c2,
+        stat_name=stat_name,
+        stat_value=stat_value,
+        move=move,
+        held_momentum=held_momentum,
+        adds=adds,
+    )
 
 
 def score_action_roll(
-    d1: int, c1: int, c2: int, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
+    d1: int, c1: int, c2: int, *, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
 ) -> RollResult:
     action_die = 0 if held_momentum < 0 and -held_momentum == d1 else d1
     score = min(action_die + stat_value + adds, rules().dice.action_score_max)

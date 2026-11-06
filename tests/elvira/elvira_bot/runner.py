@@ -201,7 +201,7 @@ def run_session(
 
             if is_correction_turn:
                 game, narration, turn_rec, session_ended = _play_correction_turn(
-                    provider, game, narration, total_turns, persona, slog
+                    provider, game, narration, total_turns, slog
                 )
             else:
                 game, narration, turn_rec, session_ended = _play_turn(
@@ -209,9 +209,9 @@ def run_session(
                     game,
                     narration,
                     total_turns,
-                    persona,
-                    style,
-                    burn_setting,
+                    persona=persona,
+                    style=style,
+                    burn_setting=burn_setting,
                     print_full=print_full,
                     print_rolls=print_rolls,
                     do_invariants=do_invariants,
@@ -242,7 +242,7 @@ def run_session(
             chat_messages.append({"role": "assistant", "content": narration})
 
             if total_turns % save_every == 0:
-                _save_and_verify(game, username, chat_messages, save_out, slog, coverage)
+                _save_and_verify(game, username, chat_messages, save_out, slog=slog, coverage=coverage)
 
             if game.game_over and not session_ended and succession_enabled and not slog.succession:
                 game, succession_narration = _play_succession(provider, game, game_cfg, slog, coverage)
@@ -285,7 +285,15 @@ def run_session(
             ]
 
             game, narration, chat_messages, should_break = _chapter_transition(
-                provider, game, chat_messages, username, save_out, chapter_num, chapter_idx, max_chapters, slog
+                provider,
+                game,
+                chat_messages,
+                username,
+                save_out,
+                chapter_num=chapter_num,
+                chapter_idx=chapter_idx,
+                max_chapters=max_chapters,
+                slog=slog,
             )
 
             if not should_break and pre_chapter_npcs:
@@ -315,7 +323,7 @@ def run_session(
     }
 
     print_summary(slog, game)
-    _save_and_verify(game, username, chat_messages, save_out, slog, coverage)
+    _save_and_verify(game, username, chat_messages, save_out, slog=slog, coverage=coverage)
     coverage.hit("burn_offered", burns_offered)
     coverage.hit("burn_taken", burns_taken)
     coverage.hit("correction", len(slog.correction_tests))
@@ -379,10 +387,10 @@ def _play_turn(
     game: GameState,
     narration: str,
     turn: int,
+    *,
     persona: str,
     style: str,
     burn_setting: str,
-    *,
     print_full: bool,
     print_rolls: bool,
     do_invariants: bool,
@@ -391,9 +399,9 @@ def _play_turn(
     coverage: Coverage,
     events: _EventCapture,
     judge_cfg: dict[str, Any] | None,
-    prev_action: str = "",
-    inject_failure: bool = False,
-    directive_key: str | None = None,
+    prev_action: str,
+    inject_failure: bool,
+    directive_key: str | None,
     fixed: str | None,
 ) -> tuple[GameState, str, TurnRecord, bool]:
     previous_narration = narration
@@ -450,7 +458,7 @@ def _play_turn(
 
     rec = record_turn(game, turn, action, narration, roll)
     rec.turn_secs = round(time.monotonic() - started, 1)
-    _record_stream(rec, stream, sentences, first_at, narration, slog, coverage)
+    _record_stream(rec, stream, sentences, first_at, narration, slog=slog, coverage=coverage)
     played = game.narrative.session_log[-1]
     result, played_move = played.result, played.move
     match = bool(roll and roll.match)
@@ -458,7 +466,16 @@ def _play_turn(
 
     if burn_offer:
         narration, director_ctx = _handle_burn(
-            provider, game, burn_offer, narration, director_ctx, burn_setting, style, rec, turn, slog
+            provider,
+            game,
+            burn_offer,
+            narration,
+            director_ctx,
+            burn_setting=burn_setting,
+            style=style,
+            rec=rec,
+            turn=turn,
+            slog=slog,
         )
         if rec.burn_taken and not rec.burn_error:
             result = burn_offer.new_result
@@ -603,6 +620,7 @@ def _record_stream(
     sentences: list[str],
     first_at: list[float],
     narration: str,
+    *,
     slog: SessionLog,
     coverage: Coverage,
 ) -> None:
@@ -648,6 +666,7 @@ def _save_and_verify(
     username: str,
     chat_messages: list[dict[str, Any]],
     save_out: str,
+    *,
     slog: SessionLog,
     coverage: Coverage,
 ) -> None:
@@ -694,7 +713,6 @@ def _play_correction_turn(
     game: GameState,
     narration: str,
     turn: int,
-    _persona: str,
     slog: SessionLog,
 ) -> tuple[GameState, str, TurnRecord, bool]:
     say(f"  [CORRECTION TEST] Sending ## correction at turn {turn}")
@@ -781,6 +799,7 @@ def _handle_burn(
     offer: BurnOffer,
     narration: str,
     director_ctx: DirectorCall | None,
+    *,
     burn_setting: str,
     style: str,
     rec: TurnRecord,
@@ -834,6 +853,7 @@ def _chapter_transition(
     chat_messages: list[dict[str, Any]],
     username: str,
     save_out: str,
+    *,
     chapter_num: int,
     chapter_idx: int,
     max_chapters: int,

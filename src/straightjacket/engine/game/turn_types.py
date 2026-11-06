@@ -7,7 +7,6 @@ from straightjacket.engine.models import (
     ClockFillResult,
     Consequence,
     GameState,
-    NpcData,
     RandomEvent,
     ResolvedFact,
     Revelation,
@@ -16,6 +15,7 @@ from straightjacket.engine.models import (
     ThreatEvent,
     TurnSnapshot,
 )
+from straightjacket.engine.prompt_shared import PromptScene
 from straightjacket.engine.ruleset.moves import Move
 
 
@@ -24,14 +24,10 @@ class SceneContext:
     provider: AIProvider
     game: GameState
     brain: BrainResult
-    player_message: str
-    scene_setup: SceneSetup
-    prompt_npc_ids: set[str]
+    scene: PromptScene
     revelation: Revelation | None
     facts: list[ResolvedFact]
     summary_label: str
-    activated_npcs: list[NpcData]
-    mentioned_npcs: list[NpcData]
     pending_random_events: list[RandomEvent]
     stream: NarrationSink | None
     narrator_note: str

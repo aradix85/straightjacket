@@ -69,6 +69,7 @@ def _fact_requests(npc_ids: list[str]) -> dict[str, Any]:
 
 
 def get_brain_output_schema(
+    *,
     move_keys: list[str],
     stat_names: list[str],
     bonus_ids: list[str],

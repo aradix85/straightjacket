@@ -141,9 +141,11 @@ def test_stance_in_target_npc_block() -> None:
         game,
         brain,
         roll,
-        [consequence("momentum_change", n=1)],
-        [],
-        **action_prompt_kwargs(consequence_sentences=["The tide shifts."], player_words="I ask about the cargo"),
+        **action_prompt_kwargs(
+            consequences=[consequence("momentum_change", n=1)],
+            consequence_sentences=["The tide shifts."],
+            player_words="I ask about the cargo",
+        ),
     )
     assert 'stance="evasive"' in prompt
     assert "constraint=" in prompt
@@ -167,7 +169,7 @@ def _compel_a_hostile_npc(result: str) -> str:
         move="adventure/compel",
         match=False,
     )
-    return build_action_prompt(game, brain, roll, [], [], **action_prompt_kwargs(player_words="Talk."))
+    return build_action_prompt(game, brain, roll, **action_prompt_kwargs(player_words="Talk."))
 
 
 @pytest.mark.parametrize(
@@ -223,8 +225,6 @@ def test_stance_in_activated_npc_block() -> None:
         game,
         brain,
         roll,
-        [],
-        [],
         **action_prompt_kwargs(
             consequence_sentences=["The tide shifts."], player_words="dodge", activated_npcs=[npc1, npc2]
         ),

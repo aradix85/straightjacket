@@ -1,6 +1,7 @@
 import json
 import random
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
@@ -30,6 +31,26 @@ from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.ruleset.impacts import get_impacts
 from straightjacket.engine.xml_utils import xa as _xa
 from straightjacket.engine.xml_utils import xe as _xe
+
+
+@dataclass
+class PromptScene:
+    player_words: str
+    scene_setup: SceneSetup
+    activated_npcs: list[NpcData]
+    mentioned_npcs: list[NpcData]
+
+    def npc_ids(self) -> set[str]:
+        return {n.id for n in self.activated_npcs} | {n.id for n in self.mentioned_npcs}
+
+
+@dataclass
+class TurnEvents:
+    random_events: list[RandomEvent]
+    threat_events: list[ThreatEvent]
+    clock_fill_results: list[ClockFillResult]
+    npc_agency: list[str]
+    revelation: Revelation | None
 
 
 def creativity_seed() -> str:
@@ -404,18 +425,19 @@ def _npcs_section(
     game: GameState,
     brain: BrainResult,
     context_text: str,
-    activated_npcs: Sequence[NpcData],
-    mentioned_npcs: Sequence[NpcData],
+    scene: PromptScene,
     move_category: str,
     *,
     miss: bool = False,
 ) -> str:
     target_id = brain.target_npc
-    activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text, move_category, miss=miss)
-    exclude_ids = {n.id for n in activated_npcs}
+    activated_block = _activated_npcs_block(
+        scene.activated_npcs, target_id, game, context_text, move_category, miss=miss
+    )
+    exclude_ids = {n.id for n in scene.activated_npcs}
     if target_id:
         exclude_ids.add(target_id)
-    known_str = _known_npcs_string(mentioned_npcs, game, exclude_ids)
+    known_str = _known_npcs_string(scene.mentioned_npcs, game, exclude_ids)
     section = ""
     if activated_block:
         section += f"\n{activated_block}"

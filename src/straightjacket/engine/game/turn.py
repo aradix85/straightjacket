@@ -27,21 +27,19 @@ from straightjacket.engine.gamemaster.world import apply_brain_location_time
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import (
     BrainResult,
-    ClockFillResult,
     GameState,
     PlaceRecord,
     RandomEvent,
     ResolvedFact,
-    Revelation,
     RollResult,
     SceneLogEntry,
     SceneSetup,
-    ThreatEvent,
     TurnSnapshot,
 )
 from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
 from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.prompt_shared import PromptScene, TurnEvents
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.consequences import consequence_texts, generate_consequence_sentences
 from straightjacket.engine.ruleset.make_move import RollOutcome, make_move_without_roll, plays_without_roll, roll_move
@@ -152,9 +150,9 @@ def _play_turn(
         brain,
         player_message,
         scene_setup,
-        pending_random_events,
-        facts,
-        label,
+        pending_random_events=pending_random_events,
+        facts=facts,
+        summary_label=label,
         stream=stream,
         narrator_note=narrator_note,
     )
@@ -190,20 +188,13 @@ def _snapshot_of_turn(game: GameState) -> TurnSnapshot:
     return snapshot
 
 
-def _keep_what_the_turn_told(
-    game: GameState,
-    random_events: list[RandomEvent],
-    threat_events: list[ThreatEvent],
-    clock_fill_results: list[ClockFillResult],
-    npc_agency: list[str],
-    revelation: Revelation | None,
-) -> None:
+def _keep_what_the_turn_told(game: GameState, events: TurnEvents) -> None:
     snapshot = _snapshot_of_turn(game)
-    snapshot.random_events = list(random_events)
-    snapshot.threat_events = list(threat_events)
-    snapshot.clock_fill_results = list(clock_fill_results)
-    snapshot.npc_agency = list(npc_agency)
-    snapshot.revelation = revelation
+    snapshot.random_events = list(events.random_events)
+    snapshot.threat_events = list(events.threat_events)
+    snapshot.clock_fill_results = list(events.clock_fill_results)
+    snapshot.npc_agency = list(events.npc_agency)
+    snapshot.revelation = events.revelation
 
 
 def _begin_turn(game: GameState, player_message: str) -> None:
@@ -247,28 +238,27 @@ def build_scene_context(
     brain: BrainResult,
     player_message: str,
     scene_setup: SceneSetup,
+    *,
     pending_random_events: list[RandomEvent],
     facts: list[ResolvedFact],
     summary_label: str,
-    *,
     stream: NarrationSink | None,
     narrator_note: str,
 ) -> SceneContext:
     activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, player_message)
-    prompt_npc_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
-
     return SceneContext(
         provider=provider,
         game=game,
         brain=brain,
-        player_message=player_message,
-        scene_setup=scene_setup,
-        prompt_npc_ids=prompt_npc_ids,
+        scene=PromptScene(
+            player_words=player_message,
+            scene_setup=scene_setup,
+            activated_npcs=activated_npcs,
+            mentioned_npcs=mentioned_npcs,
+        ),
         revelation=None,
         facts=facts,
         summary_label=summary_label,
-        activated_npcs=activated_npcs,
-        mentioned_npcs=mentioned_npcs,
         pending_random_events=pending_random_events,
         stream=stream,
         narrator_note=narrator_note,
@@ -309,24 +299,24 @@ def _process_unrolled_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]
     make_follow_up_moves(game, engine_moves)
     update_crisis(game)
     ctx.revelation = land_revelation(game, outcome_of(result))
-    _keep_what_the_turn_told(game, ctx.pending_random_events, threat_events, pending_fills, npc_agency, ctx.revelation)
+    events = TurnEvents(
+        random_events=ctx.pending_random_events,
+        threat_events=threat_events,
+        clock_fill_results=pending_fills,
+        npc_agency=npc_agency,
+        revelation=ctx.revelation,
+    )
+    _keep_what_the_turn_told(game, events)
 
     prompt = build_dialog_prompt(
         game,
         brain,
-        player_words=ctx.player_message,
-        scene_setup=ctx.scene_setup,
-        activated_npcs=ctx.activated_npcs,
-        mentioned_npcs=ctx.mentioned_npcs,
+        ctx.scene,
+        events,
         result=result,
         oracle_answer=oracle_answer,
-        random_events=ctx.pending_random_events,
-        threat_events=threat_events,
         consequence_texts=consequence_texts(engine_moves.consequences, game, brain),
-        clock_fill_results=pending_fills,
-        npc_agency=npc_agency,
         facts=ctx.facts,
-        revelation=ctx.revelation,
     )
     prompt = _with_narrator_note(prompt, ctx.narrator_note)
     narration = narrate_scene(
@@ -343,8 +333,8 @@ def _process_unrolled_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]
         narration,
         log_entry=SceneLogEntry(
             scene=game.narrative.scene_count,
-            scene_type=ctx.scene_setup.scene_type,
-            summary=brain.player_intent or ctx.player_message,
+            scene_type=ctx.scene.scene_setup.scene_type,
+            summary=brain.player_intent or ctx.scene.player_words,
             move=brain.move,
             result=result,
             consequences=engine_moves.consequences,
@@ -356,7 +346,7 @@ def _process_unrolled_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]
         pacing_type="breather",
         prompt_summary=get_prompt(
             _history_key(result),
-            intent=(brain.player_intent or ctx.player_message)[: eng().truncations.log_medium],
+            intent=(brain.player_intent or ctx.scene.player_words)[: eng().truncations.log_medium],
         ),
         agency_clock_events=agency_clock_events,
         threat_events=threat_events,
@@ -377,8 +367,8 @@ def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOf
         new_result=new_result,
         cost=momentum(game),
         brain=ctx.brain,
-        player_words=ctx.player_message,
-        scene_setup=ctx.scene_setup,
+        player_words=ctx.scene.player_words,
+        scene_setup=ctx.scene.scene_setup,
         ds_move=roll_outcome.ds_move,
         random_events=list(ctx.pending_random_events),
         facts=list(ctx.facts),
@@ -409,38 +399,31 @@ def _narrate_action_and_finalize(
     game = ctx.game
     brain = ctx.brain
     roll = roll_outcome.roll
-    player_message = ctx.player_message
+    player_message = ctx.scene.player_words
 
     consequence_sentences = generate_consequence_sentences(
         action_res.consequences, action_res.clock_events, game, brain
     )
-    _keep_what_the_turn_told(
-        game,
-        ctx.pending_random_events,
-        action_res.threat_events,
-        action_res.clock_fill_results,
-        action_res.npc_agency,
-        ctx.revelation,
+    events = TurnEvents(
+        random_events=ctx.pending_random_events,
+        threat_events=action_res.threat_events,
+        clock_fill_results=action_res.clock_fill_results,
+        npc_agency=action_res.npc_agency,
+        revelation=ctx.revelation,
     )
+    _keep_what_the_turn_told(game, events)
 
     prompt = build_action_prompt(
         game,
         brain,
         roll,
-        action_res.consequences,
-        action_res.npc_agency,
-        player_words=player_message,
-        scene_setup=ctx.scene_setup,
-        activated_npcs=ctx.activated_npcs,
-        mentioned_npcs=ctx.mentioned_npcs,
+        ctx.scene,
+        events,
+        consequences=action_res.consequences,
+        consequence_sentences=consequence_sentences,
         position=action_res.position,
         effect=action_res.effect,
-        consequence_sentences=consequence_sentences,
-        random_events=ctx.pending_random_events,
-        threat_events=action_res.threat_events,
-        clock_fill_results=action_res.clock_fill_results,
         facts=ctx.facts,
-        revelation=ctx.revelation,
     )
     prompt = _with_narrator_note(prompt, ctx.narrator_note)
     narration = narrate_scene(
@@ -459,7 +442,7 @@ def _narrate_action_and_finalize(
         narration,
         log_entry=SceneLogEntry(
             scene=game.narrative.scene_count,
-            scene_type=ctx.scene_setup.scene_type,
+            scene_type=ctx.scene.scene_setup.scene_type,
             summary=brain.player_intent or player_message,
             move=brain.move,
             result=roll.result,

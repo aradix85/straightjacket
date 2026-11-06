@@ -8,7 +8,6 @@ import pytest
 
 from straightjacket.engine.ai.brain import call_brain
 from straightjacket.engine.ai.provider_base import AIUnavailableError
-from straightjacket.engine.ai.schemas import get_brain_output_schema
 from straightjacket.engine.correction import process_correction
 from straightjacket.engine.correction.ops import apply_correction_ops
 from straightjacket.engine.game import process_momentum_burn, process_turn, turn
@@ -36,7 +35,7 @@ from straightjacket.engine.models import (
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.ruleset.progress import new_track
 from tests._creation import OpeningProvider, TurnProvider, brain_answer, create_game, creation_data, force_result
-from tests._helpers import change_config, fix_dice
+from tests._helpers import brain_schema, change_config, fix_dice
 from tests._mocks import MockProvider
 
 
@@ -216,9 +215,7 @@ def test_a_doublet_queues_a_random_event(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_the_brain_schema_offers_only_known_types_and_subjects() -> None:
-    facts = get_brain_output_schema(["adventure/face_danger"], [], [], ["npc_1"], [], [], [])["properties"][
-        "undetermined_facts"
-    ]
+    facts = brain_schema(["adventure/face_danger"], npc_ids=["npc_1"])["properties"]["undetermined_facts"]
     place, npc = facts["items"]["anyOf"]
     assert place["properties"]["fact_type"]["enum"] == ["locked", "occupied", "useful"]
     assert place["properties"]["about"]["enum"] == ["here"]
@@ -226,9 +223,7 @@ def test_the_brain_schema_offers_only_known_types_and_subjects() -> None:
     assert npc["properties"]["about"]["enum"] == ["npc_1"]
     assert facts["maxItems"] == gm().fact_resolution.max_per_turn
 
-    alone = get_brain_output_schema(["adventure/face_danger"], [], [], [], [], [], [])["properties"][
-        "undetermined_facts"
-    ]
+    alone = brain_schema(["adventure/face_danger"])["properties"]["undetermined_facts"]
     assert len(alone["items"]["anyOf"]) == 1
 
 

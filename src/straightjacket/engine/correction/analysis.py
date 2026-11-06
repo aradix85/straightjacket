@@ -21,6 +21,7 @@ def call_correction_brain(
     game: GameState,
     correction_text: str,
     snap: TurnSnapshot,
+    *,
     brain: BrainResult,
     narration: str,
 ) -> dict[str, Any]:

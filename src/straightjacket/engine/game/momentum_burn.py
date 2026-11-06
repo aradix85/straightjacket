@@ -24,9 +24,9 @@ def process_momentum_burn(
         offer.brain,
         offer.player_words,
         offer.scene_setup,
-        list(offer.random_events),
-        list(offer.facts),
-        get_prompt("history_label_burn"),
+        pending_random_events=list(offer.random_events),
+        facts=list(offer.facts),
+        summary_label=get_prompt("history_label_burn"),
         stream=None,
         narrator_note=eng().ai_text.narrator_defaults["momentum_burn_injection"],
     )

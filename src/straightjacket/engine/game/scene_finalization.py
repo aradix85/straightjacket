@@ -82,19 +82,19 @@ def finalize_scene(
 ) -> DirectorCall | None:
     game = ctx.game
     brain = ctx.brain
-    scene_present_ids = present_in_narration(game, ctx.prompt_npc_ids, brain.target_npc, narration)
+    scene_present_ids = present_in_narration(game, ctx.scene.npc_ids(), brain.target_npc, narration)
 
     metadata = apply_post_narration(
         ctx.provider,
         game,
         narration,
-        brain,
-        outcome_of(log_entry.result),
-        scene_present_ids,
+        brain=brain,
+        outcome=outcome_of(log_entry.result),
+        scene_present_ids=scene_present_ids,
         consequences=log_entry.consequences,
     )
 
-    scene_type = ctx.scene_setup.scene_type if ctx.scene_setup.scene_type != "expected" else pacing_type
+    scene_type = ctx.scene.scene_setup.scene_type if ctx.scene.scene_setup.scene_type != "expected" else pacing_type
     record_scene_intensity(game, scene_type)
 
     nar = game.narrative
@@ -124,7 +124,7 @@ def finalize_scene(
     update_chaos_factor(game, outcome_of(log_entry.result), target_npc_id=brain.target_npc)
 
     _update_characters_list(game, metadata, scene_present_ids)
-    scene_events = [*ctx.pending_random_events, *filter(None, [ctx.scene_setup.interrupt_event])]
+    scene_events = [*ctx.pending_random_events, *filter(None, [ctx.scene.scene_setup.interrupt_event])]
     for thread_id in invoked_threads(game, brain, scene_events, threat_events):
         add_thread_weight(game, thread_id)
     consolidate_lists(game)
@@ -133,7 +133,7 @@ def finalize_scene(
     director_reason = should_call_director(
         game,
         roll_result=log_entry.result,
-        chaos_used=ctx.scene_setup.scene_type != "expected",
+        chaos_used=ctx.scene.scene_setup.scene_type != "expected",
         new_npcs_found=bool(metadata["new_npcs"]),
         revelation_landed=ctx.revelation is not None,
     )

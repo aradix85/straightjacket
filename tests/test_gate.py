@@ -145,9 +145,11 @@ def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
         game,
         brain,
         roll,
-        [consequence("momentum_change", n=1)],
-        [],
-        **action_prompt_kwargs(consequence_sentences=["The tide shifts."], player_words="approach carefully"),
+        **action_prompt_kwargs(
+            consequences=[consequence("momentum_change", n=1)],
+            consequence_sentences=["The tide shifts."],
+            player_words="approach carefully",
+        ),
     )
 
 

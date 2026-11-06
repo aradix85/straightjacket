@@ -88,11 +88,12 @@ def _mentioned(label: str, player_input: str, story_text: str) -> bool:
 
 def _score_npc(
     npc: NpcData,
+    game: GameState,
+    *,
     target_id: str | None,
     player_input: str,
     story_text: str,
     tfidf: float,
-    game: GameState,
 ) -> float:
     scores = gm().activation_scores
     tf = gm().tf_idf
@@ -174,7 +175,9 @@ def activate_npcs_for_prompt(
             continue
 
         tfidf = tfidf_scores.get(npc.id, 0.0)
-        score = _score_npc(npc, target_id, player_input, story_text, tfidf, game)
+        score = _score_npc(
+            npc, game, target_id=target_id, player_input=player_input, story_text=story_text, tfidf=tfidf
+        )
 
         if score >= gm().npc.activation_threshold:
             activated.append(npc)

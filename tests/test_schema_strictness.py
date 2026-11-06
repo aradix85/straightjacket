@@ -3,12 +3,12 @@ from typing import Any
 
 from straightjacket.engine.ai import schemas
 from straightjacket.engine.ai.schemas import (
-    get_brain_output_schema,
     get_correction_output_schema,
     get_narrator_metadata_schema,
 )
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
+from tests._helpers import brain_schema
 
 ANTHROPIC_UNION_LIMIT = 16
 _TWELVE_NPCS = [f"npc_{i}" for i in range(1, 13)]
@@ -53,13 +53,13 @@ def _every_schema() -> dict[str, dict[str, Any]]:
         "director with twelve reflections": schemas.get_director_output_schema(_TWELVE_NPCS),
         "metadata with twelve known NPCs": schemas.get_narrator_metadata_schema(_TWELVE_NPCS),
         "brain with every choice": schemas.get_brain_output_schema(
-            ["adventure/face_danger"],
-            ["iron"],
-            ["infiltrator#0"],
-            _TWELVE_NPCS,
-            ["track_1"],
-            ["A danger"],
-            ["threat_1"],
+            move_keys=["adventure/face_danger"],
+            stat_names=["iron"],
+            bonus_ids=["infiltrator#0"],
+            npc_ids=_TWELVE_NPCS,
+            track_ids=["track_1"],
+            clock_names=["A danger"],
+            threat_ids=["threat_1"],
         ),
     }
 
@@ -87,19 +87,19 @@ def test_the_checks_see_a_property_that_is_not_required_and_every_kind_of_union(
 
 
 def test_the_brain_schema_always_asks_for_a_track_name_and_rank() -> None:
-    props = get_brain_output_schema(["combat/enter_the_fray"], [], [], [], [], [], [])["properties"]
+    props = brain_schema(["combat/enter_the_fray"])["properties"]
     assert props["track_name"] == {"type": "string"}
     assert props["track_rank"]["type"] == "string"
     assert "dangerous" in props["track_rank"]["enum"]
 
 
 def test_the_brain_schema_offers_exactly_the_moves_it_is_given() -> None:
-    props = get_brain_output_schema(["dialog", "combat/enter_the_fray"], [], [], [], [], [], [])["properties"]
+    props = brain_schema(["dialog", "combat/enter_the_fray"])["properties"]
     assert props["move"]["enum"] == ["combat/enter_the_fray", "dialog"]
 
 
 def test_the_brain_schema_offers_the_stats_it_is_given_beside_no_stat_and_the_pick_methods() -> None:
-    props = get_brain_output_schema(["adventure/face_danger"], ["grit", "guile"], [], [], [], [], [])["properties"]
+    props = brain_schema(["adventure/face_danger"], stat_names=["grit", "guile"])["properties"]
     assert props["stat"]["enum"] == ["grit", "guile", "none", "highest", "lowest"]
 
 

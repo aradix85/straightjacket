@@ -67,7 +67,14 @@ def roll_move(game: GameState, brain: BrainResult, earlier: RollResult | None) -
         if earlier is None:
             roll = roll_action(stat_name, stat_value, brain.move, rolled_momentum, adds)
         else:
-            roll = keep_action_dice(earlier, stat_name, stat_value, brain.move, rolled_momentum, adds)
+            roll = keep_action_dice(
+                earlier,
+                stat_name=stat_name,
+                stat_value=stat_value,
+                move=brain.move,
+                held_momentum=rolled_momentum,
+                adds=adds,
+            )
         game.resources.next_move_bonus = 0
         if bonus:
             apply_momentum_on_hit(game, bonus, roll.result)

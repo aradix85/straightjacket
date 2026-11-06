@@ -71,7 +71,7 @@ class TestApplyEffects:
         ],
     )
     def test_resource_change(
-        game: GameState, effect: str, track: str, start: int, expected: int, cons_fragment: str
+        game: GameState, *, effect: str, track: str, start: int, expected: int, cons_fragment: str
     ) -> None:
         game.resources.meters[track] = start
         result = apply_effects(game, parse_effects([effect]))

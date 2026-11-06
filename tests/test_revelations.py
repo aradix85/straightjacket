@@ -201,7 +201,9 @@ def test_a_correction_tells_the_turns_revelation_again_and_marks_it_once(
     monkeypatch: pytest.MonkeyPatch, source: str
 ) -> None:
     def _hit(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> Any:
-        return score_action_roll(6, 1, 2, stat_name, stat_value, move, momentum, adds)
+        return score_action_roll(
+            6, 1, 2, stat_name=stat_name, stat_value=stat_value, move=move, held_momentum=momentum, adds=adds
+        )
 
     monkeypatch.setattr(make_move, "roll_action", _hit)
     monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))

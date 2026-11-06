@@ -41,10 +41,12 @@ def fixed_result(result: str) -> Generator[None]:
     challenge_faces = range(1, rules().dice.challenge_die + 1)
 
     def action(
-        _d1: int, _c1: int, _c2: int, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
+        _d1: int, _c1: int, _c2: int, *, stat_name: str, stat_value: int, move: str, held_momentum: int, adds: int
     ) -> RollResult:
         candidates = [
-            score_action(a, x, y, stat_name, stat_value, move, held_momentum, adds)
+            score_action(
+                a, x, y, stat_name=stat_name, stat_value=stat_value, move=move, held_momentum=held_momentum, adds=adds
+            )
             for a, x, y in itertools.product(action_faces, challenge_faces, challenge_faces)
         ]
         return _pick(result, candidates, f"{move} with {stat_name} {stat_value}")

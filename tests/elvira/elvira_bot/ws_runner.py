@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any
 from unittest import mock
 
 if TYPE_CHECKING:
-    from straightjacket.engine.ai.provider_base import AIProvider
     from tests.elvira.elvira_bot.models import NpcSnapshot
 
 import uvicorn
@@ -301,10 +300,17 @@ async def run_ws_session(
             )
 
             if is_correction:
-                narration, rec = await _play_correction(client, provider, game, total_turns, slog)
+                narration, rec = await _play_correction(client, game, total_turns, slog)
             else:
                 narration, rec, burn = await _play_turn(
-                    client, provider, game, narration, total_turns, persona, style, burn_setting, print_full=print_full
+                    client,
+                    game,
+                    narration,
+                    total_turns,
+                    persona=persona,
+                    style=style,
+                    burn_setting=burn_setting,
+                    print_full=print_full,
                 )
                 if burn:
                     burns_offered += 1
@@ -441,14 +447,13 @@ async def run_ws_session(
 
 async def _play_turn(
     client: WsClient,
-    provider: AIProvider,
     game: GameState,
     narration: str,
     turn: int,
+    *,
     persona: str,
     style: str,
     burn_setting: str,
-    *,
     print_full: bool,
 ) -> tuple[str, TurnRecord, dict[str, Any] | None]:
     context = build_turn_context(game, narration, turn)
@@ -480,14 +485,12 @@ async def _play_turn(
 
     burn_data = None
     if td["burn_offer"]:
-        burn_data = await _handle_burn(client, provider, game, td["burn_offer"], burn_setting, style, rec)
+        burn_data = await _handle_burn(client, game, td["burn_offer"], burn_setting=burn_setting, style=style, rec=rec)
 
     return new_narration, rec, burn_data
 
 
-async def _play_correction(
-    client: WsClient, _provider: AIProvider, game: GameState, turn: int, slog: SessionLog
-) -> tuple[str, TurnRecord]:
+async def _play_correction(client: WsClient, game: GameState, turn: int, slog: SessionLog) -> tuple[str, TurnRecord]:
     corrections = [
         "I didn't mean to do that — I wanted to just observe, not act",
         "That's not what I said — I was asking a question, not making a statement",
@@ -516,13 +519,7 @@ async def _play_correction(
 
 
 async def _handle_burn(
-    client: WsClient,
-    _provider: AIProvider,
-    game: GameState,
-    burn_offer: dict[str, Any],
-    burn_setting: str,
-    style: str,
-    rec: TurnRecord,
+    client: WsClient, game: GameState, burn_offer: dict[str, Any], *, burn_setting: str, style: str, rec: TurnRecord
 ) -> dict[str, Any]:
     current = burn_offer["current"]
     upgrade = burn_offer["upgrade"]

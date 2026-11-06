@@ -19,6 +19,7 @@ from straightjacket.engine.models import (
 from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
 from straightjacket.engine.prompt_loader import get_prompt
+from straightjacket.engine.prompt_shared import PromptScene, TurnEvents
 from straightjacket.engine.ruleset.consequences import consequence_texts, generate_consequence_sentences
 from straightjacket.engine.xml_utils import xe as _xe
 
@@ -28,43 +29,36 @@ if TYPE_CHECKING:
     from straightjacket.engine.models import (
         BrainResult,
         GameState,
-        NpcData,
         ResolvedFact,
-        SceneSetup,
         TurnSnapshot,
     )
 
 
 def _rewrite_prompt(
-    game: GameState,
-    snap: TurnSnapshot,
-    brain: BrainResult,
-    scene_setup: SceneSetup,
-    activated_npcs: list[NpcData],
-    mentioned_npcs: list[NpcData],
+    game: GameState, snap: TurnSnapshot, brain: BrainResult, scene: PromptScene
 ) -> tuple[str, list[ResolvedFact]]:
     roll = snap.roll
     facts = facts_of_this_place(game, snap.facts)
     last_entry = game.narrative.session_log[-1]
     consequences = last_entry.consequences
+    events = TurnEvents(
+        random_events=snap.random_events,
+        threat_events=snap.threat_events,
+        clock_fill_results=snap.clock_fill_results,
+        npc_agency=snap.npc_agency,
+        revelation=snap.revelation,
+    )
 
     if roll is None:
         prompt = build_dialog_prompt(
             game,
             brain,
-            player_words=snap.player_input,
-            scene_setup=scene_setup,
-            activated_npcs=activated_npcs,
-            mentioned_npcs=mentioned_npcs,
+            scene,
+            events,
             result=last_entry.result,
             oracle_answer=last_entry.oracle_answer,
-            random_events=snap.random_events,
-            threat_events=snap.threat_events,
             consequence_texts=consequence_texts(consequences, game, brain),
-            clock_fill_results=snap.clock_fill_results,
-            npc_agency=snap.npc_agency,
             facts=facts,
-            revelation=snap.revelation,
         )
         return prompt, facts
 
@@ -77,20 +71,13 @@ def _rewrite_prompt(
         game,
         brain,
         roll,
-        consequences,
-        snap.npc_agency,
+        scene,
+        events,
+        consequences=consequences,
         consequence_sentences=consequence_sentences,
-        player_words=snap.player_input,
-        scene_setup=scene_setup,
-        activated_npcs=activated_npcs,
-        mentioned_npcs=mentioned_npcs,
         position=last_entry.position,
         effect=last_entry.effect,
-        random_events=snap.random_events,
-        threat_events=snap.threat_events,
-        clock_fill_results=snap.clock_fill_results,
         facts=facts,
-        revelation=snap.revelation,
     )
     return prompt, facts
 
@@ -139,7 +126,7 @@ def process_correction(
         msg = "The last turn's snapshot holds no Brain result, narration, or scene setup"
         raise ValueError(msg)
 
-    analysis = call_correction_brain(provider, game, correction_text, snap, brain, last_narration)
+    analysis = call_correction_brain(provider, game, correction_text, snap, brain=brain, narration=last_narration)
     note = (
         get_prompt("block_correction_context", guidance=_xe(analysis["narrator_guidance"]))
         + "\n"
@@ -154,7 +141,13 @@ def process_correction(
 
     apply_correction_ops(game, analysis["state_ops"])
     activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, snap.player_input)
-    prompt, facts = _rewrite_prompt(game, snap, brain, scene_setup, activated_npcs, mentioned_npcs)
+    scene = PromptScene(
+        player_words=snap.player_input,
+        scene_setup=scene_setup,
+        activated_npcs=activated_npcs,
+        mentioned_npcs=mentioned_npcs,
+    )
+    prompt, facts = _rewrite_prompt(game, snap, brain, scene)
     narration = narrate_scene(provider, game, f"{prompt}\n{note}")
     snap.narration = narration
     snap.facts = list(facts)
@@ -163,11 +156,9 @@ def process_correction(
         provider,
         game,
         narration,
-        brain,
-        outcome_of(game.narrative.session_log[-1].result),
-        present_in_narration(
-            game, {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}, brain.target_npc, narration
-        ),
+        brain=brain,
+        outcome=outcome_of(game.narrative.session_log[-1].result),
+        scene_present_ids=present_in_narration(game, scene.npc_ids(), brain.target_npc, narration),
         consequences=game.narrative.session_log[-1].consequences,
     )
 
