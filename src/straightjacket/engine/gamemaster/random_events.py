@@ -37,7 +37,8 @@ def roll_event_focus() -> str:
             focus: str = entry["focus"]
             return focus
 
-    raise ValueError(f"event_focus table has no entry covering roll={roll}")
+    msg = f"event_focus table has no entry covering roll={roll}"
+    raise ValueError(msg)
 
 
 def roll_meaning_table(table_name: str) -> tuple[str, str]:
@@ -51,7 +52,8 @@ def roll_meaning_table(table_name: str) -> tuple[str, str]:
         words1 = tables["actions"]["verbs"]
         words2 = tables["actions"]["subjects"]
     else:
-        raise KeyError(f"Unknown meaning table '{table_name}' (valid: 'actions', 'descriptions')")
+        msg = f"Unknown meaning table '{table_name}' (valid: 'actions', 'descriptions')"
+        raise KeyError(msg)
 
     w1 = words1[random.randint(0, len(words1) - 1)]
     w2 = words2[random.randint(0, len(words2) - 1)]
@@ -147,10 +149,11 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
     elif entry.trigger_type == "threat_menace_phase":
         pool = event.target
     else:
-        raise ValueError(
+        msg = (
             f"random_events.keyed_scene_mapping for focus {event.focus!r} uses unsupported "
             f"trigger_type {entry.trigger_type!r}"
         )
+        raise ValueError(msg)
     trigger_value = f"{pool}:{entry.threshold}"
 
     scene = add_keyed_scene(

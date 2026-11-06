@@ -17,18 +17,24 @@ class InvalidNameError(ValueError):
 
 def _safe_name(name: str) -> str:
     if any(ch in _FORBIDDEN_NAME_CHARS or ord(ch) < 32 for ch in name):
-        raise InvalidNameError(f"Name contains a character no file name may hold: {name!r}")
+        msg = f"Name contains a character no file name may hold: {name!r}"
+        raise InvalidNameError(msg)
     clean = " ".join(name.split())
     if not clean:
-        raise InvalidNameError(f"Invalid name: {name!r}")
+        msg = f"Invalid name: {name!r}"
+        raise InvalidNameError(msg)
     if len(clean) > 100:
-        raise InvalidNameError(f"Name too long ({len(clean)} chars, max 100): {name[:20]!r}...")
+        msg = f"Name too long ({len(clean)} chars, max 100): {name[:20]!r}..."
+        raise InvalidNameError(msg)
     if clean.startswith("."):
-        raise InvalidNameError(f"Name starts with a dot: {name!r}")
+        msg = f"Name starts with a dot: {name!r}"
+        raise InvalidNameError(msg)
     if clean.endswith("."):
-        raise InvalidNameError(f"Name ends with a dot, which Windows drops: {name!r}")
+        msg = f"Name ends with a dot, which Windows drops: {name!r}"
+        raise InvalidNameError(msg)
     if clean.split(".")[0].strip().upper() in _WINDOWS_RESERVED_NAMES:
-        raise InvalidNameError(f"Name is a reserved device name on Windows: {name!r}")
+        msg = f"Name is a reserved device name on Windows: {name!r}"
+        raise InvalidNameError(msg)
     return clean
 
 

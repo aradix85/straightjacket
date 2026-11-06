@@ -67,7 +67,8 @@ def _count_information_gathered(game: GameState, brain: BrainResult, roll: RollR
         return
     target = find_npc(game, brain.target_npc)
     if target is None:
-        raise ValueError(f"Target NPC {brain.target_npc!r} is not in the game")
+        msg = f"Target NPC {brain.target_npc!r} is not in the game"
+        raise ValueError(msg)
     target.gather_count += 1
 
 

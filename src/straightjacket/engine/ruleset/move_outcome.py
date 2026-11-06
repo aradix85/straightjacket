@@ -50,7 +50,8 @@ def resolve_move_outcome(
     match_key = f"{result_key}_match"
     effects_raw = move_cfg[match_key] if match and match_key in move_cfg else move_cfg.get(result_key)
     if effects_raw is None:
-        raise ValueError(f"No effects for {move_key}/{result_key}. Add it to ruleset/move_outcomes.yaml.")
+        msg = f"No effects for {move_key}/{result_key}. Add it to ruleset/move_outcomes.yaml."
+        raise ValueError(msg)
 
     effects = parse_effects(effects_raw)
     if roll_result not in rules().dice.hit_results and complication_replaces_price(game, match):
@@ -113,7 +114,8 @@ def make_due_bond_test(game: GameState, npc_id: str | None, rolled_move: str | N
         return
     npc = find_npc(game, npc_id)
     if npc is None:
-        raise ValueError(f"the bond track of {npc_id} names no NPC in the game")
+        msg = f"the bond track of {npc_id} names no NPC in the game"
+        raise ValueError(msg)
     result.consequences.append(consequence("bond_tested", name=npc.name, vow=forsaken[0].name))
     log(f"[Bond] {npc.name}: the forsaken vow '{forsaken[0].name}' tests the bond")
     _make_follow_up(game, move_key, npc_id, result)
@@ -128,5 +130,6 @@ def _dispatch_handler(
         "recovery": apply_recovery_handler,
     }
     if handler not in handlers:
-        raise ValueError(f"Unknown move-outcome handler {handler!r}. Valid: {sorted(handlers)}.")
+        msg = f"Unknown move-outcome handler {handler!r}. Valid: {sorted(handlers)}."
+        raise ValueError(msg)
     return handlers[handler](game, move_key, roll_result, params, match)

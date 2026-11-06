@@ -98,14 +98,16 @@ def advance_cost(kind: str) -> int:
         return cfg.asset_upgrade_cost
     if kind == "new":
         return cfg.new_asset_cost
-    raise ValueError(f"Unknown advance: {kind!r}. Valid: 'upgrade', 'new'")
+    msg = f"Unknown advance: {kind!r}. Valid: 'upgrade', 'new'"
+    raise ValueError(msg)
 
 
 def _held_id(game: GameState, data: dict[str, Any]) -> str | None:
     for held in (*game.paths, *game.assets):
         held_data = asset_data(game, held)
         if held_data is None:
-            raise ValueError(f"Held asset {held!r} is not in setting {game.setting_id!r}")
+            msg = f"Held asset {held!r} is not in setting {game.setting_id!r}"
+            raise ValueError(msg)
         if held_data["_id"] == data["_id"]:
             return held
     return None

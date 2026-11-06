@@ -112,7 +112,8 @@ def test_an_unknown_tool_answers_with_an_error() -> None:
 
 def test_an_engine_fault_in_a_tool_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
     def broken(game: GameState) -> dict[str, Any]:
-        raise KeyError("missing")
+        msg = "missing"
+        raise KeyError(msg)
 
     monkeypatch.setitem(registry._registry, "broken", (broken, {}))
     with pytest.raises(KeyError, match="missing"):

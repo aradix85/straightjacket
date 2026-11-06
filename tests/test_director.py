@@ -155,7 +155,8 @@ def test_an_invented_tool_costs_no_extra_round(load_engine: None, monkeypatch: A
 
 def test_a_fault_in_a_tool_is_the_engines_and_propagates(load_engine: None, monkeypatch: Any) -> None:
     def broken_tool(name: str, arguments: dict[str, Any], game: GameState) -> str:
-        raise KeyError("broken tool")
+        msg = "broken tool"
+        raise KeyError(msg)
 
     monkeypatch.setattr(director, "execute_tool_call", broken_tool)
     with pytest.raises(KeyError, match="broken tool"):

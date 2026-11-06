@@ -56,7 +56,8 @@ def roll_rows(table: OracleTable) -> TableRoll:
         return TableRoll(rows=[row], worse=False)
     rule = instruction["duplicates"]
     if rule not in _DUPLICATE_RULES:
-        raise ValueError(f"Oracle table '{table.id}' has an unknown duplicates rule {rule!r}")
+        msg = f"Oracle table '{table.id}' has an unknown duplicates rule {rule!r}"
+        raise ValueError(msg)
     picked: list[OracleRow] = []
     while len(picked) < int(instruction["number_of_rolls"]):
         again = table.roll()

@@ -132,10 +132,12 @@ def process_correction(
 ) -> tuple[str, BurnOffer | None, DirectorCall | None]:
     snap = game.last_turn_snapshot
     if snap is None:
-        raise ValueError("No turn to correct: the game holds no snapshot of a played turn")
+        msg = "No turn to correct: the game holds no snapshot of a played turn"
+        raise ValueError(msg)
     brain, last_narration, scene_setup = snap.brain, snap.narration, snap.scene_setup
     if brain is None or last_narration is None or scene_setup is None:
-        raise ValueError("The last turn's snapshot holds no Brain result, narration, or scene setup")
+        msg = "The last turn's snapshot holds no Brain result, narration, or scene setup"
+        raise ValueError(msg)
 
     analysis = call_correction_brain(provider, game, correction_text, snap, brain, last_narration)
     note = (

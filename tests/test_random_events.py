@@ -239,3 +239,8 @@ def test_random_event_roundtrip() -> None:
     assert restored.target == "Kira"
     assert restored.meaning_action == "Abandon"
     assert restored.source == "fate_doublet"
+
+
+def test_an_unknown_meaning_table_is_refused(load_engine: None) -> None:
+    with pytest.raises(KeyError, match="Unknown meaning table 'colours'"):
+        roll_meaning_table("colours")

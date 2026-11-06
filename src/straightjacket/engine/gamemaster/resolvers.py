@@ -16,7 +16,8 @@ def _target_npc(game: GameState, brain: BrainResult) -> NpcData | None:
         return None
     target = find_npc(game, brain.target_npc)
     if target is None:
-        raise ValueError(f"Target NPC {brain.target_npc!r} is not in the game")
+        msg = f"Target NPC {brain.target_npc!r} is not in the game"
+        raise ValueError(msg)
     return target
 
 

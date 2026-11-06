@@ -157,12 +157,13 @@ def _parsed_guidance(answer: AIResponse) -> dict[str, Any]:
     except json.JSONDecodeError as e:
         usage = answer.usage or {}
         reasoning_tail = " ".join(answer.reasoning[-eng().truncations.log_xlong :].split())
-        raise ValueError(
+        msg = (
             f"{e}; the answer stopped as {answer.stop_reason} after {usage.get('output_tokens')} output tokens, "
             f"{usage.get('reasoning_tokens')} of them reasoning, with {len(answer.content)} characters of JSON, "
             f"which began: {answer.content[: eng().truncations.log_xlong]!r}, "
             f"and {len(answer.reasoning)} of reasoning text, which ended: {reasoning_tail!r}"
-        ) from e
+        )
+        raise ValueError(msg) from e
     return guidance
 
 

@@ -59,7 +59,8 @@ class MockProvider(ScriptedProvider):
     def create_message(self, spec: AICallSpec) -> AIResponse:
         self.calls.append({"system": spec.system, "json_schema": spec.json_schema, "messages": spec.messages})
         if self._fail:
-            raise ConnectionError("mock fail")
+            msg = "mock fail"
+            raise ConnectionError(msg)
         return AIResponse(content=self._content, usage={"input_tokens": 10, "output_tokens": 10})
 
 

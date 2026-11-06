@@ -32,7 +32,8 @@ def roll_oracle_cascade(pkg: SettingPackage, entry_path: str) -> list[CascadeSte
         steps.append(CascadeStep(path=current_path, label=label or text, text=text))
         current_path = next_path
 
-    raise RuntimeError(f"Oracle cascade from '{entry_path}' links on past {_MAX_DEPTH} tables")
+    msg = f"Oracle cascade from '{entry_path}' links on past {_MAX_DEPTH} tables"
+    raise RuntimeError(msg)
 
 
 def _extract_next_path(text: str) -> tuple[str | None, str | None]:

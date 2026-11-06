@@ -26,9 +26,10 @@ def load_ac_data() -> dict[str, Any]:
     global _ac_data
     if _ac_data is None:
         with _AC_DATA_PATH.open(encoding="utf-8") as f:
-            _ac_data = json.load(f)
+            data: dict[str, Any] = json.load(f)
         log(f"[AdventureCrafter] Loaded {_AC_DATA_PATH}")
-        _validate_random_themes(_ac_data)
+        _validate_random_themes(data)
+        _ac_data = data
     return _ac_data
 
 
@@ -40,18 +41,20 @@ def _validate_random_themes(data: dict[str, Any]) -> None:
             json_table[face] = entry["theme"]
     if json_table != cfg.theme_die_table:
         diff = sorted(set(json_table.items()) ^ set(cfg.theme_die_table.items()))
-        raise ValueError(
+        msg = (
             f"adventure_crafter.yaml theme_die_table does not match "
             f"data/adventure_crafter.json random_themes. Differing entries: {diff}"
         )
+        raise ValueError(msg)
 
     yaml_theme_set = set(cfg.themes)
     json_theme_set = set(json_table.values())
     if yaml_theme_set != json_theme_set:
-        raise ValueError(
+        msg = (
             f"adventure_crafter.yaml themes {sorted(yaml_theme_set)} does not match "
             f"random_themes theme set {sorted(json_theme_set)}"
         )
+        raise ValueError(msg)
 
 
 @dataclass(frozen=True)
@@ -99,10 +102,11 @@ def lookup_plot_point(theme: str, roll: int) -> PlotPointResult:
             continue
         if themes[theme]["min"] <= roll <= themes[theme]["max"]:
             return PlotPointResult(name=entry["name"], special_range=_special_range_for(roll, cfg.special_ranges))
-    raise LookupError(
+    msg = (
         f"no plot_points entry covers theme={theme!r} roll={roll}; "
         f"data/adventure_crafter.json plot_points may be incomplete"
     )
+    raise LookupError(msg)
 
 
 def _special_range_for(roll: int, ranges: PlotPointRanges) -> str | None:
@@ -121,9 +125,10 @@ def lookup_meta_plot_point(roll: int) -> str:
         if entry["min"] <= roll <= entry["max"]:
             result: str = entry["name"]
             return result
-    raise LookupError(
+    msg = (
         f"no meta_plot_points entry covers roll={roll}; data/adventure_crafter.json meta_plot_points may be incomplete"
     )
+    raise LookupError(msg)
 
 
 def lookup_theme_priority(roll: int, alternation: ThemeAlternation) -> int:
@@ -137,7 +142,8 @@ def lookup_theme_priority(roll: int, alternation: ThemeAlternation) -> int:
                 alternation.next_is_4 = not alternation.next_is_4
                 return resolved
             return int(priority)
-    raise LookupError(f"no plot_point_theme_priority entry covers roll={roll}")
+    msg = f"no plot_point_theme_priority entry covers roll={roll}"
+    raise LookupError(msg)
 
 
 def _lookup_template_result(roll: int, template_key: str) -> str:
@@ -145,7 +151,8 @@ def _lookup_template_result(roll: int, template_key: str) -> str:
     for entry in data[template_key]:
         if entry["min"] <= roll <= entry["max"]:
             return str(entry["result"])
-    raise LookupError(f"no {template_key} entry covers roll={roll}")
+    msg = f"no {template_key} entry covers roll={roll}"
+    raise LookupError(msg)
 
 
 def lookup_characters_template(roll: int) -> str:
@@ -181,7 +188,8 @@ def _roll_plot_point(
     priority = lookup_theme_priority(rng.randint(1, crafter().adventure_crafter_dice.theme_die), alternation)
     theme_index = priority - 1
     if not 0 <= theme_index < len(themes):
-        raise LookupError(f"theme priority {priority} outside themes list of length {len(themes)}")
+        msg = f"theme priority {priority} outside themes list of length {len(themes)}"
+        raise LookupError(msg)
     theme = themes[theme_index]
     plot_roll = _table_roll(rng)
     result = lookup_plot_point(theme, plot_roll)
@@ -203,7 +211,8 @@ def roll_turning_point(
 ) -> TurningPoint:
     cfg = crafter().adventure_crafter
     if len(themes) != cfg.theme_slots:
-        raise ValueError(f"themes length {len(themes)} != theme_slots {cfg.theme_slots}")
+        msg = f"themes length {len(themes)} != theme_slots {cfg.theme_slots}"
+        raise ValueError(msg)
 
     plotline_roll = _table_roll(rng)
     plotline_template = lookup_plotlines_template(plotline_roll)

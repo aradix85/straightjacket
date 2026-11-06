@@ -45,7 +45,8 @@ def build_new_game_prompt(game: GameState) -> str:
 def build_epilogue_prompt(game: GameState) -> str:
     bp = game.narrative.story_blueprint
     if bp is None:
-        raise ValueError("an epilogue ends the story of a blueprint, and this game has none")
+        msg = "an epilogue ends the story of a blueprint, and this game has none"
+        raise ValueError(msg)
     endings_text = ", ".join(
         get_prompt("block_epilogue_ending", type=e.type, description=e.description) for e in bp.possible_endings
     )

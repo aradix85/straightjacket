@@ -33,13 +33,15 @@ class OracleTable:
 
     def roll(self) -> OracleRow:
         if not self.rows:
-            raise ValueError(f"Oracle table '{self.id}' has no rows")
+            msg = f"Oracle table '{self.id}' has no rows"
+            raise ValueError(msg)
         die_roll = random.randint(1, max(row.max for row in self.rows))
         for row in self.rows:
             if row.min <= die_roll <= row.max:
                 return row
 
-        raise ValueError(f"Oracle table '{self.id}' rolled {die_roll} but no row covers it — malformed row ranges")
+        msg = f"Oracle table '{self.id}' rolled {die_roll} but no row covers it — malformed row ranges"
+        raise ValueError(msg)
 
     def __len__(self) -> int:
         return len(self.rows)
@@ -88,7 +90,8 @@ def read_datasworn(datasworn_id: str) -> dict[str, Any]:
         return _files[datasworn_id]
     path = _DATA_DIR / f"{datasworn_id}.json"
     if not path.exists():
-        raise FileNotFoundError(f"Datasworn JSON not found: {path}\nRun: python data/data.py")
+        msg = f"Datasworn JSON not found: {path}\nRun: python data/data.py"
+        raise FileNotFoundError(msg)
     log(f"[Datasworn] Loading {datasworn_id} from {path.name}")
     with Path(path).open(encoding="utf-8") as f:
         raw: dict[str, Any] = json.load(f)

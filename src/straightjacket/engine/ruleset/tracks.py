@@ -67,7 +67,8 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
         log(f"[Track] {brain.move} continues {brain.target_track}; no new {track_type} track")
         return
     if not brain.track_name or not brain.track_rank:
-        raise ValueError(f"{brain.move} starts a {track_type} track but the Brain named no track name or rank")
+        msg = f"{brain.move} starts a {track_type} track but the Brain named no track name or rank"
+        raise ValueError(msg)
 
     if track_type == "connection":
         if brain.target_npc is None:
@@ -188,7 +189,8 @@ def apply_progress_and_legacy(
         target = brain.target_track
         if started and target is None:
             if not brain.track_name:
-                raise ValueError(f"{brain.move} marks progress on a new track but the Brain named no track")
+                msg = f"{brain.move} marks progress on a new track but the Brain named no track"
+                raise ValueError(msg)
             target = _started_track_id(started, brain.track_name)
         track = find_progress_track(game, track_category, target)
         for _ in range(outcome.progress_marks):
@@ -200,14 +202,16 @@ def apply_progress_and_legacy(
         mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
     elif outcome.legacy_track:
         if rolled_track is None:
-            raise ValueError(f"{brain.move}: a legacy reward by rank needs the progress track that was rolled")
+            msg = f"{brain.move}: a legacy reward by rank needs the progress track that was rolled"
+            raise ValueError(msg)
         rank = shifted_rank(rolled_track.rank, outcome.legacy_rank_shift)
         if rank is not None:
             mark_legacy(game, outcome.legacy_track, source_rank=rank)
 
     if outcome.experience_rank_shift is not None:
         if rolled_track is None:
-            raise ValueError(f"{brain.move}: experience by rank needs the progress track that was rolled")
+            msg = f"{brain.move}: experience by rank needs the progress track that was rolled"
+            raise ValueError(msg)
         rank = shifted_rank(rolled_track.rank, outcome.experience_rank_shift)
         gained = rules().legacy.experience_by_rank[rank] if rank is not None else 0
         game.campaign.xp += gained
@@ -255,22 +259,26 @@ def find_progress_track(game: GameState, track_category: str, target_track: str 
     if target_track is not None:
         track = next((t for t in candidates if t.id == target_track), None)
         if track is None:
-            raise ValueError(f"Target track {target_track!r} is not an active {track_type} track")
+            msg = f"Target track {target_track!r} is not an active {track_type} track"
+            raise ValueError(msg)
         return track
 
     if len(candidates) == 1:
         return candidates[0]
 
     if not candidates:
-        raise ValueError(f"No active {track_type} track")
+        msg = f"No active {track_type} track"
+        raise ValueError(msg)
     names = ", ".join(t.name for t in candidates)
-    raise ValueError(f"Multiple active {track_type} tracks: {names}. Brain must set target_track.")
+    msg = f"Multiple active {track_type} tracks: {names}. Brain must set target_track."
+    raise ValueError(msg)
 
 
 def complete_track(game: GameState, track_id: str, outcome: str) -> None:
     track = next((t for t in game.progress_tracks if t.id == track_id), None)
     if track is None:
-        raise KeyError(f"complete_track: no progress track with id {track_id!r}")
+        msg = f"complete_track: no progress track with id {track_id!r}"
+        raise KeyError(msg)
     track.status = outcome
     log(f"[Track] {track.name} ({track.track_type}) → {outcome}")
 

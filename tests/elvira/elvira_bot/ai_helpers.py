@@ -28,7 +28,8 @@ def _load_prompts() -> dict[str, Any]:
     global _prompts
     if _prompts is None:
         if not _PROMPTS_PATH.exists():
-            raise FileNotFoundError(f"Elvira prompts not found: {_PROMPTS_PATH}")
+            msg = f"Elvira prompts not found: {_PROMPTS_PATH}"
+            raise FileNotFoundError(msg)
         with Path(_PROMPTS_PATH).open(encoding="utf-8") as f:
             _prompts = yaml.safe_load(f)
     return _prompts
@@ -38,7 +39,8 @@ def _p(key: str, **kwargs: Any) -> str:
     prompts = _load_prompts()
     template = prompts[key]
     if not isinstance(template, str):
-        raise TypeError(f"Elvira prompt '{key}' is not a string (got {type(template).__name__})")
+        msg = f"Elvira prompt '{key}' is not a string (got {type(template).__name__})"
+        raise TypeError(msg)
     return template.format(**kwargs) if kwargs else template
 
 
@@ -75,7 +77,8 @@ def get_persona(style: str) -> str:
     key = f"style_{style}"
     if key not in prompts:
         valid = sorted(k.removeprefix("style_") for k in prompts if k.startswith("style_"))
-        raise KeyError(f"Unknown Elvira style '{style}'. Valid styles: {', '.join(valid)}")
+        msg = f"Unknown Elvira style '{style}'. Valid styles: {', '.join(valid)}"
+        raise KeyError(msg)
     persona: str = prompts[key]
     return persona
 
@@ -103,7 +106,8 @@ def _resolve_turn_directive(turn: int, directive_key: str | None = None) -> tupl
     prompts = _load_prompts()
     rotation = prompts["bot_turn_rotation"]
     if not isinstance(rotation, list) or not rotation:
-        raise ValueError("Elvira prompt 'bot_turn_rotation' must be a non-empty list")
+        msg = "Elvira prompt 'bot_turn_rotation' must be a non-empty list"
+        raise ValueError(msg)
     directive_key = directive_key or rotation[(turn - 1) % len(rotation)]
     full = _p(directive_key)
     short = full.split(" — ")[0]

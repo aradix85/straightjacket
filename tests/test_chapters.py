@@ -109,7 +109,8 @@ def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none(load_engine: None) 
         @override
         def create_message(self, spec: AICallSpec) -> AIResponse:
             if spec.json_schema is not None and "central_conflict" in spec.json_schema["properties"]:
-                raise ConnectionError("voicing is down")
+                msg = "voicing is down"
+                raise ConnectionError(msg)
             return super().create_message(spec)
 
     game = _game()

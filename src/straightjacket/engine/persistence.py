@@ -39,7 +39,8 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
     try:
         game = GameState.from_dict(game_data)
     except ValueError as e:
-        raise IncompatibleSaveError(f"{username}/{name}: {e}") from e
+        msg = f"{username}/{name}: {e}"
+        raise IncompatibleSaveError(msg) from e
 
     chat_messages = data["chat_messages"]
     log(

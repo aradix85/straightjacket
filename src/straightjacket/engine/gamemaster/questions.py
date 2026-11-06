@@ -43,7 +43,8 @@ def install_answers(ruleset: RulesetAnswers) -> None:
 
 def answers() -> RulesetAnswers:
     if _answers is None:
-        raise RuntimeError("No ruleset answers the game master; the server and Elvira install one when they start")
+        msg = "No ruleset answers the game master; the server and Elvira install one when they start"
+        raise RuntimeError(msg)
     return _answers
 
 

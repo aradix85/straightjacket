@@ -16,7 +16,8 @@ _adapter_cache: dict[str, ModelListingProvider] = {}
 def build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
     resolved_key = os.environ.get(pc.api_key_env, "")
     if not resolved_key:
-        raise ValueError(f"No API key for provider '{name}'. Set the ${pc.api_key_env} environment variable.")
+        msg = f"No API key for provider '{name}'. Set the ${pc.api_key_env} environment variable."
+        raise ValueError(msg)
 
     cache_key = (
         f"{name}:{pc.type}:{pc.api_base}:{pc.timeout_seconds}:{hashlib.sha256(resolved_key.encode()).hexdigest()[:16]}"
@@ -32,7 +33,8 @@ def build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
             api_key=resolved_key, timeout_seconds=pc.timeout_seconds, api_base=pc.api_base
         )
     else:
-        raise ValueError(f"Unknown type {pc.type!r} for provider '{name}'. Valid types: anthropic, openai_compatible.")
+        msg = f"Unknown type {pc.type!r} for provider '{name}'. Valid types: anthropic, openai_compatible."
+        raise ValueError(msg)
 
     _adapter_cache[cache_key] = adapter
     return adapter

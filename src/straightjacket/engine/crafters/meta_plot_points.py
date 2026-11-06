@@ -142,9 +142,10 @@ _META_HANDLERS: dict[str, MetaHandler] = {
 def dispatch_meta(roll: int, narrative: NarrativeState, active_plotline_id: str | None) -> None:
     meta_name = lookup_meta_plot_point(roll)
     if meta_name not in _META_HANDLERS:
-        raise KeyError(
+        msg = (
             f"meta plot-point {meta_name!r} has no handler in _META_HANDLERS; "
             f"data/adventure_crafter.json meta_plot_points and "
             f"crafters/meta_plot_points.py _META_HANDLERS have drifted"
         )
+        raise KeyError(msg)
     _META_HANDLERS[meta_name](narrative, active_plotline_id)

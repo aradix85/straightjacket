@@ -62,10 +62,11 @@ def process_turn(
     stream: NarrationSink | None,
 ) -> tuple[str, RollResult | None, BurnOffer | None, DirectorCall | None]:
     if game.game_over:
-        raise RuntimeError(
+        msg = (
             "process_turn called on a game with game_over=True. "
             "Caller must continue the campaign through succession before requesting another turn."
         )
+        raise RuntimeError(msg)
 
     _begin_turn(game, player_message)
     scene_setup = check_scene(game)
@@ -97,7 +98,8 @@ def replay_turn(
 ) -> tuple[str, BurnOffer | None, DirectorCall | None]:
     snap = game.last_turn_snapshot
     if snap is None or snap.scene_setup is None:
-        raise ValueError("replay_turn needs the snapshot of a played turn, taken after its scene test")
+        msg = "replay_turn needs the snapshot of a played turn, taken after its scene test"
+        raise ValueError(msg)
     scene_setup = snap.scene_setup
     earlier = copy.deepcopy(snap)
     earlier_places = list(game.world.places)
@@ -183,7 +185,8 @@ def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
 def _snapshot_of_turn(game: GameState) -> TurnSnapshot:
     snapshot = game.last_turn_snapshot
     if snapshot is None:
-        raise ValueError("A turn runs only after its snapshot is taken")
+        msg = "A turn runs only after its snapshot is taken"
+        raise ValueError(msg)
     return snapshot
 
 

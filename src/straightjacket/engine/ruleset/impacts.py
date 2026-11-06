@@ -46,7 +46,8 @@ def apply_impact(game: GameState, key: str) -> bool:
         return False
     impacts = get_impacts(game.setting_id)
     if key not in impacts:
-        raise KeyError(f"Unknown impact {key!r} in {game.setting_id}; its rules have: {sorted(impacts)}")
+        msg = f"Unknown impact {key!r} in {game.setting_id}; its rules have: {sorted(impacts)}"
+        raise KeyError(msg)
     game.impacts.append(key)
     cap_momentum(game)
     log(f"[Impact] {key} applied — max momentum → {max_momentum(game)}")

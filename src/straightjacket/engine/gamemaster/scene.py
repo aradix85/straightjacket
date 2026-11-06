@@ -61,7 +61,8 @@ def _lookup_adjustment(table: list[dict[str, Any]], roll: int) -> str:
         if entry["min"] <= roll <= entry["max"]:
             result: str = entry["result"]
             return result
-    raise KeyError(f"scene_adjustment table has no entry covering roll={roll}; table={table!r}")
+    msg = f"scene_adjustment table has no entry covering roll={roll}; table={table!r}"
+    raise KeyError(msg)
 
 
 def _roll_single_adjustment(table: list[dict[str, Any]]) -> str:

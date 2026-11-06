@@ -41,12 +41,14 @@ END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
 def prepare_succession(game: GameState) -> None:
     end_reason = game.end_reason
     if end_reason not in END_REASONS:
-        raise ValueError(f"Unknown succession end_reason: {end_reason!r} (valid: {END_REASONS})")
+        msg = f"Unknown succession end_reason: {end_reason!r} (valid: {END_REASONS})"
+        raise ValueError(msg)
     if game.campaign.pending_succession:
-        raise ValueError(
+        msg = (
             "prepare_succession called while pending_succession is already set. "
             "Call start_succession_with_character to complete the existing succession first."
         )
+        raise ValueError(msg)
     record = build_predecessor_record(game, end_reason)
     rolls = run_inheritance_rolls(game)
     record.inheritance_rolls = list(rolls)
@@ -123,12 +125,14 @@ def start_succession_with_character(
     creation_data: dict[str, Any],
 ) -> str:
     if not game.campaign.pending_succession:
-        raise ValueError(
+        msg = (
             "start_succession_with_character called without pending_succession set. "
             "Call prepare_succession first to lock in inheritance rolls."
         )
+        raise ValueError(msg)
     if not game.campaign.predecessors:
-        raise ValueError("pending_succession is True but predecessors archive is empty. Save state is corrupt.")
+        msg = "pending_succession is True but predecessors archive is empty. Save state is corrupt."
+        raise ValueError(msg)
     record = game.campaign.predecessors[-1]
     rolls = list(record.inheritance_rolls)
 

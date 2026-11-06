@@ -1,6 +1,6 @@
 import pytest
 
-from straightjacket.engine.setting.loader import load_setting
+from straightjacket.engine.setting.loader import OracleRow, OracleTable, load_setting, read_datasworn
 from straightjacket.engine.setting.packages import list_packages, load_package
 
 
@@ -100,3 +100,23 @@ def test_setting_isolation() -> None:
 
     assert cl.oracle("action_and_theme/action") is not None
     assert sf.oracle("action_and_theme/action") is None
+
+
+def test_a_table_without_rows_cannot_be_rolled() -> None:
+    with pytest.raises(ValueError, match="has no rows"):
+        OracleTable(id="empty", title="Empty", rows=[]).roll()
+
+
+def test_a_table_whose_rows_leave_a_gap_reports_the_roll(monkeypatch: pytest.MonkeyPatch) -> None:
+    rows = [
+        OracleRow(min=1, max=2, text="low", oracle_rolls=None),
+        OracleRow(min=5, max=6, text="high", oracle_rolls=None),
+    ]
+    monkeypatch.setattr("straightjacket.engine.setting.loader.random.randint", lambda _low, _high: 3)
+    with pytest.raises(ValueError, match="rolled 3 but no row covers it"):
+        OracleTable(id="gappy", title="Gappy", rows=rows).roll()
+
+
+def test_a_missing_datasworn_file_says_how_to_fetch_it() -> None:
+    with pytest.raises(FileNotFoundError, match=r"Run: python data/data\.py"):
+        read_datasworn("no_such_ruleset")

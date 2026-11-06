@@ -18,9 +18,11 @@ def resolve_fate_chart(odds: str, chaos_factor: int) -> FateResult:
     chart = data["fate_chart"]
 
     if odds not in chart:
-        raise KeyError(f"Unknown odds level '{odds}' (valid: {sorted(chart.keys())})")
+        msg = f"Unknown odds level '{odds}' (valid: {sorted(chart.keys())})"
+        raise KeyError(msg)
     if not 1 <= chaos_factor <= len(chart[odds]):
-        raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: 1..{len(chart[odds])})")
+        msg = f"Unknown chaos_factor {chaos_factor} (valid: 1..{len(chart[odds])})"
+        raise KeyError(msg)
 
     cell = chart[odds][chaos_factor - 1]
     roll = random.randint(1, gm().mythic_dice.fate_chart_die)
@@ -66,7 +68,8 @@ def _check_answer(answers: dict[str, dict[str, int]], total: int) -> str:
         if "max_total" in bounds and total > bounds["max_total"]:
             continue
         return answer
-    raise ValueError(f"fate_check answers in mythic_gme_2e.json cover no total {total}")
+    msg = f"fate_check answers in mythic_gme_2e.json cover no total {total}"
+    raise ValueError(msg)
 
 
 def resolve_fate_check(odds: str, chaos_factor: int) -> FateResult:
@@ -74,9 +77,11 @@ def resolve_fate_check(odds: str, chaos_factor: int) -> FateResult:
     odds_modifiers = {row["odds"]: row["modifier"] for row in check["odds_modifiers"]}
     chaos_modifiers = {row["chaos_factor"]: row["modifier"] for row in check["chaos_factor_modifiers"]}
     if odds not in odds_modifiers:
-        raise KeyError(f"Unknown odds level '{odds}' (valid: {sorted(odds_modifiers)})")
+        msg = f"Unknown odds level '{odds}' (valid: {sorted(odds_modifiers)})"
+        raise KeyError(msg)
     if chaos_factor not in chaos_modifiers:
-        raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: {sorted(chaos_modifiers)})")
+        msg = f"Unknown chaos_factor {chaos_factor} (valid: {sorted(chaos_modifiers)})"
+        raise KeyError(msg)
 
     die = gm().mythic_dice.fate_check_die
     d1, d2 = random.randint(1, die), random.randint(1, die)
@@ -109,7 +114,8 @@ def resolve_fate(game: GameState, odds: str) -> FateResult:
     elif method == "fate_chart":
         result = resolve_fate_chart(odds, game.world.chaos_factor)
     else:
-        raise ValueError(f"Unknown fate method {method!r}; valid: 'fate_chart', 'fate_check'")
+        msg = f"Unknown fate method {method!r}; valid: 'fate_chart', 'fate_check'"
+        raise ValueError(msg)
 
     if result.random_event_triggered:
         generate_random_event(game, source="fate_doublet")
@@ -121,6 +127,7 @@ def score_to_odds(score: int) -> str:
     for entry in gm().fate.likelihood_rules.score_to_odds:
         if score >= int(entry["min_score"]):
             return str(entry["odds"])
-    raise ValueError(
+    msg = (
         f"score_to_odds has no matching threshold for score={score}; table must include a catch-all entry at the bottom"
     )
+    raise ValueError(msg)

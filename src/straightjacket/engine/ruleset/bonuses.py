@@ -76,7 +76,8 @@ def chosen_bonus(game: GameState, bonus_id: str | None) -> RollBonus | None:
         if option.id == bonus_id:
             log(f"[Bonus] {option.source}: +{option.add}")
             return option
-    raise ValueError(f"Bonus {bonus_id!r} is not on offer")
+    msg = f"Bonus {bonus_id!r} is not on offer"
+    raise ValueError(msg)
 
 
 def bond_of_bonus(game: GameState, bonus_id: str | None) -> str | None:

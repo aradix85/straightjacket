@@ -20,8 +20,10 @@ def stat_descriptions(setting_id: str) -> dict[str, str]:
 def validate_stats(stats: dict[str, int], setting_id: str) -> None:
     names = list(stat_descriptions(setting_id))
     if sorted(stats) != sorted(names):
-        raise ValueError(f"Stats must be {', '.join(names)}, got {', '.join(stats)}")
+        msg = f"Stats must be {', '.join(names)}, got {', '.join(stats)}"
+        raise ValueError(msg)
     array = sorted(rules().stats.creation_array, reverse=True)
     values = sorted(stats.values(), reverse=True)
     if values != array:
-        raise ValueError(f"Stats must take {array} in any order, got {values}")
+        msg = f"Stats must take {array} in any order, got {values}"
+        raise ValueError(msg)

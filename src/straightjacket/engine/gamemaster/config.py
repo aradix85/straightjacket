@@ -231,11 +231,13 @@ def _build_fact_resolution(fr_raw: dict[str, Any]) -> FactResolutionConfig:
     }
     for name, spec in types.items():
         if spec.subject not in _FACT_SUBJECTS:
-            raise ValueError(f"fact type {name!r} has subject {spec.subject!r}; valid: {list(_FACT_SUBJECTS)}")
+            msg = f"fact type {name!r} has subject {spec.subject!r}; valid: {list(_FACT_SUBJECTS)}"
+            raise ValueError(msg)
     settles = dict(fr_raw.pop("information_miss_settles"))
     for name in settles:
         if name not in types or types[name].subject != "place":
-            raise ValueError(f"information_miss_settles names {name!r}, which is not a place fact type")
+            msg = f"information_miss_settles names {name!r}, which is not a place fact type"
+            raise ValueError(msg)
     config: FactResolutionConfig = build_strict(
         FactResolutionConfig, {**fr_raw, "types": types, "information_miss_settles": settles}
     )

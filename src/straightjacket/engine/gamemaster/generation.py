@@ -14,7 +14,8 @@ _FACT_CATEGORY = "fact"
 def _check_registered(category: str) -> None:
     categories = gm().generation.categories
     if category not in categories:
-        raise KeyError(f"Unknown generation category {category!r}; registered: {categories}")
+        msg = f"Unknown generation category {category!r}; registered: {categories}"
+        raise KeyError(msg)
 
 
 def generate_fact(game: GameState, request: FactRequest) -> ResolvedFact:
@@ -25,7 +26,8 @@ def generate_fact(game: GameState, request: FactRequest) -> ResolvedFact:
 def generate_entity(game: GameState, category: str) -> GeneratedEntity:
     _check_registered(category)
     if category == _FACT_CATEGORY:
-        raise ValueError("A fact is settled by generate_fact, not rolled as an entity")
+        msg = "A fact is settled by generate_fact, not rolled as an entity"
+        raise ValueError(msg)
     pkg = load_package(game.setting_id)
     results = roll_generator_tables(pkg, pkg.generator_tables(category))
     log(f"[Generate] {category}: " + "; ".join(f"{role}={value}" for role, value in results.items()))

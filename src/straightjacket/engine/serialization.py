@@ -40,7 +40,8 @@ def _unwrap_optional(tp: Any) -> tuple[Any, bool]:
 
 def serialize(obj: Any) -> dict[str, Any]:
     if not dataclasses.is_dataclass(obj):
-        raise TypeError(f"Expected dataclass instance, got {type(obj).__name__}")
+        msg = f"Expected dataclass instance, got {type(obj).__name__}"
+        raise TypeError(msg)
     result = {}
     for f in dataclasses.fields(obj):
         val = getattr(obj, f.name)
@@ -60,20 +61,24 @@ def _serialize_value(val: Any) -> Any:
     return val
 
 
-def deserialize(cls: type[_T], data: dict[str, Any]) -> _T:
+def deserialize(cls: type[_T], data: object) -> _T:
     if not _is_dataclass_type(cls):
-        raise TypeError(f"Expected dataclass type, got {cls}")
+        msg = f"Expected dataclass type, got {cls}"
+        raise TypeError(msg)
     if not isinstance(data, dict):
-        raise TypeError(f"Expected dict, got {type(data).__name__}")
+        msg = f"Expected dict, got {type(data).__name__}"
+        raise TypeError(msg)
 
     hints = get_type_hints(cls)
     field_names = {f.name for f in dataclasses.fields(cls)}
     unknown = sorted(set(data) - field_names)
     if unknown:
-        raise ValueError(f"{cls.__name__}: unknown fields {unknown}")
+        msg = f"{cls.__name__}: unknown fields {unknown}"
+        raise ValueError(msg)
     missing = sorted(field_names - set(data))
     if missing:
-        raise ValueError(f"{cls.__name__}: missing fields {missing}")
+        msg = f"{cls.__name__}: missing fields {missing}"
+        raise ValueError(msg)
 
     return cls(**{key: _deserialize_value(hints[key], val) for key, val in data.items()})
 
@@ -82,7 +87,8 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
     if val is None:
         if _allows_none(hint):
             return None
-        raise ValueError(f"null where {hint} is required")
+        msg = f"null where {hint} is required"
+        raise ValueError(msg)
 
     inner, is_optional = _unwrap_optional(hint)
     if is_optional:
@@ -90,23 +96,27 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
 
     if _is_dataclass_type(inner):
         if not isinstance(val, dict):
-            raise ValueError(f"{inner.__name__} needs an object, got {type(val).__name__}")
+            msg = f"{inner.__name__} needs an object, got {type(val).__name__}"
+            raise ValueError(msg)
         return deserialize(inner, val)
 
     origin = get_origin(inner)
     if origin is list:
         if not isinstance(val, list):
-            raise ValueError(f"{inner} needs a list, got {type(val).__name__}")
+            msg = f"{inner} needs a list, got {type(val).__name__}"
+            raise ValueError(msg)
         item_type = _resolve_item_type(inner)
         if item_type is None:
             return list(val)
         if not all(isinstance(item, dict) for item in val):
-            raise ValueError(f"a list of {item_type.__name__} holds an entry that is not an object")
+            msg = f"a list of {item_type.__name__} holds an entry that is not an object"
+            raise ValueError(msg)
         return [deserialize(item_type, item) for item in val]
 
     if origin is dict:
         if not isinstance(val, dict):
-            raise ValueError(f"{inner} needs an object, got {type(val).__name__}")
+            msg = f"{inner} needs an object, got {type(val).__name__}"
+            raise ValueError(msg)
         if _is_dataclass_type(value_type := get_args(inner)[1]):
             return {key: deserialize(value_type, item) for key, item in val.items()}
         return dict(val)

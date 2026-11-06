@@ -27,13 +27,16 @@ from straightjacket.engine.setting.packages import SettingPackage, load_package
 
 def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> None:
     if not creation_data["player_name"]:
-        raise ValueError("creation_data['player_name'] is empty.")
+        msg = "creation_data['player_name'] is empty."
+        raise ValueError(msg)
     if creation_data["truths"] and not pkg.creation_flow.has_truths:
-        raise ValueError(f"Setting '{pkg.id}' does not support truths")
+        msg = f"Setting '{pkg.id}' does not support truths"
+        raise ValueError(msg)
     tone = creation_data["tone"]
     tones = gm().story.tones
     if tone not in tones:
-        raise ValueError(f"Unknown tone '{tone}' (valid: {sorted(tones)})")
+        msg = f"Unknown tone '{tone}' (valid: {sorted(tones)})"
+        raise ValueError(msg)
 
 
 def take_up_character(

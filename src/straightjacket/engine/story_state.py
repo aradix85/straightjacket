@@ -15,7 +15,8 @@ if TYPE_CHECKING:
 def get_current_act(game: GameState) -> CurrentAct:
     bp = game.narrative.story_blueprint
     if bp is None:
-        raise ValueError("get_current_act needs a story blueprint")
+        msg = "get_current_act needs a story blueprint"
+        raise ValueError(msg)
 
     if bp.story_complete and game.campaign.epilogue_dismissed:
         last = bp.acts[-1]

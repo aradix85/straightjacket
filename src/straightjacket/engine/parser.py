@@ -81,7 +81,8 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
 
     if not narration.strip():
         log("[Parser] WARNING: nothing of the narration is left after cleanup", level="warning")
-        raise AIUnavailableError("narrator: empty narration after cleanup")
+        msg = "narrator: empty narration after cleanup"
+        raise AIUnavailableError(msg)
 
     return narration
 

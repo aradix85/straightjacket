@@ -52,7 +52,8 @@ def call_narrator(
     response = stream_with_retry(provider, spec, stream) if stream is not None else create_with_retry(provider, spec)
     raw = response.content
     if not raw.strip():
-        raise AIUnavailableError("narrator: empty narration")
+        msg = "narrator: empty narration"
+        raise AIUnavailableError(msg)
 
     if response.stop_reason == "truncated":
         log(f"[Narrator] WARNING: Response truncated at max_tokens ({len(raw)} chars)", level="warning")
@@ -193,5 +194,6 @@ def call_narrator_metadata(
 def _checked_metadata(content: str, npc_ids: list[str]) -> dict[str, Any]:
     metadata: dict[str, Any] = json.loads(content)
     if not npc_ids and (metadata["npc_renames"] or metadata["npc_details"]):
-        raise ValueError("the metadata renames or details an NPC, but no NPC is known")
+        msg = "the metadata renames or details an NPC, but no NPC is known"
+        raise ValueError(msg)
     return metadata

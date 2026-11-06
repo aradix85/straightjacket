@@ -18,7 +18,8 @@ def _read_version() -> str:
     pyproject = PROJECT_ROOT / "pyproject.toml"
     m = re.search(r'^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"), re.MULTILINE)
     if not m:
-        raise RuntimeError(f'no `version = "..."` line in {pyproject}')
+        msg = f'no `version = "..."` line in {pyproject}'
+        raise RuntimeError(msg)
     return m.group(1)
 
 
@@ -77,13 +78,16 @@ class AppConfig:
 
 def _check_keys(where: str, data: Any, keys: tuple[str, ...]) -> dict[str, Any]:
     if not isinstance(data, dict):
-        raise TypeError(f"config.yaml: {where} must be a mapping")
+        msg = f"config.yaml: {where} must be a mapping"
+        raise TypeError(msg)
     unknown = sorted(set(data) - set(keys))
     if unknown:
-        raise ValueError(f"config.yaml: {where} has unknown keys {unknown}")
+        msg = f"config.yaml: {where} has unknown keys {unknown}"
+        raise ValueError(msg)
     missing = [k for k in keys if k not in data]
     if missing:
-        raise ValueError(f"config.yaml: {where} missing required fields: {missing}")
+        msg = f"config.yaml: {where} missing required fields: {missing}"
+        raise ValueError(msg)
     return data
 
 
@@ -126,10 +130,11 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
     for cname, cdata in ad["clusters"].items():
         _check_keys(f"cluster '{cname}'", cdata, _CLUSTER_KEYS)
         if cdata["provider"] not in providers:
-            raise ValueError(
+            msg = (
                 f"Cluster '{cname}' uses provider '{cdata['provider']}', which is not defined under ai.providers. "
                 f"Defined providers: {sorted(providers)}."
             )
+            raise ValueError(msg)
         clusters[cname] = ClusterConfig(
             provider=cdata["provider"],
             model=cdata["model"],
@@ -143,10 +148,11 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
     _check_keys("ai.role_cluster", ad["role_cluster"], _ROLES)
     for role, cname in ad["role_cluster"].items():
         if cname not in clusters:
-            raise ValueError(
+            msg = (
                 f"Role '{role}' maps to cluster '{cname}', which is not defined under ai.clusters. "
                 f"Defined clusters: {sorted(clusters)}."
             )
+            raise ValueError(msg)
 
     ai = AIConfig(
         providers=providers,
@@ -165,15 +171,17 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
 
 def _load_config_file() -> dict[str, Any]:
     if not _CONFIG_PATH.exists():
-        raise FileNotFoundError(
+        msg = (
             f"Config file not found: {_CONFIG_PATH}\n"
             f"The config.yaml file ships with the repo — if you deleted it, restore it from git.\n"
             f"To use a different config file, set the STRAIGHTJACKET_CONFIG environment variable."
         )
+        raise FileNotFoundError(msg)
     with _CONFIG_PATH.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
     if not isinstance(data, dict):
-        raise TypeError(f"Config file is not a valid YAML dict: {_CONFIG_PATH}")
+        msg = f"Config file is not a valid YAML dict: {_CONFIG_PATH}"
+        raise TypeError(msg)
     log(f"[Config] Loaded {_CONFIG_PATH}")
     return data
 
@@ -206,7 +214,8 @@ def model_for_role(role: str) -> str:
     cluster = _cluster_for_role(role)
     if not cluster.model:
         cluster_name = cfg().ai.role_cluster[role]
-        raise ValueError(f"No model configured for role '{role}'. Set ai.clusters.{cluster_name}.model in config.yaml.")
+        msg = f"No model configured for role '{role}'. Set ai.clusters.{cluster_name}.model in config.yaml."
+        raise ValueError(msg)
     return cluster.model
 
 

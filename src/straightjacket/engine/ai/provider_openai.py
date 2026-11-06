@@ -37,7 +37,8 @@ class OpenAICompatibleProvider:
         if isinstance(listing, dict):
             listing = listing["data"]
         if not isinstance(listing, list):
-            raise TypeError(f"Unexpected model listing from the provider: {type(listing).__name__}")
+            msg = f"Unexpected model listing from the provider: {type(listing).__name__}"
+            raise TypeError(msg)
         return [str(entry["id"]) for entry in listing]
 
     def create_message(self, spec: AICallSpec) -> AIResponse:

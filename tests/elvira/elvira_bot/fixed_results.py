@@ -19,13 +19,15 @@ def check_results(results: list[str]) -> None:
     known = rules().dice.results_by_dice_beaten
     unknown = [r for r in results if r not in known]
     if unknown:
-        raise ValueError(f"The scenario fixes results the ruleset does not roll: {unknown} (known: {known})")
+        msg = f"The scenario fixes results the ruleset does not roll: {unknown} (known: {known})"
+        raise ValueError(msg)
 
 
 def _pick(result: str, candidates: list[RollResult], rolled: str) -> RollResult:
     fitting = [r for r in candidates if r.result == result]
     if not fitting:
-        raise ValueError(f"The scenario fixes {result}, which no dice give for {rolled}")
+        msg = f"The scenario fixes {result}, which no dice give for {rolled}"
+        raise ValueError(msg)
     without_match = [r for r in fitting if not r.match]
     return random.choice(without_match or fitting)
 

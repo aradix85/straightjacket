@@ -88,7 +88,8 @@ _SIMPLE_SECTIONS: dict[str, type] = {
 
 def _known_track_type(track_type: str, track_types: set[str]) -> str:
     if track_type not in track_types:
-        raise ValueError(f"move_availability names {track_type!r}, which is no track type of track_types_by_category")
+        msg = f"move_availability names {track_type!r}, which is no track type of track_types_by_category"
+        raise ValueError(msg)
     return track_type
 
 
@@ -102,22 +103,25 @@ def _parse_move_availability_condition(cond: dict[str, Any], track_types: set[st
         return BondedTrackCondition(bonded_track=_known_track_type(cond["bonded_track"], track_types))
     if keys == {"combat_pos_in"}:
         return CombatPosCondition(combat_pos_in=list(cond["combat_pos_in"]))
-    raise ValueError(
+    msg = (
         f"Invalid move_availability condition: {cond!r}. "
         "Expected exactly one of: active_track, no_active_track, bonded_track, combat_pos_in."
     )
+    raise ValueError(msg)
 
 
 def _parse_move_availability_rule(rule: dict[str, Any], track_types: set[str]) -> MoveAvailabilityRule:
     keys = set(rule.keys())
     if keys == {"never"}:
         if not rule["never"]:
-            raise ValueError(f"move_availability rule with never=false is not allowed: {rule!r}")
+            msg = f"move_availability rule with never=false is not allowed: {rule!r}"
+            raise ValueError(msg)
         return MoveAvailabilityRule(never=True, available=[])
     if keys == {"available"}:
         conds = [_parse_move_availability_condition(dict(c), track_types) for c in rule["available"]]
         return MoveAvailabilityRule(never=False, available=conds)
-    raise ValueError(f"Invalid move_availability rule: {rule!r}. Expected exactly one of: never, available.")
+    msg = f"Invalid move_availability rule: {rule!r}. Expected exactly one of: never, available."
+    raise ValueError(msg)
 
 
 def _build_threats(t_raw: dict[str, Any]) -> ThreatConfig:

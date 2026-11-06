@@ -30,7 +30,8 @@ def _path_names(paths: list[str], own: RulesFile) -> list[str]:
     for pid in paths:
         path = own.asset("path", pid)
         if path is None:
-            raise ValueError(f"Path '{pid}' is not among the paths of '{own.datasworn_id}'")
+            msg = f"Path '{pid}' is not among the paths of '{own.datasworn_id}'"
+            raise ValueError(msg)
         names.append(path["name"])
     return names
 
@@ -39,7 +40,8 @@ def _validate_assets(assets: list[str], pkg: SettingPackage, own: RulesFile) -> 
     allowed_cats = set(pkg.creation_flow.starting_asset_categories)
     for asset_id in assets:
         if not any(own.asset(cat, asset_id) for cat in allowed_cats):
-            raise ValueError(f"Asset '{asset_id}' not in allowed categories: {allowed_cats}")
+            msg = f"Asset '{asset_id}' not in allowed categories: {allowed_cats}"
+            raise ValueError(msg)
 
 
 def _check_choices(paths: list[str], assets: list[str], ruleset_id: str) -> None:
@@ -49,10 +51,12 @@ def _check_choices(paths: list[str], assets: list[str], ruleset_id: str) -> None
         ("starting assets", assets, creation.max_starting_assets[ruleset_id]),
     ):
         if len(picks) > limit:
-            raise ValueError(f"Too many {kind}: {len(picks)} (max {limit})")
+            msg = f"Too many {kind}: {len(picks)} (max {limit})"
+            raise ValueError(msg)
     chosen = paths + assets
     if len(set(chosen)) < len(chosen):
-        raise ValueError(f"An asset is chosen twice: {chosen}")
+        msg = f"An asset is chosen twice: {chosen}"
+        raise ValueError(msg)
 
 
 def make_character(creation_data: dict[str, Any], pkg: SettingPackage) -> Character:
@@ -70,9 +74,11 @@ def make_character(creation_data: dict[str, Any], pkg: SettingPackage) -> Charac
     assets = [asset_id for asset_id in assets if asset_id not in paths]
     path_names = _path_names(paths, own)
     if not background_vow:
-        raise ValueError("creation_data['background_vow'] is empty. The background vow becomes the first vow track.")
+        msg = "creation_data['background_vow'] is empty. The background vow becomes the first vow track."
+        raise ValueError(msg)
     if vow_rank and vow_rank not in ranks():
-        raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {ranks()})")
+        msg = f"Invalid vow rank: '{vow_rank}' (valid: {ranks()})"
+        raise ValueError(msg)
     return Character(
         stats={n: stats[n] for n in stat_descriptions(pkg.id)},
         paths=paths,

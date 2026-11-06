@@ -90,7 +90,8 @@ class Coverage:
 
     def hit(self, target: str, times: int = 1) -> None:
         if target not in TARGETS:
-            raise ValueError(f"Unknown coverage target '{target}'")
+            msg = f"Unknown coverage target '{target}'"
+            raise ValueError(msg)
         if times > 0:
             self.counts[target] = self.counts.get(target, 0) + times
 

@@ -92,13 +92,16 @@ def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> t
     if ds_move is not None and not ds_move.valid_stats:
         source = roll_source_without_stat(game, ds_move, brain.target_npc)
         if source is None:
-            raise ValueError(f"{brain.move!r} has nothing to roll with for target {brain.target_npc!r}")
+            msg = f"{brain.move!r} has nothing to roll with for target {brain.target_npc!r}"
+            raise ValueError(msg)
         return source
     if brain.stat == eng().ai_text.no_stat:
-        raise ValueError(f"{brain.move!r} is an action roll, but the Brain named no stat")
+        msg = f"{brain.move!r} is an action roll, but the Brain named no stat"
+        raise ValueError(msg)
     if brain.stat in PICK_METHODS:
         if ds_move is None:
-            raise ValueError(f"{brain.move!r} has no way that rolls the {brain.stat} stat")
+            msg = f"{brain.move!r} has no way that rolls the {brain.stat} stat"
+            raise ValueError(msg)
         return roll_by_method(game, ds_move, brain.stat)
     return brain.stat, game.stats[brain.stat]
 

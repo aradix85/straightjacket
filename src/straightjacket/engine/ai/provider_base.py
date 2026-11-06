@@ -133,7 +133,8 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
             is_connection_error = any("Connection" in cls.__name__ for cls in type(e).__mro__)
             is_retryable_status = status_code in _retry_cfg.retryable_http_codes
             if attempt >= spec.max_retries or not (is_retryable_status or is_connection_error):
-                raise AIUnavailableError(f"{spec.log_role}: {type(e).__name__}: {e}") from e
+                msg = f"{spec.log_role}: {type(e).__name__}: {e}"
+                raise AIUnavailableError(msg) from e
             retry_after = _retry_after_seconds(e)
             wait = (
                 min(retry_after, _retry_cfg.max_retry_after_seconds)
@@ -151,7 +152,8 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
             return result
         if attempt >= spec.max_retries:
             log(f"[AI] {spec.log_role}: model refused on every attempt", level="error")
-            raise AIUnavailableError(f"{spec.log_role}: model refused on every attempt")
+            msg = f"{spec.log_role}: model refused on every attempt"
+            raise AIUnavailableError(msg)
         log(f"[AI] {spec.log_role}: model refused, retry {attempt + 1}/{spec.max_retries}", level="warning")
         attempt += 1
 

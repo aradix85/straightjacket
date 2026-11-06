@@ -16,7 +16,8 @@ from tests._mocks import MockProvider, RecordingWebSocket
 
 def test_a_failed_chapter_opening_leaves_the_game_as_it_was(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     def narrator_down(*_args: Any, **_kwargs: Any) -> str:
-        raise AIUnavailableError("narrator: down")
+        msg = "narrator: down"
+        raise AIUnavailableError(msg)
 
     monkeypatch.setattr(chapters, "call_narrator", narrator_down)
     monkeypatch.setattr(handlers, "get_provider", lambda: MockProvider("{}"))
@@ -36,7 +37,8 @@ def test_a_fault_outside_the_ai_calls_is_not_swallowed_by_the_handler(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     def broken(*_args: Any) -> None:
-        raise KeyError("broken succession")
+        msg = "broken succession"
+        raise KeyError(msg)
 
     monkeypatch.setattr(handlers, "prepare_succession", broken)
     session = new_session()

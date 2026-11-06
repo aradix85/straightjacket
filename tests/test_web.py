@@ -241,7 +241,8 @@ class TestWebSocket:
         self, client: TestClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         def broken(_player: str) -> list[dict[str, Any]]:
-            raise KeyError("boom")
+            msg = "boom"
+            raise KeyError(msg)
 
         monkeypatch.setattr(handlers, "list_saves_with_info", broken)
         with client.websocket_connect("/ws") as ws:

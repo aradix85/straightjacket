@@ -105,7 +105,8 @@ def parse_effect(effect_str: str) -> MoveEffect:
     if effect_str in _PLAIN_EFFECTS:
         return MoveEffect(type=effect_str, value=0, target="")
 
-    raise ValueError(f"Unknown move effect {effect_str!r}")
+    msg = f"Unknown move effect {effect_str!r}"
+    raise ValueError(msg)
 
 
 def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
@@ -252,7 +253,8 @@ CONNECTION_EFFECTS = frozenset({"bond", "raise_connection_rank", "clear_bond"})
 
 def _required_target(effect: MoveEffect, target: NpcData | None) -> NpcData:
     if target is None:
-        raise ValueError(f"The {effect.type} effect needs a target NPC")
+        msg = f"The {effect.type} effect needs a target NPC"
+        raise ValueError(msg)
     return target
 
 
@@ -260,7 +262,8 @@ def _target_connection(game: GameState, effect: MoveEffect, target: NpcData | No
     npc = _required_target(effect, target)
     track = connection_track(game, npc.id)
     if track is None:
-        raise ValueError(f"The {effect.type} effect needs a connection with {npc.name}")
+        msg = f"The {effect.type} effect needs a connection with {npc.name}"
+        raise ValueError(msg)
     return npc, track
 
 

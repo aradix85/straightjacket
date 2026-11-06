@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -136,3 +137,15 @@ def test_score_to_odds_covers_the_scale(load_engine: None) -> None:
 def test_score_below_the_catch_all_raises(load_engine: None) -> None:
     with pytest.raises(ValueError, match="no matching threshold"):
         score_to_odds(-100)
+
+
+@pytest.mark.parametrize("resolve", [resolve_fate_chart, resolve_fate_check])
+def test_an_unknown_odds_level_is_refused(load_engine: None, resolve: Callable[[str, int], FateResult]) -> None:
+    with pytest.raises(KeyError, match="Unknown odds level 'certainish'"):
+        resolve("certainish", 5)
+
+
+@pytest.mark.parametrize("resolve", [resolve_fate_chart, resolve_fate_check])
+def test_a_chaos_factor_off_the_table_is_refused(load_engine: None, resolve: Callable[[str, int], FateResult]) -> None:
+    with pytest.raises(KeyError, match="Unknown chaos_factor 99"):
+        resolve("likely", 99)

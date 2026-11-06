@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from straightjacket.engine.crafters import adventure_crafter
+from straightjacket.engine.crafters import config as crafters_config
 from straightjacket.engine.crafters.adventure_crafter import (
     PlotPointHit,
     PlotPointResult,
@@ -23,7 +24,7 @@ from straightjacket.engine.crafters.adventure_crafter import (
 )
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.crafters.meta_plot_points import dispatch_meta
-from tests._helpers import make_character_entry, make_narrative, make_plotline
+from tests._helpers import change_config, make_character_entry, make_narrative, make_plotline
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -69,6 +70,8 @@ def test_data_whose_themes_disagree_with_the_theme_die_refuses_to_load(
     bad.write_text(json.dumps(data), encoding="utf-8")
     monkeypatch.setattr(adventure_crafter, "_AC_DATA_PATH", bad)
     monkeypatch.setattr(adventure_crafter, "_ac_data", None)
+    with pytest.raises(ValueError, match="theme_die_table"):
+        load_ac_data()
     with pytest.raises(ValueError, match="theme_die_table"):
         load_ac_data()
 
@@ -415,3 +418,13 @@ def test_plot_points_round_trip_special_entries() -> None:
                 range_["min"],
                 range_["max"],
             ) == expected, f"{name}.{t} has range ({range_['min']}, {range_['max']}) != yaml {expected}"
+
+
+def test_themes_that_disagree_with_the_data_refuse_to_load(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def add_a_theme(section: dict[str, Any]) -> None:
+        section["themes"] = [*section["themes"], "horror"]
+
+    change_config(monkeypatch, tmp_path, crafters_config, "_crafter", "adventure_crafter", add_a_theme)
+    monkeypatch.setattr(adventure_crafter, "_ac_data", None)
+    with pytest.raises(ValueError, match=r"themes .* does not match random_themes theme set"):
+        load_ac_data()

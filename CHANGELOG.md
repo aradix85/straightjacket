@@ -8,6 +8,16 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.06.3] — 2026-11-06
+
+Exception messages, the fourth step of the user's request: ruff's rules on how an exception is raised (EM, and TRY003 on long messages) leave the later groups. Every message is built in a variable before the `raise`, ruff's own rewrite, in `src/`, the tests, and Elvira.
+
+- Each message takes a statement of its own, so an error path no test reached counted twice and coverage fell to 95.58%. New tests reach those paths instead of the floor moving: the yaml directory loader's four refusals (`tests/test_yaml_merge.py`), a setting yaml of the wrong shape and a missing setting (`tests/test_setting_package_errors.py`), serializing or loading what is not a dataclass or an object (`tests/test_serialization_errors.py`), an unknown odds level or chaos factor for both fate methods, a missing or non-mapping config file and a role without a model, move-availability rules of the wrong shape, an unknown meaning table, an oracle table without rows or with a gap, a missing Datasworn file, and crafter themes that disagree with the data.
+- The Adventure Crafter's data is cached only once it is validated; a second load after a refusal returned the data unchecked (tested).
+- `deserialize` takes its data as `object`, since it comes straight from JSON and the check that it is a mapping is what refuses anything else; typed as a dict, mypy found that check unreachable once its branch held more than the raise.
+
+Quality gate: 1896 tests, coverage 96.08% to 96.09% over four runs, mypy clean on 266 files, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: no message of the game changes, and the cache fix only matters once the data has been refused.
+
 ## [2026.11.06.2] — 2026-11-06
 
 Imports at their strictest, the third step of the user's request. Every import stands at the top of its file and is absolute (`ban-relative-imports = "all"`), and an import used only in annotations stands under `TYPE_CHECKING`, in ruff's strict mode, with `SerializableMixin` declared as read at runtime, since `deserialize` resolves the models' annotations.

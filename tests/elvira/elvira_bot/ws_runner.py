@@ -164,8 +164,10 @@ async def _start_server(port: int) -> Any:
         if server.started:
             return server
         if serve_task.done():
-            raise RuntimeError(f"Server on port {port} stopped during startup: {serve_task.exception()}")
-    raise RuntimeError(f"Server failed to start on port {port} within 5s")
+            msg = f"Server on port {port} stopped during startup: {serve_task.exception()}"
+            raise RuntimeError(msg)
+    msg = f"Server failed to start on port {port} within 5s"
+    raise RuntimeError(msg)
 
 
 async def run_ws_session(

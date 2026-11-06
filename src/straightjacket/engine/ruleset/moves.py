@@ -127,7 +127,8 @@ def offers_table(setting_id: str, move: Move, key: str) -> bool:
 def move_table(setting_id: str, move: Move, key: str) -> OracleTable:
     table = _offered_table(setting_id, move, key)
     if table is None:
-        raise KeyError(f"{move.name} neither carries nor suggests a table {key!r} in setting {setting_id!r}")
+        msg = f"{move.name} neither carries nor suggests a table {key!r} in setting {setting_id!r}"
+        raise KeyError(msg)
     return table
 
 

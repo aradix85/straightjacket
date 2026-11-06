@@ -162,3 +162,28 @@ def test_the_users_folder_defaults_to_the_project() -> None:
     env = {key: value for key, value in os.environ.items() if key != "STRAIGHTJACKET_USERS_DIR"}
     expected = str(config_loader.PROJECT_ROOT / "users")
     assert _users_dirs_in_a_fresh_process(env) == [expected, expected]
+
+
+def test_a_missing_config_file_says_how_to_restore_it(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(config_loader, "_CONFIG_PATH", tmp_path / "config.yaml")
+    monkeypatch.setattr(config_loader, "_cfg", None)
+    with pytest.raises(FileNotFoundError, match="restore it from git"):
+        config_loader.cfg()
+
+
+def test_a_config_file_that_is_not_a_mapping_stops_loading(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text("- server\n", encoding="utf-8")
+    monkeypatch.setattr(config_loader, "_CONFIG_PATH", path)
+    monkeypatch.setattr(config_loader, "_cfg", None)
+    with pytest.raises(TypeError, match="not a valid YAML dict"):
+        config_loader.cfg()
+
+
+def test_a_role_whose_cluster_names_no_model_is_refused(read_config: Callable[[dict[str, object]], None]) -> None:
+    data = _full_config_data()
+    data["ai"]["clusters"]["classification"]["model"] = ""
+    read_config(data)
+    role = next(name for name, cluster in data["ai"]["role_cluster"].items() if cluster == "classification")
+    with pytest.raises(ValueError, match=f"No model configured for role '{role}'"):
+        config_loader.model_for_role(role)

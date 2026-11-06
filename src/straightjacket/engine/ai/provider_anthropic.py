@@ -10,7 +10,8 @@ from straightjacket.engine.logging_util import log
 def _cached_system(spec: AICallSpec, cache_control: dict[str, Any]) -> list[dict[str, Any]]:
     prefix = spec.cached_system_prefix or spec.system
     if not spec.system.startswith(prefix):
-        raise ValueError(f"{spec.log_role}: cached_system_prefix is not the start of the system prompt")
+        msg = f"{spec.log_role}: cached_system_prefix is not the start of the system prompt"
+        raise ValueError(msg)
     blocks: list[dict[str, Any]] = [{"type": "text", "text": prefix, "cache_control": cache_control}]
     if len(spec.system) > len(prefix):
         blocks.append({"type": "text", "text": spec.system[len(prefix) :]})

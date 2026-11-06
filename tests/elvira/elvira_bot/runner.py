@@ -346,7 +346,8 @@ def _setup_game(
         save_name = game_cfg["save_name"]
         game, chat_messages = load_game(username, save_name)
         if not game:
-            raise SystemExit(f"Save '{save_name}' not found for user '{username}'")
+            missing = f"Save '{save_name}' not found for user '{username}'"
+            raise SystemExit(missing)
         narration = ""
         for msg in reversed(chat_messages):
             if msg.get("role") == "assistant" and not msg.get("recap"):

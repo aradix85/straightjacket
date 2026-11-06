@@ -21,7 +21,8 @@ def _roll_twice_max(table: str, row_text: str, text_key: str) -> int:
     for entry in load_ac_data()[table]:
         if entry[text_key] == row_text:
             return int(entry["max"])
-    raise LookupError(f"data/adventure_crafter.json {table} has no row {row_text!r}")
+    msg = f"data/adventure_crafter.json {table} has no row {row_text!r}"
+    raise LookupError(msg)
 
 
 def lookup_character_special_trait(roll: int) -> str:
@@ -29,10 +30,11 @@ def lookup_character_special_trait(roll: int) -> str:
     for entry in data["character_special_trait"]:
         if entry["min"] <= roll <= entry["max"]:
             return str(entry["trait"])
-    raise LookupError(
+    msg = (
         f"no character_special_trait entry covers roll={roll}; "
         f"data/adventure_crafter.json character_special_trait may be incomplete"
     )
+    raise LookupError(msg)
 
 
 def lookup_character_identity(roll: int) -> str:
@@ -40,10 +42,11 @@ def lookup_character_identity(roll: int) -> str:
     for entry in data["character_identity"]:
         if entry["min"] <= roll <= entry["max"]:
             return str(entry["identity"])
-    raise LookupError(
+    msg = (
         f"no character_identity entry covers roll={roll}; "
         f"data/adventure_crafter.json character_identity may be incomplete"
     )
+    raise LookupError(msg)
 
 
 def lookup_character_descriptor(roll: int) -> str:
@@ -51,10 +54,11 @@ def lookup_character_descriptor(roll: int) -> str:
     for entry in data["character_descriptors"]:
         if entry["min"] <= roll <= entry["max"]:
             return str(entry["descriptor"])
-    raise LookupError(
+    msg = (
         f"no character_descriptors entry covers roll={roll}; "
         f"data/adventure_crafter.json character_descriptors may be incomplete"
     )
+    raise LookupError(msg)
 
 
 def roll_character_traits(rng: random.Random) -> CharacterTraits:

@@ -177,7 +177,8 @@ class NarrativeState(SerializableMixin):
         self.keyed_scenes = [KeyedScene.from_dict(k) for k in snap["keyed_scenes"]]
         bp, bp_snap = self.story_blueprint, snap["story_blueprint_snapshot"]
         if (bp is None) != (bp_snap is None):
-            raise ValueError("a turn's snapshot and the game disagree on whether there is a story blueprint")
+            msg = "a turn's snapshot and the game disagree on whether there is a story blueprint"
+            raise ValueError(msg)
         if bp is not None:
             bp.revealed = list(bp_snap["revealed"])
             bp.triggered_transitions = list(bp_snap["triggered_transitions"])

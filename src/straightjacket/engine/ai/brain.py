@@ -148,7 +148,8 @@ def _build_fact_types_block() -> str:
 
 def _refuse(reason: str) -> NoReturn:
     log(f"[Brain] Refused: {reason}", level="warning")
-    raise AIUnavailableError(f"brain: {reason}")
+    msg = f"brain: {reason}"
+    raise AIUnavailableError(msg)
 
 
 def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str, list[str]]) -> None:
@@ -234,7 +235,8 @@ def _ask_brain(provider: AIProvider, spec: AICallSpec) -> tuple[str, BrainResult
         return content, BrainResult.from_dict(json.loads(content))
     except Exception as e:
         log(f"[Brain] Failed ({type(e).__name__}: {e})", level="warning")
-        raise AIUnavailableError(f"brain: {type(e).__name__}: {e}") from e
+        msg = f"brain: {type(e).__name__}: {e}"
+        raise AIUnavailableError(msg) from e
 
 
 def call_brain(provider: AIProvider, game: GameState, player_message: str) -> BrainResult:

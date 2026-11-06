@@ -125,7 +125,8 @@ class _StreamFails:
         on_text("Half a sent")
         if self.refuses:
             return AIResponse(content="Half a sent", stop_reason="refusal")
-        raise ConnectionError("stream dropped")
+        msg = "stream dropped"
+        raise ConnectionError(msg)
 
 
 @pytest.mark.parametrize("refuses", [False, True], ids=["dropped", "refused"])

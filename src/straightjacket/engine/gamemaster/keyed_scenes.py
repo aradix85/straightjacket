@@ -39,7 +39,8 @@ def _eval_chaos_extreme(game: GameState, value: str) -> bool:
         return cf <= chaos.min
     if value == "max":
         return cf >= chaos.max
-    raise ValueError(f"chaos_extreme trigger_value must be 'min' or 'max', got {value!r}")
+    msg = f"chaos_extreme trigger_value must be 'min' or 'max', got {value!r}"
+    raise ValueError(msg)
 
 
 def _eval_scene_count(game: GameState, value: str) -> bool:
@@ -55,7 +56,8 @@ def _bond_pool_candidates(
     if pool != "any" and not _is_disposition_pattern(pool):
         npc = find_npc(game, pool)
         if npc is None:
-            raise KeyError(f"bond_threshold trigger references unknown npc_id {pool!r}")
+            msg = f"bond_threshold trigger references unknown npc_id {pool!r}"
+            raise KeyError(msg)
         if npc.id in exclude_ids:
             return []
         return [npc.id] if answers().closeness(game, npc.id) >= threshold else []
@@ -81,7 +83,8 @@ def _threat_pool_candidates(
     if pool != "any":
         danger = next((d for d in dangers if d.name == pool), None)
         if danger is None:
-            raise KeyError(f"threat_menace_phase trigger references unknown danger {pool!r}")
+            msg = f"threat_menace_phase trigger references unknown danger {pool!r}"
+            raise KeyError(msg)
         if danger.id in exclude_ids:
             return []
         return [danger.id] if danger.progress >= threshold else []
@@ -147,7 +150,8 @@ def _resolve_pattern_entity(
             return None
         if strategy == "highest_bond":
             return max(candidates, key=lambda nid: answers().closeness(game, nid))
-        raise ValueError(f"unknown bond_threshold matcher_strategy {strategy!r}")
+        msg = f"unknown bond_threshold matcher_strategy {strategy!r}"
+        raise ValueError(msg)
 
     if trigger_type == "threat_menace_phase":
         candidates = _threat_pool_candidates(game, pool, threshold, exclude_ids=already_bound)
@@ -156,7 +160,8 @@ def _resolve_pattern_entity(
         if strategy == "highest_menace":
             progress = {d.id: d.progress for d in answers().dangers(game)}
             return max(candidates, key=lambda did: progress[did])
-        raise ValueError(f"unknown threat_menace_phase matcher_strategy {strategy!r}")
+        msg = f"unknown threat_menace_phase matcher_strategy {strategy!r}"
+        raise ValueError(msg)
 
     if trigger_type == "clock_fills":
         candidates = _clock_pool_candidates(game, pool, threshold, exclude_ids=already_bound)
@@ -165,9 +170,11 @@ def _resolve_pattern_entity(
         if strategy == "highest_filled":
             key_to_clock = {_clock_key(c.name): c for c in game.world.clocks}
             return max(candidates, key=lambda key: key_to_clock[key].filled)
-        raise ValueError(f"unknown clock_fills matcher_strategy {strategy!r}")
+        msg = f"unknown clock_fills matcher_strategy {strategy!r}"
+        raise ValueError(msg)
 
-    raise ValueError(f"trigger_type {trigger_type!r} has no resolver")
+    msg = f"trigger_type {trigger_type!r} has no resolver"
+    raise ValueError(msg)
 
 
 def _parse_pattern_value(value: str) -> tuple[str, int]:
@@ -217,14 +224,16 @@ def _bound_entity_meets_threshold(game: GameState, trigger_type: str, value: str
     if trigger_type == "threat_menace_phase":
         danger = next((d for d in answers().dangers(game) if d.id == entity_id), None)
         if danger is None:
-            raise KeyError(f"threat_menace_phase keyed scene is bound to unknown danger {entity_id!r}")
+            msg = f"threat_menace_phase keyed scene is bound to unknown danger {entity_id!r}"
+            raise KeyError(msg)
         return danger.progress >= threshold
     if trigger_type == "clock_fills":
         for clock in game.world.clocks:
             if _clock_key(clock.name) == entity_id:
                 return clock.filled >= threshold
         return False
-    raise ValueError(f"trigger_type {trigger_type!r} not pattern-supporting")
+    msg = f"trigger_type {trigger_type!r} not pattern-supporting"
+    raise ValueError(msg)
 
 
 def has_keyed_scene_from(narrative: NarrativeState, source: str) -> bool:
@@ -240,7 +249,8 @@ def add_keyed_scene(
 ) -> KeyedScene:
     cfg = gm().keyed_scenes
     if trigger_type not in cfg.triggers:
-        raise ValueError(f"Unknown KeyedScene trigger_type {trigger_type!r}; registered: {sorted(cfg.triggers)}")
+        msg = f"Unknown KeyedScene trigger_type {trigger_type!r}; registered: {sorted(cfg.triggers)}"
+        raise ValueError(msg)
     if trigger_type in cfg.pattern_grammars:
         _validate_pattern_trigger_value(trigger_type, trigger_value)
     scene = KeyedScene(
@@ -259,19 +269,22 @@ def add_keyed_scene(
 def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
     parts = value.split(":", 1)
     if len(parts) != 2 or not parts[0] or not parts[1]:
-        raise ValueError(f"{trigger_type} trigger_value must be '<pool>:<threshold>', got {value!r}")
+        msg = f"{trigger_type} trigger_value must be '<pool>:<threshold>', got {value!r}"
+        raise ValueError(msg)
     pool, threshold_str = parts
     try:
         int(threshold_str)
     except ValueError as exc:
-        raise ValueError(f"{trigger_type} threshold must be an integer, got {threshold_str!r}") from exc
+        msg = f"{trigger_type} threshold must be an integer, got {threshold_str!r}"
+        raise ValueError(msg) from exc
 
     prefixes = gm().keyed_scenes.pattern_grammars[trigger_type].pattern_prefixes
     if "disposition_" in prefixes and pool.startswith("disposition_"):
         disposition = pool.removeprefix("disposition_")
         valid = gm().enums.dispositions
         if disposition not in valid:
-            raise ValueError(
+            msg = (
                 f"{trigger_type} disposition pattern {pool!r} uses unknown disposition "
                 f"{disposition!r}; valid: {sorted(valid)}"
             )
+            raise ValueError(msg)

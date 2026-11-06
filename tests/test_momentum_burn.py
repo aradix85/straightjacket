@@ -133,7 +133,8 @@ def test_new_player_input_withdraws_a_pending_burn_offer(
     session.pending_burn = offer
 
     def failing_turn(provider: Any, g: Any, text: str, config: Any, stream: Any) -> Any:
-        raise AIUnavailableError("narrator: test")
+        msg = "narrator: test"
+        raise AIUnavailableError(msg)
 
     monkeypatch.setattr(handlers, "process_turn", failing_turn)
     monkeypatch.setattr(handlers, "get_provider", lambda: None)
@@ -151,7 +152,8 @@ class _FlakyNarrator(TurnProvider):
     @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         if self.narrator_down and spec.log_role == "narrator":
-            raise ConnectionError("narrator unreachable")
+            msg = "narrator unreachable"
+            raise ConnectionError(msg)
         return super().create_message(spec)
 
 

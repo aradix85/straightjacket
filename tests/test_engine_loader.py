@@ -40,3 +40,23 @@ def test_a_move_gate_on_a_track_type_that_does_not_exist_is_refused(
     change_config(monkeypatch, tmp_path, ruleset_config, "_rules", "move_availability", gate_on_a_missing_type)
     with pytest.raises(ValueError, match="'has_journey', which is no track type"):
         ruleset_config.rules()
+
+
+@pytest.mark.parametrize(
+    ("rule", "message"),
+    [
+        ({"never": False}, "never=false is not allowed"),
+        ({"never": True, "available": []}, "Expected exactly one of: never, available"),
+        ({"available": [{"active_track": "vow", "bonded_track": "connection"}]}, "Invalid move_availability condition"),
+    ],
+    ids=["never_false", "two_keys", "condition_with_two_keys"],
+)
+def test_a_move_availability_rule_of_the_wrong_shape_is_refused(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, rule: dict[str, object], message: str
+) -> None:
+    def reshape(section: dict[str, Any]) -> None:
+        section["adventure/face_danger"] = rule
+
+    change_config(monkeypatch, tmp_path, ruleset_config, "_rules", "move_availability", reshape)
+    with pytest.raises(ValueError, match=message):
+        ruleset_config.rules()

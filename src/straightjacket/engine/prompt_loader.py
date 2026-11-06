@@ -20,7 +20,8 @@ _PREFIX_MARKER = "\x00"
 def get_prompt_prefix(name: str, until: str, **variables: str) -> str:
     rendered = get_prompt(name, **{**variables, until: _PREFIX_MARKER})
     if _PREFIX_MARKER not in rendered:
-        raise KeyError(f"Prompt '{name}' has no placeholder '{until}'")
+        msg = f"Prompt '{name}' has no placeholder '{until}'"
+        raise KeyError(msg)
     return rendered[: rendered.index(_PREFIX_MARKER)]
 
 

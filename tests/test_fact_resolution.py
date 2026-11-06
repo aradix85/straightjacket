@@ -329,7 +329,8 @@ def test_an_oracle_question_covered_by_a_fact_skips_the_oracle_roll(
     _force(monkeypatch, "MISS")
 
     def _no_oracle(game: Any) -> str:
-        raise AssertionError("the oracle table must not be rolled")
+        msg = "the oracle table must not be rolled"
+        raise AssertionError(msg)
 
     monkeypatch.setattr(turn, "roll_oracle_answer", _no_oracle)
     brain = _brain(

@@ -77,35 +77,42 @@ class _SettingConfig:
 
 def _require_dict(data: dict[str, Any], key: str, yaml_path: str) -> dict[str, Any]:
     if key not in data:
-        raise KeyError(f"Required key '{key}' missing in {yaml_path}")
+        msg = f"Required key '{key}' missing in {yaml_path}"
+        raise KeyError(msg)
     value = data[key]
     if not isinstance(value, dict):
-        raise TypeError(f"Expected dict at '{key}' in {yaml_path}, got {type(value).__name__}")
+        msg = f"Expected dict at '{key}' in {yaml_path}, got {type(value).__name__}"
+        raise TypeError(msg)
     return value
 
 
 def _require_str(data: dict[str, Any], key: str, yaml_path: str) -> str:
     if key not in data:
-        raise KeyError(f"Required key '{key}' missing in {yaml_path}")
+        msg = f"Required key '{key}' missing in {yaml_path}"
+        raise KeyError(msg)
     value = data[key]
     if not isinstance(value, str):
-        raise TypeError(f"Expected str at '{key}' in {yaml_path}, got {type(value).__name__}")
+        msg = f"Expected str at '{key}' in {yaml_path}, got {type(value).__name__}"
+        raise TypeError(msg)
     return value
 
 
 def _require_bool(data: dict[str, Any], key: str, yaml_path: str) -> bool:
     if key not in data:
-        raise KeyError(f"Required key '{key}' missing in {yaml_path}")
+        msg = f"Required key '{key}' missing in {yaml_path}"
+        raise KeyError(msg)
     value = data[key]
     if not isinstance(value, bool):
-        raise TypeError(f"Expected bool at '{key}' in {yaml_path}, got {type(value).__name__}")
+        msg = f"Expected bool at '{key}' in {yaml_path}, got {type(value).__name__}"
+        raise TypeError(msg)
     return value
 
 
 def _reject_unknown_keys(data: dict[str, Any], schema: type, section: str, yaml_path: str) -> None:
     unknown = sorted(set(data) - {f.name for f in fields(schema)})
     if unknown:
-        raise KeyError(f"Unknown key(s) {unknown} in {section} of {yaml_path}")
+        msg = f"Unknown key(s) {unknown} in {section} of {yaml_path}"
+        raise KeyError(msg)
 
 
 def _parse_oracle_paths_partial(data: dict[str, Any], yaml_path: str) -> _OraclePathsPartial:
@@ -124,16 +131,17 @@ def _parse_generators(data: dict[str, Any], yaml_path: str) -> dict[str, dict[st
     generators: dict[str, dict[str, str]] = {}
     for category, tables in data.items():
         if not isinstance(tables, dict) or not tables:
-            raise TypeError(f"Expected a mapping of roles to oracle paths at generators.{category} in {yaml_path}")
+            msg = f"Expected a mapping of roles to oracle paths at generators.{category} in {yaml_path}"
+            raise TypeError(msg)
         roles: dict[str, str] = {}
         for role, template in tables.items():
             if not isinstance(template, str):
-                raise TypeError(f"Expected an oracle path at generators.{category}.{role} in {yaml_path}")
+                msg = f"Expected an oracle path at generators.{category}.{role} in {yaml_path}"
+                raise TypeError(msg)
             unknown = [name for name in PLACEHOLDER_PATTERN.findall(template) if name not in roles]
             if unknown:
-                raise KeyError(
-                    f"generators.{category}.{role} in {yaml_path} names {unknown}, which no earlier role of it rolls"
-                )
+                msg = f"generators.{category}.{role} in {yaml_path} names {unknown}, which no earlier role of it rolls"
+                raise KeyError(msg)
             roles[str(role)] = template
         generators[str(category)] = roles
     return generators
@@ -169,7 +177,8 @@ def _parse_setting_config(data: dict[str, Any], yaml_path: str) -> _SettingConfi
     _reject_unknown_keys(data, _SettingConfig, "the setting", yaml_path)
     setting_id = _require_str(data, "id", yaml_path)
     if setting_id != Path(yaml_path).stem:
-        raise ValueError(f"Setting id '{setting_id}' must equal the file name '{Path(yaml_path).stem}' in {yaml_path}")
+        msg = f"Setting id '{setting_id}' must equal the file name '{Path(yaml_path).stem}' in {yaml_path}"
+        raise ValueError(msg)
     parent_raw = data.get("parent")
     return _SettingConfig(
         id=setting_id,
@@ -192,14 +201,16 @@ def _resolve_oracle_paths(chain: list[_SettingConfig], yaml_path: str) -> Oracle
             val = getattr(cfg.oracle_paths, attr)
             if val is not None:
                 return str(val)
-        raise KeyError(f"oracle_paths.{attr} missing in setting chain ending at {yaml_path}")
+        msg = f"oracle_paths.{attr} missing in setting chain ending at {yaml_path}"
+        raise KeyError(msg)
 
     def pick_str_list(attr: str) -> list[str]:
         for cfg in chain:
             val = getattr(cfg.oracle_paths, attr)
             if val is not None:
                 return [str(item) for item in val]
-        raise KeyError(f"oracle_paths.{attr} missing in setting chain ending at {yaml_path}")
+        msg = f"oracle_paths.{attr} missing in setting chain ending at {yaml_path}"
+        raise KeyError(msg)
 
     return OraclePaths(
         action_theme=pick_str_list("action_theme"),
@@ -214,14 +225,16 @@ def _resolve_creation_flow(chain: list[_SettingConfig], yaml_path: str) -> Creat
             val = getattr(cfg.creation_flow, attr)
             if val is not None:
                 return bool(val)
-        raise KeyError(f"creation_flow.{attr} missing in setting chain ending at {yaml_path}")
+        msg = f"creation_flow.{attr} missing in setting chain ending at {yaml_path}"
+        raise KeyError(msg)
 
     def pick_str_list(attr: str) -> list[str]:
         for cfg in chain:
             val = getattr(cfg.creation_flow, attr)
             if val is not None:
                 return [str(item) for item in val]
-        raise KeyError(f"creation_flow.{attr} missing in setting chain ending at {yaml_path}")
+        msg = f"creation_flow.{attr} missing in setting chain ending at {yaml_path}"
+        raise KeyError(msg)
 
     return CreationFlow(
         has_truths=pick_bool("has_truths"),
@@ -246,7 +259,8 @@ class SettingPackage:
 
         rulesets = {pkg.datasworn_id: pkg.ruleset_id for pkg in self.chain()}
         if len(set(rulesets.values())) > 1:
-            raise ValueError(f"The setting chain ending at {yaml_path} names more than one ruleset: {rulesets}")
+            msg = f"The setting chain ending at {yaml_path} names more than one ruleset: {rulesets}"
+            raise ValueError(msg)
 
         chain = [pkg._config for pkg in self.chain()]
         self._oracle_paths = _resolve_oracle_paths(chain, yaml_path)
@@ -256,7 +270,8 @@ class SettingPackage:
             self._generators.update(ancestor_config.generators)
         tones = [cfg.default_tone for cfg in chain if cfg.default_tone is not None]
         if not tones:
-            raise KeyError(f"default_tone missing in setting chain ending at {yaml_path}")
+            msg = f"default_tone missing in setting chain ending at {yaml_path}"
+            raise KeyError(msg)
         self._default_tone = tones[0]
 
         if config.vocabulary.is_empty() and parent is not None:
@@ -322,7 +337,8 @@ class SettingPackage:
             table = pkg._data.oracle(path)
             if table is not None:
                 return table
-        raise KeyError(f"Oracle table '{path}' not found in the setting chain of {self.id}")
+        msg = f"Oracle table '{path}' not found in the setting chain of {self.id}"
+        raise KeyError(msg)
 
     def table_by_id(self, datasworn_id: str) -> OracleTable | None:
         owner, path = link_owner_and_path(datasworn_id)
@@ -331,7 +347,8 @@ class SettingPackage:
             return None
         table = pkg._data.oracle(path)
         if table is None:
-            raise KeyError(f"Oracle '{datasworn_id}' not found in {owner}")
+            msg = f"Oracle '{datasworn_id}' not found in {owner}"
+            raise KeyError(msg)
         return table
 
     def roll_action_theme(self) -> tuple[str, str]:
@@ -340,7 +357,8 @@ class SettingPackage:
 
     def generator_tables(self, category: str) -> dict[str, str]:
         if category not in self._generators:
-            raise KeyError(f"No generator tables for {category!r} in the setting chain of {self.id}")
+            msg = f"No generator tables for {category!r} in the setting chain of {self.id}"
+            raise KeyError(msg)
         return dict(self._generators[category])
 
     def name_tables(self, category: str) -> dict[str, OracleTable]:
@@ -357,7 +375,8 @@ def list_packages() -> list[str]:
 def _read_yaml(setting_id: str) -> tuple[dict[str, Any], Path]:
     yaml_path = _SETTINGS_DIR / f"{setting_id}.yaml"
     if not yaml_path.exists():
-        raise FileNotFoundError(f"Setting package not found: {yaml_path}")
+        msg = f"Setting package not found: {yaml_path}"
+        raise FileNotFoundError(msg)
     with Path(yaml_path).open(encoding="utf-8") as f:
         raw = yaml.safe_load(f)
     return raw, yaml_path

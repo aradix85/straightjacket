@@ -49,9 +49,10 @@ def generate_epilogue(provider: AIProvider, game: GameState) -> str:
 
 def start_new_chapter(provider: AIProvider, game: GameState) -> str:
     if game.game_over:
-        raise RuntimeError(
+        msg = (
             "start_new_chapter called on a game with game_over=True; a game that is over continues through succession."
         )
+        raise RuntimeError(msg)
     log(f"[Campaign] Starting chapter {game.campaign.chapter_number + 1} for {game.player_name}")
 
     chapter_summary = _close_previous_chapter(game)

@@ -17,14 +17,16 @@ if TYPE_CHECKING:
 def check_expectations(spec: dict[str, Any]) -> None:
     unknown = [target for target in spec["expect"] if target not in TARGETS]
     if unknown:
-        raise ValueError(f"Unknown coverage targets in scenario: {unknown}")
+        msg = f"Unknown coverage targets in scenario: {unknown}"
+        raise ValueError(msg)
 
 
 def _set_resources(game: GameState, resources: dict[str, Any]) -> list[str]:
     notes = []
     for name, value in resources.items():
         if name not in game.resources.meters:
-            raise KeyError(f"The scenario sets {name!r}, which is no meter of {game.setting_id}")
+            msg = f"The scenario sets {name!r}, which is no meter of {game.setting_id}"
+            raise KeyError(msg)
         amount = max_momentum(game) if value == "max" else int(value)
         game.resources.meters[name] = amount
         notes.append(f"{name} {amount}")

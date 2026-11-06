@@ -56,9 +56,11 @@ class BlueprintSeed:
 
 def _scene_ranges_evenly_split(total_range: list[int], act_count: int) -> list[list[int]]:
     if len(total_range) != 2:
-        raise ValueError(f"scene_range_default must have length 2, got {total_range}")
+        msg = f"scene_range_default must have length 2, got {total_range}"
+        raise ValueError(msg)
     if act_count < 1:
-        raise ValueError(f"act_count must be >= 1, got {act_count}")
+        msg = f"act_count must be >= 1, got {act_count}"
+        raise ValueError(msg)
     start, end = total_range[0], total_range[1]
     span = end - start + 1
     base = span // act_count
@@ -131,10 +133,12 @@ def materialize_blueprint(seed: BlueprintSeed, voicing: dict[str, Any]) -> Story
 
     voicing_acts = list(voicing["acts"])
     if len(voicing_acts) != len(seed.acts):
-        raise ValueError(f"voicing returned {len(voicing_acts)} acts, seed has {len(seed.acts)}")
+        msg = f"voicing returned {len(voicing_acts)} acts, seed has {len(seed.acts)}"
+        raise ValueError(msg)
     voicing_revelations = list(voicing["revelations"])
     if len(voicing_revelations) != len(seed.acts):
-        raise ValueError(f"voicing returned {len(voicing_revelations)} revelations, seed has {len(seed.acts)} acts")
+        msg = f"voicing returned {len(voicing_revelations)} revelations, seed has {len(seed.acts)} acts"
+        raise ValueError(msg)
     acts: list[StoryAct] = []
     revelations: list[Revelation] = []
     for i, (act_seed, act, revelation) in enumerate(zip(seed.acts, voicing_acts, voicing_revelations, strict=True)):
@@ -160,9 +164,8 @@ def materialize_blueprint(seed: BlueprintSeed, voicing: dict[str, Any]) -> Story
 
     voicing_endings = list(voicing["possible_endings"])
     if len(voicing_endings) != bp_cfg.possible_endings_per_blueprint:
-        raise ValueError(
-            f"voicing returned {len(voicing_endings)} endings, expected {bp_cfg.possible_endings_per_blueprint}"
-        )
+        msg = f"voicing returned {len(voicing_endings)} endings, expected {bp_cfg.possible_endings_per_blueprint}"
+        raise ValueError(msg)
     possible_endings = [PossibleEnding(type=v["type"], description=v["description"]) for v in voicing_endings]
 
     return StoryBlueprint(

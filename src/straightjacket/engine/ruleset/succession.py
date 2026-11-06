@@ -84,10 +84,11 @@ def apply_npc_carryover(game: GameState) -> tuple[list[NpcData], list[ProgressTr
 
     for npc in game.npcs:
         if npc.status not in carryover:
-            raise ValueError(
+            msg = (
                 f"NPC {npc.id} has status {npc.status!r} with no succession.npc_carryover rule. "
                 f"Update ruleset/succession.yaml or NPC status."
             )
+            raise ValueError(msg)
         rule = carryover[npc.status]
         if not rule.keep:
             log(f"[Succession] Pruning {npc.status} NPC: {npc.name} ({npc.id})")

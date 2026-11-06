@@ -15,7 +15,8 @@ def reject_unknown(cls: type, data: dict[str, Any]) -> dict[str, Any]:
     known = {f.name for f in dataclasses.fields(cls)}
     unknown = set(data.keys()) - known
     if unknown:
-        raise ValueError(f"Unknown keys for {cls.__name__}: {sorted(unknown)}")
+        msg = f"Unknown keys for {cls.__name__}: {sorted(unknown)}"
+        raise ValueError(msg)
     return data
 
 

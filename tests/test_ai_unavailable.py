@@ -29,7 +29,8 @@ class _NarratorDown(TurnProvider):
     @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         if spec.json_schema is None:
-            raise ConnectionError("narrator unreachable")
+            msg = "narrator unreachable"
+            raise ConnectionError(msg)
         return super().create_message(spec)
 
 

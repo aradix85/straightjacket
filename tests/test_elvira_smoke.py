@@ -174,7 +174,8 @@ def test_a_failed_load_back_is_reported_not_raised(
     _mock_direct_runner(monkeypatch, tmp_path)
 
     def broken_load(username: str, name: str) -> tuple[object, list[object]]:
-        raise RuntimeError("UNIQUE constraint failed: threads.id")
+        msg = "UNIQUE constraint failed: threads.id"
+        raise RuntimeError(msg)
 
     monkeypatch.setattr(runner, "load_game", broken_load)
     bot_cfg = runner.load_config(ELVIRA_CONFIG)

@@ -12,7 +12,8 @@ from straightjacket.engine.models import BrainResult, FactRequest, GameState, Re
 def _npc_disposition(game: GameState, request: FactRequest) -> int:
     npc = find_npc(game, request.about)
     if npc is None:
-        raise ValueError(f"fact input npc_disposition needs an NPC, got about={request.about!r}")
+        msg = f"fact input npc_disposition needs an NPC, got about={request.about!r}"
+        raise ValueError(msg)
     return gm().fate.likelihood_rules.disposition_scores[npc.disposition]
 
 
@@ -39,7 +40,8 @@ def _about_name(game: GameState, request: FactRequest) -> str:
         return game.world.current_location
     npc = find_npc(game, request.about)
     if npc is None:
-        raise ValueError(f"fact {request.fact_type!r} is about an NPC that does not exist: {request.about!r}")
+        msg = f"fact {request.fact_type!r} is about an NPC that does not exist: {request.about!r}"
+        raise ValueError(msg)
     return npc.name
 
 
