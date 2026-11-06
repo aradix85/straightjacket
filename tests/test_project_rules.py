@@ -475,23 +475,15 @@ def _class_inherits_mixin(node: ast.ClassDef) -> bool:
 
 def _class_opts_out_serialization(node: ast.ClassDef) -> bool:
     for stmt in node.body:
+        value: ast.expr | None
         if isinstance(stmt, ast.Assign):
-            for target in stmt.targets:
-                if (
-                    isinstance(target, ast.Name)
-                    and target.id == "_NOT_SERIALIZED"
-                    and isinstance(stmt.value, ast.Constant)
-                    and stmt.value.value is True
-                ):
-                    return True
-        elif (
-            isinstance(stmt, ast.AnnAssign)
-            and isinstance(stmt.target, ast.Name)
-            and stmt.target.id == "_NOT_SERIALIZED"
-            and stmt.value is not None
-            and isinstance(stmt.value, ast.Constant)
-            and stmt.value.value is True
-        ):
+            targets, value = stmt.targets, stmt.value
+        elif isinstance(stmt, ast.AnnAssign):
+            targets, value = [stmt.target], stmt.value
+        else:
+            continue
+        named = any(isinstance(target, ast.Name) and target.id == "_NOT_SERIALIZED" for target in targets)
+        if named and isinstance(value, ast.Constant) and value.value is True:
             return True
     return False
 
@@ -831,16 +823,11 @@ def _names_a_node_uses(node: ast.AST) -> list[str]:
         return [alias.name.split(".")[0] for alias in node.names]
     if isinstance(node, ast.ClassDef) and any(isinstance(b, ast.Name) and b.id == "Protocol" for b in node.bases):
         return [item.name for item in node.body if isinstance(item, ast.FunctionDef)]
-    if (
-        isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Name)
-        and node.func.id == "getattr"
-        and len(node.args) >= 2
-        and isinstance(node.args[1], ast.Constant)
-        and isinstance(node.args[1].value, str)
-    ):
-        return [node.args[1].value]
-    return []
+    match node:
+        case ast.Call(func=ast.Name(id="getattr"), args=[_, ast.Constant(value=str() as attribute), *_]):
+            return [attribute]
+        case _:
+            return []
 
 
 def _collect_src_uses() -> dict[Path, set[str]]:

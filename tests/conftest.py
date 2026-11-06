@@ -8,18 +8,11 @@ from typing import TYPE_CHECKING
 import pytest
 
 from straightjacket.engine.ai import provider_base
-from straightjacket.engine.crafters.config import crafter
-from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.questions import install_answers
 from straightjacket.engine.ruleset import answers
-from straightjacket.engine.ruleset.config import rules
-from tests._helpers import install_config
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
-    from tests._helpers import SettingsSet
 
 logging.getLogger("rpg_engine").addHandler(logging.NullHandler())
 
@@ -38,13 +31,3 @@ def _no_backoff_wait(monkeypatch: pytest.MonkeyPatch) -> None:
 def _reset_random() -> Iterator[None]:
     yield
     _random.seed()
-
-
-@pytest.fixture(scope="session")
-def _real_engine() -> SettingsSet:
-    return eng(), gm(), crafter(), rules()
-
-
-@pytest.fixture
-def load_engine(_real_engine: SettingsSet) -> None:
-    install_config(_real_engine)

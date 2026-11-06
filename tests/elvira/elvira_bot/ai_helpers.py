@@ -20,19 +20,18 @@ _PROMPTS_PATH = _HERE / "elvira_prompts.yaml"
 
 ELVIRA_ROLE = "elvira"
 
-_prompts: dict[str, Any] | None = None
+_cache: dict[Path, dict[str, Any]] = {}
 _bot: dict[str, Any] = {}
 
 
 def _load_prompts() -> dict[str, Any]:
-    global _prompts
-    if _prompts is None:
+    if _PROMPTS_PATH not in _cache:
         if not _PROMPTS_PATH.exists():
             msg = f"Elvira prompts not found: {_PROMPTS_PATH}"
             raise FileNotFoundError(msg)
-        with Path(_PROMPTS_PATH).open(encoding="utf-8") as f:
-            _prompts = yaml.safe_load(f)
-    return _prompts
+        with _PROMPTS_PATH.open(encoding="utf-8") as f:
+            _cache[_PROMPTS_PATH] = yaml.safe_load(f)
+    return _cache[_PROMPTS_PATH]
 
 
 def _p(key: str, **kwargs: Any) -> str:

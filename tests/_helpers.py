@@ -8,10 +8,8 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
-from straightjacket.engine import engine_loader
-from straightjacket.engine.crafters import config as crafters_config
+from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.director import new_guidance
-from straightjacket.engine.gamemaster import config as gamemaster_config
 from straightjacket.engine.gamemaster.world import new_world
 from straightjacket.engine.models import (
     BrainResult,
@@ -37,7 +35,6 @@ from straightjacket.engine.models import (
 )
 from straightjacket.engine.models_story import PossibleEnding, Revelation, StoryAct, StoryBlueprint
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
-from straightjacket.engine.ruleset import config as ruleset_config
 from straightjacket.engine.ruleset import move_effects
 from straightjacket.engine.ruleset.legacy import new_campaign
 from straightjacket.engine.ruleset.meters import starting_resources
@@ -51,35 +48,28 @@ if TYPE_CHECKING:
     import pytest
 
     from straightjacket.engine.ai.provider_base import AICallSpec
-    from straightjacket.engine.crafters.config import CrafterSettings
-    from straightjacket.engine.engine_config import EngineSettings
-    from straightjacket.engine.gamemaster.config import GameMasterSettings
     from straightjacket.engine.models import (
         Consequence,
     )
-    from straightjacket.engine.ruleset.config import RulesetSettings
     from straightjacket.engine.ruleset.datasworn import RulesFile
     from straightjacket.engine.ruleset.outcome_result import OutcomeResult
-
-    SettingsSet = tuple[EngineSettings, GameMasterSettings, CrafterSettings, RulesetSettings]
 
 
 def change_config(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     layer: ModuleType,
-    cache: str,
     section: str,
     change: Callable[[dict[str, Any]], None],
 ) -> None:
-    folder = tmp_path / layer._CONFIG_DIR.name
-    shutil.copytree(layer._CONFIG_DIR, folder)
+    layer_folder = layer.__name__.split(".")[-2]
+    folder = tmp_path / layer_folder
+    shutil.copytree(PROJECT_ROOT / layer_folder, folder)
     path = folder / f"{section}.yaml"
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     change(data[section])
     path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
     monkeypatch.setattr(layer, "_CONFIG_DIR", folder)
-    monkeypatch.setattr(layer, cache, None)
 
 
 def fix_dice(monkeypatch: pytest.MonkeyPatch, *rolls: int) -> None:
@@ -426,10 +416,6 @@ def make_blueprint(**kwargs: Any) -> StoryBlueprint:
     kwargs.setdefault("thematic_thread", "")
     kwargs.setdefault("story_complete", False)
     return StoryBlueprint(**kwargs)
-
-
-def install_config(settings: SettingsSet) -> None:
-    engine_loader._eng, gamemaster_config._gm, crafters_config._crafter, ruleset_config._rules = settings
 
 
 def schema_of(spec: AICallSpec) -> dict[str, Any]:

@@ -33,19 +33,18 @@ class RulesetAnswers(Protocol):
     def clock_filled(self, game: GameState, clock: ClockData) -> None: ...
 
 
-_answers: RulesetAnswers | None = None
+_installed: list[RulesetAnswers] = []
 
 
 def install_answers(ruleset: RulesetAnswers) -> None:
-    global _answers
-    _answers = ruleset
+    _installed[:] = [ruleset]
 
 
 def answers() -> RulesetAnswers:
-    if _answers is None:
+    if not _installed:
         msg = "No ruleset answers the game master; the server and Elvira install one when they start"
         raise RuntimeError(msg)
-    return _answers
+    return _installed[0]
 
 
 def outcome_of(result: str) -> str:

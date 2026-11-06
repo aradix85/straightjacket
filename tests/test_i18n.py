@@ -10,7 +10,6 @@ def strings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     strings_file = tmp_path / "strings" / "test.yaml"
     strings_file.parent.mkdir()
     monkeypatch.setattr(i18n, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(i18n, "_strings", None)
     return strings_file
 
 

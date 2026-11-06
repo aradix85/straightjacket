@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from starlette.testclient import TestClient
 from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, AIUnavailableError
@@ -296,9 +297,10 @@ def test_a_reload_drops_a_standing_burn_and_shows_the_end_while_a_reconnect_offe
     session, _ws, _provider = _dying_on_a_miss(monkeypatch, tmp_path, TurnProvider(_HEAL))
     monkeypatch.setattr(server, "active_session", session)
 
-    reconnected = RecordingWebSocket()
-    asyncio.run(server._send_initial_state(reconnected))
-    assert _types(reconnected)[-2:] == ["player_selected", "burn_offer"]
+    with TestClient(server.app).websocket_connect("/ws") as reconnected:
+        reconnected.send_json({"type": "list_saves"})
+        initial_state = list(iter(lambda: reconnected.receive_json()["type"], "saves_list"))
+    assert initial_state == ["ui_strings", "players_list", "player_selected", "burn_offer"]
 
     reloaded = RecordingWebSocket()
     asyncio.run(handlers.handle_select_player(session, reloaded, {"name": "Kael"}))

@@ -69,7 +69,6 @@ def test_data_whose_themes_disagree_with_the_theme_die_refuses_to_load(
     bad = tmp_path / "adventure_crafter.json"
     bad.write_text(json.dumps(data), encoding="utf-8")
     monkeypatch.setattr(adventure_crafter, "_AC_DATA_PATH", bad)
-    monkeypatch.setattr(adventure_crafter, "_ac_data", None)
     with pytest.raises(ValueError, match="theme_die_table"):
         load_ac_data()
     with pytest.raises(ValueError, match="theme_die_table"):
@@ -424,7 +423,7 @@ def test_themes_that_disagree_with_the_data_refuse_to_load(tmp_path: Path, monke
     def add_a_theme(section: dict[str, Any]) -> None:
         section["themes"] = [*section["themes"], "horror"]
 
-    change_config(monkeypatch, tmp_path, crafters_config, "_crafter", "adventure_crafter", add_a_theme)
-    monkeypatch.setattr(adventure_crafter, "_ac_data", None)
+    change_config(monkeypatch, tmp_path, crafters_config, "adventure_crafter", add_a_theme)
+    monkeypatch.setattr(adventure_crafter, "_cache", {})
     with pytest.raises(ValueError, match=r"themes .* does not match random_themes theme set"):
         load_ac_data()

@@ -186,15 +186,13 @@ def _load_config_file() -> dict[str, Any]:
     return data
 
 
-_cfg: AppConfig | None = None
+_cache: dict[Path, AppConfig] = {}
 
 
 def cfg() -> AppConfig:
-    global _cfg
-    if _cfg is None:
-        data = _load_config_file()
-        _cfg = _parse_config(data)
-    return _cfg
+    if _CONFIG_PATH not in _cache:
+        _cache[_CONFIG_PATH] = _parse_config(_load_config_file())
+    return _cache[_CONFIG_PATH]
 
 
 def narration_language() -> str:

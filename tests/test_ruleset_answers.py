@@ -14,13 +14,13 @@ from tests._helpers import make_game_state, make_npc, make_progress_track, make_
 
 
 def test_the_server_installs_the_ironsworn_answers_when_it_starts(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(questions, "_answers", None)
+    monkeypatch.setattr(questions, "_installed", [])
     with TestClient(app):
         assert questions.answers() is answers
 
 
 def test_without_installed_answers_the_game_master_cannot_ask(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(questions, "_answers", None)
+    monkeypatch.setattr(questions, "_installed", [])
     with pytest.raises(RuntimeError, match="No ruleset answers"):
         questions.answers()
 

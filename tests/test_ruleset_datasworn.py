@@ -4,12 +4,13 @@ from typing import Any
 import pytest
 import yaml
 
+from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.setting import packages
 from straightjacket.engine.setting.packages import load_package
 
-_REAL_SETTINGS = packages._SETTINGS_DIR
+_REAL_SETTINGS = PROJECT_ROOT / "data" / "settings"
 
 
 @pytest.fixture

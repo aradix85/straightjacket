@@ -262,7 +262,7 @@ class SettingPackage:
             msg = f"The setting chain ending at {yaml_path} names more than one ruleset: {rulesets}"
             raise ValueError(msg)
 
-        chain = [pkg._config for pkg in self.chain()]
+        chain = [pkg.config for pkg in self.chain()]
         self._oracle_paths = _resolve_oracle_paths(chain, yaml_path)
         self._creation_flow = _resolve_creation_flow(chain, yaml_path)
         self._generators: dict[str, dict[str, str]] = {}
@@ -278,6 +278,10 @@ class SettingPackage:
             self._vocabulary = parent.vocabulary
         else:
             self._vocabulary = config.vocabulary
+
+    @property
+    def config(self) -> _SettingConfig:
+        return self._config
 
     @property
     def id(self) -> str:
@@ -324,17 +328,16 @@ class SettingPackage:
         return self._creation_flow
 
     def chain(self) -> Iterator[SettingPackage]:
-        pkg: SettingPackage | None = self
-        while pkg is not None:
-            yield pkg
-            pkg = pkg._parent
+        yield self
+        if self._parent is not None:
+            yield from self._parent.chain()
 
     def has_oracle(self, path: str) -> bool:
-        return any(pkg._data.oracle(path) is not None for pkg in self.chain())
+        return any(pkg.data.oracle(path) is not None for pkg in self.chain())
 
     def oracle_table(self, path: str) -> OracleTable:
         for pkg in self.chain():
-            table = pkg._data.oracle(path)
+            table = pkg.data.oracle(path)
             if table is not None:
                 return table
         msg = f"Oracle table '{path}' not found in the setting chain of {self.id}"
@@ -345,7 +348,7 @@ class SettingPackage:
         pkg = next((p for p in self.chain() if p.datasworn_id == owner), None)
         if pkg is None:
             return None
-        table = pkg._data.oracle(path)
+        table = pkg.data.oracle(path)
         if table is None:
             msg = f"Oracle '{datasworn_id}' not found in {owner}"
             raise KeyError(msg)

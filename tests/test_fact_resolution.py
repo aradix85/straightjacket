@@ -426,7 +426,7 @@ def test_facts_survive_a_save_round_trip() -> None:
 def test_fact_resolution_yaml_with_a_wrong_value_refuses_to_load(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, change: Callable[[dict[str, object]], None], message: str
 ) -> None:
-    change_config(monkeypatch, tmp_path, gamemaster_config, "_gm", "fact_resolution", change)
+    change_config(monkeypatch, tmp_path, gamemaster_config, "fact_resolution", change)
     with pytest.raises(ValueError, match=message):
         gamemaster_config.gm()
 

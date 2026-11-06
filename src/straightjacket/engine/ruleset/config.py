@@ -43,6 +43,8 @@ from straightjacket.engine.ruleset.config_types import (
 from straightjacket.engine.yaml_merge import load_yaml_dir
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from straightjacket.engine.ruleset.config_types import (
         MoveAvailabilityCondition,
     )
@@ -226,13 +228,12 @@ def parse_ruleset_yaml(data: dict[str, Any]) -> RulesetSettings:
     )
 
 
-_rules: RulesetSettings | None = None
+_cache: dict[Path, RulesetSettings] = {}
 
 
 def rules() -> RulesetSettings:
-    global _rules
-    if _rules is None:
+    if _CONFIG_DIR not in _cache:
         data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="The ruleset/ directory ships with the repo.")
-        _rules = parse_ruleset_yaml(data)
+        _cache[_CONFIG_DIR] = parse_ruleset_yaml(data)
         log(f"[Config] Loaded {_CONFIG_DIR} ({len(data)} sections)")
-    return _rules
+    return _cache[_CONFIG_DIR]

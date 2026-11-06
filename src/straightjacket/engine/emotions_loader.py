@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from straightjacket.engine.config_loader import PROJECT_ROOT
@@ -6,18 +7,15 @@ from straightjacket.engine.yaml_merge import load_yaml_dir
 
 _EMOTIONS_DIR = PROJECT_ROOT / "emotions"
 
-_data: dict[str, Any] | None = None
+_cache: dict[Path, dict[str, Any]] = {}
 
 
 def _ensure_loaded() -> dict[str, Any]:
-    global _data
-    if _data is None:
-        _data = load_yaml_dir(
-            _EMOTIONS_DIR,
-            missing_dir_hint="The emotions/ directory ships with the repo.",
-        )
-        log(f"[Emotions] Loaded {_EMOTIONS_DIR} ({len(_data)} sections)")
-    return _data
+    if _EMOTIONS_DIR not in _cache:
+        data = load_yaml_dir(_EMOTIONS_DIR, missing_dir_hint="The emotions/ directory ships with the repo.")
+        _cache[_EMOTIONS_DIR] = data
+        log(f"[Emotions] Loaded {_EMOTIONS_DIR} ({len(data)} sections)")
+    return _cache[_EMOTIONS_DIR]
 
 
 def importance_map() -> dict[str, int]:

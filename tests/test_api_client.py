@@ -76,7 +76,6 @@ def two_providers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, 
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.safe_dump(data), encoding="utf-8")
     monkeypatch.setattr(config_loader, "_CONFIG_PATH", config_file)
-    monkeypatch.setattr(config_loader, "_cfg", None)
     adapters = {"fast": _FakeAdapter("fast", ["model-a"]), "prose": _FakeAdapter("prose", ["model-b"])}
     monkeypatch.setattr(api_client, "build_adapter", lambda name, _pc: adapters[name])
     return adapters

@@ -61,7 +61,6 @@ def read_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Callable[[di
         path = tmp_path / "config.yaml"
         path.write_text(yaml.safe_dump(data), encoding="utf-8")
         monkeypatch.setattr(config_loader, "_CONFIG_PATH", path)
-        monkeypatch.setattr(config_loader, "_cfg", None)
         config_loader.cfg()
 
     return read
@@ -166,7 +165,6 @@ def test_the_users_folder_defaults_to_the_project() -> None:
 
 def test_a_missing_config_file_says_how_to_restore_it(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(config_loader, "_CONFIG_PATH", tmp_path / "config.yaml")
-    monkeypatch.setattr(config_loader, "_cfg", None)
     with pytest.raises(FileNotFoundError, match="restore it from git"):
         config_loader.cfg()
 
@@ -175,7 +173,6 @@ def test_a_config_file_that_is_not_a_mapping_stops_loading(monkeypatch: pytest.M
     path = tmp_path / "config.yaml"
     path.write_text("- server\n", encoding="utf-8")
     monkeypatch.setattr(config_loader, "_CONFIG_PATH", path)
-    monkeypatch.setattr(config_loader, "_cfg", None)
     with pytest.raises(TypeError, match="not a valid YAML dict"):
         config_loader.cfg()
 

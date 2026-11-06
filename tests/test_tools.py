@@ -115,6 +115,6 @@ def test_an_engine_fault_in_a_tool_propagates(monkeypatch: pytest.MonkeyPatch) -
         msg = "missing"
         raise KeyError(msg)
 
-    monkeypatch.setitem(registry._registry, "broken", (broken, {}))
+    monkeypatch.setattr(registry, "_registry", {"broken": (broken, {})})
     with pytest.raises(KeyError, match="missing"):
         execute_tool_call("broken", {}, make_game_state())

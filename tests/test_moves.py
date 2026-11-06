@@ -138,6 +138,8 @@ class TestStarforgedMoves:
             ro.condition_meter for c in cyg.conditions for ro in c.roll_options if ro.using == "condition_meter"
         ] == ["supply"]
 
+
+class TestStarforgedMoveSet:
     @staticmethod
     def test_all_categories_present() -> None:
         moves = get_moves("starforged")

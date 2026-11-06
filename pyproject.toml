@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.06.5"
+version = "2026.11.06.6"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -33,14 +33,10 @@ ignore = [
     # taken up in later releases, one group at a time:
     "any-type",
     "complex-structure",
-    "global-statement",
-    "private-member-access",
     "too-many-arguments",
-    "too-many-boolean-expressions",
     "too-many-branches",
     "too-many-locals",
     "too-many-positional-arguments",
-    "too-many-public-methods",
     "too-many-return-statements",
     "too-many-statements",
 ]
@@ -106,7 +102,7 @@ enable_error_code = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-usefixtures = ["_ruleset_answers", "_no_backoff_wait", "_reset_random", "load_engine"]
+usefixtures = ["_ruleset_answers", "_no_backoff_wait", "_reset_random"]
 asyncio_mode = "strict"
 
 [tool.coverage.run]

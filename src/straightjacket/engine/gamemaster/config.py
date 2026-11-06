@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from straightjacket.engine.config_binding import RawSections, build_strict, reject_unknown
 from straightjacket.engine.config_loader import PROJECT_ROOT
@@ -64,6 +64,9 @@ from straightjacket.engine.gamemaster.config_types import (
 )
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.yaml_merge import load_yaml_dir
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _CONFIG_DIR = PROJECT_ROOT / "gamemaster"
 
@@ -326,13 +329,12 @@ def parse_gamemaster_yaml(data: dict[str, Any]) -> GameMasterSettings:
     )
 
 
-_gm: GameMasterSettings | None = None
+_cache: dict[Path, GameMasterSettings] = {}
 
 
 def gm() -> GameMasterSettings:
-    global _gm
-    if _gm is None:
+    if _CONFIG_DIR not in _cache:
         data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="The gamemaster/ directory ships with the repo.")
-        _gm = parse_gamemaster_yaml(data)
+        _cache[_CONFIG_DIR] = parse_gamemaster_yaml(data)
         log(f"[Config] Loaded {_CONFIG_DIR} ({len(data)} sections)")
-    return _gm
+    return _cache[_CONFIG_DIR]

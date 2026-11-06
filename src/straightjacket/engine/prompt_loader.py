@@ -1,17 +1,19 @@
+from pathlib import Path
+
 from straightjacket.engine.config_loader import PROJECT_ROOT, cfg
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.yaml_merge import load_text_dir
 
-_prompts: dict[str, str] | None = None
+_cache: dict[Path, dict[str, str]] = {}
 
 
 def _ensure_loaded() -> dict[str, str]:
-    global _prompts
-    if _prompts is None:
-        directory = PROJECT_ROOT / cfg().ai.prompts_dir
-        _prompts = load_text_dir(directory, missing_dir_hint="Check ai.prompts_dir in config.yaml.")
-        log(f"[Prompts] Loaded {len(_prompts)} prompts from {directory}")
-    return _prompts
+    directory = PROJECT_ROOT / cfg().ai.prompts_dir
+    if directory not in _cache:
+        prompts = load_text_dir(directory, missing_dir_hint="Check ai.prompts_dir in config.yaml.")
+        _cache[directory] = prompts
+        log(f"[Prompts] Loaded {len(prompts)} prompts from {directory}")
+    return _cache[directory]
 
 
 _PREFIX_MARKER = "\x00"

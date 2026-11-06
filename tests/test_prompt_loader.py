@@ -11,7 +11,6 @@ def prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     prompts_file = tmp_path / cfg().ai.prompts_dir / "test.yaml"
     prompts_file.parent.mkdir(parents=True)
     monkeypatch.setattr(prompt_loader, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(prompt_loader, "_prompts", None)
     return prompts_file
 
 

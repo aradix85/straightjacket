@@ -8,6 +8,17 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.06.6] — 2026-11-06
+
+Module state and private access, the seventh step of the user's request: ruff's rules on the `global` statement, access to a private member, too many public methods, and too many boolean expressions leave the later groups.
+
+- The loaders of `config.yaml`, the yaml stores, the prompts, the strings, the emotions, and the Mythic and Adventure Crafter data keep what they loaded in a dict keyed by the path they read, no longer in a global they rebind, and Elvira's prompts likewise; the game master's installed ruleset answers are a one-place list (`gamemaster/questions.py` → `install_answers`). A test that points a loader at another file or folder now gets that file's content without clearing the cache, so those resets are gone.
+- `load_engine`, which reinstalled the real configuration before every test, is gone with its helper, since each test that changes the configuration restores it through `monkeypatch` and the suite passes without it; `tests/_helpers.py` → `change_config` finds the layer's folder from its module.
+- A setting package reads its ancestors through their public `config` and `data` and walks its chain through its own parent (`setting/packages.py` → `SettingPackage.chain`). No test reads or sets a private attribute any more, though `monkeypatch` still sets private names by their string: the reconnect after a game over connects through the server's WebSocket, the broken tool replaces the registry, and the settings folder is named from the project root.
+- The Starforged move tests split their checks of the whole move set into a class of their own; two project-rule checks read a constant assignment and a `getattr` name with fewer conditions.
+
+Quality gate: 1896 tests, coverage 96.08%, mypy clean on 267 files, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: nothing the game does changes.
+
 ## [2026.11.06.5] — 2026-11-06
 
 Numbers, booleans, and console output, the sixth step of the user's request: ruff's rules on magic numbers, boolean arguments, comparing with an empty string, membership in a literal, and `print` leave the later groups.

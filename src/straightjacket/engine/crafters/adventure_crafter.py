@@ -12,6 +12,7 @@ from straightjacket.engine.models_story import PlotlineEntry
 
 if TYPE_CHECKING:
     import random
+    from pathlib import Path
 
     from straightjacket.engine.crafters.config import PlotPointRanges
     from straightjacket.engine.models_story import NarrativeState
@@ -19,18 +20,17 @@ if TYPE_CHECKING:
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
 _PLOTLINE_ID_PREFIX = "ac_plot_"
 
-_ac_data: dict[str, Any] | None = None
+_cache: dict[Path, dict[str, Any]] = {}
 
 
 def load_ac_data() -> dict[str, Any]:
-    global _ac_data
-    if _ac_data is None:
+    if _AC_DATA_PATH not in _cache:
         with _AC_DATA_PATH.open(encoding="utf-8") as f:
             data: dict[str, Any] = json.load(f)
         log(f"[AdventureCrafter] Loaded {_AC_DATA_PATH}")
         _validate_random_themes(data)
-        _ac_data = data
-    return _ac_data
+        _cache[_AC_DATA_PATH] = data
+    return _cache[_AC_DATA_PATH]
 
 
 def _validate_random_themes(data: dict[str, Any]) -> None:

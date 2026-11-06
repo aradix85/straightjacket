@@ -211,7 +211,7 @@ def test_elvira_installs_the_ruleset_answers_when_she_starts(monkeypatch: pytest
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
     bot_cfg["session"]["max_turns"] = 1
     bot_cfg["logging"]["print_full_narration"] = False
-    monkeypatch.setattr(questions, "_answers", None)
+    monkeypatch.setattr(questions, "_installed", [])
 
     runner.run_session(bot_cfg, auto_override=True)
 

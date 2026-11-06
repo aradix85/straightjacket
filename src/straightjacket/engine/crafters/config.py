@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from straightjacket.engine.config_binding import RawSections, build_strict, reject_unknown
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.gamemaster.config_types import ClockCreationMappingEntry
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.yaml_merge import load_yaml_dir
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _CONFIG_DIR = PROJECT_ROOT / "crafters"
 
@@ -129,13 +132,12 @@ def parse_crafters_yaml(data: dict[str, Any]) -> CrafterSettings:
     )
 
 
-_crafter: CrafterSettings | None = None
+_cache: dict[Path, CrafterSettings] = {}
 
 
 def crafter() -> CrafterSettings:
-    global _crafter
-    if _crafter is None:
+    if _CONFIG_DIR not in _cache:
         data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="The crafters/ directory ships with the repo.")
-        _crafter = parse_crafters_yaml(data)
+        _cache[_CONFIG_DIR] = parse_crafters_yaml(data)
         log(f"[Config] Loaded {_CONFIG_DIR} ({len(data)} sections)")
-    return _crafter
+    return _cache[_CONFIG_DIR]
