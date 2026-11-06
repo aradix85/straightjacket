@@ -56,7 +56,7 @@ def score_action_roll(
 ) -> RollResult:
     action_die = 0 if held_momentum < 0 and -held_momentum == d1 else d1
     score = min(action_die + stat_value + adds, rules().dice.action_score_max)
-    return RollResult(d1, c1, c2, stat_name, stat_value, score, _result(score, c1, c2), move, match=(c1 == c2))
+    return RollResult(d1, c1, c2, stat_name, stat_value, score, _result(score, c1, c2), move, match=c1 == c2)
 
 
 def downgrade_in_position(game: GameState, roll: RollResult) -> RollResult:

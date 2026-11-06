@@ -68,7 +68,7 @@ def test_every_schema_requires_all_its_properties() -> None:
     problems: list[str] = []
     for name, schema in _every_schema().items():
         _loose_objects(schema, name, problems)
-    assert problems == []
+    assert not problems
 
 
 def test_every_schema_stays_within_anthropics_limit_on_union_typed_fields() -> None:

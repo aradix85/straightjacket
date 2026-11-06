@@ -159,10 +159,10 @@ def _parse_move(raw: dict[str, Any]) -> Move:
     )
 
 
-def _load_moves(rules_file: RulesFile) -> dict[str, Move]:
+def _load_moves(ruleset: RulesFile) -> dict[str, Move]:
     return {
         f"{cat_key}/{move_key}": _parse_move(move_data)
-        for cat_key, cat_data in rules_file.moves.items()
+        for cat_key, cat_data in ruleset.moves.items()
         for move_key, move_data in cat_data["contents"].items()
     }
 

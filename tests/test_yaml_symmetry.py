@@ -72,7 +72,7 @@ class TestMoveCategoriesSymmetry:
                 key = f"{cat}_{res}"
                 if key not in base:
                     missing.append(key)
-        assert missing == [], (
+        assert not missing, (
             f"memory_emotions.base missing keys: {missing}. Every (category, result) combination must be present."
         )
 

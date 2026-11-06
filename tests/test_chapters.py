@@ -157,7 +157,7 @@ def test_a_created_game_moves_into_its_next_chapter() -> None:
         "bonds": 1,
         "discoveries": 0,
     }
-    assert assert_game_state(game, turn=1) == []
+    assert not assert_game_state(game, turn=1)
 
 
 def test_a_chapter_opening_registers_its_people_and_place_beside_a_lore_figure() -> None:

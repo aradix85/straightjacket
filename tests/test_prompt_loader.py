@@ -6,8 +6,8 @@ from straightjacket.engine import prompt_loader
 from straightjacket.engine.config_loader import cfg
 
 
-@pytest.fixture
-def prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+@pytest.fixture(name="prompts")
+def fixture_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     prompts_file = tmp_path / cfg().ai.prompts_dir / "test.yaml"
     prompts_file.parent.mkdir(parents=True)
     monkeypatch.setattr(prompt_loader, "PROJECT_ROOT", tmp_path)

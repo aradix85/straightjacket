@@ -13,8 +13,8 @@ from tests._helpers import fix_dice
 from tests.elvira.elvira_bot.invariants import check_turn_replacement
 
 
-@pytest.fixture
-def dice(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
+@pytest.fixture(name="dice")
+def fixture_dice(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
     counts = {"rolls": 0, "scenes": 0, "scene_roll": 10}
     real_scene = check_scene
 
@@ -85,9 +85,9 @@ def test_a_corrected_miss_can_offer_a_burn() -> None:
 @pytest.mark.usefixtures("dice")
 def test_elvira_accepts_a_replayed_turn_and_a_burn() -> None:
     before, game, narration, offer = _turn_then_correct(TurnProvider(brain_answer(), brain_answer(stat="iron")))
-    assert check_turn_replacement(before, game, narration, 1, "correction", keeps_location=False) == []
+    assert not check_turn_replacement(before, game, narration, 1, "correction", keeps_location=False)
 
     assert offer is not None
     before_burn = copy.deepcopy(game)
     narration, _director = process_momentum_burn(TurnProvider(brain_answer(stat="iron")), game, offer)
-    assert check_turn_replacement(before_burn, game, narration, 1, "momentum burn", keeps_location=True) == []
+    assert not check_turn_replacement(before_burn, game, narration, 1, "momentum burn", keeps_location=True)

@@ -612,8 +612,8 @@ def test_correction_state_ops_npc_merge() -> None:
         memory=[make_memory(scene=2, event="saw fire", importance=5)],
     )
     game.npcs.append(source)
-    ops = [{"op": "npc_merge", "npc_id": "npc_1", "merge_source_id": "npc_3"}]
-    apply_correction_ops(game, ops)
+    state_ops = [{"op": "npc_merge", "npc_id": "npc_1", "merge_source_id": "npc_3"}]
+    apply_correction_ops(game, state_ops)
     assert not any(n.id == "npc_3" for n in game.npcs), "source should be removed"
     target = next(n for n in game.npcs if n.id == "npc_1")
     assert any(m.event == "saw fire" for m in target.memory), "memories should transfer"

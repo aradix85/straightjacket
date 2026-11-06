@@ -115,7 +115,7 @@ def test_a_created_game_plays_a_turn_in_every_playable_setting(
         player_name="Kael",
         background_vow="Keep the archive whole",
     )
-    assert assert_game_state(game, turn=0) == []
+    assert not assert_game_state(game, turn=0)
     force_result(monkeypatch, "MISS")
     _narration, roll, _offer, _director = process_turn(
         TurnProvider(brain_answer()), game, "I slip into the vault", stream=None
@@ -124,4 +124,4 @@ def test_a_created_game_plays_a_turn_in_every_playable_setting(
     assert roll is not None
     assert game.narrative.scene_count == 2
     assert [p.name for p in game.world.places] == ["Archive Vault"]
-    assert assert_game_state(game, turn=1) == []
+    assert not assert_game_state(game, turn=1)

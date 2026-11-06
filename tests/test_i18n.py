@@ -5,8 +5,8 @@ import pytest
 from straightjacket import i18n
 
 
-@pytest.fixture
-def strings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+@pytest.fixture(name="strings")
+def fixture_strings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     strings_file = tmp_path / "strings" / "test.yaml"
     strings_file.parent.mkdir()
     monkeypatch.setattr(i18n, "PROJECT_ROOT", tmp_path)

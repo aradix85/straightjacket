@@ -201,8 +201,8 @@ def edit_distance_le1(a: str, b: str) -> bool:
     if la > lb:
         a, b = b, a
     j = diffs = 0
-    for i in range(len(b)):
-        if j < len(a) and a[j] == b[i]:
+    for letter in b:
+        if j < len(a) and a[j] == letter:
             j += 1
         else:
             diffs += 1

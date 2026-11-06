@@ -97,7 +97,7 @@ def test_a_place_already_seen_is_not_generated() -> None:
     _n, _r, _o, _d = process_turn(provider, game, "I go back to the vault", stream=None)
 
     assert game.world.current_location == "Archive Vault"
-    assert game.world.places == []
+    assert not game.world.places
     assert "<generated" not in provider.prompts[-1]
 
 
@@ -106,7 +106,7 @@ def test_staying_put_generates_nothing() -> None:
     provider = TurnProvider(brain_answer(location_change=None))
     game = library_game()
     _n, _r, _o, _d = process_turn(provider, game, "I search the shelves", stream=None)
-    assert game.world.places == []
+    assert not game.world.places
 
 
 @pytest.mark.usefixtures("miss")

@@ -72,8 +72,8 @@ def _fate(answer: str) -> FateResult:
     return FateResult(answer=answer, random_event_triggered=False)
 
 
-@pytest.fixture
-def counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+@pytest.fixture(name="counted_fate")
+def fixture_counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     calls: list[str] = []
 
     def _resolve(_game: Any, odds: str) -> FateResult:
@@ -124,14 +124,14 @@ def test_moving_clears_the_facts_and_staying_keeps_them() -> None:
     update_location(game, "the abandoned library")
     assert len(game.world.facts) == 1
     update_location(game, "Harbor Market")
-    assert game.world.facts == []
+    assert not game.world.facts
 
 
 def test_a_chapter_start_clears_the_facts() -> None:
     game = _game()
     game.world.facts = [_fact("locked")]
     start_new_chapter(OpeningProvider([], "Ring Dock"), game)
-    assert game.world.facts == []
+    assert not game.world.facts
 
 
 def test_a_succession_clears_the_facts() -> None:
@@ -141,7 +141,7 @@ def test_a_succession_clears_the_facts() -> None:
     prepare_succession(game)
     successor = creation_data("classic", stats=(3, 2, 2, 1, 1), player_name="Ayla", background_vow="Find Kael")
     start_succession_with_character(OpeningProvider([], "Ring Dock"), game, successor)
-    assert game.world.facts == []
+    assert not game.world.facts
 
 
 def test_a_location_correction_clears_the_facts() -> None:
@@ -150,7 +150,7 @@ def test_a_location_correction_clears_the_facts() -> None:
     apply_correction_ops(game, [{"op": "location_edit", "value": "Abandoned Library"}])
     assert len(game.world.facts) == 1
     apply_correction_ops(game, [{"op": "location_edit", "value": "Harbor Market"}])
-    assert game.world.facts == []
+    assert not game.world.facts
 
 
 def test_a_hit_clears_only_the_types_that_say_so() -> None:
@@ -215,13 +215,13 @@ def test_a_doublet_queues_a_random_event(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_the_brain_schema_offers_only_known_types_and_subjects() -> None:
-    facts = brain_schema(["adventure/face_danger"], npc_ids=["npc_1"])["properties"]["undetermined_facts"]
-    place, npc = facts["items"]["anyOf"]
+    fact_schema = brain_schema(["adventure/face_danger"], npc_ids=["npc_1"])["properties"]["undetermined_facts"]
+    place, npc = fact_schema["items"]["anyOf"]
     assert place["properties"]["fact_type"]["enum"] == ["locked", "occupied", "useful"]
     assert place["properties"]["about"]["enum"] == ["here"]
     assert npc["properties"]["fact_type"]["enum"] == ["alert", "present"]
     assert npc["properties"]["about"]["enum"] == ["npc_1"]
-    assert facts["maxItems"] == gm().fact_resolution.max_per_turn
+    assert fact_schema["maxItems"] == gm().fact_resolution.max_per_turn
 
     alone = brain_schema(["adventure/face_danger"])["properties"]["undetermined_facts"]
     assert len(alone["items"]["anyOf"]) == 1
@@ -291,7 +291,7 @@ def test_a_hit_clears_the_fact_but_the_narrator_still_gets_it(monkeypatch: pytes
     game = _game()
     _n, _r, _o, _d = process_turn(provider, game, "I force the vault door", stream=None)
 
-    assert game.world.facts == []
+    assert not game.world.facts
     assert "<facts>" in provider.prompts[-1]
 
 
@@ -351,7 +351,7 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
 
     _narration, _director = process_momentum_burn(provider, game, offer)
 
-    assert game.world.facts == []
+    assert not game.world.facts
     assert "<facts>" in provider.prompts[-1]
     assert counted_fate == ["fifty_fifty"]
 
@@ -386,7 +386,7 @@ def test_a_burn_to_a_hit_overrules_nothing_useful(monkeypatch: pytest.MonkeyPatc
     _narration, _director = process_momentum_burn(provider, game, offer)
 
     assert gm().fact_resolution.types["useful"].description not in provider.prompts[-1]
-    assert game.world.facts == []
+    assert not game.world.facts
 
 
 def test_a_correction_reuses_the_facts_of_the_turn(counted_fate: list[str], monkeypatch: pytest.MonkeyPatch) -> None:

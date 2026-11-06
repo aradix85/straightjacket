@@ -322,7 +322,7 @@ class _ScriptedRng(random.Random):
         self.values = list(values)
 
     @override
-    def randint(self, low: int, high: int) -> int:
+    def randint(self, _a: int, _b: int) -> int:
         return self.values.pop(0)
 
 
@@ -634,7 +634,7 @@ def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(monkeypa
     )
     assert labels_of(outcome.consequences)[0] == f"Take Decisive Action: {worse}"
     assert game.resources.meters["health"] == 3
-    assert rolled == []
+    assert not rolled
 
 
 @pytest.mark.parametrize(("setting", "clue"), [("starforged", True), ("sundered_isles", True), ("classic", False)])

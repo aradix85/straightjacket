@@ -80,7 +80,7 @@ def test_a_vow_fulfilled_against_a_pressing_threat_tells_it_overcome_once() -> N
     assert [(e.threat_id, e.source) for e in take_pending_threat_events(game)] == [
         ("t_storm", "overcome_under_pressure")
     ]
-    assert take_pending_threat_events(game) == []
+    assert not take_pending_threat_events(game)
 
 
 @pytest.mark.parametrize(

@@ -49,8 +49,8 @@ if TYPE_CHECKING:
     from straightjacket.engine.models import GameState, NpcData, ProgressTrack, TurnSnapshot
 
 
-@pytest.fixture
-def aria() -> GameState:
+@pytest.fixture(name="aria")
+def fixture_aria() -> GameState:
     g = create_game(
         "starforged",
         location="Hearthwood",
@@ -79,7 +79,7 @@ def test_build_predecessor_captures_pre_roll_state(aria: GameState) -> None:
     assert record.legacy_filled_boxes["quests"] == 6
     assert record.legacy_filled_boxes["bonds"] == 2
     assert record.legacy_filled_boxes["discoveries"] == 4
-    assert record.inheritance_rolls == []
+    assert not record.inheritance_rolls
 
 
 def test_run_inheritance_rolls_returns_one_per_legacy_track(aria: GameState) -> None:
@@ -252,7 +252,7 @@ def test_filter_drops_vow_threads() -> None:
         make_thread(id="t2", name="Find ally", thread_type="vow", source="vow"),
     ]
     kept = threads_for_successor(threads)
-    assert kept == []
+    assert not kept
 
 
 def test_filter_drops_creation_threads_regardless_of_type() -> None:
@@ -411,7 +411,7 @@ def test_start_succession_without_pending_raises(aria: GameState) -> None:
     provider = TurnProvider()
     with pytest.raises(ValueError, match="pending_succession"):
         start_succession_with_character(provider, aria, {})
-    assert provider.calls == []
+    assert not provider.calls
 
 
 def test_start_succession_pending_without_predecessor_raises(aria: GameState) -> None:
@@ -421,7 +421,7 @@ def test_start_succession_pending_without_predecessor_raises(aria: GameState) ->
     provider = TurnProvider()
     with pytest.raises(ValueError, match="predecessors"):
         start_succession_with_character(provider, aria, {})
-    assert provider.calls == []
+    assert not provider.calls
 
 
 def test_succession_summary_renders_narrative_text(aria: GameState) -> None:

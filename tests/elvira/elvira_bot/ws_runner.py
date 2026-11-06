@@ -12,9 +12,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest import mock
 
-if TYPE_CHECKING:
-    from tests.elvira.elvira_bot.models import NpcSnapshot
-
 import uvicorn
 import websockets
 
@@ -42,6 +39,9 @@ from tests.elvira.elvira_bot.recorder import record_turn
 from tests.elvira.elvira_bot.report import write_report
 from tests.elvira.elvira_bot.runner import RUNS_DIR, _EventCapture, aggregate_token_stats, selectable_settings
 from tests.elvira.elvira_bot.tokens import TokenMeter
+
+if TYPE_CHECKING:
+    from tests.elvira.elvira_bot.models import NpcSnapshot
 
 SEPARATOR = "=" * 62
 CORRECTION_TEST_INTERVAL = 8

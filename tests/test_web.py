@@ -14,13 +14,13 @@ from straightjacket.engine.models import (
 from straightjacket.engine.persistence import save_game
 from straightjacket.engine.user_management import create_user
 from straightjacket.i18n import t
-from straightjacket.web import handlers
+from straightjacket.web import handlers, server
 from straightjacket.web.serializers import (
     build_creation_options,
     build_narrative_status,
     highlight_dialog,
 )
-from straightjacket.web.server import active_session, app
+from straightjacket.web.server import app
 from straightjacket.web.session import new_session
 from tests._helpers import (
     make_act,
@@ -40,7 +40,7 @@ class TestSession:
         assert not s.player
         assert s.game is None
         assert s.processing is False
-        assert s.chat_messages == []
+        assert not s.chat_messages
         assert s.pending_burn is None
 
     @staticmethod
@@ -108,7 +108,7 @@ class TestSession:
         game_after: GameState | None = s.game
         offer_after: BurnOffer | None = s.pending_burn
         assert game_after is None
-        assert s.chat_messages == []
+        assert not s.chat_messages
         assert offer_after is None
 
 
@@ -174,23 +174,29 @@ class TestBuildCreationOptions:
             assert all(p["id"] and p["title"] for p in s["paths"])
 
 
-@pytest.fixture
-def client() -> TestClient:
+@pytest.fixture(name="client")
+def fixture_client() -> TestClient:
     return TestClient(app)
 
 
-@pytest.mark.usefixtures("_setup")
-class TestWebSocket:
-    @pytest.fixture
-    def _setup(self) -> None:
-        active_session.player = ""
-        active_session.game = None
-        active_session.chat_messages = []
-        active_session.processing = False
-        active_session.active_ws = None
-        active_session.pending_burn = None
-        self.session = active_session
+@pytest.fixture
+def _fresh_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(server, "active_session", new_session())
 
+
+@pytest.fixture
+def _players_in_tmp(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    users = tmp_path / "users"
+    users.mkdir()
+    for target in (
+        "straightjacket.engine.config_loader.USERS_DIR",
+        "straightjacket.engine.user_management.USERS_DIR",
+    ):
+        monkeypatch.setattr(target, users)
+
+
+@pytest.mark.usefixtures("_fresh_session")
+class TestWebSocket:
     @staticmethod
     def test_full_connection_flow(client: TestClient) -> None:
         with client.websocket_connect("/ws") as ws:
@@ -307,25 +313,8 @@ class TestWebSocket:
             ws.receive_json()
 
 
-@pytest.mark.usefixtures("_setup")
+@pytest.mark.usefixtures("_players_in_tmp", "_fresh_session")
 class TestSuccessionWebSocket:
-    @pytest.fixture
-    def _setup(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        users = tmp_path / "users"
-        users.mkdir()
-        for target in (
-            "straightjacket.engine.config_loader.USERS_DIR",
-            "straightjacket.engine.user_management.USERS_DIR",
-        ):
-            monkeypatch.setattr(target, users)
-        active_session.player = ""
-        active_session.game = None
-        active_session.chat_messages = []
-        active_session.processing = False
-        active_session.active_ws = None
-        active_session.pending_burn = None
-        self.session = active_session
-
     @staticmethod
     def _seed_session(player: str = "ws_succ") -> None:
         create_user(player)
@@ -350,8 +339,8 @@ class TestSuccessionWebSocket:
             self._drain_initial(ws)
             ws.send_json({"type": "retire"})
 
-            assert self.session.game is None
-            assert self.session.processing is False
+            assert server.active_session.game is None
+            assert server.active_session.processing is False
 
     def test_retire_with_game_prepares_succession(self, client: TestClient) -> None:
         self._seed_session()
@@ -370,9 +359,9 @@ class TestSuccessionWebSocket:
             assert "Aria" in succ["headline"]
             assert len(succ["inheritance"]) == 3
 
-            assert self.session.game is not None
-            assert self.session.game.campaign.pending_succession is True
-            assert self.session.game.game_over is True
+            assert server.active_session.game is not None
+            assert server.active_session.game.campaign.pending_succession is True
+            assert server.active_session.game.game_over is True
 
     def test_retire_twice_rejected(self, client: TestClient) -> None:
         self._seed_session()

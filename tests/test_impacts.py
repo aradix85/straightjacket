@@ -213,7 +213,7 @@ class TestRecoveryHandlerClearsImpact:
         result = resolve_move_outcome(
             game, "recover/heal", "STRONG_HIT", target_npc_id=None, aided_by=None, match=False
         )
-        assert game.impacts == []
+        assert not game.impacts
         assert any("wounded" in c for c in labels_of(result.consequences)) is wounded
 
 

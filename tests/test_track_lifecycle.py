@@ -129,36 +129,36 @@ class TestTracksStatus:
 def test_progress_track_ticks_per_mark() -> None:
     expected_table = rules().progress.ticks_per_mark
     for rank, expected in expected_table.items():
-        t = make_progress_track(rank=rank)
-        assert ticks_per_mark(t) == expected
+        track = make_progress_track(rank=rank)
+        assert ticks_per_mark(track) == expected
 
 
 def test_progress_track_mark_progress_troublesome() -> None:
-    t = make_progress_track(rank="troublesome", ticks=0)
-    added = mark_progress(t)
+    track = make_progress_track(rank="troublesome", ticks=0)
+    added = mark_progress(track)
     assert added == 12
-    assert t.ticks == 12
-    assert filled_boxes(t) == 3
+    assert track.ticks == 12
+    assert filled_boxes(track) == 3
 
 
 def test_progress_track_mark_progress_epic() -> None:
-    t = make_progress_track(rank="epic", ticks=0)
-    added = mark_progress(t)
+    track = make_progress_track(rank="epic", ticks=0)
+    added = mark_progress(track)
     assert added == 1
-    assert t.ticks == 1
-    assert filled_boxes(t) == 0
+    assert track.ticks == 1
+    assert filled_boxes(track) == 0
 
 
 def test_progress_track_mark_progress_clamps_at_max() -> None:
-    t = make_progress_track(rank="troublesome", ticks=36)
-    added = mark_progress(t)
-    assert t.ticks == 40
+    track = make_progress_track(rank="troublesome", ticks=36)
+    added = mark_progress(track)
+    assert track.ticks == 40
     assert added == 4
 
 
 def test_progress_track_filled_boxes() -> None:
-    t = make_progress_track(ticks=17)
-    assert filled_boxes(t) == 4
+    track = make_progress_track(ticks=17)
+    assert filled_boxes(track) == 4
 
 
 def test_progress_roll_uses_track_boxes() -> None:

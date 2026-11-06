@@ -68,8 +68,8 @@ class APITimeoutError(APIConnectionError):
     pass
 
 
-@pytest.fixture
-def waits(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+@pytest.fixture(name="waits")
+def fixture_waits(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     recorded: list[float] = []
     monkeypatch.setattr(provider_base, "_time", SimpleNamespace(sleep=recorded.append))
     return recorded

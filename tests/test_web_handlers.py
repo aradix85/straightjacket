@@ -45,18 +45,18 @@ def _run(coro: Coroutine[object, object, None]) -> None:
     asyncio.run(coro)
 
 
-@pytest.fixture
-def fake_ws() -> RecordingWebSocket:
+@pytest.fixture(name="fake_ws")
+def fixture_fake_ws() -> RecordingWebSocket:
     return RecordingWebSocket()
 
 
-@pytest.fixture
-def session() -> Session:
+@pytest.fixture(name="session")
+def fixture_session() -> Session:
     return new_session()
 
 
-@pytest.fixture
-def users(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+@pytest.fixture(name="users")
+def fixture_users(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     for target in (
         "straightjacket.engine.config_loader.USERS_DIR",
         "straightjacket.engine.user_management.USERS_DIR",
@@ -78,7 +78,7 @@ def test_a_new_player_without_a_name_is_refused(
 ) -> None:
     _run(handle_create_player(session, fake_ws, msg))
     assert fake_ws.sent == [{"type": "error", "text": t("error.empty_player_name")}]
-    assert list(users.iterdir()) == []
+    assert not list(users.iterdir())
 
 
 @pytest.mark.usefixtures("users")
@@ -207,7 +207,7 @@ def test_handle_create_player_invalid_name_is_reported_and_creates_nothing(
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
     _run(handle_create_player(session, fake_ws, {"name": "D:"}))
     assert fake_ws.sent == [{"type": "error", "text": t("error.invalid_name")}]
-    assert list(tmp_path.iterdir()) == []
+    assert not list(tmp_path.iterdir())
 
 
 @pytest.mark.parametrize("name", ["NUL", "   ", ""])
@@ -218,7 +218,7 @@ def test_a_save_under_an_unusable_name_writes_nothing(
     session.player = "Alice"
     _run(handle_save(session, fake_ws, {"name": name}))
     assert fake_ws.sent == [{"type": "error", "text": t("error.invalid_name")}]
-    assert list(users.rglob("*.json")) == []
+    assert not list(users.rglob("*.json"))
 
 
 def test_handle_load_no_player_silent(session: Session, fake_ws: RecordingWebSocket) -> None:
@@ -415,4 +415,4 @@ def test_a_correction_with_no_turn_to_correct_is_refused_outside_the_story(
 
     assert fake_ws.sent == [{"type": "error", "text": t("correction.no_snapshot")}]
     assert (session.chat_messages, session.game.to_dict(), provider.calls) == (opening, before, [])
-    assert list(users.rglob("*.json")) == []
+    assert not list(users.rglob("*.json"))

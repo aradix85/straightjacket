@@ -95,8 +95,8 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
     npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
     actions, clock_events, _ = check_npc_agency(game)
-    assert actions == []
-    assert clock_events == []
+    assert not actions
+    assert not clock_events
 
 
 def test_autonomous_clocks_skip_npc_owned() -> None:

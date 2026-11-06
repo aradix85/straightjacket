@@ -63,7 +63,7 @@ def _should_reject_identity_reveal(npc: NpcData, new_name: str) -> bool:
     for a in npc.aliases:
         known_words |= set(normalize_for_match(a).split())
     new_name_words = set(normalize_for_match(new_name).split())
-    return not (new_name_words & known_words)
+    return new_name_words.isdisjoint(known_words)
 
 
 def _create_stub_for_rejected_reveal(

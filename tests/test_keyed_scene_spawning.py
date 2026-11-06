@@ -283,7 +283,7 @@ def test_ac_spawner_skips_unmapped_plot_points() -> None:
     narrative = make_narrative()
     tp = _turning_point_with_plot_points("A Common Social Gathering", "Dense Urban Setting")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
-    assert narrative.keyed_scenes == []
+    assert not narrative.keyed_scenes
 
 
 def test_ac_spawner_dedups_same_plot_point_within_chapter() -> None:
@@ -323,7 +323,7 @@ def test_ac_spawner_skips_special_range_plot_points() -> None:
         concludes_plotline=True,
     )
     spawn_keyed_scenes_for_turning_point(narrative, tp)
-    assert narrative.keyed_scenes == []
+    assert not narrative.keyed_scenes
 
 
 def test_random_event_spawner_creates_concrete_bond_keyed_scene_for_npc_focus() -> None:
@@ -342,7 +342,7 @@ def test_random_event_spawner_skips_a_bond_scene_for_a_character_without_npc_rec
     game = _seed_game()
     event = make_random_event(focus="npc_action", target="The ferryman", target_id="char_1")
     spawn_keyed_scene_from_random_event(game, event)
-    assert game.narrative.keyed_scenes == []
+    assert not game.narrative.keyed_scenes
 
 
 def test_random_event_spawner_creates_concrete_threat_keyed_scene_for_pc_negative() -> None:
@@ -361,14 +361,14 @@ def test_random_event_spawner_skips_focus_without_mapping() -> None:
     game = _seed_game()
     event = make_random_event(focus="remote_event", target="", target_id="")
     spawn_keyed_scene_from_random_event(game, event)
-    assert game.narrative.keyed_scenes == []
+    assert not game.narrative.keyed_scenes
 
 
 def test_random_event_spawner_skips_event_without_target_id() -> None:
     game = _seed_game()
     event = make_random_event(focus="npc_action", target="", target_id="")
     spawn_keyed_scene_from_random_event(game, event)
-    assert game.narrative.keyed_scenes == []
+    assert not game.narrative.keyed_scenes
 
 
 def test_random_event_spawner_dedups_same_focus_target_pair() -> None:

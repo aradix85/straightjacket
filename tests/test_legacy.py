@@ -146,7 +146,7 @@ class TestAdvanceAsset:
         game.campaign.xp = 2
         assert advance_asset(game, "empath", "new") == "insufficient"
         assert game.campaign.xp_spent == 0
-        assert game.assets == []
+        assert not game.assets
 
     @staticmethod
     def test_an_asset_the_setting_lacks_is_refused() -> None:
@@ -154,7 +154,7 @@ class TestAdvanceAsset:
         game.campaign.xp = 10
         assert advance_asset(game, "no_such_asset", "new") == "unknown"
         assert game.campaign.xp_spent == 0
-        assert game.assets == []
+        assert not game.assets
 
     @staticmethod
     def test_buying_an_asset_already_held_is_refused() -> None:
@@ -163,7 +163,7 @@ class TestAdvanceAsset:
         game.campaign.xp = 10
         assert advance_asset(game, "path/empath", "new") == "held"
         assert game.campaign.xp_spent == 0
-        assert game.assets == []
+        assert not game.assets
 
     @staticmethod
     def test_upgrading_an_asset_not_held_is_refused() -> None:
@@ -171,7 +171,7 @@ class TestAdvanceAsset:
         game.campaign.xp = 10
         assert advance_asset(game, "empath", "upgrade") == "not_held"
         assert game.campaign.xp_spent == 0
-        assert game.asset_abilities == {}
+        assert not game.asset_abilities
 
     @staticmethod
     def test_upgrading_a_fully_upgraded_asset_is_refused() -> None:

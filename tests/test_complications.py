@@ -92,7 +92,7 @@ def test_a_complication_clock_fills_every_scene_and_strikes_when_full() -> None:
     for scene in range(1, 4):
         tick_autonomous_clocks(game)
         assert game.world.clocks[0].filled == scene
-        assert game.world.pending_clock_fills == []
+        assert not game.world.pending_clock_fills
     [event] = tick_autonomous_clocks(game)
     assert event.triggered
     assert game.world.clocks[0].fired

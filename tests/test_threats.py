@@ -141,7 +141,7 @@ class TestMenaceOnMiss:
         game = _game_with_threat()
         game.progress_tracks[0].status = "completed"
         events = advance_menace_on_miss(game)
-        assert events == []
+        assert not events
         assert game.threats[0].menace_ticks == 0
 
     @staticmethod
@@ -149,7 +149,7 @@ class TestMenaceOnMiss:
         game = _game_with_threat()
         game.threats[0].status = "resolved"
         events = advance_menace_on_miss(game)
-        assert events == []
+        assert not events
 
     @staticmethod
     def test_menace_full_event() -> None:
@@ -185,7 +185,7 @@ class TestAdvancesReachTheNarrator:
         [event] = game.world.pending_threat_events
         assert (event.source, event.threat_name) == ("autonomous", "The Beast Awakens")
         assert threats.take_pending_threat_events(game) == [event]
-        assert game.world.pending_threat_events == []
+        assert not game.world.pending_threat_events
         assert '<threat_advance name="The Beast Awakens" menace_full="False" offscreen="true"/>' in dialog_prompt(
             game, threat_events=[event]
         )
@@ -253,7 +253,7 @@ class TestResolveForsakeVow:
         resolve_full_menace(game, result)
         assert game.resources.meters["spirit"] == old_spirit - 2
         assert labels_of(result.consequences) == ['forsake the vow "Hunt the beast"', "spirit -2"]
-        assert result.follow_up_moves == []
+        assert not result.follow_up_moves
 
     @staticmethod
     def test_classic_forsakes_through_endure_stress() -> None:
@@ -288,7 +288,7 @@ class TestResolveForsakeVow:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 30
         events = resolve_full_menace(game, make_outcome())
-        assert events == []
+        assert not events
         assert game.progress_tracks[0].status == "active"
         assert game.threats[0].status == "active"
 
@@ -298,7 +298,7 @@ class TestResolveForsakeVow:
         game.threats[0].menace_ticks = 40
         game.threats[0].status = "resolved"
         events = resolve_full_menace(game, make_outcome())
-        assert events == []
+        assert not events
 
     @staticmethod
     def test_menace_full_vow_already_gone() -> None:
@@ -366,7 +366,7 @@ class TestAVowSwornAgainstAThreat:
         )
         start_track(game, brain, "STRONG_HIT")
         assert vow_against(game, game.threats[0]) is None
-        assert advance_menace_on_miss(game) == []
+        assert not advance_menace_on_miss(game)
 
     @staticmethod
     def test_the_brain_sees_threats_and_may_name_one_without_a_vow() -> None:

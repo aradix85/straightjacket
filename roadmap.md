@@ -130,7 +130,42 @@ README.md and ORIGINS.md are background. For anything else a sub-agent reports w
 
 ---
 
-## NEXT STEP — 18: Asset mechanics beyond adds
+## NEXT STEP — 9y: The strictest linters and type checkers
+
+At the user's request (2026-11-06), taken up before step 18: every check of ruff, mypy, pylint, and pyright at their default limits, with nothing the game does changed. Each group is a release of its own; the groups still to come stand in `pyproject.toml` under "taken up in later releases", in `[tool.ruff.lint]` and in `[tool.pylint."messages control"]`. What is done is under DONE.
+
+- **9y.1 Complexity at the default limits:** too many branches, statements, return statements, and locals, in ruff and in pylint, and mccabe's complexity above 10, in about 12 functions in `src/` and 14 in Elvira, among them her two main loops, `runner.py` → `run_session` and `ws_runner.py` → `run_ws_session`. With mccabe at 10, the project-rule scan of a complexity of at most 20, its radon dependency, and the stub in `stubs/` are redundant and go; once ruff checks the four, pylint's same checks are left to it.
+- **9y.2 pylint's duplicate code and module length:** about 29 copied blocks, many between Elvira's two runners and among game start, chapters, and succession; `tests/test_project_rules.py` is longer than 1000 lines.
+- **9y.3 No `Any`:** ruff's `any-type` and mypy's `disallow_any_explicit` and `disallow_any_expr`, about 540 and then about 9,750 errors when measured: every value from yaml, JSON, and the AI's answers gets a real type.
+- **9y.4 pyright strict,** last, the user's choice: 519 errors before 9y.3 (2026-11-06), most of which 9y.3 removes.
+- **9y.5 pylint's optional extensions and the checks it leaves off by default,** which the user decides one by one, since some clash with their choices: on 2026-11-06 the most frequent were magic values in comparisons (1689, mostly the tests, where the user chose plain numbers), assignment expressions (278), comparisons with zero (65), too many statements in a `try` (30), mccabe's complexity again (24), and a ban on `while` (14).
+
+### Definition of Done
+
+- Every group of the two "taken up in later releases" lists is on, and the lists are gone; what stays off is only what clashes with a project rule, a tool, or a choice of the user, each with its reason.
+- mypy runs with `disallow_any_explicit` and `disallow_any_expr`, and pyright strict is clean over the same paths, in CONTRIBUTING.md's workflow and the pre-commit hook.
+- Nothing the game does changes; an Elvira run follows only a substep that changes how a turn plays.
+
+### Reference patterns
+
+- An ignore with its reason: `[tool.ruff.lint]` and `[tool.pylint."messages control"]` in `pyproject.toml`.
+- Arguments that belong together as one object: `prompt_shared.py` → `PromptScene`, `TurnEvents`.
+- A value from yaml typed where it enters typed code: the typed binding (ARCHITECTURE.md, Configuration).
+
+---
+
+## Next steps
+
+Sketches, in the order of work.
+
+Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
+
+**The Director's tools.** The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and a step that wants another decides whether it becomes a new tool or part of that one. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text.
+
+- A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`).
+- A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
+
+### 18 — Asset mechanics beyond adds
 
 Every character starts with paths and assets, and of their abilities only adds take effect, so the rest is lost from the first turn: a Fated path in the Elvira run after 9w.R did nothing. The user put 18 after 9x and before 9w.1 to 9w.4. It builds on the enabled abilities and the Brain's `bonus_id` (`ruleset/assets.py`, `ruleset/bonuses.py`; `docs/ruleset.md`, Assets).
 
@@ -161,14 +196,14 @@ What this needs: a vow an ability names (the background vow, `vow_background`, o
 
 **18.5** An asset's own state on the game state: its meters and boxes (`controls`; a companion's and a vehicle's with step 19), its options, and what `enhance_asset` changes.
 
-### Definition of Done
+**Definition of Done.**
 
 - Every effect of the abilities 18.1 names takes effect through the real path, each tested with real Datasworn ids as character creation stores them.
 - An ability's effects come from yaml through one pipeline, so step 20 adds assets without Python.
 - Rerolls, upgrades, and starting abilities follow the user's choices; the register entry "Roll bonuses are chosen for the player, and only adds are modelled" leaves, or keeps only what step 20 still adds.
 - An Elvira run where the narrator is told something new, with its cost named first.
 
-### Reference patterns
+**Reference patterns.**
 
 - An add the Brain picks: `ruleset/bonuses.py` → `roll_bonuses`, `chosen_bonus`.
 - Effects from yaml: `ruleset/move_effects.py` → `parse_effects`, `apply_effects`.
@@ -177,22 +212,9 @@ What this needs: a vow an ability names (the background vow, `vow_background`, o
 - A legacy track a rule marks: `ruleset/legacy.py` → `mark_legacy`.
 - Tests through the real path: `tests/_creation.py` → `create_game`, a turn with `TurnProvider` and `force_result`.
 
----
-
-## Next steps
-
-Sketches, in the order of work.
-
-Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
-
-**The Director's tools.** The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and a step that wants another decides whether it becomes a new tool or part of that one. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text.
-
-- A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`).
-- A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
-
 ### 9w — Elvira tests what the engine does
 
-At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026.10.23.2). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone, and set the order within it: 9w.0 (done), then step 9x (done), then step 18 (NEXT STEP), then 9w.1 to 9w.4.
+At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026.10.23.2). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone, and set the order within it: 9w.0 (done), then step 9x (done), then step 18, then 9w.1 to 9w.4; step 9y (NEXT STEP), the user's request of 2026-11-06, comes before 18.
 
 **9w.1** Faults in Elvira herself.
 
@@ -639,3 +661,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9r — Where each rule comes from:** every rule that decides facts, pacing, or behaviour in the fiction was read against the first commit, EdgeTales of 31 March, the design document, and the books; what came from EdgeTales or the engine without a source went to the step that replaces it (9j, 9t, 9u, 10, 10b, 11, 11b, 13, 13b, 13c, 14b, 14c, 30, 31, 32b, 33) and to the register, and AUDIT.md's principle 6 keeps it so. The design document is theory that gives a rule its aim, not its form (the user's words). Fixed on the way: a lore figure who appears becomes active, an overcome threat is told once, only threat clocks press the position, and the caps on spawned threats and clocks count the open ones; the off-screen death vote from EdgeTales, which could never fire, is gone with its two yaml files (the user's consent).
 - **9w, so far.** Reach a Milestone is the first move the engine makes without a roll (`offered_without_roll`, `docs/ruleset.md`, Moves without a roll): it marks the vow the Brain names by its rank, which neither book limits, so Fulfill Your Vow rolls against real progress and a vow is fulfilled in play; the Brain must name the track when several of its kind are active, and Elvira's `vow_fulfilment` scenario plays a vow to its end, tested on the mock provider (9w.R, moved from 13b at the user's choice). The four suspected faults of 9w.0 were real and are fixed: the autosave slot after a Save as, a correction with nothing to correct, a burn on a game-over turn, and the narration unescaped in the extractions and the Director.
 - **9x — The documents, shorter and by layer** (the user's choice, since every session reads them anew): `docs/mechanics.md` split into `docs/ruleset.md`, `docs/gamemaster.md`, and `docs/story.md`, so a session reads only the layer its step touches (Sessions with the user); every md file of the root and `docs/` but the CHANGELOG rewritten in short paragraphs and lists, with what repeated another file cut; sub-agents held the old files against the new, statement by statement. AGENTS.md joined the documentation-drift scans.
+- **9y, so far** (2026.11.06.0 to .8): mypy in strict mode but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); on the way, module state without `global`, tests without private access, and the narrator's prompt builders on a `PromptScene` and a `TurnEvents`.

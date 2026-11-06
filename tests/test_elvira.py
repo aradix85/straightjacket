@@ -13,8 +13,8 @@ from tests.elvira.elvira_bot.recorder import record_turn
 from tests.elvira.elvira_bot.ws_runner import WsClient
 
 
-@pytest.fixture
-def game() -> GameState:
+@pytest.fixture(name="game")
+def fixture_game() -> GameState:
     g = make_game_state(
         player_name="Elvira",
         setting_id="starforged",
@@ -71,7 +71,7 @@ class TestInvariants:
     @staticmethod
     def test_clean_game_no_violations(game: GameState) -> None:
         violations = assert_game_state(game, turn=1)
-        assert violations == []
+        assert not violations
 
     @staticmethod
     def test_catches_bad_health(game: GameState) -> None:

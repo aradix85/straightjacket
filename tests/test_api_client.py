@@ -44,8 +44,8 @@ def _cluster(provider: str, model: str) -> dict[str, Any]:
     }
 
 
-@pytest.fixture
-def two_providers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, _FakeAdapter]:
+@pytest.fixture(name="two_providers")
+def fixture_two_providers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, _FakeAdapter]:
     data = {
         "server": {"host": "127.0.0.1", "port": 8081, "stream_narration": True},
         "language": {"narration_language": "English"},

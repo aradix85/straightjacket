@@ -55,8 +55,8 @@ def _full_config_data(**overrides: object) -> dict[str, Any]:
     return base
 
 
-@pytest.fixture
-def read_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Callable[[dict[str, Any]], None]:
+@pytest.fixture(name="read_config")
+def fixture_read_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Callable[[dict[str, Any]], None]:
     def read(data: dict[str, Any]) -> None:
         path = tmp_path / "config.yaml"
         path.write_text(yaml.safe_dump(data), encoding="utf-8")

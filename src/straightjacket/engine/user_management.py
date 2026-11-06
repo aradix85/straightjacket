@@ -34,7 +34,7 @@ def _safe_name(name: str) -> str:
     if clean.endswith("."):
         msg = f"Name ends with a dot, which Windows drops: {name!r}"
         raise InvalidNameError(msg)
-    if clean.split(".")[0].strip().upper() in _WINDOWS_RESERVED_NAMES:
+    if clean.split(".", maxsplit=1)[0].strip().upper() in _WINDOWS_RESERVED_NAMES:
         msg = f"Name is a reserved device name on Windows: {name!r}"
         raise InvalidNameError(msg)
     return clean

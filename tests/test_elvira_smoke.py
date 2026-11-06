@@ -102,12 +102,12 @@ def test_elvira_plays_a_short_session_end_to_end(monkeypatch: pytest.MonkeyPatch
     assert "## Revelations" in report
     assert report.startswith("# Elvira report: starforged, explorer")
     assert session.coverage["counts"]["save_roundtrip"] >= 1
-    assert session.save_roundtrip_issues == []
+    assert not session.save_roundtrip_issues
     compact = session.turns[0].to_compact_dict()
     assert compact["narration"]
     assert all(t.stream_complete for t in session.turns if not t.is_correction and not t.error and not t.rolled_back)
     assert session.coverage["counts"]["ai_failure_rollback"] == 1
-    assert session.rollback_issues == []
+    assert not session.rollback_issues
     assert {"narrator", "opening_setup", "brain"} <= {str(e["role"]) for e in session.turns[0].token_usage}
 
 

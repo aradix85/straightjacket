@@ -255,7 +255,7 @@ def test_roll_turning_point_creates_plotline_on_empty_list() -> None:
     narrative = make_narrative()
     rng = random.Random(1)
     themes = ["action", "tension", "mystery", "social", "personal"]
-    assert narrative.plotlines_list == []
+    assert not narrative.plotlines_list
     roll_turning_point(rng, themes, narrative)
     assert len(narrative.plotlines_list) == 1
     assert narrative.plotlines_list[0].turning_point_count == 1

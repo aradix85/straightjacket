@@ -296,7 +296,7 @@ def test_a_new_game_and_a_successor_take_up_a_character_alike() -> None:
 
 
 def test_a_character_without_a_vow_subject_puts_no_one_on_the_characters_list() -> None:
-    assert _take_up("").narrative.characters_list == []
+    assert not _take_up("").narrative.characters_list
 
 
 @pytest.mark.parametrize(

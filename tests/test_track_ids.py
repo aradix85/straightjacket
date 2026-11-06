@@ -32,9 +32,9 @@ def _connect(game: GameState, target: str | None, result: str) -> None:
 def test_a_connection_is_keyed_by_its_npc_and_made_only_on_a_hit() -> None:
     game = make_game_state(setting_id="starforged")
     _connect(game, "npc_1", "MISS")
-    assert game.progress_tracks == []
+    assert not game.progress_tracks
     _connect(game, None, "STRONG_HIT")
-    assert game.progress_tracks == []
+    assert not game.progress_tracks
     _connect(game, "npc_1", "WEAK_HIT")
     assert [(t.id, t.track_type) for t in game.progress_tracks] == [("connection_npc_1", "connection")]
 

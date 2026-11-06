@@ -48,7 +48,7 @@ def test_a_failed_turn_is_rolled_back_and_reported(monkeypatch: pytest.MonkeyPat
 
     assert game.to_dict() == before
     assert {"type": "error", "text": f"{t('error.ai_unavailable')} {t('error.nothing_changed')}"} in ws.sent
-    assert session.chat_messages == []
+    assert not session.chat_messages
     assert session.processing is False
 
 

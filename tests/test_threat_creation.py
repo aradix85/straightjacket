@@ -55,7 +55,7 @@ def test_random_event_threat_skips_unmapped_focus() -> None:
 
     spawn_danger_from_random_event(g, event)
 
-    assert g.threats == []
+    assert not g.threats
 
 
 def test_random_event_threat_dedup_per_focus_target() -> None:
@@ -103,7 +103,7 @@ def test_ac_threat_skips_unmapped_plot_point() -> None:
 
     spawn_dangers_for_turning_point(g, tp)
 
-    assert g.threats == []
+    assert not g.threats
 
 
 def test_ac_threat_dedup_skips_same_plot_point_twice() -> None:

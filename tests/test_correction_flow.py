@@ -192,4 +192,4 @@ def test_a_game_without_a_played_turn_has_nothing_to_correct() -> None:
     provider = _provider(_MISREAD, _SHOVE)
     with pytest.raises(ValueError, match="No turn to correct"):
         process_correction(provider, library_game(), "Fix something")
-    assert provider.calls == []
+    assert not provider.calls

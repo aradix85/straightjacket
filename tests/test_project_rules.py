@@ -553,7 +553,8 @@ def _scan_provider_sdk(path: Path, rel: str) -> list[Violation]:
 
 
 _MODEL_NAME_PATTERNS = re.compile(
-    r"(qwen[-\d]|gpt-oss|gpt-\d|gpt-4|claude-\d|claude-opus|claude-sonnet|claude-haiku|glm-?\d|zai-|deepseek|kimi-|llama-?\d|mistral-)",
+    r"(qwen[-\d]|gpt-oss|gpt-\d|gpt-4|claude-\d|claude-opus|claude-sonnet|claude-haiku"
+    r"|glm-?\d|zai-|deepseek|kimi-|llama-?\d|mistral-)",
     re.IGNORECASE,
 )
 

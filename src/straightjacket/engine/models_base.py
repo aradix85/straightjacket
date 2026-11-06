@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -17,8 +18,8 @@ class Resources(SerializableMixin):
 
     def restore(self, snap: dict[str, Any]) -> None:
         restored = deserialize(Resources, snap)
-        for f in self.__dataclass_fields__:
-            setattr(self, f, getattr(restored, f))
+        for f in dataclasses.fields(self):
+            setattr(self, f.name, getattr(restored, f.name))
 
 
 @dataclass
@@ -75,8 +76,8 @@ class WorldState(SerializableMixin):
 
     def restore(self, snap: dict[str, Any]) -> None:
         restored = deserialize(WorldState, snap)
-        for f in self.__dataclass_fields__:
-            setattr(self, f, getattr(restored, f))
+        for f in dataclasses.fields(self):
+            setattr(self, f.name, getattr(restored, f.name))
 
 
 @dataclass
@@ -130,8 +131,8 @@ class Consequence(SerializableMixin):
         return eng().ai_text.consequence_labels[self.kind].format(**self.values)
 
 
-def consequence(kind: str, /, **values: Any) -> Consequence:
-    return Consequence(kind=kind, values=values)
+def consequence(consequence_kind: str, /, **values: Any) -> Consequence:
+    return Consequence(kind=consequence_kind, values=values)
 
 
 def labels_of(consequences: list[Consequence]) -> list[str]:

@@ -116,7 +116,7 @@ def test_face_death_on_a_weak_hit_returns_bound_to_an_extreme_vow(monkeypatch: p
     )
 
     complete_track(game, vow.id, "completed")
-    assert game.impacts == []
+    assert not game.impacts
 
 
 def test_a_failed_bound_vow_keeps_its_burden() -> None:

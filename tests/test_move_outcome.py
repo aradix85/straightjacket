@@ -9,8 +9,8 @@ from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from tests._helpers import make_game_state, record_price_tables
 
 
-@pytest.fixture
-def game() -> GameState:
+@pytest.fixture(name="game")
+def fixture_game() -> GameState:
     g = make_game_state()
     g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     g.setting_id = "starforged"

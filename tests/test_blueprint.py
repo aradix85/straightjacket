@@ -64,7 +64,7 @@ def test_every_act_gets_its_own_turning_point() -> None:
 
 def test_assemble_blueprint_seed_from_ac_seeds_plotlines() -> None:
     game = make_game_state(player_name="Hero", setting_id="starforged")
-    assert game.narrative.plotlines_list == []
+    assert not game.narrative.plotlines_list
 
     assemble_blueprint_seed_from_ac(random.Random(7), game)
 
@@ -130,7 +130,7 @@ def test_materialize_blueprint_gives_each_act_its_revelation() -> None:
     assert [(r.content, r.act_number, r.keyed_scene_source) for r in bp.revelations] == [
         (f"reveal {n}", n, act.revelation_trigger) for n, act in enumerate(seed.acts, start=1)
     ]
-    assert bp.revealed == []
+    assert not bp.revealed
     assert len(bp.possible_endings) == 3
     assert bp.possible_endings[0].type == "earned"
     assert bp.possible_endings[0].description == "end 1"

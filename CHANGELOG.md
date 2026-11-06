@@ -8,6 +8,16 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.06.8] — 2026-11-06
+
+pylint beside ruff and mypy, at the user's request, and the request in the roadmap. pylint is pinned at 4.1.3 in the test extra and runs its default checks from the pre-commit hook and the quality gate (CONTRIBUTING.md, Workflow step 3) over the same paths as mypy, at ruff's line length. `[tool.pylint."messages control"]` leaves out, each with its reason, the docstring checks the project rules forbid, what clashes with the dataclass models or with the tests' list unpacking, the argument count the user left free, and the broad except and the imports that ruff checks with its carve-outs; its complexity checks wait with ruff's, and its duplicate code and module length are later groups.
+
+- What pylint found beyond ruff: 76 test asserts that compared a typed list or dict with an empty one test it through truth, as the tests do with an empty string; the models restore their fields through `dataclasses.fields`; `consequence` calls its positional-only parameter `consequence_kind`, so that a value passed as `kind` reads as one; a parameter, a local in two tests, and loop variables in a third no longer shadow a module-level name, and the tests' own fixtures take their names through `name=`, so pylint's check of shadowed names stays on; and five smaller rewrites (`isdisjoint`, `types.NoneType`, a loop over letters, a `maxsplit`, needless parentheses).
+- The web tests get a fresh session through `monkeypatch`, which restores the server's own afterwards, where two copied methods reset the shared session by hand and kept it on the test class; the players' folder moves to a temporary one through a fixture of its own.
+- The roadmap holds the request as step 9y, now NEXT STEP ahead of step 18, which keeps its content: what is done under DONE, and as substeps the complexity at the default limits, pylint's duplicate code and module length, the typing that bans `Any`, pyright last, and pylint's optional extensions for the user to choose among.
+
+Quality gate: 1896 tests, coverage 96.04% to 96.05%, mypy and pylint clean, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: nothing the game does changes.
+
 ## [2026.11.06.7] — 2026-11-06
 
 Positional arguments, the eighth step of the user's request: ruff's rule on more than five positional arguments leaves the later groups, at its default limit. The rule on more than five arguments in all is ignored for good, the user's choice, since keyword-only arguments name themselves at every call; a factory such as `new_npc` names every field it fills, as dataclass fields have no defaults (CONTRIBUTING.md, Code standards).

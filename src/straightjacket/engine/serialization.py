@@ -24,7 +24,7 @@ def _resolve_item_type(tp: Any) -> type | None:
 
 def _allows_none(tp: Any) -> bool:
     if get_origin(tp) is Union or isinstance(tp, types.UnionType):
-        return type(None) in get_args(tp)
+        return types.NoneType in get_args(tp)
     return False
 
 
@@ -32,8 +32,8 @@ def _unwrap_optional(tp: Any) -> tuple[Any, bool]:
     origin = get_origin(tp)
     if origin is Union or isinstance(tp, types.UnionType):
         args = get_args(tp)
-        non_none = [a for a in args if a is not type(None)]
-        if len(non_none) == 1 and type(None) in args:
+        non_none = [a for a in args if a is not types.NoneType]
+        if len(non_none) == 1 and types.NoneType in args:
             return non_none[0], True
     return tp, False
 

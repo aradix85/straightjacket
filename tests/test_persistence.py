@@ -64,7 +64,7 @@ def test_load_nonexistent_returns_none() -> None:
 @pytest.mark.usefixtures("save_dir")
 def test_list_saves_empty() -> None:
     result = list_saves_with_info("empty_user")
-    assert result == []
+    assert not result
 
 
 @pytest.mark.usefixtures("save_dir")
@@ -82,7 +82,7 @@ def test_list_saves_with_saves() -> None:
 def test_delete_save() -> None:
     save_game(_game(), "deleter", [], "to_delete")
     delete_save("deleter", "to_delete")
-    assert list_saves_with_info("deleter") == []
+    assert not list_saves_with_info("deleter")
 
 
 @pytest.mark.usefixtures("save_dir")

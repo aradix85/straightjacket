@@ -13,8 +13,8 @@ from straightjacket.engine.setting.packages import load_package
 _REAL_SETTINGS = PROJECT_ROOT / "data" / "settings"
 
 
-@pytest.fixture
-def settings_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+@pytest.fixture(name="settings_dir")
+def fixture_settings_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(packages, "_cache", {})
     monkeypatch.setattr(packages, "_SETTINGS_DIR", tmp_path)
     return tmp_path

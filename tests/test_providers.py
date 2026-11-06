@@ -80,8 +80,8 @@ def _openai() -> provider_openai.OpenAICompatibleProvider:
     return provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30, api_base="")
 
 
-@pytest.fixture
-def anthropic_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
+@pytest.fixture(name="anthropic_endpoint")
+def fixture_anthropic_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
     endpoint = _FakeEndpoint()
 
     def fake_client(**kwargs: Any) -> SimpleNamespace:
@@ -92,8 +92,8 @@ def anthropic_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
     return endpoint
 
 
-@pytest.fixture
-def openai_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
+@pytest.fixture(name="openai_endpoint")
+def fixture_openai_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
     endpoint = _FakeEndpoint()
 
     def fake_client(**kwargs: Any) -> SimpleNamespace:
@@ -162,7 +162,7 @@ class TestAnthropicProvider:
         )
         result = _anthropic().create_message(_spec())
         assert result.stop_reason == "truncated"
-        assert result.tool_calls == []
+        assert not result.tool_calls
 
     @staticmethod
     def test_base_url_only_when_configured(anthropic_endpoint: _FakeEndpoint) -> None:
@@ -234,7 +234,7 @@ class TestOpenAICompatibleProvider:
         result = _openai().create_message(_spec())
         assert result.stop_reason == "truncated"
         assert not result.content
-        assert result.tool_calls == []
+        assert not result.tool_calls
 
     @staticmethod
     def test_base_url_only_when_configured(openai_endpoint: _FakeEndpoint) -> None:

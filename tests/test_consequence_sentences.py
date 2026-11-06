@@ -138,7 +138,7 @@ def test_generate_sentences_with_triggered_clock() -> None:
 
 def test_generate_sentences_empty_returns_empty() -> None:
     sentences = generate_consequence_sentences([], [], _game(), _brain())
-    assert sentences == []
+    assert not sentences
 
 
 def test_generate_sentences_with_npc_target() -> None:

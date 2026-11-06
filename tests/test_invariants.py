@@ -34,7 +34,7 @@ def _clean_game() -> GameState:
 def test_clean_state_no_violations() -> None:
     game = _clean_game()
     violations = assert_game_state(game, turn=1)
-    assert violations == []
+    assert not violations
 
 
 def test_catches_health_out_of_range() -> None:
@@ -92,7 +92,7 @@ def test_meters_at_zero_without_game_over_are_no_violation() -> None:
     game.resources.meters["health"] = 0
     game.resources.meters["spirit"] = 0
     game.crisis_mode = True
-    assert assert_game_state(game, turn=1) == []
+    assert not assert_game_state(game, turn=1)
 
 
 def test_catches_npc_empty_id() -> None:
@@ -152,7 +152,7 @@ def test_a_dying_clock_is_a_valid_clock() -> None:
     game.resources.meters["health"] = 0
     game.crisis_mode = True
     start_dying_clock(game)
-    assert assert_game_state(game, turn=1) == []
+    assert not assert_game_state(game, turn=1)
 
 
 if __name__ == "__main__":
@@ -185,7 +185,7 @@ def test_quality_passes_clean_narration() -> None:
     issues = check_narration_quality(
         "The wind howled through the broken windows. She stepped inside, her boots crunching on shattered glass."
     )
-    assert issues == []
+    assert not issues
 
 
 def test_quality_catches_bracket_annotations() -> None:

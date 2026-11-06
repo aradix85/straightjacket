@@ -184,7 +184,7 @@ def test_sanitize_npc_name() -> None:
 def test_sanitize_npc_name_no_parens() -> None:
     clean, aliases = sanitize_npc_name("Kira Voss")
     assert clean == "Kira Voss"
-    assert aliases == []
+    assert not aliases
 
 
 def test_normalize_for_match() -> None:
@@ -243,7 +243,7 @@ def test_consolidate_memory_over_limit() -> None:
 def test_retrieve_memories_empty() -> None:
     npc = make_npc(id="npc_1", name="Test")
     result = retrieve_memories(npc, context_text="", max_count=5, current_scene=5)
-    assert result == []
+    assert not result
 
 
 def test_retrieve_memories_includes_reflection() -> None:
@@ -307,7 +307,7 @@ def test_merge_npc_identity_same_name_skipped() -> None:
     npc = make_npc(id="npc_1", name="Kira", disposition="neutral")
     merge_npc_identity(npc, "Kira", game=make_game_state(npcs=[npc]))
     assert npc.name == "Kira"
-    assert npc.aliases == []
+    assert not npc.aliases
 
 
 def test_sanitize_aliases() -> None:

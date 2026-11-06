@@ -128,7 +128,7 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries() -> None:
 
     narration, _director = process_momentum_burn(provider, game, offer)
 
-    assert check_turn_replacement(before, game, narration, 2, "momentum burn", keeps_location=True) == []
+    assert not check_turn_replacement(before, game, narration, 2, "momentum burn", keeps_location=True)
 
 
 @pytest.mark.usefixtures("forced_miss")
