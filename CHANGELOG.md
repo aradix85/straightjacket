@@ -12,7 +12,7 @@ Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for relea
 
 The two functions that 2026.11.07.0 left with more than 15 locals besides their arguments are split too, at the user's request, while pylint's count of locals stays off, since it counts the arguments, whose number the user left free. `ai/blueprint_voicing.py` → `call_blueprint_voicing` asks the AI through `_ask_voicing`, which holds the call and the reading of its answer, so an answer it cannot read still degrades to no blueprint, now tested for an answer that is no JSON, no object, or lacks a field; `gamemaster/npc/memory.py` → `retrieve_memories` scores each memory through `_score_memory`, `_relevance`, and `_words` instead of a closure. Nothing the game does changes: a script found old and new memory retrieval alike on five hundred random cases. A sub-agent checked the release.
 
-The documents, at the user's request: the CHANGELOG now holds only the releases of the step in progress, and a closed step's entries leave it (CONTRIBUTING.md, Workflow step 6), since DONE keeps its summary and every commit's title its version; and the roadmap's DONE is cut to what a later session needs, with what was done moved out of the open steps.
+The documents, at the user's request: the CHANGELOG now holds only the releases of the step in progress, and a closed step's entries leave it (CONTRIBUTING.md, Workflow step 6), since DONE keeps its summary and every commit's title its version; and the roadmap's DONE is cut to what a later session needs, with what was done moved out of the open steps. The Elvira runs that four releases of 2026-11-06 announced are not needed (the user's choice), so their entries no longer announce them.
 
 Quality gate: 1913 tests, coverage 96.04% to 96.06%, mypy clean on 267 files, pylint clean, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: nothing the game does changes.
 
@@ -66,7 +66,7 @@ Numbers, booleans, and console output, the sixth step of the user's request: ruf
 - Elvira writes her console output through the `elvira` logger (`elvira_bot/console.py` → `say`), which her script shows on the console, and `run.py` and `data/data.py` through loggers of their own; what appears is unchanged.
 - The tests compare with an empty string through truth, and test membership in a set, ruff's rewrite; the judge's tests call the judge module they import, so mypy now checks those calls, which found the five calls whose keyword arguments a helper typed as a module had hidden.
 
-Quality gate: 1896 tests, coverage 96.07%, mypy clean on 267 files, ruff clean on every rule outside the ignores. Save format unchanged. The Elvira run follows, since her console output now goes through a logger.
+Quality gate: 1896 tests, coverage 96.07%, mypy clean on 267 files, ruff clean on every rule outside the ignores. Save format unchanged.
 
 ## [2026.11.06.4] — 2026-11-06
 
@@ -98,7 +98,7 @@ Imports at their strictest, the third step of the user's request. Every import s
 - The three imports kept inside functions to break a cycle are at the top; no cycle remains. With ruff holding every import to the top, the project-rule scan of inline imports, its whitelist, and CONTRIBUTING.md's exception for an inline import are gone, as is the import-layer scans' reading of relative imports.
 - In the tests, the 1167 imports inside test functions are at the top of their files. `tests/conftest.py` no longer swaps `logging_util` out of `sys.modules` ahead of every import, but gives the `rpg_engine` logger a null handler, and pytest puts `src/` on the path; a test that patched `api_client.get_provider` patches it where Elvira's WebSocket runner holds it; the server's one session is `active_session`, which the tests reset, no longer a private name they import.
 
-Quality gate: 1866 tests, coverage 96.16%, mypy clean on 263 files, ruff clean on every rule outside the ignores. Save format unchanged. The Elvira run follows, since she now installs the answers herself.
+Quality gate: 1866 tests, coverage 96.16%, mypy clean on 263 files, ruff clean on every rule outside the ignores. Save format unchanged.
 
 ## [2026.11.06.1] — 2026-11-06
 
@@ -108,7 +108,7 @@ ruff at its strictest, the second step of the user's request: ruff is pinned at 
 - The AI call sites log and return after their `except`, with every read of the answer still inside the `try`, so a malformed answer still falls back as before (`ai/narrator.py`, `correction/analysis.py`, `director.py` → `_parsed_guidance`).
 - Tests and Elvira: the fixtures that ran for every test are named in `[tool.pytest.ini_options]` `usefixtures` and in marks instead of `autouse`; `tests/test_prompt_xml.py` parses through `defusedxml`, a new test dependency; Elvira's WebSocket client takes no timeouts, which its callers set with `asyncio.timeout`, and its drain waits for a quiet period named as such. `data/data.py` names its sources as paths on the one host, writes the scheme into the request, and opens it through an opener that knows only HTTPS, with proxies and redirects handled as before; tried against both sources. A test that repeated the scan for dataclass defaults is gone.
 
-Quality gate: 1865 tests, coverage 96.09%, mypy clean on 263 files, ruff clean on every rule outside the ignores. Save format unchanged. The Elvira run follows, since the AI call sites, the handlers' saves, and Elvira's client changed.
+Quality gate: 1865 tests, coverage 96.09%, mypy clean on 263 files, ruff clean on every rule outside the ignores. Save format unchanged.
 
 ## [2026.11.06.0] — 2026-11-06
 
@@ -119,4 +119,4 @@ mypy at its strictest, at the user's request, as a first step: strict mode plus 
 - The test factories return their types instead of `Any`; a test that reached a name through a module that only imports it now takes it from the module that defines it, and patches the dice through a dotted path; radon has a stub in `stubs/`; the two `[tool.mypy]` overrides, which no longer suppressed anything, are gone.
 - `tests/test_providers.py` imports the SDKs it holds the adapters against, where it reached them through the adapters' own imports, which strict mode does not export; the provider-import scan allows that one test (`docs/ai.md`, Provider adapters).
 
-Quality gate: 1864 tests, coverage 96.03% to 96.08% over the runs, mypy clean on 263 files. Save format unchanged. The Elvira run follows, since the Brain's retry loop changed shape.
+Quality gate: 1864 tests, coverage 96.03% to 96.08% over the runs, mypy clean on 263 files. Save format unchanged.
