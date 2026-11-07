@@ -46,7 +46,7 @@ def _scenario_run(name: str, turns: int) -> SessionLog:
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
     bot_cfg["session"] |= {"scenario": name, "max_turns": turns, "inject_ai_failure_turn": 0}
     bot_cfg["logging"]["print_full_narration"] = False
-    session: SessionLog = runner.run_session(bot_cfg, auto_override=True)
+    session: SessionLog = runner.run_session(bot_cfg, auto_override=True, turns_override=None)
     return session
 
 
@@ -91,7 +91,7 @@ def test_elvira_plays_a_short_session_end_to_end(monkeypatch: pytest.MonkeyPatch
     bot_cfg["logging"]["print_full_narration"] = False
     bot_cfg["session"]["inject_ai_failure_turn"] = 3
 
-    session = runner.run_session(bot_cfg, auto_override=True)
+    session = runner.run_session(bot_cfg, auto_override=True, turns_override=None)
 
     assert session.chapters
     assert session.chapters[0].turns_played == 3
@@ -111,7 +111,7 @@ def test_elvira_plays_a_short_session_end_to_end(monkeypatch: pytest.MonkeyPatch
     assert {"narrator", "opening_setup", "brain"} <= {str(e["role"]) for e in session.turns[0].token_usage}
 
 
-def test_elvira_websocket_mode_plays_through_the_real_server(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def _ws_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> SessionLog:
     users = tmp_path / "users"
     users.mkdir()
     for target in (
@@ -119,7 +119,7 @@ def test_elvira_websocket_mode_plays_through_the_real_server(monkeypatch: pytest
         "straightjacket.engine.user_management.USERS_DIR",
     ):
         monkeypatch.setattr(target, users)
-    monkeypatch.setattr(ws_runner, "RUNS_DIR", tmp_path / "runs")
+    monkeypatch.setattr(runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(ws_runner, "check_configured_models", lambda: None)
     monkeypatch.setattr(ws_runner, "get_provider", _provider)
     monkeypatch.setattr(ai_helpers, "provider_named", lambda _name: _provider())
@@ -135,7 +135,12 @@ def test_elvira_websocket_mode_plays_through_the_real_server(monkeypatch: pytest
     bot_cfg["logging"]["print_full_narration"] = False
     bot_cfg["ws_port"] = port
 
-    session = asyncio.run(ws_runner.run_ws_session(bot_cfg, auto_override=True))
+    session: SessionLog = asyncio.run(ws_runner.run_ws_session(bot_cfg, auto_override=True, turns_override=None))
+    return session
+
+
+def test_elvira_websocket_mode_plays_through_the_real_server(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    session = _ws_session(monkeypatch, tmp_path)
 
     played = [t for t in session.turns if not t.error]
     assert len(played) == 2
@@ -145,6 +150,18 @@ def test_elvira_websocket_mode_plays_through_the_real_server(monkeypatch: pytest
     assert all(t.token_usage for t in played)
     assert session.token_summary["by_role"]["narrator"]["calls"] >= 2
     assert list((tmp_path / "runs").glob("*.md"))
+
+
+def test_a_websocket_chapter_that_ends_on_an_error_says_so(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def no_decision(_persona: str, _context: str, *, max_tokens: int) -> str:
+        msg = f"bot unreachable after {max_tokens} tokens"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(ws_runner, "ask_bot", no_decision)
+    session = _ws_session(monkeypatch, tmp_path)
+    assert [ch.ended_reason for ch in session.chapters] == ["engine_error"]
+    assert session.ended_reason == "engine_error"
+    assert session.turns[0].error
 
 
 def test_event_capture_keeps_only_the_configured_prefixes() -> None:
@@ -169,7 +186,7 @@ def test_a_failed_load_back_is_reported_not_raised(monkeypatch: pytest.MonkeyPat
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
     bot_cfg["session"] |= {"max_turns": 1, "inject_ai_failure_turn": 0}
     bot_cfg["logging"]["print_full_narration"] = False
-    session = runner.run_session(bot_cfg, auto_override=True)
+    session = runner.run_session(bot_cfg, auto_override=True, turns_override=None)
     assert session.save_roundtrip_issues
     assert all("UNIQUE constraint failed" in issue for issue in session.save_roundtrip_issues)
 
@@ -213,6 +230,6 @@ def test_elvira_installs_the_ruleset_answers_when_she_starts(monkeypatch: pytest
     bot_cfg["logging"]["print_full_narration"] = False
     monkeypatch.setattr(questions, "_installed", [])
 
-    runner.run_session(bot_cfg, auto_override=True)
+    runner.run_session(bot_cfg, auto_override=True, turns_override=None)
 
     assert questions.answers() is answers

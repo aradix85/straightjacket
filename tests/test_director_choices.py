@@ -9,25 +9,26 @@ from straightjacket.engine.director import call_director
 from tests._helpers import make_game_state, make_npc
 from tests._mocks import ScriptedProvider
 
+_SCALAR_MINIMUMS: dict[str, Any] = {
+    "array": [],
+    "integer": 0,
+    "number": 0,
+    "boolean": False,
+    "null": None,
+    "string": "",
+}
+
 
 def _minimal(schema: dict[str, Any]) -> Any:
     if "anyOf" in schema:
         options = schema["anyOf"]
         return None if {"type": "null"} in options else _minimal(options[0])
-    kind = schema.get("type")
     if "enum" in schema:
         return schema["enum"][0]
+    kind = schema["type"]
     if kind == "object":
         return {key: _minimal(value) for key, value in schema["properties"].items()}
-    if kind == "array":
-        return []
-    if kind in {"integer", "number"}:
-        return 0
-    if kind == "boolean":
-        return False
-    if kind == "null":
-        return None
-    return ""
+    return _SCALAR_MINIMUMS[kind]
 
 
 class _Director(ScriptedProvider):

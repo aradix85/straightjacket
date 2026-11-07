@@ -70,27 +70,35 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
         msg = f"{brain.move} starts a {track_type} track but the Brain named no track name or rank"
         raise ValueError(msg)
 
-    if track_type == "connection":
-        if brain.target_npc is None:
-            log(f"[Track] {brain.move}: its target turned out absent; no connection")
-            return
-        if connection_track(game, brain.target_npc) is not None:
-            log(f"[Track] {brain.target_npc} is already a connection; not made again")
-            return
-        base_id = connection_track_id(brain.target_npc)
-    else:
-        base_id = _started_track_id(track_type, brain.track_name)
+    base_id = _new_track_base_id(game, brain, track_type, brain.track_name)
+    if base_id is None:
+        return
     if any(t.id == base_id and t.status == "active" for t in game.progress_tracks):
         log(f"[Track] {track_type} '{brain.track_name}' is already active; not created again")
         return
     track = _add_track(game, base_id, brain.track_name, track_type, brain.track_rank)
-    if track_type != "vow":
-        return
-    track.vowed_to = bond_of_bonus(game, brain.bonus_id)
+    if track_type == "vow":
+        _bind_vow(game, brain, track)
+
+
+def _new_track_base_id(game: GameState, brain: BrainResult, track_type: str, name: str) -> str | None:
+    if track_type != "connection":
+        return _started_track_id(track_type, name)
+    if brain.target_npc is None:
+        log(f"[Track] {brain.move}: its target turned out absent; no connection")
+        return None
+    if connection_track(game, brain.target_npc) is not None:
+        log(f"[Track] {brain.target_npc} is already a connection; not made again")
+        return None
+    return connection_track_id(brain.target_npc)
+
+
+def _bind_vow(game: GameState, brain: BrainResult, vow: ProgressTrack) -> None:
+    vow.vowed_to = bond_of_bonus(game, brain.bonus_id)
     if brain.target_threat is not None:
         threat = next(t for t in game.threats if t.id == brain.target_threat)
-        threat.linked_vow_id = track.id
-        log(f"[Threat] '{threat.name}' now has the vow '{track.name}' sworn against it")
+        threat.linked_vow_id = vow.id
+        log(f"[Threat] '{threat.name}' now has the vow '{vow.name}' sworn against it")
 
 
 def _add_track(game: GameState, base_id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
@@ -184,38 +192,51 @@ def apply_progress_and_legacy(
     rolled_track: ProgressTrack | None,
 ) -> None:
     if outcome.progress_marks > 0:
-        track_category = rules().get_raw("progress_mark_categories")[brain.move]
-        started = rules().get_raw("track_creating_moves").get(brain.move)
-        target = brain.target_track
-        if started and target is None:
-            if not brain.track_name:
-                msg = f"{brain.move} marks progress on a new track but the Brain named no track"
-                raise ValueError(msg)
-            target = _started_track_id(started, brain.track_name)
-        track = find_progress_track(game, track_category, target)
-        for _ in range(outcome.progress_marks):
-            added = mark_progress(track)
-            if added:
-                log(f"[Track] {track.name}: +{added} ticks ({filled_boxes(track)}/{rules().progress.boxes} boxes)")
-
-    if outcome.legacy_track and outcome.legacy_fixed_ticks:
-        mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
-    elif outcome.legacy_track:
-        if rolled_track is None:
-            msg = f"{brain.move}: a legacy reward by rank needs the progress track that was rolled"
-            raise ValueError(msg)
-        rank = shifted_rank(rolled_track.rank, outcome.legacy_rank_shift)
-        if rank is not None:
-            mark_legacy(game, outcome.legacy_track, source_rank=rank)
-
+        _mark_move_progress(game, outcome, brain)
+    if outcome.legacy_track:
+        _mark_legacy_reward(game, outcome, brain, rolled_track)
     if outcome.experience_rank_shift is not None:
-        if rolled_track is None:
-            msg = f"{brain.move}: experience by rank needs the progress track that was rolled"
+        _gain_experience(game, outcome.experience_rank_shift, brain, rolled_track)
+
+
+def _mark_move_progress(game: GameState, outcome: OutcomeResult, brain: BrainResult) -> None:
+    track_category = rules().get_raw("progress_mark_categories")[brain.move]
+    started = rules().get_raw("track_creating_moves").get(brain.move)
+    target = brain.target_track
+    if started and target is None:
+        if not brain.track_name:
+            msg = f"{brain.move} marks progress on a new track but the Brain named no track"
             raise ValueError(msg)
-        rank = shifted_rank(rolled_track.rank, outcome.experience_rank_shift)
-        gained = rules().legacy.experience_by_rank[rank] if rank is not None else 0
-        game.campaign.xp += gained
-        log(f"[Legacy] Experience +{gained} for a {rolled_track.rank} vow (total {game.campaign.xp})")
+        target = _started_track_id(started, brain.track_name)
+    track = find_progress_track(game, track_category, target)
+    for _ in range(outcome.progress_marks):
+        added = mark_progress(track)
+        if added:
+            log(f"[Track] {track.name}: +{added} ticks ({filled_boxes(track)}/{rules().progress.boxes} boxes)")
+
+
+def _mark_legacy_reward(
+    game: GameState, outcome: OutcomeResult, brain: BrainResult, rolled_track: ProgressTrack | None
+) -> None:
+    if outcome.legacy_fixed_ticks:
+        mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
+        return
+    if rolled_track is None:
+        msg = f"{brain.move}: a legacy reward by rank needs the progress track that was rolled"
+        raise ValueError(msg)
+    rank = shifted_rank(rolled_track.rank, outcome.legacy_rank_shift)
+    if rank is not None:
+        mark_legacy(game, outcome.legacy_track, source_rank=rank)
+
+
+def _gain_experience(game: GameState, rank_shift: int, brain: BrainResult, rolled_track: ProgressTrack | None) -> None:
+    if rolled_track is None:
+        msg = f"{brain.move}: experience by rank needs the progress track that was rolled"
+        raise ValueError(msg)
+    rank = shifted_rank(rolled_track.rank, rank_shift)
+    gained = rules().legacy.experience_by_rank[rank] if rank is not None else 0
+    game.campaign.xp += gained
+    log(f"[Legacy] Experience +{gained} for a {rolled_track.rank} vow (total {game.campaign.xp})")
 
 
 def active_tracks(game: GameState) -> list[ProgressTrack]:

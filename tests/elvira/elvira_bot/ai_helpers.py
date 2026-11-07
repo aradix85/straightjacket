@@ -113,50 +113,53 @@ def _resolve_turn_directive(turn: int, directive_key: str | None = None) -> tupl
     return full, short
 
 
+def _listing(lines: list[str]) -> str:
+    return "\n".join(lines) if lines else _p("bot_active_none_label")
+
+
+def _story_block(game: GameState) -> str:
+    bp = game.narrative.story_blueprint
+    if not bp or not bp.acts:
+        return ""
+    act = get_current_act(game)
+    sr = act.scene_range
+    scene_range = _p("bot_scene_range", start=sr[0], end=sr[1]) if len(sr) == 2 else _p("bot_scene_range_unknown")
+    story_block = _p(
+        "bot_story_block",
+        act_number=act.act_number,
+        total_acts=act.total_acts,
+        title=act.title,
+        scene_range=scene_range,
+    )
+    if bp.central_conflict:
+        story_block += _p("bot_story_conflict", conflict=bp.central_conflict[:120])
+    return story_block
+
+
 def build_turn_context(
     game: GameState, narration: str, turn: int, prev_action: str = "", directive_key: str | None = None
 ) -> str:
     world = game.world
     unknown = _p("bot_unknown_label")
-    none_label = _p("bot_active_none_label")
-
-    npc_lines = [_p("bot_npc_line", name=n.name, disposition=n.disposition) for n in game.npcs if n.status == "active"]
-    active_npcs = "\n".join(npc_lines) if npc_lines else none_label
-
-    clock_lines = [
-        _p("bot_clock_line", name=c.name, filled=c.filled, segments=c.segments) for c in world.clocks if not c.fired
-    ]
-    active_clocks = "\n".join(clock_lines) if clock_lines else none_label
-
-    track_lines = [
-        _p(
-            "bot_track_line",
-            name=t.name,
-            track_type=t.track_type,
-            rank=t.rank,
-            filled_boxes=filled_boxes(t),
-        )
-        for t in game.progress_tracks
-        if t.status == "active"
-    ]
-    active_tracks = "\n".join(track_lines) if track_lines else none_label
-
-    story_block = ""
-    bp = game.narrative.story_blueprint
-    if bp and bp.acts:
-        act = get_current_act(game)
-        sr = act.scene_range
-        scene_range = _p("bot_scene_range", start=sr[0], end=sr[1]) if len(sr) == 2 else _p("bot_scene_range_unknown")
-        story_block = _p(
-            "bot_story_block",
-            act_number=act.act_number,
-            total_acts=act.total_acts,
-            title=act.title,
-            scene_range=scene_range,
-        )
-        conflict = bp.central_conflict
-        if conflict:
-            story_block += _p("bot_story_conflict", conflict=conflict[:120])
+    active_npcs = _listing(
+        [_p("bot_npc_line", name=n.name, disposition=n.disposition) for n in game.npcs if n.status == "active"]
+    )
+    active_clocks = _listing(
+        [_p("bot_clock_line", name=c.name, filled=c.filled, segments=c.segments) for c in world.clocks if not c.fired]
+    )
+    active_tracks = _listing(
+        [
+            _p(
+                "bot_track_line",
+                name=t.name,
+                track_type=t.track_type,
+                rank=t.rank,
+                filled_boxes=filled_boxes(t),
+            )
+            for t in game.progress_tracks
+            if t.status == "active"
+        ]
+    )
 
     turn_directive_full, turn_directive_short = _resolve_turn_directive(turn, directive_key)
     mandatory_action_block = _p(
@@ -178,7 +181,7 @@ def build_turn_context(
         time_of_day=world.time_of_day or unknown,
         **game.resources.meters,
         max_momentum=max_momentum(game),
-        story_block=story_block,
+        story_block=_story_block(game),
         active_npcs=active_npcs,
         active_tracks=active_tracks,
         active_clocks=active_clocks,

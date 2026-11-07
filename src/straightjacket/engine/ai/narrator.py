@@ -15,7 +15,7 @@ from straightjacket.engine.config_loader import model_for_role, narration_langua
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.models import BrainResult, GameState
+from straightjacket.engine.models import BrainResult, GameState, NpcData
 from straightjacket.engine.parser import salvage_truncated_narration
 from straightjacket.engine.prompt_blocks import content_boundaries_block, get_narrator_system
 from straightjacket.engine.prompt_loader import get_prompt
@@ -107,42 +107,29 @@ def call_opening_setup(provider: AIProvider, narration: str, game: GameState) ->
     return data
 
 
-def call_narrator_metadata(
-    provider: AIProvider,
-    narration: str,
-    game: GameState,
-    brain: BrainResult,
-    consequences: Sequence[str],
-) -> dict[str, Any]:
-    lang = narration_language()
+def _metadata_npc_ref(npc: NpcData) -> str:
+    entry = get_prompt("metadata_npc_ref", id=npc.id, npc=_xe(npc.name))
+    if npc.aliases:
+        entry += get_prompt("metadata_npc_aliases", aliases=_xe(", ".join(npc.aliases)))
+    if npc.status == "deceased":
+        entry += get_prompt("metadata_npc_deceased")
+    elif npc.status == "lore":
+        entry += get_prompt("metadata_npc_lore")
+    if npc.last_location:
+        entry += get_prompt("metadata_npc_at", location=_xe(npc.last_location))
+    if npc.description:
+        description = npc.description[: eng().truncations.prompt_xshort]
+        entry += get_prompt("metadata_npc_description", description=_xe(description))
+    return entry
 
-    npc_refs = []
-    npc_ids: list[str] = []
-    for n in game.npcs:
-        npc_ids.append(n.id)
-        entry = get_prompt("metadata_npc_ref", id=n.id, npc=_xe(n.name))
-        if n.aliases:
-            entry += get_prompt("metadata_npc_aliases", aliases=_xe(", ".join(n.aliases)))
-        if n.status == "deceased":
-            entry += get_prompt("metadata_npc_deceased")
-        elif n.status == "lore":
-            entry += get_prompt("metadata_npc_lore")
 
-        npc_loc = n.last_location
-        if npc_loc:
-            entry += get_prompt("metadata_npc_at", location=_xe(npc_loc))
-
-        desc = n.description
-        if desc:
-            entry += get_prompt("metadata_npc_description", description=_xe(desc[: eng().truncations.prompt_xshort]))
-        npc_refs.append(entry)
-
+def _metadata_engine_context(brain: BrainResult, consequences: Sequence[str]) -> str:
     parts = [get_prompt("metadata_context_move", move=brain.move)]
     if brain.stat != eng().ai_text.no_stat:
         parts.append(get_prompt("metadata_context_stat", stat=brain.stat))
     if brain.target_npc:
         parts.append(get_prompt("metadata_context_target", target=brain.target_npc))
-    mechanical_ctx = "\n" + get_prompt(
+    return "\n" + get_prompt(
         "metadata_engine_context",
         context=" | ".join(parts),
         consequences=get_prompt("metadata_context_consequences", consequences=_xe(", ".join(consequences)))
@@ -150,21 +137,35 @@ def call_narrator_metadata(
         else "",
     )
 
-    system_base = get_prompt("narrator_metadata", lang=lang, dispositions="|".join(gm().enums.dispositions))
 
-    cb = content_boundaries_block(game)
-    system = f"{system_base}\n{cb}" if cb else system_base
+def _metadata_request(game: GameState, narration: str, engine_context: str) -> str:
+    npc_refs = [_metadata_npc_ref(n) for n in game.npcs]
     defaults = eng().ai_text.narrator_defaults
-
-    prompt = get_prompt(
+    return get_prompt(
         "narrator_metadata_request",
         narration=_xe(narration),
         player_name=_xe(game.player_name),
         known_npcs="\n".join(npc_refs) if npc_refs else defaults["no_npcs"],
         location=_xe(game.world.current_location or defaults["unknown_location"]),
         time=game.world.time_of_day or defaults["unknown_time"],
-        engine_context=mechanical_ctx,
+        engine_context=engine_context,
     )
+
+
+def call_narrator_metadata(
+    provider: AIProvider,
+    narration: str,
+    game: GameState,
+    brain: BrainResult,
+    consequences: Sequence[str],
+) -> dict[str, Any]:
+    npc_ids = [n.id for n in game.npcs]
+    system_base = get_prompt(
+        "narrator_metadata", lang=narration_language(), dispositions="|".join(gm().enums.dispositions)
+    )
+    cb = content_boundaries_block(game)
+    system = f"{system_base}\n{cb}" if cb else system_base
+    prompt = _metadata_request(game, narration, _metadata_engine_context(brain, consequences))
 
     spec = AICallSpec(
         model=model_for_role("narrator_metadata"),

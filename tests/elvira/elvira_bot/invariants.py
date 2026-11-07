@@ -8,19 +8,34 @@ from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.meters import condition_meters, in_crisis, max_momentum, momentum
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from straightjacket.engine.models import ClockData, GameState, NpcData
+
+
+def _checker(violations: list[str], prefix: str) -> Callable[..., None]:
+    def check(*, condition: bool, msg: str) -> None:
+        if not condition:
+            violations.append(f"{prefix} {msg}")
+
+    return check
 
 
 def assert_game_state(game: GameState, turn: int) -> list[str]:
     violations: list[str] = []
+    _check_meters(game, turn, violations)
+    for npc in game.npcs:
+        _check_npc(npc, turn, violations)
+    for clock in game.world.clocks:
+        _check_clock(clock, turn, violations)
+    _check_records(game, turn, violations)
+    _check_combat_track_sync(game, turn, violations)
+    return violations
 
-    def check(*, condition: bool, msg: str) -> None:
-        if not condition:
-            violations.append(f"[TURN {turn}] {msg}")
 
+def _check_meters(game: GameState, turn: int, violations: list[str]) -> None:
+    check = _checker(violations, f"[TURN {turn}]")
     meters = game.resources.meters
-    world = game.world
-
     for name, meter in condition_meters(game.setting_id).items():
         check(
             condition=meter.min <= meters[name] <= meter.max,
@@ -29,9 +44,10 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
     floor, ceiling = rules().momentum.floor, max_momentum(game)
     check(condition=floor <= momentum(game) <= ceiling, msg=f"momentum={momentum(game)} out of [{floor},{ceiling}]")
 
+    chaos = game.world.chaos_factor
     check(
-        condition=gm().chaos.min <= world.chaos_factor <= gm().chaos.max,
-        msg=f"chaos_factor={world.chaos_factor} out of [{gm().chaos.min},{gm().chaos.max}]",
+        condition=gm().chaos.min <= chaos <= gm().chaos.max,
+        msg=f"chaos_factor={chaos} out of [{gm().chaos.min},{gm().chaos.max}]",
     )
 
     check(condition=game.narrative.scene_count >= 1, msg=f"scene_count={game.narrative.scene_count} < 1")
@@ -39,17 +55,13 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
     crisis_meters = {name: meters[name] for name in rules().meters.crisis_at_zero}
     check(condition=game.crisis_mode == in_crisis(game), msg=f"crisis_mode={game.crisis_mode} but {crisis_meters}")
 
-    for npc in game.npcs:
-        _check_npc(npc, turn, violations)
 
-    for clock in world.clocks:
-        _check_clock(clock, turn, violations)
-
+def _check_records(game: GameState, turn: int, violations: list[str]) -> None:
+    check = _checker(violations, f"[TURN {turn}]")
     check(
-        condition=world.combat_position in {"", "in_control", "bad_spot"},
-        msg=f"invalid combat_position '{world.combat_position}'",
+        condition=game.world.combat_position in {"", "in_control", "bad_spot"},
+        msg=f"invalid combat_position '{game.world.combat_position}'",
     )
-
     for track in game.progress_tracks:
         check(condition=bool(track.id), msg="progress_track with empty id")
         check(condition=bool(track.name), msg=f"progress_track '{track.id}' with empty name")
@@ -61,26 +73,21 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
             condition=0 <= track.ticks <= track.max_ticks,
             msg=f"progress_track '{track.id}' ticks={track.ticks} out of [0,{track.max_ticks}]",
         )
-
     thread_ids = set()
     for t in game.narrative.threads:
         check(condition=bool(t.id), msg="thread with empty id")
         check(condition=t.id not in thread_ids, msg=f"duplicate thread id '{t.id}'")
         thread_ids.add(t.id)
         check(condition=t.weight > 0, msg=f"thread '{t.id}' weight={t.weight} <= 0")
-
     char_ids = set()
     for c in game.narrative.characters_list:
         check(condition=bool(c.id), msg="character_list entry with empty id")
         check(condition=c.id not in char_ids, msg=f"duplicate character_list id '{c.id}'")
         char_ids.add(c.id)
-
     for truth_id, summary in game.truths.items():
         check(condition=bool(summary.strip()), msg=f"truth '{truth_id}' has empty summary")
-
     for asset_id in game.assets:
         check(condition=bool(asset_id.strip()), msg="empty asset id in assets list")
-
     if game.narrative.session_log:
         last = game.narrative.session_log[-1]
         check(
@@ -88,15 +95,9 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
             msg=f"session_log last scene={last.scene} != scene_count={game.narrative.scene_count}",
         )
 
-    _check_combat_track_sync(game, turn, violations)
-
-    return violations
-
 
 def _check_npc(npc: NpcData, turn: int, violations: list[str]) -> None:
-    def check(*, condition: bool, msg: str) -> None:
-        if not condition:
-            violations.append(f"[TURN {turn}] NPC '{npc.name}': {msg}")
+    check = _checker(violations, f"[TURN {turn}] NPC '{npc.name}':")
 
     check(condition=bool(npc.id), msg="empty id")
     check(condition=bool(npc.name), msg="empty name")
@@ -129,9 +130,7 @@ def _check_npc(npc: NpcData, turn: int, violations: list[str]) -> None:
 
 
 def _check_clock(clock: ClockData, turn: int, violations: list[str]) -> None:
-    def check(*, condition: bool, msg: str) -> None:
-        if not condition:
-            violations.append(f"[TURN {turn}] Clock '{clock.name}': {msg}")
+    check = _checker(violations, f"[TURN {turn}] Clock '{clock.name}':")
 
     check(condition=bool(clock.name), msg="empty name")
     clock_types = ("threat", "scheme", "progress", rules().suffer.dying_clock.clock_type)
@@ -163,10 +162,7 @@ def check_turn_replacement(
     before: GameState, after: GameState, narration: str, turn: int, kind: str, *, keeps_location: bool
 ) -> list[str]:
     violations: list[str] = []
-
-    def check(*, condition: bool, msg: str) -> None:
-        if not condition:
-            violations.append(f"[TURN {turn}] {kind}: {msg}")
+    check = _checker(violations, f"[TURN {turn}] {kind}:")
 
     old_history, new_history = before.narrative.narration_history, after.narrative.narration_history
     check(

@@ -43,11 +43,7 @@ def _scenario_cfg(bot_cfg: dict[str, Any], name: str) -> dict[str, Any]:
     return run_cfg
 
 
-def main() -> None:
-    show_on_console()
-    for stream in (sys.stdout, sys.stderr):
-        if isinstance(stream, io.TextIOWrapper):
-            stream.reconfigure(encoding="utf-8", errors="replace")
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Straightjacket — Elvira Test Player Bot")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Path to elvira_config.yaml")
     parser.add_argument("--auto", action="store_true", help="Override: enable full auto mode")
@@ -73,7 +69,15 @@ def main() -> None:
         default=None,
         help="Play a prepared situation from the config, or 'all' (direct mode only)",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main() -> None:
+    show_on_console()
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+    args = _parse_args()
 
     bot_cfg = load_config(args.config)
 
@@ -81,7 +85,10 @@ def main() -> None:
         bot_cfg.setdefault("game", {})["setting_id"] = args.setting
     if args.style:
         bot_cfg.setdefault("bot_behavior", {})["style"] = args.style
+    _play(bot_cfg, args)
 
+
+def _play(bot_cfg: dict[str, Any], args: argparse.Namespace) -> None:
     if args.scenario:
         names = list(bot_cfg["scenarios"]) if args.scenario == "all" else [args.scenario]
         for name in names:

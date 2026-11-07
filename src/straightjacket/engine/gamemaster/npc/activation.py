@@ -1,4 +1,5 @@
 import math
+from collections import Counter
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.npc.lifecycle import reactivate_npc
@@ -8,64 +9,54 @@ from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import BrainResult, GameState, NpcData
 
 
-def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
-    tfidf_cfg = gm().tf_idf
-    min_tok = tfidf_cfg.token_min_length
+def _tokenize(text: str) -> list[str]:
+    min_tok = gm().tf_idf.token_min_length
+    return [w for w in text.lower().split() if len(w) >= min_tok and w.isalpha()]
 
-    def _tokenize(text: str) -> list[str]:
-        return [w for w in text.lower().split() if len(w) >= min_tok and w.isalpha()]
 
+def _npc_documents(npcs: list[NpcData]) -> dict[str, list[str]]:
+    window = gm().tf_idf.memory_window
     docs = {}
     for npc in npcs:
         if npc.status not in gm().npc_status_groups.in_play:
             continue
-        npc_id = npc.id
-        parts = [
-            npc.name,
-            npc.description,
-            npc.agenda,
-            " ".join(npc.aliases),
-        ]
+        parts = [npc.name, npc.description, npc.agenda, " ".join(npc.aliases)]
+        parts.extend(m.event for m in npc.memory[-window:])
+        docs[npc.id] = _tokenize(" ".join(parts))
+    return docs
 
-        parts.extend(m.event for m in npc.memory[-tfidf_cfg.memory_window :])
-        docs[npc_id] = _tokenize(" ".join(parts))
 
+def _tfidf_vector(tokens: list[str], idf: dict[str, float]) -> dict[str, float]:
+    doc_len = len(tokens)
+    return {t: (count / doc_len) * idf[t] for t, count in Counter(tokens).items()}
+
+
+def _norm(vector: dict[str, float]) -> float:
+    sumsq = sum(v * v for v in vector.values())
+    return math.sqrt(sumsq) if sumsq > 0 else 1.0
+
+
+def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
+    docs = _npc_documents(npcs)
     query_tokens = _tokenize(query_text)
     if not query_tokens:
         return {}
 
     all_docs = [*list(docs.values()), query_tokens]
-    n_docs = len(all_docs)
-    df: dict[str, int] = {}
-    for doc in all_docs:
-        seen = set(doc)
-        for term in seen:
-            df[term] = df.get(term, 0) + 1
+    df = Counter(term for doc in all_docs for term in set(doc))
+    idf = {term: math.log(len(all_docs) / count) for term, count in df.items()}
 
-    idf = {term: math.log(n_docs / count) for term, count in df.items()}
-
-    def _tfidf_vector(tokens: list[str]) -> dict[str, float]:
-        tf: dict[str, int] = {}
-        for t in tokens:
-            tf[t] = tf.get(t, 0) + 1
-        doc_len = len(tokens)
-        return {t: (count / doc_len) * idf[t] for t, count in tf.items()}
-
-    query_vec = _tfidf_vector(query_tokens)
-    q_sumsq = sum(v * v for v in query_vec.values())
-    query_norm = math.sqrt(q_sumsq) if q_sumsq > 0 else 1.0
+    query_vec = _tfidf_vector(query_tokens, idf)
+    query_norm = _norm(query_vec)
 
     scores = {}
     for npc_id, tokens in docs.items():
         if not tokens:
             scores[npc_id] = 0.0
             continue
-        doc_vec = _tfidf_vector(tokens)
-        d_sumsq = sum(v * v for v in doc_vec.values())
-        doc_norm = math.sqrt(d_sumsq) if d_sumsq > 0 else 1.0
-
+        doc_vec = _tfidf_vector(tokens, idf)
         dot = sum(query_vec.get(t, 0) * doc_vec.get(t, 0) for t in set(query_vec) | set(doc_vec))
-        scores[npc_id] = dot / (query_norm * doc_norm)
+        scores[npc_id] = dot / (query_norm * _norm(doc_vec))
 
     return scores
 

@@ -1,5 +1,6 @@
 import pytest
 
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import (
     BrainResult,
     ClockEvent,
@@ -196,3 +197,31 @@ def test_task_mentions_consequence_weaving() -> None:
         ),
     )
     assert "<consequence>" in prompt.lower()
+
+
+@pytest.mark.parametrize(
+    ("kind", "values", "event", "npc", "detail"),
+    [
+        ("bond_progress", {"name": "Mira"}, "bond_gain", "Mira", ""),
+        ("disposition_shift", {"name": "Mira"}, "disposition_shift", "Mira", ""),
+        ("bond_sealed", {"name": "Mira"}, "bond_sealed", "Mira", ""),
+        ("bond_tested", {"name": "Mira"}, "bond_tested", "Mira", ""),
+        ("bond_cleared", {"name": "Mira"}, "bond_cleared", "Mira", ""),
+        ("mark_impact", {"impact": "wounded"}, "impact_mark", "Target", "wounded"),
+        ("clear_impact", {"impact": "wounded"}, "impact_clear", "Target", "wounded"),
+        ("complication_clock", {"name": "Rising Tide"}, "complication_clock", "Target", "Rising Tide"),
+        ("complication_averted", {"name": "Rising Tide"}, "complication_averted", "Target", "Rising Tide"),
+        ("recommit", {"track": "Find the Ship"}, "recommit", "Target", "Find the Ship"),
+        ("complication", {"kind": "gather_information"}, "complication_gather_information", "Target", ""),
+        ("bond_request", {}, "bond_request", "Target", ""),
+        ("obstacle", {}, "obstacle", "Target", ""),
+        ("loyalty_test", {}, "loyalty_test", "Target", ""),
+        ("milestone", {}, "milestone", "Target", ""),
+    ],
+)
+def test_each_kind_is_told_by_its_template_about_its_own_values(
+    kind: str, values: dict[str, str], event: str, npc: str, detail: str
+) -> None:
+    sentence = resolve_consequence_sentence(consequence(kind, **values), "Ash", "Target", "The Docks")
+    told = {"player": "Ash", "npc": npc, "location": "The Docks", "amount": "", "impact": detail, "danger": detail}
+    assert sentence in {line.format(**told) for line in eng().get_raw("consequence_templates")[event]}

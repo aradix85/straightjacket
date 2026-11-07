@@ -46,6 +46,12 @@ def check_narration_quality(narration: str) -> list[str]:
     return findings
 
 
+def _named_in(name: str, narration_lower: str) -> bool:
+    return name.lower() in narration_lower or any(
+        len(part) >= 4 and part.lower() in narration_lower for part in name.split()
+    )
+
+
 def check_npc_spatial_consistency(
     game: GameState,
     prev_npcs: list[NpcSnapshot] | None,
@@ -59,34 +65,13 @@ def check_npc_spatial_consistency(
     prev_by_id = {n.id: n for n in prev_npcs}
 
     for npc in game.npcs:
-        if npc.status not in {"active", "background"}:
-            continue
         prev = prev_by_id.get(npc.id)
-        if not prev:
+        if npc.status not in {"active", "background"} or not prev:
             continue
-        if not prev.last_location:
+        old_loc, new_loc = prev.last_location, npc.last_location
+        if not old_loc or not new_loc or _same_place(old_loc, new_loc) or _named_in(npc.name, narration_lower):
             continue
-
-        old_loc = prev.last_location
-        new_loc = npc.last_location
-
-        if not old_loc or not new_loc:
-            continue
-        if _same_place(old_loc, new_loc):
-            continue
-
-        name_lower = npc.name.lower()
-        mentioned = name_lower in narration_lower
-        if not mentioned:
-            for part in npc.name.split():
-                if len(part) >= 4 and part.lower() in narration_lower:
-                    mentioned = True
-                    break
-
-        if not mentioned:
-            findings.append(
-                f"NPC '{npc.name}' teleported from '{old_loc}' to '{new_loc}' without appearing in narration"
-            )
+        findings.append(f"NPC '{npc.name}' teleported from '{old_loc}' to '{new_loc}' without appearing in narration")
 
     return findings
 

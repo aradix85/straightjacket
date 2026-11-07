@@ -11,6 +11,8 @@ from tests.elvira.elvira_bot.coverage import TARGETS
 from tests.elvira.elvira_bot.fixed_results import check_results
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from straightjacket.engine.models import GameState, NpcData, ProgressTrack
 
 
@@ -121,6 +123,19 @@ def fixed_result_of_turn(spec: dict[str, Any] | None, turn: int) -> str | None:
     return results[turn - 1] if turn <= len(results) else None
 
 
+_PREPARATIONS: dict[str, Callable[[GameState, Any], str]] = {
+    "game_over": lambda game, value: _game_over(game, str(value)),
+    "story_end": lambda game, _value: _near_story_end(game),
+    "combat": lambda game, _value: _start_combat(game),
+    "clock_nearly_full": lambda game, _value: _nearly_full_clock(game),
+    "companion": lambda game, _value: _keep_one_companion(game),
+    "bonded": lambda game, _value: _bond_with_companion(game),
+    "vow_boxes": lambda game, value: _vow_near_its_end(game, int(value)),
+    "vow_to_companion": lambda game, _value: _vow_to_companion(game),
+    "threat_on_vow": lambda game, value: _threat_on_vow(game, dict(value)),
+}
+
+
 def prepare_scenario(game: GameState, spec: dict[str, Any]) -> list[str]:
     check_expectations(spec)
     notes: list[str] = []
@@ -129,22 +144,5 @@ def prepare_scenario(game: GameState, spec: dict[str, Any]) -> list[str]:
         notes.append(f"results of the first {len(spec['results'])} turns fixed: {', '.join(spec['results'])}")
     if "resources" in spec:
         notes += _set_resources(game, spec["resources"])
-    if "game_over" in spec:
-        notes.append(_game_over(game, str(spec["game_over"])))
-    if "story_end" in spec:
-        notes.append(_near_story_end(game))
-    if "combat" in spec:
-        notes.append(_start_combat(game))
-    if "clock_nearly_full" in spec:
-        notes.append(_nearly_full_clock(game))
-    if "companion" in spec:
-        notes.append(_keep_one_companion(game))
-    if "bonded" in spec:
-        notes.append(_bond_with_companion(game))
-    if "vow_boxes" in spec:
-        notes.append(_vow_near_its_end(game, int(spec["vow_boxes"])))
-    if "vow_to_companion" in spec:
-        notes.append(_vow_to_companion(game))
-    if "threat_on_vow" in spec:
-        notes.append(_threat_on_vow(game, dict(spec["threat_on_vow"])))
+    notes += [prepare(game, spec[key]) for key, prepare in _PREPARATIONS.items() if key in spec]
     return notes

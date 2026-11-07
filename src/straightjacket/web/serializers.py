@@ -14,7 +14,7 @@ from straightjacket.engine.ruleset.progress import filled_boxes, menace_boxes, r
 from straightjacket.engine.ruleset.stats import stat_descriptions
 from straightjacket.engine.ruleset.threats import active_threats
 from straightjacket.engine.ruleset.tracks import active_tracks
-from straightjacket.engine.setting.packages import list_packages, load_package
+from straightjacket.engine.setting.packages import SettingPackage, list_packages, load_package
 from straightjacket.engine.story_state import get_current_act
 from straightjacket.i18n import t
 
@@ -146,82 +146,54 @@ def build_threats_status(game: GameState) -> str:
     return "\n".join(lines)
 
 
-def build_creation_options() -> dict[str, Any]:
-    settings = []
-    for pkg_id in list_packages():
-        pkg = load_package(pkg_id)
-        if not pkg.playable:
-            continue
-
-        ruleset = load_ruleset(pkg_id)
-        own = ruleset.setting_file
-        paths = []
-        for asset in own.assets_of("path"):
-            asset_id = asset["_id"].rsplit("/", 1)[-1]
-            paths.append({"id": asset_id, "title": asset["name"]})
-
-        truths = []
-        flow = pkg.creation_flow
-        if flow.has_truths:
-            raw_truths = pkg.data.truths()
-            trunc = eng().truncations
-            for truth_id, truth_data in raw_truths.items():
-                options = []
-
-                for opt in truth_data["options"]:
-                    summary_text = opt["summary"] if "summary" in opt else opt["description"]
-                    options.append(
-                        {
-                            "summary": str(summary_text)[: trunc.prompt_medium],
-                            "description": str(opt["description"])[: trunc.prompt_medium],
-                        }
-                    )
-
-                truths.append(
-                    {
-                        "id": truth_id,
-                        "name": truth_data["name"],
-                        "options": options,
-                    }
-                )
-
-        name_tables = {}
-        if flow.has_name_tables:
-            for table_id, table in pkg.name_tables(gm().naming.category).items():
-                name_tables[table_id] = [row.text for row in table.rows]
-
-        backstory_prompts = []
-        if flow.has_backstory_oracle:
-            backstory_prompts = [row.text for row in pkg.oracle_table(pkg.oracle_paths.backstory).rows]
-
-        starting_assets = []
-        for cat in flow.starting_asset_categories:
-            for asset in own.assets_of(cat):
-                asset_id = asset["_id"].rsplit("/", 1)[-1]
-                starting_assets.append(
-                    {
-                        "id": asset_id,
-                        "title": asset["name"],
-                        "category": own.assets[cat]["name"],
-                    }
-                )
-
-        settings.append(
+def _truth_options(pkg: SettingPackage) -> list[dict[str, Any]]:
+    trunc = eng().truncations
+    truths = []
+    for truth_id, truth_data in pkg.data.truths().items():
+        options = [
             {
-                "id": pkg_id,
-                "title": pkg.title,
-                "description": pkg.description,
-                "paths": paths,
-                "max_paths": rules().creation.max_paths[ruleset.id],
-                "truths": truths,
-                "name_tables": name_tables,
-                "backstory_prompts": backstory_prompts,
-                "starting_assets": starting_assets,
-                "max_starting_assets": rules().creation.max_starting_assets[ruleset.id],
-                "default_tone": pkg.default_tone,
-                "stats": list(stat_descriptions(pkg_id)),
+                "summary": str(opt["summary"] if "summary" in opt else opt["description"])[: trunc.prompt_medium],
+                "description": str(opt["description"])[: trunc.prompt_medium],
             }
-        )
+            for opt in truth_data["options"]
+        ]
+        truths.append({"id": truth_id, "name": truth_data["name"], "options": options})
+    return truths
+
+
+def _setting_options(pkg_id: str, pkg: SettingPackage) -> dict[str, Any]:
+    ruleset = load_ruleset(pkg_id)
+    own = ruleset.setting_file
+    flow = pkg.creation_flow
+    return {
+        "id": pkg_id,
+        "title": pkg.title,
+        "description": pkg.description,
+        "paths": [{"id": asset["_id"].rsplit("/", 1)[-1], "title": asset["name"]} for asset in own.assets_of("path")],
+        "max_paths": rules().creation.max_paths[ruleset.id],
+        "truths": _truth_options(pkg) if flow.has_truths else [],
+        "name_tables": {
+            table_id: [row.text for row in table.rows]
+            for table_id, table in pkg.name_tables(gm().naming.category).items()
+        }
+        if flow.has_name_tables
+        else {},
+        "backstory_prompts": [row.text for row in pkg.oracle_table(pkg.oracle_paths.backstory).rows]
+        if flow.has_backstory_oracle
+        else [],
+        "starting_assets": [
+            {"id": asset["_id"].rsplit("/", 1)[-1], "title": asset["name"], "category": own.assets[cat]["name"]}
+            for cat in flow.starting_asset_categories
+            for asset in own.assets_of(cat)
+        ],
+        "max_starting_assets": rules().creation.max_starting_assets[ruleset.id],
+        "default_tone": pkg.default_tone,
+        "stats": list(stat_descriptions(pkg_id)),
+    }
+
+
+def build_creation_options() -> dict[str, Any]:
+    settings = [_setting_options(pkg_id, pkg) for pkg_id in list_packages() if (pkg := load_package(pkg_id)).playable]
 
     stat_array = rules().stats.creation_array
     return {

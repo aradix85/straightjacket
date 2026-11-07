@@ -239,13 +239,9 @@ def _ask_brain(provider: AIProvider, spec: AICallSpec) -> tuple[str, BrainResult
         raise AIUnavailableError(msg) from e
 
 
-def call_brain(provider: AIProvider, game: GameState, player_message: str) -> BrainResult:
-    brain_lang = narration_language()
-
-    log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[: eng().truncations.log_long]}")
-
+def _system_prompt(game: GameState) -> tuple[str, str]:
     system_variables = {
-        "lang": brain_lang,
+        "lang": narration_language(),
         "world": world_tag(game),
         "content_boundaries_block": content_boundaries_block(game),
         "stats": _stats_block(game),
@@ -254,11 +250,10 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         "place": gm().fact_resolution.place_reference,
     }
     system = get_prompt("brain_parser", moves_block=_build_moves_block(game), **system_variables)
-    cached_prefix = get_prompt_prefix("brain_parser", "moves_block", **system_variables)
+    return system, get_prompt_prefix("brain_parser", "moves_block", **system_variables)
 
-    w = game.world
-    texts = eng().ai_text.narrator_defaults
 
+def _build_npcs_block(game: GameState) -> str:
     npc_lines = []
     for n in _listed_npcs(game):
         connection = connection_track(game, n.id)
@@ -272,37 +267,52 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         if n.aliases:
             entry += get_prompt("brain_npc_aliases", aliases=_xe(",".join(n.aliases)))
         npc_lines.append(entry)
-    npc_block = (
-        get_prompt("brain_npcs_wrapper", lines="\n".join(npc_lines))
-        if npc_lines
-        else get_prompt("brain_npcs_none", none=texts["no_npcs"])
-    )
+    if npc_lines:
+        return get_prompt("brain_npcs_wrapper", lines="\n".join(npc_lines))
+    return get_prompt("brain_npcs_none", none=eng().ai_text.narrator_defaults["no_npcs"])
 
-    tracks_block = _build_tracks_block(game)
-    dangers_block = _build_dangers_block(game)
-    bonuses = bonus_block(game)
 
-    user_msg = get_prompt(
+def _build_user_message(game: GameState, player_message: str) -> str:
+    w = game.world
+    return get_prompt(
         "brain_user_message",
         location=_xe(w.current_location),
         context=_xe(w.current_scene_context),
-        time=w.time_of_day or texts["unknown_time"],
+        time=w.time_of_day or eng().ai_text.narrator_defaults["unknown_time"],
         stats=_build_stats_line(game),
-        npcs=npc_block,
-        tracks=tracks_block,
-        dangers=dangers_block,
-        bonuses=bonuses,
+        npcs=_build_npcs_block(game),
+        tracks=_build_tracks_block(game),
+        dangers=_build_dangers_block(game),
+        bonuses=bonus_block(game),
         input=_xe(player_message),
     )
 
-    move_keys = list(_offered_moves(game))
-    choices = {
+
+def _choices(game: GameState) -> dict[str, list[str]]:
+    return {
         "bonus_id": [b.id for b in roll_bonuses(game)],
         "target_npc": [n.id for n in _listed_npcs(game)],
         "target_track": [tr.id for tr in active_tracks(game)],
         "target_clock": [c.name for c in open_complications(game)],
         "target_threat": [t.id for t in active_threats(game) if vow_against(game, t) is None],
     }
+
+
+def _log_result(result: BrainResult) -> None:
+    log(
+        f"[Brain] move={result.move}, stat={result.stat}, "
+        f"intent={result.player_intent[: eng().truncations.log_short]}"
+        + (f", target_clock={result.target_clock}" if result.target_clock else "")
+        + (f", target_threat={result.target_threat}" if result.target_threat else "")
+    )
+
+
+def call_brain(provider: AIProvider, game: GameState, player_message: str) -> BrainResult:
+    log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[: eng().truncations.log_long]}")
+
+    system, cached_prefix = _system_prompt(game)
+    move_keys = list(_offered_moves(game))
+    choices = _choices(game)
     schema = get_brain_output_schema(
         move_keys=move_keys,
         stat_names=list(stat_descriptions(game.setting_id)),
@@ -312,20 +322,18 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         clock_names=choices["target_clock"],
         threat_ids=choices["target_threat"],
     )
-    model = model_for_role("brain")
-    params = sampling_params("brain")
-    messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
+    messages: list[dict[str, Any]] = [{"role": "user", "content": _build_user_message(game, player_message)}]
     retries_asked = 0
     while True:
         spec = AICallSpec(
-            model=model,
+            model=model_for_role("brain"),
             system=system,
             messages=list(messages),
             json_schema=schema,
             tools=None,
             log_role="brain",
             cached_system_prefix=cached_prefix,
-            **params,
+            **sampling_params("brain"),
         )
         content, result = _ask_brain(provider, spec)
         _check_choices(result, move_keys, choices)
@@ -333,12 +341,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         _check_target_track(game, result)
         stats = _wrong_stat(game, result)
         if not stats:
-            log(
-                f"[Brain] move={result.move}, stat={result.stat}, "
-                f"intent={result.player_intent[: eng().truncations.log_short]}"
-                + (f", target_clock={result.target_clock}" if result.target_clock else "")
-                + (f", target_threat={result.target_threat}" if result.target_threat else "")
-            )
+            _log_result(result)
             return result
         if retries_asked >= eng().retry.brain_stat_retries:
             _refuse(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")

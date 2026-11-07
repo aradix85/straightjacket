@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
-from radon.complexity import cc_visit
 from typing_extensions import override
 
 if TYPE_CHECKING:
@@ -47,13 +46,6 @@ _AI_CALL_CARVE_OUT_TESTS = {
 
 _HARDCODED_MODEL_NAME_TEST_WHITELIST = {
     "test_project_rules.py",
-}
-
-
-_COMPLEXITY_TEST_WHITELIST = {
-    ("elvira/elvira_bot/runner.py", "run_session"),
-    ("elvira/elvira_bot/models.py", "to_compact_dict"),
-    ("elvira/elvira_bot/ws_runner.py", "run_ws_session"),
 }
 
 
@@ -592,38 +584,6 @@ def _scan_model_names(path: Path, rel: str) -> list[Violation]:
     return violations
 
 
-_COMPLEXITY_CEILING = 20
-
-
-def _check_no_function_exceeds_complexity_ceiling() -> tuple[str, list[Violation]]:
-    violations: list[Violation] = []
-    for path in _iter_source_files():
-        rel = _rel(path)
-        violations.extend(_scan_complexity(path, rel, set()))
-    for path in _iter_test_files():
-        rel = _rel_test(path)
-        violations.extend(_scan_complexity(path, rel, _COMPLEXITY_TEST_WHITELIST))
-
-    return f"CYCLOMATIC COMPLEXITY above {_COMPLEXITY_CEILING} (decompose into sub-functions)", violations
-
-
-def _scan_complexity(path: Path, rel: str, whitelist: set[tuple[str, str]]) -> list[Violation]:
-    violations: list[Violation] = []
-    try:
-        text, _, _, _ = _load(path)
-        blocks = cc_visit(text)
-    except SyntaxError:
-        return violations
-    for block in blocks:
-        if block.complexity <= _COMPLEXITY_CEILING:
-            continue
-        if (rel, block.name) in whitelist:
-            continue
-        snippet = f"{block.name} — complexity {block.complexity}"
-        violations.append(Violation(rel, block.lineno, snippet))
-    return violations
-
-
 def _is_empty_collection(node: ast.expr) -> bool:
     if isinstance(node, ast.List) and not node.elts:
         return True
@@ -926,7 +886,7 @@ def _has_broad_except(path: Path) -> bool:
     )
 
 
-def _stale_file_entries() -> list[Violation]:
+def _stale_broad_except_carve_outs() -> list[Violation]:
     violations: list[Violation] = []
     for rel in sorted(_AI_CALL_CARVE_OUT_FILES):
         path = SRC_ROOT / rel
@@ -938,6 +898,11 @@ def _stale_file_entries() -> list[Violation]:
         path = TESTS_ROOT / rel
         if not path.exists() or not _has_broad_except(path):
             violations.append(Violation(rel, 0, "test carve-out file has no broad except to carve out"))
+    return violations
+
+
+def _stale_scan_allowances() -> list[Violation]:
+    violations: list[Violation] = []
     for rel in sorted(_HARDCODED_MODEL_NAME_TEST_WHITELIST):
         path = TESTS_ROOT / rel
         if not path.exists() or not _scan_model_names(path, rel):
@@ -950,17 +915,22 @@ def _stale_file_entries() -> list[Violation]:
         path = TESTS_ROOT / rel
         if not path.exists() or not _scan_provider_sdk(path, rel):
             violations.append(Violation(rel, 0, "provider-import allowance for a test that imports no provider SDK"))
-    violations.extend(
-        Violation(rel, 0, "config binding file does not exist")
-        for rel in sorted(_CONFIG_BINDING_FILES)
-        if not (SRC_ROOT / rel).exists()
-    )
-    violations.extend(
-        Violation(f"engine/{stem}.py", 0, "import-layer base file does not exist")
-        for stem in sorted(_CORE_BASE)
-        if not (SRC_ROOT / "engine" / f"{stem}.py").exists()
-    )
     return violations
+
+
+def _missing_listed_files() -> list[Violation]:
+    return [
+        *(
+            Violation(rel, 0, "config binding file does not exist")
+            for rel in sorted(_CONFIG_BINDING_FILES)
+            if not (SRC_ROOT / rel).exists()
+        ),
+        *(
+            Violation(f"engine/{stem}.py", 0, "import-layer base file does not exist")
+            for stem in sorted(_CORE_BASE)
+            if not (SRC_ROOT / "engine" / f"{stem}.py").exists()
+        ),
+    ]
 
 
 def _stale_symbol_entries() -> list[Violation]:
@@ -970,14 +940,16 @@ def _stale_symbol_entries() -> list[Violation]:
     for rel, name in sorted(_EXTERNAL_STRUCTURE_DATACLASSES):
         if not _defines(SRC_ROOT / rel, name):
             violations.append(Violation(rel, 0, f"external-structure dataclass {name!r} is not defined there"))
-    for rel, name in sorted(_COMPLEXITY_TEST_WHITELIST):
-        if not _defines(TESTS_ROOT / rel, name):
-            violations.append(Violation(rel, 0, f"complexity whitelist function {name!r} is not defined there"))
     return violations
 
 
 def _check_no_stale_carve_out_entries() -> tuple[str, list[Violation]]:
-    return "STALE carve-out or whitelist entry", _stale_file_entries() + _stale_symbol_entries()
+    return "STALE carve-out or whitelist entry", [
+        *_stale_broad_except_carve_outs(),
+        *_stale_scan_allowances(),
+        *_missing_listed_files(),
+        *_stale_symbol_entries(),
+    ]
 
 
 _SKIP_PATTERN = re.compile(r"pytest\.(mark\.)?(skip|skipif|xfail)\b")
@@ -1171,6 +1143,28 @@ def _register_titles() -> set[str]:
     return {_anchor(m.group(1)) for line in text.splitlines() if (m := re.match(r"^- \*\*([^*]+)\*\*", line))}
 
 
+def _section_problems(doc: Path, own: list[str], line: str) -> Iterator[str]:
+    for target, section in _section_refs(line):
+        path = doc if target is None else REPO_ROOT / target
+        if not path.is_file():
+            yield f"names {target}, which does not exist"
+        elif not _names_section(own if target is None else _anchors(path), section):
+            yield f"{path.name} has no section {section!r}"
+
+
+def _register_problems(line: str, titles: set[str]) -> Iterator[str]:
+    for match in _REGISTER_TITLE_REF.finditer(line):
+        title = match.group(1) or match.group(2)
+        if _anchor(title) not in titles:
+            yield f"no register entry {title!r}"
+
+
+def _step_problems(line: str, steps: set[str], substeps: set[str]) -> Iterator[str]:
+    for step, sub in _ROADMAP_STEP_REF.findall(line):
+        if step not in steps or (sub and not {f"{step}.{sub}", f"{step}."} & substeps):
+            yield f"roadmap has no step {step}.{sub}".rstrip(".")
+
+
 def _check_doc_references_resolve() -> tuple[str, list[Violation]]:
     roadmap_path = REPO_ROOT / "roadmap.md"
     steps, substeps = _roadmap_steps(roadmap_path.read_text(encoding="utf-8"))
@@ -1179,23 +1173,10 @@ def _check_doc_references_resolve() -> tuple[str, list[Violation]]:
     for doc in [*_doc_files(), roadmap_path]:
         own = _anchors(doc)
         for lineno, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
-            for target, section in _section_refs(line):
-                path = doc if target is None else REPO_ROOT / target
-                if not path.is_file():
-                    violations.append(Violation(_doc_name(doc), lineno, f"names {target}, which does not exist"))
-                elif not _names_section(own if target is None else _anchors(path), section):
-                    violations.append(Violation(_doc_name(doc), lineno, f"{path.name} has no section {section!r}"))
-            for match in _REGISTER_TITLE_REF.finditer(line):
-                title = match.group(1) or match.group(2)
-                if _anchor(title) not in titles:
-                    violations.append(Violation(_doc_name(doc), lineno, f"no register entry {title!r}"))
-            if doc == roadmap_path:
-                continue
-            for step, sub in _ROADMAP_STEP_REF.findall(line):
-                if step not in steps or (sub and not {f"{step}.{sub}", f"{step}."} & substeps):
-                    violations.append(
-                        Violation(_doc_name(doc), lineno, f"roadmap has no step {step}.{sub}".rstrip("."))
-                    )
+            problems = [*_section_problems(doc, own, line), *_register_problems(line, titles)]
+            if doc != roadmap_path:
+                problems.extend(_step_problems(line, steps, substeps))
+            violations.extend(Violation(_doc_name(doc), lineno, problem) for problem in problems)
     return "DOC DRIFT: a reference to a section, register entry, or roadmap step that does not exist", violations
 
 
@@ -1387,7 +1368,6 @@ _ALL_CHECKS = (
     _check_dataclasses_in_models_inherit_serializablemixin,
     _check_no_direct_provider_sdk_imports,
     _check_no_hardcoded_model_names_in_engine,
-    _check_no_function_exceeds_complexity_ceiling,
     _check_no_setdefault_calls,
     _check_no_get_raw_with_fallback,
     _check_no_warning_suppression,

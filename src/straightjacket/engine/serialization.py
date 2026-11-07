@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from typing_extensions import TypeIs
 
 _T = TypeVar("_T")
+_S = TypeVar("_S")
 
 
 def _is_dataclass_type(tp: object) -> TypeIs[type[DataclassInstance]]:
@@ -93,38 +94,37 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
     inner, is_optional = _unwrap_optional(hint)
     if is_optional:
         return _deserialize_value(inner, val)
-
     if _is_dataclass_type(inner):
-        if not isinstance(val, dict):
-            msg = f"{inner.__name__} needs an object, got {type(val).__name__}"
-            raise ValueError(msg)
-        return deserialize(inner, val)
-
+        return deserialize(inner, _shaped(val, dict, f"{inner.__name__} needs an object"))
     origin = get_origin(inner)
     if origin is list:
-        if not isinstance(val, list):
-            msg = f"{inner} needs a list, got {type(val).__name__}"
-            raise ValueError(msg)
-        item_type = _resolve_item_type(inner)
-        if item_type is None:
-            return list(val)
-        if not all(isinstance(item, dict) for item in val):
-            msg = f"a list of {item_type.__name__} holds an entry that is not an object"
-            raise ValueError(msg)
-        return [deserialize(item_type, item) for item in val]
-
+        return _deserialize_list(inner, _shaped(val, list, f"{inner} needs a list"))
     if origin is dict:
-        if not isinstance(val, dict):
-            msg = f"{inner} needs an object, got {type(val).__name__}"
-            raise ValueError(msg)
-        if _is_dataclass_type(value_type := get_args(inner)[1]):
-            return {key: deserialize(value_type, item) for key, item in val.items()}
-        return dict(val)
+        return _deserialize_dict(inner, _shaped(val, dict, f"{inner} needs an object"))
+    return dict(val) if isinstance(val, dict) else val
 
-    if isinstance(val, dict):
-        return dict(val)
 
-    return val
+def _shaped(val: object, shape: type[_S], requirement: str) -> _S:
+    if isinstance(val, shape):
+        return val
+    msg = f"{requirement}, got {type(val).__name__}"
+    raise ValueError(msg)
+
+
+def _deserialize_list(hint: Any, val: list[Any]) -> list[Any]:
+    item_type = _resolve_item_type(hint)
+    if item_type is None:
+        return list(val)
+    if not all(isinstance(item, dict) for item in val):
+        msg = f"a list of {item_type.__name__} holds an entry that is not an object"
+        raise ValueError(msg)
+    return [deserialize(item_type, item) for item in val]
+
+
+def _deserialize_dict(hint: Any, val: dict[Any, Any]) -> dict[Any, Any]:
+    if _is_dataclass_type(value_type := get_args(hint)[1]):
+        return {key: deserialize(value_type, item) for key, item in val.items()}
+    return dict(val)
 
 
 class SerializableMixin:

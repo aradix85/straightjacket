@@ -204,35 +204,10 @@ def _roll_plot_point(
     return PlotPointHit(theme=theme, name=result.name, special_range=result.special_range)
 
 
-def roll_turning_point(
-    rng: random.Random,
-    themes: list[str],
-    narrative: NarrativeState,
-) -> TurningPoint:
-    cfg = crafter().adventure_crafter
-    if len(themes) != cfg.theme_slots:
-        msg = f"themes length {len(themes)} != theme_slots {cfg.theme_slots}"
-        raise ValueError(msg)
-
-    plotline_roll = _table_roll(rng)
-    plotline_template = lookup_plotlines_template(plotline_roll)
-    existing_plotline = _select_active_plotline(narrative)
-
-    if plotline_template == "new_plotline" or existing_plotline is None:
-        plotline = _create_plotline(
-            narrative,
-            name=crafter().adventure_crafter.plotline_name_template.format(n=len(narrative.plotlines_list) + 1),
-        )
-        plotline_was_new = True
-    else:
-        plotline = existing_plotline
-        plotline_was_new = False
-
+def _roll_plot_points(rng: random.Random, themes: list[str], *, conclusion_counts_as_none: bool) -> list[PlotPointHit]:
     rules = load_ac_data()["turning_point_rules"]
     slots = rules["plot_points_per_turning_point"]["max"]
     none_limit = slots - rules["plot_points_per_turning_point"]["min"]
-    conclusion_counts_as_none = plotline_was_new or plotline.status == "conclusion"
-
     alternation = ThemeAlternation(next_is_4=True)
     hits: list[PlotPointHit] = []
     none_count = 0
@@ -243,6 +218,32 @@ def roll_turning_point(
                 continue
             none_count += 1
         hits.append(hit)
+    return hits
+
+
+def roll_turning_point(
+    rng: random.Random,
+    themes: list[str],
+    narrative: NarrativeState,
+) -> TurningPoint:
+    cfg = crafter().adventure_crafter
+    if len(themes) != cfg.theme_slots:
+        msg = f"themes length {len(themes)} != theme_slots {cfg.theme_slots}"
+        raise ValueError(msg)
+
+    plotline_template = lookup_plotlines_template(_table_roll(rng))
+    existing_plotline = _select_active_plotline(narrative)
+    if plotline_template == "new_plotline" or existing_plotline is None:
+        plotline = _create_plotline(
+            narrative,
+            name=cfg.plotline_name_template.format(n=len(narrative.plotlines_list) + 1),
+        )
+        plotline_was_new = True
+    else:
+        plotline = existing_plotline
+        plotline_was_new = False
+
+    hits = _roll_plot_points(rng, themes, conclusion_counts_as_none=plotline_was_new or plotline.status == "conclusion")
     flips_to_conclusion = any(h.special_range == "conclusion" for h in hits)
 
     plotline.turning_point_count += 1

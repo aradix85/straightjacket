@@ -52,59 +52,38 @@ _PLAIN_EFFECTS = frozenset(
         "milestone",
     }
 )
-_EFFECT_RE = re.compile(r"^(\w+)\s+([+-]?\d+)$")
-_POSITION_RE = re.compile(r"^position\s+(\w+)$")
-_LEGACY_RE = re.compile(r"^legacy_reward\s+(\w+)$")
-_CHAIN_MOVE_RE = re.compile(r"^chain_move\s+(\S+)$")
-_LEGACY_LOWER_RE = re.compile(r"^legacy_reward_lower\s+(\w+)$")
-_LEGACY_TICKS_RE = re.compile(r"^legacy_ticks\s+(\w+)\s+(\d+)$")
-_FILL_CLOCK_RE = re.compile(r"^fill_clock\s+(\d+)$")
-_COMPLICATION_RE = re.compile(r"^complication\s+(\w+)$")
-_TABLE_RE = re.compile(r"^table\s+(\w+)$")
+_EFFECT_PATTERNS = tuple(
+    re.compile(pattern)
+    for pattern in (
+        r"^(?P<type>\w+)\s+(?P<value>[+-]?\d+)$",
+        r"^(?P<type>position)\s+(?P<target>\w+)$",
+        r"^(?P<type>chain_move)\s+(?P<target>\S+)$",
+        r"^(?P<type>legacy_reward_lower)\s+(?P<target>\w+)$",
+        r"^(?P<type>legacy_ticks)\s+(?P<target>\w+)\s+(?P<value>\d+)$",
+        r"^(?P<type>legacy_reward)\s+(?P<target>\w+)$",
+        r"^(?P<type>complication)\s+(?P<target>\w+)$",
+        r"^(?P<type>table)\s+(?P<target>\w+)$",
+    )
+)
+
+
+def _matched_effect(effect_str: str) -> MoveEffect | None:
+    for pattern in _EFFECT_PATTERNS:
+        m = pattern.match(effect_str)
+        if m:
+            value = m.group("value") if "value" in pattern.groupindex else "0"
+            target = m.group("target") if "target" in pattern.groupindex else ""
+            return MoveEffect(type=m.group("type"), value=int(value), target=target)
+    return None
 
 
 def parse_effect(effect_str: str) -> MoveEffect:
     effect_str = effect_str.strip()
-
-    m = _EFFECT_RE.match(effect_str)
-    if m:
-        return MoveEffect(type=m.group(1), value=int(m.group(2)), target="")
-
-    m = _POSITION_RE.match(effect_str)
-    if m:
-        return MoveEffect(type="position", value=0, target=m.group(1))
-
-    m = _CHAIN_MOVE_RE.match(effect_str)
-    if m:
-        return MoveEffect(type="chain_move", value=0, target=m.group(1))
-
-    m = _LEGACY_LOWER_RE.match(effect_str)
-    if m:
-        return MoveEffect(type="legacy_reward_lower", value=0, target=m.group(1))
-
-    m = _LEGACY_TICKS_RE.match(effect_str)
-    if m:
-        return MoveEffect(type="legacy_ticks", value=int(m.group(2)), target=m.group(1))
-
-    m = _LEGACY_RE.match(effect_str)
-    if m:
-        return MoveEffect(type="legacy_reward", value=0, target=m.group(1))
-
-    m = _FILL_CLOCK_RE.match(effect_str)
-    if m:
-        return MoveEffect(type="fill_clock", value=int(m.group(1)), target="")
-
-    m = _COMPLICATION_RE.match(effect_str)
-    if m:
-        return MoveEffect(type="complication", value=0, target=m.group(1))
-
-    m = _TABLE_RE.match(effect_str)
-    if m:
-        return MoveEffect(type="table", value=0, target=m.group(1))
-
+    effect = _matched_effect(effect_str)
+    if effect is not None:
+        return effect
     if effect_str in _PLAIN_EFFECTS:
         return MoveEffect(type=effect_str, value=0, target="")
-
     msg = f"Unknown move effect {effect_str!r}"
     raise ValueError(msg)
 

@@ -63,17 +63,23 @@ def final_state_dict(game: GameState) -> dict[str, Any]:
     }
 
 
-def print_summary(slog: SessionLog, game: GameState | None) -> None:
+def print_summary(slog: SessionLog, game: GameState) -> None:
     separator = "=" * 62
     say(f"\n{separator}")
     say(f"  Session complete: {slog.ended_reason}")
     say(f"  Chapters played : {len(slog.chapters)}")
     say(f"  Total turns     : {slog.total_turns}")
     say(f"  Violations      : {len(slog.violations)}")
-    if game:
-        say(f"  Final scene     : {game.narrative.scene_count}")
-        meters = ", ".join(f"{name} {value}" for name, value in game.resources.meters.items())
-        say(f"  Final meters    : {meters}")
+    say(f"  Final scene     : {game.narrative.scene_count}")
+    meters = ", ".join(f"{name} {value}" for name, value in game.resources.meters.items())
+    say(f"  Final meters    : {meters}")
+    _print_issue_counts(slog)
+    _print_quality_summary(slog.quality_summary)
+    _print_tokens(slog.token_summary)
+    say(separator)
+
+
+def _print_issue_counts(slog: SessionLog) -> None:
     bs = slog.burn_stats
     if bs.get("offered", 0) > 0:
         say(f"  Burns           : {bs['offered']} offered, {bs['taken']} taken, {bs['failed']} failed")
@@ -84,7 +90,9 @@ def print_summary(slog: SessionLog, game: GameState | None) -> None:
     if slog.correction_tests:
         failed = sum(1 for c in slog.correction_tests if not c.get("success"))
         say(f"  Corrections     : {len(slog.correction_tests)} tested, {failed} failed")
-    qs = slog.quality_summary
+
+
+def _print_quality_summary(qs: dict[str, Any]) -> None:
     if qs.get("narration_quality_total", 0) > 0:
         say(f"  Narration leaks : {qs['narration_quality_total']}")
     if qs.get("spatial_issues_total", 0) > 0:
@@ -95,9 +103,10 @@ def print_summary(slog: SessionLog, game: GameState | None) -> None:
     if ct > 0:
         cf = qs.get("correction_tests_failed", 0)
         say(f"  Corrections     : {ct} tested, {cf} failed")
-    ts = slog.token_summary
+
+
+def _print_tokens(ts: dict[str, Any]) -> None:
     if ts.get("total", 0) > 0:
         say(f"  Tokens          : {ts['total_input']} in + {ts['total_output']} out = {ts['total']} total")
         for role, stats in sorted(ts.get("by_role", {}).items(), key=lambda x: -x[1]["input"]):
             say(f"    {role:<20}: {stats['calls']}x, {stats['input']} in + {stats['output']} out")
-    say(separator)

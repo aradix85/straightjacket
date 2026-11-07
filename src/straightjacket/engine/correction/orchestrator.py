@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         BrainResult,
         GameState,
         ResolvedFact,
+        SceneSetup,
         TurnSnapshot,
     )
 
@@ -139,6 +140,23 @@ def process_correction(
         log("[Correction] Complete: source=input_misread, turn replayed")
         return narration, burn_offer, director_ctx
 
+    narration, director_ctx = _correct_state(
+        provider, game, analysis, snap=snap, brain=brain, scene_setup=scene_setup, note=note
+    )
+    log("[Correction] Complete: source=state_error, rewrite done")
+    return narration, None, director_ctx
+
+
+def _correct_state(
+    provider: AIProvider,
+    game: GameState,
+    analysis: dict[str, Any],
+    *,
+    snap: TurnSnapshot,
+    brain: BrainResult,
+    scene_setup: SceneSetup,
+    note: str,
+) -> tuple[str, DirectorCall | None]:
     apply_correction_ops(game, analysis["state_ops"])
     activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, snap.player_input)
     scene = PromptScene(
@@ -166,7 +184,4 @@ def process_correction(
         game, narration, (brain.player_intent or snap.player_input)[: eng().truncations.log_medium]
     )
 
-    director_ctx = _maybe_queue_director(game, analysis, narration, metadata)
-
-    log("[Correction] Complete: source=state_error, rewrite done")
-    return narration, None, director_ctx
+    return narration, _maybe_queue_director(game, analysis, narration, metadata)

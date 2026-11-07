@@ -152,33 +152,28 @@ class TurnRecord:
         d["action"] = self.action[:80]
         sa = self.state_after
         d["state"] = " ".join([*(f"{name} {value}" for name, value in sa.meters.items()), f"chaos {sa.chaos}"])
-        if self.engine_log and self.engine_log.consequences:
-            d["consequences"] = self.engine_log.consequences
-        if self.engine_log and self.engine_log.clock_events:
-            d["clock_events"] = [e["clock"] for e in self.engine_log.clock_events]
+        log = self.engine_log
+        d |= _present(
+            consequences=log.consequences if log else [],
+            clock_events=[e["clock"] for e in log.clock_events] if log else [],
+        )
         if self.story_arc:
             d["phase"] = self.story_arc.phase
-            if self.story_arc.story_complete:
-                d["complete"] = True
-        if self.director_ran:
-            d["director"] = True
-        if self.violations:
-            d["invariant_violations"] = self.violations
-        if self.narration_quality:
-            d["quality_issues"] = self.narration_quality
-        if self.spatial_issues:
-            d["spatial_issues"] = self.spatial_issues
-        if self.error:
-            d["error"] = self.error
-        if self.burn_offered:
-            d["burn"] = f"{self.burn_offered}->{'taken' if self.burn_taken else 'skip'}"
+            d |= _present(complete=self.story_arc.story_complete)
+        d |= _present(
+            director=self.director_ran,
+            invariant_violations=self.violations,
+            quality_issues=self.narration_quality,
+            spatial_issues=self.spatial_issues,
+            error=self.error,
+            burn=f"{self.burn_offered}->{'taken' if self.burn_taken else 'skip'}" if self.burn_offered else "",
+        )
         d["narration"] = self.narration
-        if self.npcs:
-            d["npcs"] = [f"{n.name} ({n.status}, {n.disposition})" for n in self.npcs]
-        if self.judge:
-            d["judge"] = self.judge
-        if self.revelation:
-            d["revelation"] = self.revelation
+        d |= _present(
+            npcs=[f"{n.name} ({n.status}, {n.disposition})" for n in self.npcs],
+            judge=self.judge,
+            revelation=self.revelation,
+        )
         if self.stream_complete is not None:
             d["stream"] = {
                 "first_sentence_secs": self.stream_first_sentence_secs,
@@ -186,15 +181,17 @@ class TurnRecord:
                 "complete": self.stream_complete,
                 "matches": self.stream_matches,
             }
-        if self.engine_events:
-            d["events"] = self.engine_events
-        if self.engine_warnings:
-            d["engine_warnings"] = self.engine_warnings
-        if self.is_correction:
-            d["correction"] = True
-        if self.token_usage:
-            d["tokens"] = self.token_usage
+        d |= _present(
+            events=self.engine_events,
+            engine_warnings=self.engine_warnings,
+            correction=self.is_correction,
+            tokens=self.token_usage,
+        )
         return d
+
+
+def _present(**fields: Any) -> dict[str, Any]:
+    return {key: value for key, value in fields.items() if value}
 
 
 @dataclass

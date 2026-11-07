@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.06.8"
+version = "2026.11.07.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx2", "types-PyYAML", "radon", "ruff==0.17.4", "pylint==4.1.3", "mypy", "defusedxml", "types-defusedxml"]
+test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx2", "types-PyYAML", "ruff==0.17.4", "pylint==4.1.3", "mypy", "defusedxml", "types-defusedxml"]
 elvira = ["websockets>=13.0,<15"]
 
 [tool.ruff]
@@ -33,11 +33,6 @@ ignore = [
     "too-many-arguments",                         # the user's choice: keyword-only arguments name themselves
     # taken up in later releases, one group at a time:
     "any-type",
-    "complex-structure",
-    "too-many-branches",
-    "too-many-locals",
-    "too-many-return-statements",
-    "too-many-statements",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -88,18 +83,18 @@ disable = [
     "broad-exception-caught",        # ruff checks it, with the AI-call carve-out
     "import-outside-toplevel",       # ruff checks it, with its carve-out for run.py
     "wrong-import-position",         # ruff checks it, with its carve-out for Elvira's script
+    "too-many-locals",               # ruff checks it at the same limit, without arguments, loop and with targets
+    "too-many-branches",             # ruff checks it, at the same limit
+    "too-many-return-statements",    # ruff checks it, at the same limit
+    "too-many-statements",           # ruff checks it, at the same limit
     # taken up in later releases, one group at a time:
-    "too-many-locals",
-    "too-many-branches",
-    "too-many-return-statements",
-    "too-many-statements",
     "duplicate-code",
     "too-many-lines",
 ]
 
 [tool.mypy]
 python_version = "3.11"
-mypy_path = ["src", "stubs"]
+mypy_path = ["src"]
 files = ["src", "tests", "run.py", "data/data.py"]
 explicit_package_bases = true
 strict = true

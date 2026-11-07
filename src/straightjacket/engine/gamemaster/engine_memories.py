@@ -24,6 +24,17 @@ def derive_memory_emotion(move: str, outcome: str, disposition: str) -> str:
     return memory_emotions.base[_memory_key(move, outcome)] + memory_emotions.disposition_suffix[disposition]
 
 
+def _template(brain: BrainResult, npc: NpcData, *, is_dialog: bool) -> str:
+    if is_dialog:
+        template_key = "dialog" if brain.target_npc else "dialog_no_target"
+    elif brain.target_npc == npc.id:
+        template_key = "action_targeted"
+    else:
+        template_key = "action"
+    template: str = getattr(gm().memory_templates, template_key)
+    return template
+
+
 def generate_engine_memories(
     game: GameState,
     brain: BrainResult,
@@ -31,8 +42,6 @@ def generate_engine_memories(
     activated_npc_ids: set[str],
     consequences: Sequence[str],
 ) -> list[tuple[NpcData, MemoryEntry]]:
-    templates = gm().memory_templates
-    result_text_map = gm().get_raw("memory_result_text")
     scene = game.narrative.scene_count
 
     move = brain.move
@@ -40,11 +49,9 @@ def generate_engine_memories(
     told_outcome = "dialog" if is_dialog else outcome
     intent = brain.player_intent
 
-    result_text = result_text_map[_memory_key(move, told_outcome)]
+    result_text = gm().get_raw("memory_result_text")[_memory_key(move, told_outcome)]
     move_verb = answers().action_phrase(move)
-
-    pd = eng().prompt_display
-    cons_max = pd.memory_consequences_max
+    cons_max = eng().prompt_display.memory_consequences_max
 
     if consequences:
         result_text += f" ({', '.join(consequences[:cons_max])})"
@@ -56,16 +63,7 @@ def generate_engine_memories(
         if npc.status not in gm().npc_status_groups.in_play:
             continue
 
-        if is_dialog:
-            template_key = "dialog" if brain.target_npc else "dialog_no_target"
-        elif brain.target_npc == npc.id:
-            template_key = "action_targeted"
-        else:
-            template_key = "action"
-
-        template: str = getattr(templates, template_key)
-
-        event_text = template.format(
+        event_text = _template(brain, npc, is_dialog=is_dialog).format(
             scene=scene,
             player=game.player_name,
             npc=npc.name,
@@ -79,7 +77,6 @@ def generate_engine_memories(
         )
 
         emotional = derive_memory_emotion(move, told_outcome, npc.disposition)
-        importance = score_importance(emotional, event_text)
 
         memories.append(
             (
@@ -88,7 +85,7 @@ def generate_engine_memories(
                     scene=scene,
                     event=event_text,
                     emotional_weight=emotional,
-                    importance=importance,
+                    importance=score_importance(emotional, event_text),
                     type="observation",
                     tone="",
                     tone_key="",

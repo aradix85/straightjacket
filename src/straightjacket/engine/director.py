@@ -46,7 +46,10 @@ def should_call_director(
         return "new_npcs"
     if revelation_landed:
         return "revelation"
+    return _state_reason(game)
 
+
+def _state_reason(game: GameState) -> str | None:
     for npc in game.npcs:
         if npc.needs_reflection and npc.status in gm().npc_status_groups.in_play:
             return f"reflection:{npc.name}"

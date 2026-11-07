@@ -27,6 +27,25 @@ def _meter_event(meter: str, change: int) -> str | None:
     return event if event in templates else None
 
 
+_SENTENCE_EVENTS: dict[str, tuple[str, str | None, str | None]] = {
+    "bond_progress": ("bond_gain", "name", None),
+    "disposition_shift": ("disposition_shift", "name", None),
+    "mark_impact": ("impact_mark", None, "impact"),
+    "clear_impact": ("impact_clear", None, "impact"),
+    "complication": ("complication_{kind}", None, None),
+    "complication_clock": ("complication_clock", None, "name"),
+    "complication_averted": ("complication_averted", None, "name"),
+    "bond_sealed": ("bond_sealed", "name", None),
+    "bond_tested": ("bond_tested", "name", None),
+    "bond_cleared": ("bond_cleared", "name", None),
+    "bond_request": ("bond_request", None, None),
+    "obstacle": ("obstacle", None, None),
+    "loyalty_test": ("loyalty_test", None, None),
+    "milestone": ("milestone", None, None),
+    "recommit": ("recommit", None, "track"),
+}
+
+
 def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
     values = c.values
     event: str | None
@@ -37,25 +56,10 @@ def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
         if values["n"] == 0:
             return None
         return ("momentum_gain" if values["n"] > 0 else "momentum_loss"), "", ""
-    if c.kind == "bond_progress":
-        return "bond_gain", values["name"], ""
-    if c.kind == "disposition_shift":
-        return "disposition_shift", values["name"], ""
-    if c.kind in {"mark_impact", "clear_impact"}:
-        return ("impact_mark" if c.kind == "mark_impact" else "impact_clear"), "", values["impact"]
-    if c.kind == "complication":
-        return f"complication_{values['kind']}", "", ""
-    if c.kind in {"complication_clock", "complication_averted"}:
-        return c.kind, "", values["name"]
-    if c.kind in {"bond_sealed", "bond_tested"}:
-        return c.kind, values["name"], ""
-    if c.kind in {"bond_request", "obstacle", "loyalty_test", "milestone"}:
-        return c.kind, "", ""
-    if c.kind == "bond_cleared":
-        return "bond_cleared", values["name"], ""
-    if c.kind == "recommit":
-        return "recommit", "", values["track"]
-    return None
+    if c.kind not in _SENTENCE_EVENTS:
+        return None
+    event, subject, detail = _SENTENCE_EVENTS[c.kind]
+    return event.format(**values), values[subject] if subject else "", values[detail] if detail else ""
 
 
 def _target_name(game: GameState, brain: BrainResult) -> str:
