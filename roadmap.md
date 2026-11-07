@@ -15,7 +15,7 @@ The steps are the order of work: NEXT STEP first, then the others in their order
 
 The roadmap stays short. A later step is a sketch: its aim, its substeps where they are known, the decisions taken with the user, and the facts a session could not find again in the code, the data, the CHANGELOG, or `docs/`. Its definition of done and reference patterns are written when it becomes NEXT STEP. What CONTRIBUTING.md, AUDIT.md, `docs/`, or the CHANGELOG already says is pointed to, not repeated.
 
-**Closing a step.** The checks of CONTRIBUTING.md pass; the step moves to DONE, cut to what a later session needs, and its CHANGELOG entry carries the details; the next step becomes NEXT STEP with substeps, a definition of done, and reference patterns; and a decision later steps rely on goes under Decisions. The step's area is read against the source rulebooks and, where it touches the architecture, the design document; a departure goes to `docs/divergences.md`.
+**Closing a step.** The checks of CONTRIBUTING.md pass; the step moves to DONE, cut to what a later session needs, and its entries leave the CHANGELOG (CONTRIBUTING.md, Workflow step 6); the next step becomes NEXT STEP with substeps, a definition of done, and reference patterns; and a decision later steps rely on goes under Decisions. The step's area is read against the source rulebooks and, where it touches the architecture, the design document; a departure goes to `docs/divergences.md`.
 
 ## Sessions with the user
 
@@ -31,7 +31,7 @@ The roadmap stays short. A later step is a sketch: its aim, its substeps where t
 - The user does not edit the laptop's copy, so a pull that refuses means a session left something there outside git, such as a file it wrote through radix-mcp: find out what it is before anything else, and never reset or force.
 - The API keys live in the laptop's Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira); a process started by a tool may need them set in its own environment.
 
-**What a session reads.** It reads these itself: roadmap.md, CONTRIBUTING.md, ARCHITECTURE.md, AGENTS.md, and the CHANGELOG entries since the last finished step (the CHANGELOG is long; its newest entries say where the work stands). It also reads the md files of the area NEXT STEP touches:
+**What a session reads.** It reads these itself: roadmap.md, CONTRIBUTING.md, ARCHITECTURE.md, AGENTS.md, and the CHANGELOG, which holds the releases of the step in progress. It also reads the md files of the area NEXT STEP touches:
 
 - the ruleset's rules (moves, tracks, meters, impacts, legacy, assets, threats): `docs/ruleset.md`;
 - the game master (scenes, chaos, random events, fate, facts, generators, NPCs, clocks): `docs/gamemaster.md`;
@@ -73,16 +73,11 @@ README.md and ORIGINS.md are background. For anything else a sub-agent reports w
 
 **Bound to the rules (9h).** The user wants the game bound to the engine and its rules as tightly as it can be: what the rules, the source data, or the story already know is read and acted on or told. A field without a reader is first a missing reader (AUDIT.md, principle 5). Every step that brings source data into play (9j, 9k, 10, 10b, 13b, 13c, 18 to 29) first reads what Datasworn carries for its mechanic (roll instructions, named results, texts) and builds on that rather than on rules of its own. Data the engine holds and does not yet read is named in the step it belongs to, or in 13b when no step names it.
 
-**Four layers (9n).** The user's choices. Mythic is the game master over whatever system is played, the Crafter books add content to it, and the ruleset and the setting are separate layers, even while every shipped setting runs on an Ironsworn ruleset, with as little as possible fixed in Python.
+**Four layers (9n).** The user's choices. Mythic is the game master over whatever system is played, the Crafter books add content to it, and the ruleset and the setting are separate layers, even while every shipped setting runs on an Ironsworn ruleset, with as little as possible fixed in Python. How the layers depend on each other and read their yaml is in ARCHITECTURE.md (The four layers).
 
-- **Where a step builds.** From 9n on, a step that adds rules (9j, 13b, 18 to 29) builds them in the ruleset; one that adds world content (10, 10b, 27) in the setting; one that extends Mythic or a Crafter (30 to 35, the Location Crafter of step 10) in its own layer.
-- **Order of the split.** The audits of principles 3 and 5 came first, since they shrink what the split moves, then the split, with the audit of principle 1 on the layout it makes.
-- **Direction.** Dependencies point up from the setting, the content every layer reads: the game master builds on it, the crafters on the game master, and the ruleset on both, so another system replaces only the ruleset. The AI calls, prompts, Director, and orchestration sit above all four.
+- **Where a step builds.** A step that adds rules (9j, 13b, 18 to 29) builds them in the ruleset; one that adds world content (10, 10b, 27) in the setting; one that extends Mythic or a Crafter (30 to 35, the Location Crafter of step 10) in its own layer.
 - **The game master's questions.** Where the game master needs to know something of the system, the system's own rules leave it first, and what remains it asks in its own coarse words, which each ruleset answers from its yaml (`docs/gamemaster.md`, Questions to the ruleset). A value the turn already hands along stays a parameter.
 - **Threats belong to the ruleset** (Delve's menace, ranks, and Forsake Your Vow): the game master and the crafters ask for a new danger in their own words, and each ruleset decides what it becomes, which keeps the most room for other systems.
-- **Accessors.** Each layer reads its yaml through its own accessor, so reading against the direction is importing against it, rather than one merged configuration watched by a scan.
-
-**Config over code (9h).** CONTRIBUTING.md states the rules (config-driven, what belongs together lives together, lean). The user settled the judgment calls of the principle-2 audit: the markup of prompts, the source systems' rule constants, named status groups, and patterns for the AI's words move to yaml.
 
 **When a generator fires (9d).**
 
@@ -105,11 +100,7 @@ README.md and ORIGINS.md are background. For anything else a sub-agent reports w
 
 **Revelations and Kishōtenketsu (9i).** The user's choices. Kishōtenketsu came from EdgeTales, where an AI wrote the whole blueprint, and skipped the Adventure Crafter; it is gone, so every chapter's plan comes from the Adventure Crafter, flexible and unpredictable as the user wants it. Each act has one revelation from its own turning point, which lands when its keyed scene fires, at the latest at its act's end, on a turn that does not fail, a dialog included (`docs/story.md`, Revelations).
 
-**From EdgeTales to the sources (9r).** The user's choice: the engine moves as far as it can from what came with EdgeTales to its own systems and the sources. 9r made the list, and AUDIT.md's principle 6 keeps it.
-
-- Every rule that decides facts, pacing, or behaviour in the fiction has an origin: a source, an engine rule with its register entry, or EdgeTales without a source; a rule of the last kind goes to the step whose source replaces it.
-- Technique that decides nothing in the fiction, such as the activation search, saves, streaming, and the correction, stays whatever its origin.
-- A system from EdgeTales does something in play, so it never just goes: in the same step it is replaced, or its work is routed to a system the engine already has (Mythic's tables, lists, fate, and scene test, the Adventure Crafter, the ruleset and its Datasworn data, the engine's facts and time), and it leaves only once that does the work. Only what never worked, such as the off-screen death vote, goes without one (the user's words).
+**From EdgeTales to the sources (9r).** The user's choice: the engine moves as far as it can from what came with EdgeTales to its own systems and the sources. AUDIT.md's principle 6 holds the rule: every rule that decides the fiction has an origin, and one from EdgeTales without a source leaves only in the step that replaces it or routes its work to a system the engine already has, unless it never worked.
 
 **Sources bought when a step needs them.** A Word Mill book or Mythic Magazine issue is bought only for a gap the setting's Datasworn data, Mythic 2e, and the Adventure Crafter leave, when a step needs it. A step with candidates starts by reading their product pages with the user, and a compilation is chosen when several needed issues fall in it and it costs less than buying them apart. A candidate that fills no gap leaves the list. The Creature Crafter is left out, since it adjusts stat blocks Ironsworn's foes do not have. Candidates, by title in Robin's subject index of Mythic Magazine (linked from Word Mill's Mythic Magazine page), not yet read:
 
@@ -166,16 +157,16 @@ Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not
 
 ### 18 — Asset mechanics beyond adds
 
-Every character starts with paths and assets, and of their abilities only adds take effect, so the rest is lost from the first turn: a Fated path in the Elvira run after 9w.R did nothing. The user put 18 after 9x and before 9w.1 to 9w.4. It builds on the enabled abilities and the Brain's `bonus_id` (`ruleset/assets.py`, `ruleset/bonuses.py`; `docs/ruleset.md`, Assets).
+Every character starts with paths and assets, and of their abilities only adds take effect, so the rest is lost from the first turn: a Fated path in an Elvira run did nothing. It comes after 9y and before 9w.1 to 9w.4 (the user's order). It builds on the enabled abilities and the Brain's `bonus_id` (`ruleset/assets.py`, `ruleset/bonuses.py`; `docs/ruleset.md`, Assets).
 
-**What Datasworn carries** (read at the start of this step, 2026.10.24.2):
+**What Datasworn carries** (read 2026-10-24):
 
 - Delve has no assets (`assets` is empty). Classic has 78 assets with 234 abilities, Starforged 87 with 261, Sundered Isles 60 with 180; every asset has three abilities. Ability 0 is enabled by default, except on 14 assets with none enabled: the ten classic companions (cave lion, giant spider, hawk, horse, hound, kindred, mammoth, owl, raven, young wyvern), classic's paths Battle-Scarred, Blade-Bound, and Shadow-Kin, and Sundered Isles' longboat.
 - **Structural:** an ability's `enhance_moves` lists the moves it enhances (`enhances`, move ids, or null) with its trigger conditions, whose condition is prose (`text`). A condition's `method` is an automatic outcome where it names `strong_hit`, `weak_hit`, or `miss` (thirteen abilities, among them both Fated paths, Animal Kin, and Leader), and otherwise how its `roll_options` are picked (`player_choice`, `highest`). `roll_options` are other things to roll with (a stat, a condition meter, an asset's meter or option), not bonuses. `enhance_asset` changes the asset itself (six abilities). An ability's `moves` are asset moves of its own (classic 23, Starforged 12, Sundered Isles 14). An asset's `controls` are its meters and boxes (a companion's health with out of action, a starship's integrity with battered and cursed, classic's strength, wealth, and ritual meters); its `options` are fields the player fills in (a companion's name, a devotant's stat); Oathbreaker has `count_as_impact`.
 - **Text only:** the add itself, every reroll (classic 28 abilities, Starforged 61, Sundered Isles 39), and every effect on a result ("take +2 momentum", "on a strong hit, mark progress"). These the engine encodes per ability from its text, as it encodes the moves' outcomes in `ruleset/move_outcomes.yaml`.
 - **Upgrades:** Datasworn's Advance moves (`move:classic/quest/advance`, `move:starforged/legacy/advance`) give the cost but not which ability an upgrade enables; classic's companions say "If they don't have a starting ability, choose one". The books leave both to the player.
 
-**The user's choices** (2026.10.24.2): the vow abilities come first; the engine decides rerolls, by a fixed rule; the player chooses which ability an upgrade enables and the starting ability where Datasworn enables none.
+**The user's choices** (2026-10-24): the vow abilities come first; the engine decides rerolls, by a fixed rule; the player chooses which ability an upgrade enables and the starting ability where Datasworn enables none.
 
 **18.1** The vow abilities, on the paths of Reach a Milestone, Swear an Iron Vow, Fulfill Your Vow, and Face Death:
 
@@ -213,7 +204,7 @@ What this needs: a vow an ability names (the background vow, `vow_background`, o
 
 ### 9w — Elvira tests what the engine does
 
-At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026.10.23.2). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone, and set the order within it: 9w.0 (done), then step 9x (done), then step 18, then 9w.1 to 9w.4; step 9y (NEXT STEP), the user's request of 2026-11-06, comes before 18.
+At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026-10-23). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone; the order is step 9y (NEXT STEP), then step 18, then 9w.1 to 9w.4.
 
 **9w.1** Faults in Elvira herself.
 
@@ -630,34 +621,26 @@ The user's aim (Decisions, Other systems later): a system that is no Ironsworn p
 
 ## DONE
 
-Finished work in its shortest form; the CHANGELOG has the details.
+Finished work in its shortest form; git holds the details, in the commits whose titles carry their versions.
 
 - **Before 9a.** The four Datasworn settings, Mythic GME 2e, the Adventure Crafter's blueprint, Blades clocks, narration streamed by sentence, strict saves and config, and Elvira.
 - **9a — Fact resolution** through Mythic's fate chart (`docs/gamemaster.md`, Facts).
 - **9b — Chapters as Mythic adventures:** resources and clocks carry over, chaos restarts at 5, and a finished game continues only through succession.
-- **9c — Soft misses:** the NPCs present withhold, and agenda, secrets, guidance, and a pending revelation stay out of the prompt.
+- **9c — Soft misses** (`docs/gamemaster.md`, What a miss withholds).
 - **9d — Generators** (`docs/gamemaster.md`, Generators).
-- **9e — Elvira findings:** NPC identity holds across extraction, renames, and chapters; in dialogs the NPC's fact budget governs.
+- **9e — NPC identity** holds across extraction, renames, and chapters.
 - **9f — Prompt tuning on Sonnet:** every role on Sonnet 5.5 at effort medium, Elvira on Haiku 5.5 (baseline 6.41 ± 0.14); rewording the narrator stayed within the noise, so the remaining faults are for the engine.
 - **9g — Tests through the real creation path** (`create_game` in `tests/_creation.py`).
 - **9l — Complications as clocks** (`docs/gamemaster.md`, Complication clocks).
-- **9j, so far.** Rules read against the books and built as they settle it (`docs/ruleset.md`, `docs/settings.md`, and `docs/story.md` hold what they do; the CHANGELOG the readings):
-  - suffering goes through `ruleset/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal; the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5);
-  - a progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9);
-  - a marked condition keeps its meter from rising outside the move that clears it (9j.1); a marked impact reaches the narrator by its label, and a result made worse reads `made worse: ` before the row (9j.10);
-  - Make a Connection's weak hit and classic Compel's bring a complication or a demand, as Gather Information's does (9j.8);
-  - classic's Forge a Bond seals a bond as a bonded connection at full closeness, marks the bonds legacy track, and aids by classic's +1 (9j.2, the user's choice);
-  - in classic every threat advance rolls Delve's Advance a Threat, a threat no vow faces achieves its goal when its menace fills, and a forsaken vow costs spirit by its rank (9j.6);
-  - with the user's choices (9j.11): classic's Strike and Clash inflict 1 harm as a mark; a missed vow meets its obstacle, classic's pressing on at -2 momentum; classic's Test Your Bond, offered only with a bond, asks loyalty on a weak hit and clears the bond on a miss; classic Sojourn takes its picks in a fixed order; a forsaken vow a bond aided makes Test Your Bond when the player next turns to that NPC; a classic character starts with three assets of any category; a classic successor keeps the people but not the bonds.
-  - The classic Elvira run after 9j.11 found no problem but reached no bond, no threat advance, and no follow-up move, so those are held by their tests alone.
-- **9h — Principle audits:** principles 2 to 5 audited (AUDIT.md, Status); the long clean-ups of principle 2 are 9o. The Brain keeps its hand-written hints, which chose moves better than the book's triggers (30 of 30 against 29 of 30). The substeps are in the CHANGELOG, and 9h.23 became 11.0.
-- **9n — Four layers:** the setting, the game master, the crafters, and the ruleset each have a package, a yaml folder, and an accessor, and a scan holds their imports to the direction (ARCHITECTURE.md, The four layers). The game master asks the ruleset only its questions (`docs/gamemaster.md`, Questions to the ruleset). The ruleset owns what a system decides, from its Datasworn rules and its own yaml, and code outside it names none of its words; dialog and asking the oracle are the game master's own moves, and every Datasworn file is at 0.1.0, pinned to one commit (the user's choices). A setting plays the ruleset its Datasworn file names (`docs/settings.md`, Rulesets). Principle 1 is done for the four layers and open for the rest of the engine (AUDIT.md, Open), and the code the split wrote or rewrote had the queries of principles 2 and 3 (AUDIT.md, Status).
-- **9o — Dataclass defaults and prompt markup:** no dataclass field has a default but an empty collection, held by a scan whose carve-out is the external structures (`tests/test_project_rules.py` → `_check_no_dataclass_defaults`); every tag, label, and marker of a prompt comes from yaml (`prompts/*.yaml`, the engine's texts in `engine/`), and the player's words are escaped wherever a prompt shows them (SECURITY.md).
-- **9p — Test audit:** every test holds what the game does, through a public function, the real creation path, or a turn; turns go through `TurnProvider` with `brain_answer` and openings through `OpeningProvider` (`tests/_creation.py`), and a loader under test reads a temporary file or folder (`tests/_helpers.py` → `change_config`). The audit found and fixed the opening prompt's unreachable crisis branch and the chapter and successor openings that skipped their extraction (9p.6).
-- **9i — Revelations settled by the engine:** one revelation per act, seeded from its own turning point, lands when its keyed scene fires or at its act's end, on a turn that does not fail, and reaches the narrator as a `<revelation>` it must tell (`docs/story.md`, Revelations); the revelation check, its cluster, and Kishōtenketsu are gone, and a chapter drops the old chapter's Adventure Crafter keyed scenes. Elvira, twenty turns of classic: the revelations of acts 1 and 2 landed at their act's end, in scenes 7 and 14, and both came across; the third act was not reached.
-- **9q — Elvira reaches what a scenario prepares:** a missed aim is a problem; a scenario fixes the results of its first turns through a seam in Elvira alone, or starts at its moment, such as a game over waiting for a successor, and plays in direct mode only (`docs/elvira.md`, Scenarios). Tested on the mock provider; the scenarios have not run on the real models.
-- **9s — NPCs named by whole names:** a text names an NPC by its name or an alias as whole words, or by a given name that keeps its capital, never by one word of a descriptive alias, which in 9i's Elvira run moved two NPCs along with the player (`docs/gamemaster.md`, Memory and activation). Presence, introduction, moving along, opening memories, and activation use the one test.
-- **9r — Where each rule comes from:** every rule that decides facts, pacing, or behaviour in the fiction was read against the first commit, EdgeTales of 31 March, the design document, and the books; what came from EdgeTales or the engine without a source went to the step that replaces it (9j, 9t, 9u, 10, 10b, 11, 11b, 13, 13b, 13c, 14b, 14c, 30, 31, 32b, 33) and to the register, and AUDIT.md's principle 6 keeps it so. The design document is theory that gives a rule its aim, not its form (the user's words). Fixed on the way: a lore figure who appears becomes active, an overcome threat is told once, only threat clocks press the position, and the caps on spawned threats and clocks count the open ones; the off-screen death vote from EdgeTales, which could never fire, is gone with its two yaml files (the user's consent).
-- **9w, so far.** Reach a Milestone is the first move the engine makes without a roll (`offered_without_roll`, `docs/ruleset.md`, Moves without a roll): it marks the vow the Brain names by its rank, which neither book limits, so Fulfill Your Vow rolls against real progress and a vow is fulfilled in play; the Brain must name the track when several of its kind are active, and Elvira's `vow_fulfilment` scenario plays a vow to its end, tested on the mock provider (9w.R, moved from 13b at the user's choice). The four suspected faults of 9w.0 were real and are fixed: the autosave slot after a Save as, a correction with nothing to correct, a burn on a game-over turn, and the narration unescaped in the extractions and the Director.
-- **9x — The documents, shorter and by layer** (the user's choice, since every session reads them anew): `docs/mechanics.md` split into `docs/ruleset.md`, `docs/gamemaster.md`, and `docs/story.md`, so a session reads only the layer its step touches (Sessions with the user); every md file of the root and `docs/` but the CHANGELOG rewritten in short paragraphs and lists, with what repeated another file cut; sub-agents held the old files against the new, statement by statement. AGENTS.md joined the documentation-drift scans.
-- **9y, so far** (2026.11.06.0 to 2026.11.07.0): mypy in strict mode but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); on the way, module state without `global`, tests without private access, and the narrator's prompt builders on a `PromptScene` and a `TurnEvents`. 9y.1: ruff's complexity rules at their default limits, pylint's same four left to ruff, and the radon scan gone; Elvira's two runners share their settings, checks, burn count, and logs.
+- **9j, so far:** classic's rules read against the books and built as they settle it (9j.1, 9j.2, 9j.5, 9j.8 to 9j.11, and part of 9j.6), which `docs/ruleset.md` describes. Its Elvira run reached no bond, threat advance, or follow-up move, so only their tests hold those.
+- **9h — Principle audits** of principles 2 to 5 (AUDIT.md, Status). The Brain keeps its hand-written hints, which chose moves better than the book's triggers (30 of 30 against 29 of 30).
+- **9n — Four layers** (ARCHITECTURE.md, The four layers; `docs/gamemaster.md`, Questions to the ruleset).
+- **9o — No dataclass defaults and prompt markup from yaml,** with the player's words escaped (SECURITY.md).
+- **9p — Test audit:** every test goes through a public function, the real creation path, or a turn (CONTRIBUTING.md, Testing).
+- **9i — Revelations settled by the engine** (`docs/story.md`, Revelations); Kishōtenketsu is gone.
+- **9q — Elvira's scenarios** (`docs/elvira.md`, Scenarios), tested on the mock provider and not yet run on the real models.
+- **9s — NPCs named by whole names** (`docs/gamemaster.md`, Memory and activation).
+- **9r — Where each rule comes from:** every rule that decides the fiction was read against EdgeTales, the design document, and the books; what lacked a source went to its step and the register, and AUDIT.md's principle 6 keeps it so.
+- **9w, so far:** Reach a Milestone is made without a roll (`docs/ruleset.md`, Moves without a roll), and the `vow_fulfilment` scenario plays a vow to its end on the mock provider (9w.R); the four suspected faults of 9w.0 are fixed.
+- **9x — The documents, shorter and by layer** (Sessions with the user).
+- **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); 9y.1, ruff's complexity rules at their default limits, with pylint's four left to ruff, the radon scan gone, and the two functions over 15 locals besides their arguments split as well.

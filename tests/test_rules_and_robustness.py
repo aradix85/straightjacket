@@ -239,3 +239,20 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once() 
     )
     assert call_blueprint_voicing(corrected, game, seed) is not None
     assert [m["role"] for m in corrected.specs[-1].messages] == ["user", "assistant", "user"]
+
+
+def test_blueprint_voicing_degrades_to_no_blueprint_on_an_answer_it_cannot_read() -> None:
+    game = library_game()
+    seed = assemble_blueprint_seed_from_ac(random.Random(1), game)
+    no_conflict: dict[str, list[str]] = {"acts": [], "revelations": [], "possible_endings": []}
+
+    class Answer(ScriptedProvider):
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+        @override
+        def create_message(self, spec: AICallSpec) -> AIResponse:
+            return AIResponse(content=self.content)
+
+    for content in ("not json", "[]", json.dumps(no_conflict)):
+        assert call_blueprint_voicing(Answer(content), game, seed) is None

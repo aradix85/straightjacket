@@ -86,18 +86,36 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
     )
 
 
+def _ask_voicing(
+    provider: AIProvider, spec: AICallSpec, expected: dict[str, int]
+) -> tuple[str, dict[str, Any], str, list[str]] | None:
+    try:
+        content = create_with_retry(provider, spec).content
+        voicing: dict[str, Any] = json.loads(content)
+        mismatch = [
+            f"{key} {len(voicing[key])} (expected {count})"
+            for key, count in expected.items()
+            if len(voicing[key]) != count
+        ]
+        conflict: str = voicing["central_conflict"]
+    except Exception as e:
+        log(
+            f"[BlueprintVoicing] Failed ({type(e).__name__}: {e}), continuing without blueprint",
+            level="warning",
+        )
+        return None
+    return content, voicing, conflict, mismatch
+
+
 def call_blueprint_voicing(
     provider: AIProvider,
     game: GameState,
     seed: BlueprintSeed,
 ) -> dict[str, Any] | None:
-    lang = narration_language()
-    cb = content_boundaries_block(game)
-
-    system = get_prompt("blueprint_voicing", lang=lang, content_boundaries_block=cb)
-    user_msg = _build_voicing_user_msg(game, seed)
+    system = get_prompt(
+        "blueprint_voicing", lang=narration_language(), content_boundaries_block=content_boundaries_block(game)
+    )
     blueprint = crafter().adventure_crafter.blueprint
-
     expected = {
         "acts": len(seed.acts),
         "revelations": len(seed.acts),
@@ -106,7 +124,7 @@ def call_blueprint_voicing(
     schema = get_blueprint_voicing_schema(expected["acts"], expected["possible_endings"])
     model = model_for_role("blueprint_voicing")
     params = sampling_params("blueprint_voicing")
-    messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
+    messages: list[dict[str, Any]] = [{"role": "user", "content": _build_voicing_user_msg(game, seed)}]
     mismatch: list[str] = []
     for _attempt in range(blueprint.voicing_count_retries + 1):
         spec = AICallSpec(
@@ -119,21 +137,10 @@ def call_blueprint_voicing(
             cached_system_prefix="",
             **params,
         )
-        try:
-            content = create_with_retry(provider, spec).content
-            voicing: dict[str, Any] = json.loads(content)
-            mismatch = [
-                f"{key} {len(voicing[key])} (expected {count})"
-                for key, count in expected.items()
-                if len(voicing[key]) != count
-            ]
-            conflict = voicing["central_conflict"]
-        except Exception as e:
-            log(
-                f"[BlueprintVoicing] Failed ({type(e).__name__}: {e}), continuing without blueprint",
-                level="warning",
-            )
+        answer = _ask_voicing(provider, spec, expected)
+        if answer is None:
             return None
+        content, voicing, conflict, mismatch = answer
         if not mismatch:
             log(
                 f"[BlueprintVoicing] Succeeded: conflict={conflict[: eng().truncations.log_medium]}, "

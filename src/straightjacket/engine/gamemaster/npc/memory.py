@@ -32,6 +32,38 @@ def recent_observations(npc: NpcData) -> list[MemoryEntry]:
     return [m for m in npc.memory if m.type == "observation"][-gm().npc.reflection_observation_window :]
 
 
+def _words(text: str) -> set[str]:
+    min_length = gm().memory.min_token_length
+    return {w.lower() for w in text.split() if len(w) >= min_length}
+
+
+def _relevance(mem: MemoryEntry, context_words: set[str], present_npc_ids: frozenset[str]) -> float:
+    mem_cfg = gm().memory
+    relevance = 0.0
+    if context_words:
+        overlap = context_words & _words(mem.event)
+        if overlap:
+            relevance = min(
+                1.0,
+                len(overlap) / max(mem_cfg.relevance_min_context_words, len(context_words)) * mem_cfg.overlap_scale,
+            )
+    if present_npc_ids and mem.about_npc in present_npc_ids:
+        relevance = min(1.0, relevance + gm().npc.about_npc_relevance_boost)
+    return relevance
+
+
+def _score_memory(
+    mem: MemoryEntry, *, current_scene: int, context_words: set[str], present_npc_ids: frozenset[str]
+) -> float:
+    weights = gm().memory_retrieval_weights
+    recency = gm().npc.memory_recency_decay ** max(0, current_scene - mem.scene)
+    if mem.type == "reflection":
+        recency = max(gm().npc.reflection_recency_floor, recency)
+    importance = mem.importance / gm().memory.importance_max
+    relevance = _relevance(mem, context_words, present_npc_ids)
+    return weights.recency * recency + weights.importance * importance + weights.relevance * relevance
+
+
 def retrieve_memories(
     npc: NpcData,
     *,
@@ -42,41 +74,12 @@ def retrieve_memories(
 ) -> list[MemoryEntry]:
     memories = npc.memory
     reflections = [m for m in memories if m.type == "reflection"]
-    weights = gm().memory_retrieval_weights
-    mem_cfg = gm().memory
-    w_recency = weights.recency
-    w_importance = weights.importance
-    w_relevance = weights.relevance
-    recency_floor = gm().npc.reflection_recency_floor
-    about_boost = gm().npc.about_npc_relevance_boost
+    context_words = _words(context_text)
 
-    context_words = {w.lower() for w in context_text.split() if len(w) >= mem_cfg.min_token_length}
-
-    def _score_memory(mem: MemoryEntry) -> float:
-        scene_gap = max(0, current_scene - mem.scene)
-        if mem.type == "reflection":
-            recency = max(recency_floor, gm().npc.memory_recency_decay ** scene_gap)
-        else:
-            recency = gm().npc.memory_recency_decay ** scene_gap
-
-        importance = mem.importance / mem_cfg.importance_max
-
-        relevance = 0.0
-        if context_words:
-            event_words = {w.lower() for w in mem.event.split() if len(w) >= mem_cfg.min_token_length}
-            overlap = context_words & event_words
-            if overlap:
-                relevance = min(
-                    1.0,
-                    len(overlap) / max(mem_cfg.relevance_min_context_words, len(context_words)) * mem_cfg.overlap_scale,
-                )
-
-        if present_npc_ids and mem.about_npc in present_npc_ids:
-            relevance = min(1.0, relevance + about_boost)
-
-        return w_recency * recency + w_importance * importance + w_relevance * relevance
-
-    scored = [(m, _score_memory(m)) for m in memories]
+    scored = [
+        (m, _score_memory(m, current_scene=current_scene, context_words=context_words, present_npc_ids=present_npc_ids))
+        for m in memories
+    ]
     scored.sort(key=itemgetter(1), reverse=True)
 
     result: list[MemoryEntry] = []

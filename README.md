@@ -51,7 +51,7 @@ Text-in, text-out, and built for screen readers from the start by a blind develo
 - [docs/elvira.md](docs/elvira.md) — the test player Elvira
 - [ORIGINS.md](ORIGINS.md) — where the project comes from, and credits
 - [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model
-- [CHANGELOG.md](CHANGELOG.md) — release log since September 2026; earlier releases are in git history
+- [CHANGELOG.md](CHANGELOG.md) — release log of the step in progress; earlier releases are in git history
 - [roadmap.md](roadmap.md) — internal working doc: what gets built next, and in what order
 - [AUDIT.md](AUDIT.md) — internal working doc: how the codebase is audited against its principles
 - [Narrative RPG Engine design document](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u) — the theoretical concept this project puts into practice, published on itch.io and in the author's repository [narrative-rpg-engine](https://github.com/aradix85/narrative-rpg-engine)
