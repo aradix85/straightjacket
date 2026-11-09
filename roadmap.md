@@ -125,8 +125,6 @@ README.md and ORIGINS.md are background. For anything else a sub-agent reports w
 
 At the user's request (2026-11-06), taken up before step 18: every check of ruff, mypy, and pylint at their default limits, with nothing the game does changed. Each group is a release of its own; the one still off, ruff's `any-type`, stands in `pyproject.toml` under "taken up in later releases" in `[tool.ruff.lint]`. What is done is under DONE.
 
-The user's choice (2026-11-10), weighing cost against what a check catches: mypy's `disallow_any_expr` (about 9,750 errors on 2026-11-06, for little beyond the explicit ban), pyright strict (which mostly repeats mypy strict), and pylint's optional extensions (style, much of it against their earlier choices) stay off.
-
 - **9y.3 No explicit `Any`:** ruff's `any-type` and mypy's `disallow_any_explicit`, about 540 errors when measured: every value from yaml, JSON, and the AI's answers gets a real type where it enters typed code.
 
 ### Definition of Done
