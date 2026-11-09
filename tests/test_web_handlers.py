@@ -37,7 +37,7 @@ from straightjacket.web.handlers import (
 )
 from straightjacket.web.session import Session, new_session
 from tests._creation import TurnProvider, brain_answer, force_result, library_game
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, use_users_dir
 from tests._mocks import DroppedWebSocket, RecordingWebSocket
 
 
@@ -57,11 +57,7 @@ def fixture_session() -> Session:
 
 @pytest.fixture(name="users")
 def fixture_users(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
-    for target in (
-        "straightjacket.engine.config_loader.USERS_DIR",
-        "straightjacket.engine.user_management.USERS_DIR",
-    ):
-        monkeypatch.setattr(target, tmp_path)
+    use_users_dir(monkeypatch, tmp_path)
     return tmp_path
 
 
@@ -86,10 +82,8 @@ def test_a_closed_connection_ends_a_handler_quietly(session: Session) -> None:
     _run(handle_list_players(session, DroppedWebSocket(), {}))
 
 
-def test_handle_list_players_returns_list(
-    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
+@pytest.mark.usefixtures("users")
+def test_handle_list_players_returns_list(session: Session, fake_ws: RecordingWebSocket) -> None:
     _run(handle_list_players(session, fake_ws, {}))
     assert len(fake_ws.sent) == 1
     assert fake_ws.sent[0]["type"] == "players_list"
@@ -108,23 +102,18 @@ def test_a_refused_player_name_leaves_the_session_as_it_was(session: Session, fa
     assert (session.player, fake_ws.sent) == (new_session().player, [])
 
 
-def test_handle_select_player_no_game_returns_creation_options(
-    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
-    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
-
+@pytest.mark.usefixtures("users")
+def test_handle_select_player_no_game_returns_creation_options(session: Session, fake_ws: RecordingWebSocket) -> None:
     _run(handle_select_player(session, fake_ws, {"name": "Alice"}))
     selected = next(m for m in fake_ws.sent if m["type"] == "player_selected")
     assert selected["has_game"] is False
     assert "creation_options" in selected
 
 
+@pytest.mark.usefixtures("users")
 def test_handle_select_player_with_an_incompatible_save_offers_a_new_game(
-    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    session: Session, fake_ws: RecordingWebSocket
 ) -> None:
-    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
-    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
     name = eng().persistence.default_save_name
     save_game(make_game_state(setting_id="starforged"), "Alice", [], name)
     path = get_save_dir("Alice") / f"{name}.json"
@@ -201,13 +190,11 @@ def test_handle_save_no_player_silent(session: Session, fake_ws: RecordingWebSoc
 
 
 def test_handle_create_player_invalid_name_is_reported_and_creates_nothing(
-    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    session: Session, fake_ws: RecordingWebSocket, users: Path
 ) -> None:
-    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
-    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
     _run(handle_create_player(session, fake_ws, {"name": "D:"}))
     assert fake_ws.sent == [{"type": "error", "text": t("error.invalid_name")}]
-    assert not list(tmp_path.iterdir())
+    assert not list(users.iterdir())
 
 
 @pytest.mark.parametrize("name", ["NUL", "   ", ""])
@@ -227,11 +214,8 @@ def test_handle_load_no_player_silent(session: Session, fake_ws: RecordingWebSoc
     assert fake_ws.sent == []
 
 
-def test_handle_load_nonexistent_save_errors(
-    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
-    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
+@pytest.mark.usefixtures("users")
+def test_handle_load_nonexistent_save_errors(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.player = "Alice"
     _run(handle_load(session, fake_ws, {"name": "nonexistent"}))
     assert any(m["type"] == "error" for m in fake_ws.sent)
@@ -337,11 +321,8 @@ def test_handle_debug_state_with_game_returns_state(session: Session, fake_ws: R
     assert any(m["type"] == "debug_state" for m in fake_ws.sent)
 
 
-def test_handle_list_saves_returns_list(
-    session: Session, fake_ws: RecordingWebSocket, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
-    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
+@pytest.mark.usefixtures("users")
+def test_handle_list_saves_returns_list(session: Session, fake_ws: RecordingWebSocket) -> None:
     session.player = "Alice"
     _run(handle_list_saves(session, fake_ws, {}))
     assert any(m["type"] == "saves_list" for m in fake_ws.sent)

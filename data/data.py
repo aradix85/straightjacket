@@ -6,11 +6,6 @@ from pathlib import Path
 DATA_DIR = Path(__file__).resolve().parent
 
 _CONSOLE = logging.getLogger("straightjacket.data")
-_CONSOLE_HANDLER = logging.StreamHandler(sys.stdout)
-_CONSOLE_HANDLER.setFormatter(logging.Formatter("%(message)s"))
-_CONSOLE.addHandler(_CONSOLE_HANDLER)
-_CONSOLE.setLevel(logging.INFO)
-_CONSOLE.propagate = False
 
 
 def _say(text: str = "") -> None:
@@ -133,4 +128,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     main()

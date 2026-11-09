@@ -9,50 +9,32 @@ import pytest
 import yaml
 
 from straightjacket.engine import config_loader
+from tests._helpers import config_data, every_role
 
 
-def _full_config_data(**overrides: object) -> dict[str, Any]:
-    base: dict[str, Any] = {
-        "server": {"host": "127.0.0.1", "port": 8081, "stream_narration": True},
-        "language": {"narration_language": "English"},
-        "ai": {
-            "prompts_dir": "prompts",
-            "providers": {
-                "local": {
-                    "type": "openai_compatible",
-                    "api_base": "http://localhost:9/v1",
-                    "api_key_env": "LOCAL_KEY",
-                    "timeout_seconds": 30,
-                },
+def _full_config_data() -> dict[str, Any]:
+    return config_data(
+        providers={
+            "local": {
+                "type": "openai_compatible",
+                "api_base": "http://localhost:9/v1",
+                "api_key_env": "LOCAL_KEY",
+                "timeout_seconds": 30,
             },
-            "clusters": {
-                "classification": {
-                    "provider": "local",
-                    "model": "qwen",
-                    "temperature": 0.5,
-                    "top_p": 0.95,
-                    "max_tokens": 8192,
-                    "max_retries": 3,
-                    "extra_body": {"foo": "bar"},
-                }
-            },
-            "role_cluster": dict.fromkeys(
-                (
-                    "narrator",
-                    "blueprint_voicing",
-                    "director",
-                    "recap",
-                    "brain",
-                    "correction",
-                    "narrator_metadata",
-                    "opening_setup",
-                ),
-                "classification",
-            ),
         },
-    }
-    base.update(overrides)
-    return base
+        clusters={
+            "classification": {
+                "provider": "local",
+                "model": "qwen",
+                "temperature": 0.5,
+                "top_p": 0.95,
+                "max_tokens": 8192,
+                "max_retries": 3,
+                "extra_body": {"foo": "bar"},
+            }
+        },
+        role_cluster=every_role("classification"),
+    )
 
 
 @pytest.fixture(name="read_config")

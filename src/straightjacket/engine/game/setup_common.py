@@ -1,5 +1,12 @@
+import random
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
+from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
+from straightjacket.engine.ai.narrator import call_narrator, call_opening_setup
+from straightjacket.engine.ai.provider_base import AIProvider
+from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac, materialize_blueprint
 from straightjacket.engine.gamemaster.npc.lifecycle import new_npc
 from straightjacket.engine.gamemaster.npc.matching import (
     apply_name_sanitization,
@@ -13,6 +20,7 @@ from straightjacket.engine.gamemaster.pacing import record_scene_intensity
 from straightjacket.engine.gamemaster.world import update_location
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import GameState, MemoryEntry, NarrationEntry, SceneLogEntry
+from straightjacket.engine.parser import parse_narrator_response
 
 
 def register_extracted_npcs(game: GameState, npc_dicts: list[dict[str, Any]]) -> None:
@@ -83,6 +91,27 @@ def apply_opening_setup(game: GameState, data: dict[str, Any], *, label: str) ->
 
     if data["scene_context"]:
         game.world.current_scene_context = data["scene_context"]
+
+
+def generate_opening(
+    provider: AIProvider, game: GameState, build_prompt: Callable[[GameState], str], *, label: str
+) -> tuple[str, dict[str, Any]]:
+    seed = assemble_blueprint_seed_from_ac(random.Random(), game)
+    log(f"[{label}] Blueprint seed assembled: themes={seed.themes}")
+    narrator_prompt = build_prompt(game)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        fut_narrator = pool.submit(call_narrator, provider, narrator_prompt, game)
+        fut_voicing = pool.submit(call_blueprint_voicing, provider, game, seed)
+        raw = fut_narrator.result()
+        voicing = fut_voicing.result()
+
+    narration = parse_narrator_response(game, raw)
+    game.narrative.story_blueprint = None if voicing is None else materialize_blueprint(seed, voicing)
+
+    setup_data = call_opening_setup(provider, narration, game)
+    apply_opening_setup(game, setup_data, label=label)
+    return narration, setup_data
 
 
 def record_opening(game: GameState, narration: str, history_summary: str, log_summary: str) -> None:

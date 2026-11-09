@@ -6,7 +6,7 @@ from straightjacket.engine.correction import process_correction
 from straightjacket.engine.game import finalization, process_turn
 from straightjacket.engine.models import ClockEvent, ClockFillResult, GameState, ThreatEvent
 from tests._creation import TurnProvider, brain_answer, correction_answer, force_result, library_game
-from tests._helpers import make_clock, make_random_event, make_scene_setup
+from tests._helpers import make_clock, make_random_event, make_scene_setup, make_state_op
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import TurnSnapshot
@@ -18,17 +18,7 @@ _TALK = brain_answer(
 _MISREAD = correction_answer(corrected_input="I talk to Mira instead", narrator_guidance="Rewrite as peaceful dialog.")
 _LOYAL = correction_answer(
     correction_source="state_error",
-    state_ops=[
-        {
-            "op": "npc_edit",
-            "npc_id": "npc_1",
-            "split_name": None,
-            "split_description": None,
-            "merge_source_id": None,
-            "fields": {"disposition": "loyal"},
-            "value": None,
-        }
-    ],
+    state_ops=[make_state_op(op="npc_edit", npc_id="npc_1", fields={"disposition": "loyal"})],
 )
 
 

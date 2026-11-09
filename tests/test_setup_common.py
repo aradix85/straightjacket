@@ -2,18 +2,8 @@ from typing import Any
 
 from straightjacket.engine.ai.schemas import get_opening_setup_schema
 from straightjacket.engine.game.setup_common import apply_opening_setup, seed_opening_memories
+from tests._creation import opening_npc
 from tests._helpers import make_clock, make_game_state, make_npc
-
-
-def _npc(name: str, description: str, disposition: str) -> dict[str, Any]:
-    return {
-        "name": name,
-        "description": description,
-        "agenda": "",
-        "instinct": "",
-        "secrets": [],
-        "disposition": disposition,
-    }
 
 
 def _setup(*npcs: dict[str, Any]) -> dict[str, Any]:
@@ -25,7 +15,11 @@ def test_an_opening_registers_neither_the_player_nor_a_known_npc_again() -> None
     game.npcs = [make_npc(id="npc_1", name="Kira", status="deceased")]
     apply_opening_setup(
         game,
-        _setup(_npc("Kira", "Scout", "friendly"), _npc("Hero", "Player", "neutral"), _npc("Borin", "Smith", "neutral")),
+        _setup(
+            opening_npc("Kira", "Scout", "friendly"),
+            opening_npc("Hero", "Player", "neutral"),
+            opening_npc("Borin", "Smith", "neutral"),
+        ),
         label="OpeningSetup",
     )
     assert [(n.id, n.name) for n in game.npcs] == [("npc_1", "Kira"), ("npc_2", "Borin")]
@@ -34,7 +28,7 @@ def test_an_opening_registers_neither_the_player_nor_a_known_npc_again() -> None
 def test_an_opening_does_not_split_a_known_npc_by_a_shorter_name() -> None:
     game = make_game_state(player_name="Hero")
     game.npcs = [make_npc(id="npc_1", name="Maren Silk", description="A smuggler.")]
-    apply_opening_setup(game, _setup(_npc("Maren", "A smuggler", "neutral")), label="OpeningSetup")
+    apply_opening_setup(game, _setup(opening_npc("Maren", "A smuggler", "neutral")), label="OpeningSetup")
     assert [n.name for n in game.npcs] == ["Maren Silk"]
 
 

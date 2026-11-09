@@ -113,15 +113,11 @@ class OpenAICompatibleProvider:
             for tc in choice.message.tool_calls or []
         ]
 
-        stop_reason = normalize_stop_reason(choice.finish_reason, ("length",), "tool_calls", "content_filter")
-
-        usage = _usage(response.usage)
-
         return AIResponse(
             content=content,
-            stop_reason=stop_reason,
+            stop_reason=normalize_stop_reason(choice.finish_reason, ("length",), "tool_calls", "content_filter"),
             tool_calls=parsed_tool_calls,
-            usage=usage,
+            usage=_usage(response.usage),
             reasoning=getattr(choice.message, "reasoning", None)
             or getattr(choice.message, "reasoning_content", None)
             or "",

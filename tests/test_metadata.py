@@ -4,7 +4,7 @@ from typing import Any
 from straightjacket.engine.ai.metadata import apply_narrator_metadata, process_deceased_npcs
 from straightjacket.engine.ai.narrator import call_narrator_metadata
 from straightjacket.engine.models import GameState
-from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc
+from tests._helpers import friendly_kira, make_brain_result, make_game_state, make_memory, make_npc
 from tests._mocks import MockProvider
 
 
@@ -14,10 +14,7 @@ def _game() -> GameState:
     game.world.current_location = "Tavern"
     game.world.time_of_day = "evening"
     game.npcs = [
-        make_npc(
-            id="npc_1",
-            name="Kira",
-            disposition="friendly",
+        friendly_kira(
             status="active",
             last_location="Tavern",
             memory=[make_memory(scene=4, event="Talked to player", importance=3)],

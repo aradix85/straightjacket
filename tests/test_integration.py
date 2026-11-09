@@ -12,7 +12,6 @@ from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
 from straightjacket.engine.gamemaster.scene import check_scene
 from straightjacket.engine.models import RollResult, labels_of
 from straightjacket.engine.models_story import StoryAct, StoryBlueprint
-from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.prompt_blocks import get_narrator_system
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
 from straightjacket.engine.ruleset import move_outcome
@@ -21,9 +20,16 @@ from straightjacket.engine.ruleset.progress import menace_per_mark, ticks_per_ma
 from straightjacket.engine.ruleset.rolls import can_burn_momentum
 from straightjacket.engine.ruleset.suffer import start_dying_clock
 from straightjacket.engine.story_state import get_current_act
-from tests._creation import TurnProvider, brain_answer, create_game, fixed_roll, force_result, library_game
+from tests._creation import (
+    TurnProvider,
+    brain_answer,
+    drift_station_game,
+    fixed_roll,
+    force_result,
+    library_game,
+)
 from tests._helpers import (
-    action_prompt_kwargs,
+    action_prompt,
     dialog_prompt_kwargs,
     fix_dice,
     make_blueprint,
@@ -32,6 +38,7 @@ from tests._helpers import (
     make_memory,
     make_npc,
     make_scene_setup,
+    make_state_op,
     make_threat,
     record_price_tables,
 )
@@ -137,14 +144,7 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id() -> None:
 def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_develops_by_rank(
     monkeypatch: pytest.MonkeyPatch, result: str
 ) -> None:
-    game = create_game(
-        "starforged",
-        location="Drift Station",
-        npcs=[("Kira Vance", "A pilot with a burned hand.", "friendly")],
-        stats=(2, 2, 1, 1, 3),
-        player_name="Aria",
-        background_vow="Keep the station running",
-    )
+    game = drift_station_game()
     kira = game.npcs[0].id
     force_result(monkeypatch, result)
     provider = TurnProvider(
@@ -279,26 +279,12 @@ def test_action_prompt_contains_result_and_position() -> None:
         player_intent="Search for hidden compartments",
         approach="carefully examining every surface",
     )
-    roll = RollResult(
-        d1=4,
-        c1=5,
-        c2=8,
-        stat_name="wits",
-        stat_value=2,
-        action_score=9,
-        result="STRONG_HIT",
-        move="adventure/face_danger",
-        match=False,
-    )
-
-    prompt = build_action_prompt(
+    prompt = action_prompt(
         game,
         brain,
-        roll,
-        **action_prompt_kwargs(
-            consequence_sentences=["The tide shifts. Hero can feel it."],
-            player_words="I search for hidden compartments",
-        ),
+        "STRONG_HIT",
+        consequence_sentences=["The tide shifts. Hero can feel it."],
+        player_words="I search for hidden compartments",
     )
 
     assert "STRONG_HIT" in prompt
@@ -426,15 +412,9 @@ def test_correction_state_ops_npc_edit() -> None:
     apply_correction_ops(
         game,
         [
-            {
-                "op": "npc_edit",
-                "npc_id": "npc_1",
-                "fields": {"description": "Updated description", "disposition": "hostile"},
-                "split_name": None,
-                "split_description": None,
-                "merge_source_id": None,
-                "value": None,
-            }
+            make_state_op(
+                op="npc_edit", npc_id="npc_1", fields={"description": "Updated description", "disposition": "hostile"}
+            )
         ],
     )
     assert game.npcs[0].description == "Updated description"
@@ -447,17 +427,7 @@ def test_correction_state_ops_npc_rename() -> None:
 
     apply_correction_ops(
         game,
-        [
-            {
-                "op": "npc_edit",
-                "npc_id": "npc_1",
-                "fields": {"name": "Captain Voss"},
-                "split_name": None,
-                "split_description": None,
-                "merge_source_id": None,
-                "value": None,
-            }
-        ],
+        [make_state_op(op="npc_edit", npc_id="npc_1", fields={"name": "Captain Voss"})],
     )
     assert game.npcs[0].name == "Captain Voss"
     assert "Mira" in game.npcs[0].aliases
@@ -468,17 +438,7 @@ def test_correction_state_ops_location_edit() -> None:
 
     apply_correction_ops(
         game,
-        [
-            {
-                "op": "location_edit",
-                "npc_id": None,
-                "fields": None,
-                "split_name": None,
-                "split_description": None,
-                "merge_source_id": None,
-                "value": "The Dark Tower",
-            }
-        ],
+        [make_state_op(op="location_edit", value="The Dark Tower")],
     )
     assert game.world.current_location == "The Dark Tower"
 
@@ -490,15 +450,9 @@ def test_correction_state_ops_npc_split() -> None:
     apply_correction_ops(
         game,
         [
-            {
-                "op": "npc_split",
-                "npc_id": "npc_1",
-                "split_name": "Mira's Twin",
-                "split_description": "Identical but different",
-                "fields": None,
-                "merge_source_id": None,
-                "value": None,
-            }
+            make_state_op(
+                op="npc_split", npc_id="npc_1", split_name="Mira's Twin", split_description="Identical but different"
+            )
         ],
     )
     assert len(game.npcs) == count_before + 1
@@ -506,24 +460,13 @@ def test_correction_state_ops_npc_split() -> None:
     assert new_npc.description == "Identical but different"
 
 
-def _op(op: str, **fields: object) -> dict[str, object]:
-    base: dict[str, object] = {
-        "op": op,
-        "npc_id": None,
-        "fields": None,
-        "split_name": None,
-        "split_description": None,
-        "merge_source_id": None,
-        "value": None,
-    }
-    return {**base, **fields}
-
-
 def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(monkeypatch: pytest.MonkeyPatch) -> None:
     warnings: list[str] = []
     monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     game = library_game()
-    ops.apply_correction_ops(game, [_op("npc_edit", npc_id="npc_1", fields={"name": " ", "agenda": "hide"})])
+    ops.apply_correction_ops(
+        game, [make_state_op(op="npc_edit", npc_id="npc_1", fields={"name": " ", "agenda": "hide"})]
+    )
     assert (game.npcs[0].name, game.npcs[0].agenda) == ("Mira", "hide")
     assert warnings == ["[Correction] npc_edit: Mira keeps its name, the analysis gave an empty one"]
 
@@ -531,7 +474,7 @@ def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(monkeypatch: 
 def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole() -> None:
     game = library_game()
     game.npcs[0].description = "A tall woman who guards the totem of the dead king"
-    apply_correction_ops(game, [_op("npc_edit", npc_id="npc_1", fields={"status": "deceased"})])
+    apply_correction_ops(game, [make_state_op(op="npc_edit", npc_id="npc_1", fields={"status": "deceased"})])
     assert game.npcs[0].status == "deceased"
     assert game.npcs[0].description == "A tall woman who guards the totem of the dead king"
 
@@ -540,20 +483,20 @@ def test_a_split_without_a_name_rolls_one_and_numbers_the_npc(monkeypatch: pytes
     monkeypatch.setattr(ops, "roll_oracle_name", lambda _game: "Bren Hollow")
     game = library_game()
     game.npcs[0].last_location = "Abandoned Library"
-    ops.apply_correction_ops(game, [_op("npc_split", npc_id="npc_1")])
+    ops.apply_correction_ops(game, [make_state_op(op="npc_split", npc_id="npc_1")])
     twin = game.npcs[-1]
     assert (twin.id, twin.name, twin.name_rolled, twin.description) == ("npc_2", "Bren Hollow", True, "")
     assert twin.last_location == "Abandoned Library"
 
 
 _UNAPPLICABLE_OPS = [
-    _op("npc_edit"),
-    _op("npc_split"),
-    _op("npc_merge", npc_id="npc_1", merge_source_id="npc_1"),
-    _op("location_edit", value=""),
-    _op("scene_context"),
-    _op("time_edit", value="teatime"),
-    _op("backstory_append"),
+    make_state_op(op="npc_edit"),
+    make_state_op(op="npc_split"),
+    make_state_op(op="npc_merge", npc_id="npc_1", merge_source_id="npc_1"),
+    make_state_op(op="location_edit", value=""),
+    make_state_op(op="scene_context"),
+    make_state_op(op="time_edit", value="teatime"),
+    make_state_op(op="backstory_append"),
 ]
 
 
@@ -612,7 +555,7 @@ def test_correction_state_ops_npc_merge() -> None:
         memory=[make_memory(scene=2, event="saw fire", importance=5)],
     )
     game.npcs.append(source)
-    state_ops = [{"op": "npc_merge", "npc_id": "npc_1", "merge_source_id": "npc_3"}]
+    state_ops = [make_state_op(op="npc_merge", npc_id="npc_1", merge_source_id="npc_3")]
     apply_correction_ops(game, state_ops)
     assert not any(n.id == "npc_3" for n in game.npcs), "source should be removed"
     target = next(n for n in game.npcs if n.id == "npc_1")

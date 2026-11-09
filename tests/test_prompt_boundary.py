@@ -3,7 +3,7 @@ import pytest
 from straightjacket.engine.models import GameState
 from straightjacket.engine.models_story import ChapterSummary, PossibleEnding
 from straightjacket.engine.prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt, build_new_game_prompt
-from tests._helpers import make_blueprint, make_game_state, make_npc, make_scene_log_entry
+from tests._helpers import friendly_kira, make_blueprint, make_game_state, make_npc, make_scene_log_entry
 
 
 def _opening_game() -> GameState:
@@ -58,7 +58,7 @@ def test_build_epilogue_prompt_renders() -> None:
             PossibleEnding(type="tragedy", description="Suppress the truth"),
         ],
     )
-    g.npcs = [make_npc(id="npc_1", name="Kira", disposition="friendly", description="Smuggler")]
+    g.npcs = [friendly_kira(description="Smuggler")]
     g.narrative.session_log.append(
         make_scene_log_entry(scene=1, summary="Met Kira", move="adventure/face_danger", result="STRONG_HIT")
     )
@@ -80,7 +80,7 @@ def test_build_new_chapter_prompt_renders_with_active_npcs() -> None:
     g = _opening_game()
     g.campaign.chapter_number = 2
     g.npcs = [
-        make_npc(id="npc_1", name="Kira", disposition="friendly", description="Smuggler", aliases=["K"]),
+        friendly_kira(description="Smuggler", aliases=["K"]),
     ]
     out = build_new_chapter_prompt(g)
     assert 'chapter="2"' in out

@@ -4,19 +4,18 @@ from straightjacket.engine.gamemaster.stance_gate import resolve_npc_stance
 from straightjacket.engine.models import (
     GameState,
     NpcData,
-    RollResult,
-    consequence,
 )
-from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
 from tests._helpers import (
-    action_prompt_kwargs,
+    action_prompt,
     dialog_prompt_kwargs,
+    docks_game,
+    friendly_kira,
     make_brain_result,
-    make_game_state,
     make_memory,
     make_npc,
     make_progress_track,
+    weak_hit_prompt,
 )
 
 
@@ -33,22 +32,7 @@ def _npc(disposition: str = "neutral") -> NpcData:
 
 
 def _game(npc: NpcData | None = None, bond: int = 0) -> GameState:
-    game = make_game_state(player_name="Ash", setting_id="starforged", setting_genre="starforged")
-    game.world.current_location = "The Docks"
-    game.narrative.scene_count = 3
-    if npc:
-        game.npcs.append(npc)
-        if bond > 0:
-            game.progress_tracks.append(
-                make_progress_track(
-                    id=f"connection_{npc.id}",
-                    name=npc.name,
-                    track_type="connection",
-                    rank="dangerous",
-                    ticks=bond * 4,
-                )
-            )
-    return game
+    return docks_game(npc, scene=3, bond=bond)
 
 
 def test_hostile_low_combat() -> None:
@@ -126,27 +110,7 @@ def test_stance_in_target_npc_block() -> None:
     brain = make_brain_result(
         move="adventure/gather_information", stat="wits", target_npc="npc_1", player_intent="ask about the cargo"
     )
-    roll = RollResult(
-        d1=3,
-        c1=6,
-        c2=7,
-        stat_name="wits",
-        stat_value=2,
-        action_score=9,
-        result="WEAK_HIT",
-        move="adventure/gather_information",
-        match=False,
-    )
-    prompt = build_action_prompt(
-        game,
-        brain,
-        roll,
-        **action_prompt_kwargs(
-            consequences=[consequence("momentum_change", n=1)],
-            consequence_sentences=["The tide shifts."],
-            player_words="I ask about the cargo",
-        ),
-    )
+    prompt = weak_hit_prompt(game, brain, "I ask about the cargo")
     assert 'stance="evasive"' in prompt
     assert "constraint=" in prompt
 
@@ -158,18 +122,7 @@ def _compel_a_hostile_npc(result: str) -> str:
     npc = _npc("hostile")
     game = _game(npc, bond=0)
     brain = make_brain_result(move="adventure/compel", stat="iron", target_npc="npc_1", player_intent="make them talk")
-    roll = RollResult(
-        d1=4,
-        c1=2,
-        c2=3,
-        stat_name="iron",
-        stat_value=1,
-        action_score=5,
-        result=result,
-        move="adventure/compel",
-        match=False,
-    )
-    return build_action_prompt(game, brain, roll, **action_prompt_kwargs(player_words="Talk."))
+    return action_prompt(game, brain, result, player_words="Talk.")
 
 
 @pytest.mark.parametrize(
@@ -202,7 +155,7 @@ def test_only_a_refusing_stance_gives_way_to_a_hit(
 
 
 def test_stance_in_activated_npc_block() -> None:
-    npc1 = make_npc(id="npc_1", name="Kira", disposition="friendly", agenda="Trade", instinct="Cautious")
+    npc1 = friendly_kira(agenda="Trade", instinct="Cautious")
     npc2 = make_npc(id="npc_2", name="Rowan", disposition="hostile", agenda="Fight", instinct="Reckless")
     game = _game()
     game.npcs = [npc1, npc2]
@@ -210,24 +163,13 @@ def test_stance_in_activated_npc_block() -> None:
         make_progress_track(id="connection_npc_1", name="Kira", track_type="connection", rank="dangerous", ticks=8)
     )
     brain = make_brain_result(move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="dodge")
-    roll = RollResult(
-        d1=4,
-        c1=3,
-        c2=4,
-        stat_name="edge",
-        stat_value=2,
-        action_score=10,
-        result="STRONG_HIT",
-        move="adventure/face_danger",
-        match=False,
-    )
-    prompt = build_action_prompt(
+    prompt = action_prompt(
         game,
         brain,
-        roll,
-        **action_prompt_kwargs(
-            consequence_sentences=["The tide shifts."], player_words="dodge", activated_npcs=[npc1, npc2]
-        ),
+        "STRONG_HIT",
+        consequence_sentences=["The tide shifts."],
+        player_words="dodge",
+        activated_npcs=[npc1, npc2],
     )
 
     assert "stance=" in prompt

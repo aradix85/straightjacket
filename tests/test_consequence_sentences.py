@@ -6,17 +6,15 @@ from straightjacket.engine.models import (
     ClockEvent,
     Consequence,
     GameState,
-    RollResult,
     consequence,
 )
-from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.ruleset.consequences import (
     generate_consequence_sentences,
     pick_template,
     resolve_consequence_sentence,
 )
 from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc
+from tests._helpers import action_prompt, make_brain_result, make_game_state, make_npc
 
 
 def _game() -> GameState:
@@ -29,20 +27,6 @@ def _game() -> GameState:
 def _brain(target: str | None = None) -> BrainResult:
     return make_brain_result(
         move="adventure/face_danger", stat="edge", player_intent="climb the wall", target_npc=target
-    )
-
-
-def _roll(result: str = "MISS") -> RollResult:
-    return RollResult(
-        d1=2,
-        c1=8,
-        c2=9,
-        stat_name="edge",
-        stat_value=2,
-        action_score=7,
-        result=result,
-        move="adventure/face_danger",
-        match=False,
     )
 
 
@@ -156,15 +140,13 @@ def test_consequence_tags_in_prompt() -> None:
     game = _game()
     game.narrative.story_blueprint = None
     sentences = ["The hit is bad. Ash feels something give.", "Whatever advantage Ash had, it's gone."]
-    prompt = build_action_prompt(
+    prompt = action_prompt(
         game,
         _brain(),
-        _roll("MISS"),
-        **action_prompt_kwargs(
-            consequences=[consequence("track_loss", track="health", n=2), consequence("momentum_change", n=-3)],
-            player_words="climb the wall",
-            consequence_sentences=sentences,
-        ),
+        "MISS",
+        consequences=[consequence("track_loss", track="health", n=2), consequence("momentum_change", n=-3)],
+        player_words="climb the wall",
+        consequence_sentences=sentences,
     )
     assert "<consequence>" in prompt
     assert "The hit is bad" in prompt
@@ -174,27 +156,20 @@ def test_consequence_tags_in_prompt() -> None:
 def test_no_consequence_tags_when_empty() -> None:
     game = _game()
     game.narrative.story_blueprint = None
-    prompt = build_action_prompt(
-        game,
-        _brain(),
-        _roll("STRONG_HIT"),
-        **action_prompt_kwargs(player_words="climb the wall"),
-    )
+    prompt = action_prompt(game, _brain(), "STRONG_HIT", player_words="climb the wall")
     assert "</consequence>" not in prompt
 
 
 def test_task_mentions_consequence_weaving() -> None:
     game = _game()
     game.narrative.story_blueprint = None
-    prompt = build_action_prompt(
+    prompt = action_prompt(
         game,
         _brain(),
-        _roll("MISS"),
-        **action_prompt_kwargs(
-            consequences=[consequence("track_loss", track="health", n=1)],
-            player_words="climb",
-            consequence_sentences=["Pain flares."],
-        ),
+        "MISS",
+        consequences=[consequence("track_loss", track="health", n=1)],
+        player_words="climb",
+        consequence_sentences=["Pain flares."],
     )
     assert "<consequence>" in prompt.lower()
 

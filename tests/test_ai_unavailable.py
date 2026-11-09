@@ -11,7 +11,7 @@ from straightjacket.i18n import t
 from straightjacket.web import handlers
 from straightjacket.web.session import new_session
 from tests._creation import TurnProvider, brain_answer, correction_answer, force_result, library_game
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, make_state_op
 from tests._mocks import MockProvider, RecordingWebSocket
 
 
@@ -63,17 +63,7 @@ def test_a_failed_state_correction_is_rolled_back_with_its_backstory(monkeypatch
     provider.correction = correction_answer(
         correction_source="state_error",
         corrected_input="",
-        state_ops=[
-            {
-                "op": "backstory_append",
-                "npc_id": None,
-                "fields": None,
-                "split_name": None,
-                "split_description": None,
-                "merge_source_id": None,
-                "value": "Raised by wolves.",
-            }
-        ],
+        state_ops=[make_state_op(op="backstory_append", value="Raised by wolves.")],
     )
     monkeypatch.setattr(handlers, "get_provider", lambda: provider)
 

@@ -10,7 +10,7 @@ from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
 from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.legacy import mark_legacy
 from straightjacket.engine.ruleset.progress import filled_boxes
-from tests._creation import OPENING_TEXT, OpeningProvider, create_game
+from tests._creation import OPENING_TEXT, OpeningProvider, drift_station_game
 from tests._helpers import make_blueprint, make_clock, make_game_state, make_memory, make_npc, make_threat
 from tests._mocks import MockProvider
 from tests.elvira.elvira_bot.invariants import assert_game_state
@@ -20,23 +20,12 @@ if TYPE_CHECKING:
     from straightjacket.engine.models_story import StoryBlueprint
 
 
-def _game() -> GameState:
-    return create_game(
-        "starforged",
-        location="Drift Station",
-        npcs=[("Kira Vance", "A pilot with a burned hand.", "friendly")],
-        stats=(2, 2, 1, 1, 3),
-        player_name="Aria",
-        background_vow="Keep the station running",
-    )
-
-
 def _next_chapter(game: GameState, provider: OpeningProvider | None = None) -> str:
     return start_new_chapter(provider or OpeningProvider([], "Ring Dock"), game)
 
 
 def test_a_new_chapter_keeps_the_character_and_the_clocks() -> None:
-    game = _game()
+    game = drift_station_game()
     meters = {"health": 2, "spirit": 3, "supply": 1, "momentum": 7}
     game.resources.meters.update(meters)
     game.world.clocks = [make_clock(name="The flood rises")]
@@ -47,7 +36,7 @@ def test_a_new_chapter_keeps_the_character_and_the_clocks() -> None:
 
 
 def test_a_new_chapter_keeps_what_carries_over() -> None:
-    game = _game()
+    game = drift_station_game()
     game.threats = [make_threat(id="t1", name="Old threat")]
     game.impacts = ["wounded"]
     before = (
@@ -63,7 +52,7 @@ def test_a_new_chapter_keeps_what_carries_over() -> None:
 
 
 def test_a_new_chapter_restarts_what_belongs_to_one_chapter() -> None:
-    game = _game()
+    game = drift_station_game()
     game.world.chaos_factor = 7
     game.world.time_of_day = "evening"
     game.world.location_history = ["Old dock"]
@@ -90,7 +79,7 @@ def test_a_new_chapter_restarts_what_belongs_to_one_chapter() -> None:
 
 
 def test_a_new_chapter_drops_only_the_old_adventures_keyed_scenes() -> None:
-    game = _game()
+    game = drift_station_game()
     game.narrative.keyed_scenes = []
     for source in ("ac:Old Plot Point", "clock:The flood rises:2", "random_event:pc_negative:npc_1"):
         add_keyed_scene(
@@ -113,13 +102,13 @@ def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none() -> None:
                 raise ConnectionError(msg)
             return super().create_message(spec)
 
-    game = _game()
+    game = drift_station_game()
     _next_chapter(game, _NoVoicing([], "Ring Dock"))
     assert game.narrative.story_blueprint is None
 
 
 def test_at_a_chapter_boundary_an_npc_without_a_part_in_the_story_steps_back() -> None:
-    game = _game()
+    game = drift_station_game()
     cap = gm().chapter.npc_memories_kept
     major = make_npc(id="npc_7", name="Major", status="active", agenda="serious goal")
     major.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=5) for i in range(cap + 5)]
@@ -135,7 +124,7 @@ def test_at_a_chapter_boundary_an_npc_without_a_part_in_the_story_steps_back() -
 
 
 def test_a_created_game_moves_into_its_next_chapter() -> None:
-    game = _game()
+    game = drift_station_game()
     game.npcs[0].agenda = "keep her ship"
     mark_legacy(game, "quests", "epic")
     mark_legacy(game, "bonds", "formidable")
@@ -161,7 +150,7 @@ def test_a_created_game_moves_into_its_next_chapter() -> None:
 
 
 def test_a_chapter_opening_registers_its_people_and_place_beside_a_lore_figure() -> None:
-    game = _game()
+    game = drift_station_game()
     game.npcs.append(make_npc(id="npc_2", name="The Founder", status="lore"))
     _next_chapter(game, OpeningProvider([("Dace Orrin", "A dockhand.", "neutral")], "Ring Dock"))
     assert game.world.current_location == "Ring Dock"
@@ -169,7 +158,7 @@ def test_a_chapter_opening_registers_its_people_and_place_beside_a_lore_figure()
 
 
 def test_a_game_that_is_over_cannot_start_a_chapter() -> None:
-    game = _game()
+    game = drift_station_game()
     game.end_reason = "death"
     with pytest.raises(RuntimeError, match="succession"):
         _next_chapter(game)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from itertools import starmap
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
@@ -44,17 +45,7 @@ class OpeningProvider(ScriptedProvider):
         if "scene_context" in props:
             return self._json(
                 {
-                    "npcs": [
-                        {
-                            "name": name,
-                            "description": description,
-                            "agenda": "",
-                            "instinct": "",
-                            "secrets": [],
-                            "disposition": disposition,
-                        }
-                        for name, description, disposition in self.npcs
-                    ],
+                    "npcs": list(starmap(opening_npc, self.npcs)),
                     "location": self.location,
                     "scene_context": "",
                     "memory_updates": [],
@@ -62,6 +53,17 @@ class OpeningProvider(ScriptedProvider):
                 }
             )
         return AIResponse(content=OPENING_TEXT, usage={"input_tokens": 10, "output_tokens": 10})
+
+
+def opening_npc(name: str, description: str, disposition: str) -> dict[str, Any]:
+    return {
+        "name": name,
+        "description": description,
+        "agenda": "",
+        "instinct": "",
+        "secrets": [],
+        "disposition": disposition,
+    }
 
 
 def _voicing(props: dict[str, Any]) -> dict[str, Any]:
@@ -213,14 +215,36 @@ def create_game(
     return game
 
 
-def library_game() -> GameState:
+def library_game(*more_npcs: tuple[str, str, str]) -> GameState:
     game = create_game(
         "classic",
         location="Abandoned Library",
-        npcs=[("Mira", "Young archivist with ink-stained hands", "friendly")],
+        npcs=[("Mira", "Young archivist with ink-stained hands", "friendly"), *more_npcs],
         stats=(2, 2, 1, 1, 3),
         player_name="Kael",
         background_vow="Keep the archive whole",
     )
     game.resources.meters["momentum"] = 6
     return game
+
+
+def drift_station_game() -> GameState:
+    return create_game(
+        "starforged",
+        location="Drift Station",
+        npcs=[("Kira Vance", "A pilot with a burned hand.", "friendly")],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Aria",
+        background_vow="Keep the station running",
+    )
+
+
+def hearthwood_game() -> GameState:
+    return create_game(
+        "starforged",
+        location="Hearthwood",
+        npcs=[("Kira", "A hunter.", "friendly")],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Aria",
+        background_vow="avenge sister",
+    )

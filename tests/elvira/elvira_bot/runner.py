@@ -15,15 +15,6 @@ from typing import TYPE_CHECKING, Any
 import yaml
 from typing_extensions import override
 
-if TYPE_CHECKING:
-    from straightjacket.engine.ai.provider_base import AIProvider
-    from straightjacket.engine.game import (
-        BurnOffer,
-        DirectorCall,
-    )
-    from straightjacket.engine.models import GameState, RollResult, TurnSnapshot
-    from tests.elvira.elvira_bot.coverage import WorldView
-
 from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 from straightjacket.engine.ai.provider_base import AIUnavailableError
 from straightjacket.engine.ai.sentence_stream import SentenceStream
@@ -39,6 +30,7 @@ from straightjacket.engine.game import (
     start_new_game,
     start_succession_with_character,
 )
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.questions import install_answers
 from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.ruleset import answers as ironsworn
@@ -61,16 +53,26 @@ from tests.elvira.elvira_bot.faults import NarratorOutage
 from tests.elvira.elvira_bot.fixed_results import fixed_result
 from tests.elvira.elvira_bot.invariants import assert_game_state, check_turn_replacement
 from tests.elvira.elvira_bot.judge import consequences_in, judge_turn, revelation_in
-from tests.elvira.elvira_bot.models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
+from tests.elvira.elvira_bot.models import ChapterRecord, SessionLog, TurnRecord
 from tests.elvira.elvira_bot.quality_checks import (
     check_chapter_continuity,
     check_narration_quality,
     check_npc_spatial_consistency,
 )
-from tests.elvira.elvira_bot.recorder import record_turn
+from tests.elvira.elvira_bot.recorder import record_turn, snapshot_npcs
 from tests.elvira.elvira_bot.report import write_report
 from tests.elvira.elvira_bot.scenarios import fixed_result_of_turn, prepare_scenario
 from tests.elvira.elvira_bot.tokens import TokenMeter
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AIProvider
+    from straightjacket.engine.game import (
+        BurnOffer,
+        DirectorCall,
+    )
+    from straightjacket.engine.models import GameState, RollResult, TurnSnapshot
+    from tests.elvira.elvira_bot.coverage import WorldView
+    from tests.elvira.elvira_bot.models import NpcSnapshot
 
 RUNS_DIR = Path(__file__).resolve().parent.parent / "runs"
 SEPARATOR = "=" * 62
@@ -126,7 +128,7 @@ class SessionSettings:
 
 
 @dataclass
-class _Run:
+class RunState:
     settings: SessionSettings
     provider: TokenMeter
     persona: str
@@ -135,9 +137,13 @@ class _Run:
     events: _EventCapture
     game: GameState
     narration: str
-    chat_messages: list[dict[str, Any]]
     total_turns: int
     prev_npcs: list[NpcSnapshot] | None
+
+
+@dataclass
+class _Run(RunState):
+    chat_messages: list[dict[str, Any]]
 
 
 class _StreamCapture:
@@ -198,6 +204,18 @@ def session_settings(bot_cfg: dict[str, Any], *, auto_override: bool, turns_over
     )
 
 
+def new_session_log(bot_cfg: dict[str, Any], settings: SessionSettings) -> SessionLog:
+    return SessionLog(
+        config={
+            **bot_cfg,
+            "game": settings.game_cfg,
+            "bot_behavior": {**bot_cfg["bot_behavior"], "style": settings.style},
+        },
+        engine_version=VERSION,
+        style=settings.style,
+    )
+
+
 def run_session(bot_cfg: dict[str, Any], *, auto_override: bool, turns_override: int | None) -> SessionLog:
     install_answers(ironsworn)
     settings = session_settings(bot_cfg, auto_override=auto_override, turns_override=turns_override)
@@ -213,15 +231,7 @@ def run_session(bot_cfg: dict[str, Any], *, auto_override: bool, turns_override:
         delete_save(settings.username, settings.save_out)
     persona = get_persona(settings.style)
 
-    slog = SessionLog(
-        config={
-            **bot_cfg,
-            "game": settings.game_cfg,
-            "bot_behavior": {**bot_cfg["bot_behavior"], "style": settings.style},
-        },
-        engine_version=VERSION,
-        style=settings.style,
-    )
+    slog = new_session_log(bot_cfg, settings)
     _print_banner(settings)
     game, narration, chat_messages = _setup_game(
         provider, settings.username, settings.game_cfg, auto_mode=settings.auto_mode
@@ -337,18 +347,7 @@ def _keep_turn(run: _Run, turn_rec: TurnRecord) -> None:
 
 
 def _next_chapter(run: _Run, *, chapter_num: int, chapter_idx: int) -> bool:
-    pre_chapter_npcs = [
-        NpcSnapshot(
-            id=n.id,
-            name=n.name,
-            status=n.status,
-            disposition=n.disposition,
-            memory_count=len(n.memory),
-            last_location=n.last_location,
-        )
-        for n in run.game.npcs
-        if n.status in {"active", "background"}
-    ]
+    pre_chapter_npcs = [n for n in snapshot_npcs(run.game) if n.status in gm().npc_status_groups.in_play]
     should_break = _chapter_transition(run, chapter_num=chapter_num, chapter_idx=chapter_idx)
     if not should_break and pre_chapter_npcs:
         for issue in check_chapter_continuity(run.game, pre_chapter_npcs):

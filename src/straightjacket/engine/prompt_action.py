@@ -9,36 +9,18 @@ from straightjacket.engine.models import (
     RollResult,
     labels_of,
 )
-from straightjacket.engine.prompt_blocks import (
-    narrative_direction_block,
-    recent_events_block,
-    story_context_block,
-    task_action,
-)
+from straightjacket.engine.prompt_blocks import narrative_direction_block, task_action
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.prompt_shared import (
     PromptScene,
     TurnEvents,
-    _clock_filled_block,
     _consequence_tags,
     _director_block,
     _facts_block,
-    _flags_block,
-    _generated_place_block,
-    _loc_hist,
-    _npc_agency_block,
     _npc_block,
     _npcs_section,
-    _pacing_block,
-    _player_words_tag,
-    _random_events_block,
     _resolve_stance_category,
-    _revelation_tag,
-    _scene_enrichment,
-    _scene_header,
-    _threat_events_block,
-    _time_ctx,
-    _world_add_tag,
+    _scene_fields,
 )
 from straightjacket.engine.ruleset.moves import get_moves, outcome_text
 from straightjacket.engine.xml_utils import xa as _xa
@@ -102,43 +84,17 @@ def build_action_prompt(
     constraint = _build_result_constraint(roll, outcome, consequences) + _move_outcome_block(game, brain, roll)
     position_tag = get_prompt("block_position", level=_xa(position), effect=_xa(effect))
 
-    flags = _flags_block(game)
-    agency = _npc_agency_block(events.npc_agency)
-    pacing = _pacing_block(game, scene.scene_setup)
-    events_block = _random_events_block(events.random_events)
-    clock_block = _clock_filled_block(events.clock_fill_results)
-    director = "" if miss else _director_block(game)
-    threat_tags = _threat_events_block(events.threat_events)
-
     return get_prompt(
         "block_scene_action",
-        n=str(game.narrative.scene_count),
-        header=_scene_header(game),
-        intent=_xe(brain.player_intent),
+        **_scene_fields(game, brain, scene, events),
         approach=_xe(brain.approach),
-        player_words=_player_words_tag(scene.player_words),
         result=constraint,
         consequences=_consequence_tags(consequence_sentences),
-        revelation=_revelation_tag(events.revelation),
-        threats=threat_tags,
-        clocks=f"\n{clock_block}" if clock_block else "",
         facts=_facts_block(facts),
         position=position_tag,
-        location=_xe(game.world.current_location),
-        generated=_generated_place_block(game),
-        previous_locations=_loc_hist(game),
-        time=_time_ctx(game),
-        thread=_scene_enrichment(game),
         npc=npc,
         npcs=npcs_sect,
-        world_add=_world_add_tag(brain.world_addition),
-        flags=flags,
-        agency=agency,
-        pacing=pacing,
-        events=events_block,
-        director=director,
+        director="" if miss else _director_block(game),
         direction=narrative_direction_block(game, outcome),
-        story=story_context_block(game),
-        recent=recent_events_block(game),
         task=task_action(),
     )

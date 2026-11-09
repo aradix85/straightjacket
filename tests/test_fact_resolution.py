@@ -34,8 +34,8 @@ from straightjacket.engine.models import (
 )
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.ruleset.progress import new_track
-from tests._creation import OpeningProvider, TurnProvider, brain_answer, create_game, creation_data, force_result
-from tests._helpers import brain_schema, change_config, fix_dice
+from tests._creation import OpeningProvider, TurnProvider, brain_answer, creation_data, force_result, library_game
+from tests._helpers import brain_schema, change_config, fix_dice, make_state_op
 from tests._mocks import MockProvider
 
 
@@ -50,16 +50,7 @@ def _chart_rolls(monkeypatch: pytest.MonkeyPatch, roll: int) -> None:
 
 
 def _game() -> GameState:
-    game = create_game(
-        "classic",
-        location="Abandoned Library",
-        npcs=[("Mira", "An archivist.", "friendly"), ("Brannoc", "A guard.", "hostile")],
-        stats=(2, 2, 1, 1, 3),
-        player_name="Kael",
-        background_vow="Keep the archive whole",
-    )
-    game.resources.meters["momentum"] = 6
-    return game
+    return library_game(("Brannoc", "A guard.", "hostile"))
 
 
 def _fact(
@@ -147,9 +138,9 @@ def test_a_succession_clears_the_facts() -> None:
 def test_a_location_correction_clears_the_facts() -> None:
     game = _game()
     game.world.facts = [_fact("locked")]
-    apply_correction_ops(game, [{"op": "location_edit", "value": "Abandoned Library"}])
+    apply_correction_ops(game, [make_state_op(op="location_edit", value="Abandoned Library")])
     assert len(game.world.facts) == 1
-    apply_correction_ops(game, [{"op": "location_edit", "value": "Harbor Market"}])
+    apply_correction_ops(game, [make_state_op(op="location_edit", value="Harbor Market")])
     assert not game.world.facts
 
 

@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from straightjacket.engine.ai.provider_base import AICallSpec
 from straightjacket.engine.ai.schemas import get_brain_output_schema
 from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint
 from straightjacket.engine.director import new_guidance
 from straightjacket.engine.gamemaster.world import new_world
 from straightjacket.engine.models import (
@@ -28,13 +30,16 @@ from straightjacket.engine.models import (
     PredecessorRecord,
     ProgressTrack,
     RandomEvent,
+    RollResult,
     SceneLogEntry,
     SceneSetup,
     ThreadEntry,
     ThreatData,
     WorldState,
+    consequence,
 )
 from straightjacket.engine.models_story import PossibleEnding, Revelation, StoryAct, StoryBlueprint
+from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
 from straightjacket.engine.prompt_shared import PromptScene, TurnEvents
 from straightjacket.engine.ruleset import move_effects
@@ -49,7 +54,6 @@ if TYPE_CHECKING:
 
     import pytest
 
-    from straightjacket.engine.ai.provider_base import AICallSpec
     from straightjacket.engine.models import (
         Consequence,
     )
@@ -101,6 +105,14 @@ def emit_engine_log(monkeypatch: pytest.MonkeyPatch, *modules: ModuleType) -> No
 
     for module in modules:
         monkeypatch.setattr(module, "log", log)
+
+
+def use_users_dir(monkeypatch: pytest.MonkeyPatch, users: Path) -> None:
+    for target in (
+        "straightjacket.engine.config_loader.USERS_DIR",
+        "straightjacket.engine.user_management.USERS_DIR",
+    ):
+        monkeypatch.setattr(target, users)
 
 
 def make_game_state(**kwargs: Any) -> GameState:
@@ -160,6 +172,15 @@ def make_keyed_scene(**kwargs: Any) -> KeyedScene:
     return KeyedScene(**kwargs)
 
 
+def make_turning_point(*plot_point_names: str) -> TurningPoint:
+    return TurningPoint(
+        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names],
+        plotline="Plotline 1",
+        opens_plotline=True,
+        concludes_plotline=False,
+    )
+
+
 def make_npc(**kwargs: Any) -> NpcData:
     kwargs.setdefault("disposition", "neutral")
     kwargs.setdefault("status", "active")
@@ -172,6 +193,10 @@ def make_npc(**kwargs: Any) -> NpcData:
     kwargs.setdefault("needs_reflection", False)
     kwargs.setdefault("gather_count", 0)
     return NpcData(**kwargs)
+
+
+def friendly_kira(**kwargs: Any) -> NpcData:
+    return make_npc(id="npc_1", name="Kira", disposition="friendly", **kwargs)
 
 
 def make_clock(**kwargs: Any) -> ClockData:
@@ -199,6 +224,21 @@ def make_progress_track(**kwargs: Any) -> ProgressTrack:
     kwargs.setdefault("status", "active")
     kwargs.setdefault("completions", 0)
     return ProgressTrack(**kwargs)
+
+
+def docks_game(npc: NpcData | None, *, scene: int, bond: int) -> GameState:
+    game = make_game_state(player_name="Ash", setting_id="starforged", setting_genre="starforged")
+    game.world.current_location = "The Docks"
+    game.narrative.scene_count = scene
+    if npc is not None:
+        game.npcs.append(npc)
+        if bond > 0:
+            game.progress_tracks.append(
+                make_progress_track(
+                    id=f"connection_{npc.id}", name=npc.name, track_type="connection", rank="dangerous", ticks=bond * 4
+                )
+            )
+    return game
 
 
 def make_threat(**kwargs: Any) -> ThreatData:
@@ -388,6 +428,38 @@ def dialog_prompt(game: Any, **kwargs: Any) -> str:
     return build_dialog_prompt(game, make_brain_result(), **dialog_prompt_kwargs(**kwargs))
 
 
+def action_prompt(game: GameState, brain: BrainResult, result: str, **kwargs: Any) -> str:
+    roll = RollResult(
+        d1=3,
+        c1=6,
+        c2=7,
+        stat_name=brain.stat,
+        stat_value=2,
+        action_score=9,
+        result=result,
+        move=brain.move,
+        match=False,
+    )
+    return build_action_prompt(game, brain, roll, **action_prompt_kwargs(**kwargs))
+
+
+def weak_hit_prompt(game: GameState, brain: BrainResult, player_words: str) -> str:
+    return action_prompt(
+        game,
+        brain,
+        "WEAK_HIT",
+        consequences=[consequence("momentum_change", n=1)],
+        consequence_sentences=["The tide shifts."],
+        player_words=player_words,
+    )
+
+
+def make_state_op(**kwargs: Any) -> dict[str, Any]:
+    for name in ("npc_id", "fields", "split_name", "split_description", "merge_source_id", "value"):
+        kwargs.setdefault(name, None)
+    return kwargs
+
+
 def make_director_guidance(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("scene_summary", "")
     kwargs.setdefault("narrator_guidance", "")
@@ -433,6 +505,33 @@ def make_blueprint(**kwargs: Any) -> StoryBlueprint:
 def schema_of(spec: AICallSpec) -> dict[str, Any]:
     assert spec.json_schema is not None
     return spec.json_schema
+
+
+def make_ai_call_spec(**kwargs: Any) -> AICallSpec:
+    kwargs.setdefault("model", "test-model")
+    kwargs.setdefault("system", "system text")
+    kwargs.setdefault("messages", [{"role": "user", "content": "hello"}])
+    kwargs.setdefault("max_tokens", 64)
+    kwargs.setdefault("max_retries", 0)
+    for name in ("temperature", "top_p", "json_schema", "tools"):
+        kwargs.setdefault(name, None)
+    kwargs.setdefault("extra_body", {})
+    kwargs.setdefault("log_role", "narrator")
+    kwargs.setdefault("cached_system_prefix", "")
+    return AICallSpec(**kwargs)
+
+
+def every_role(cluster: str) -> dict[str, str]:
+    shipped = yaml.safe_load((PROJECT_ROOT / "config.yaml").read_text(encoding="utf-8"))
+    return dict.fromkeys(shipped["ai"]["role_cluster"], cluster)
+
+
+def config_data(*, providers: dict[str, Any], clusters: dict[str, Any], role_cluster: dict[str, str]) -> dict[str, Any]:
+    return {
+        "server": {"host": "127.0.0.1", "port": 8081, "stream_narration": True},
+        "language": {"narration_language": "English"},
+        "ai": {"prompts_dir": "prompts", "providers": providers, "clusters": clusters, "role_cluster": role_cluster},
+    }
 
 
 def known_asset(setting_file: RulesFile, category: str, asset_id: str) -> dict[str, Any]:

@@ -10,7 +10,7 @@ from straightjacket.engine.gamemaster import questions
 from straightjacket.engine.ruleset import answers, threats
 from straightjacket.web import handlers
 from tests._creation import TurnProvider, brain_answer
-from tests._helpers import emit_engine_log
+from tests._helpers import emit_engine_log, use_users_dir
 from tests.elvira.elvira_bot import ai_helpers, runner, ws_runner
 from tests.elvira.elvira_bot.models import SessionLog, TurnRecord
 from tests.elvira.elvira_bot.report import _event_lines, collect_problems
@@ -29,11 +29,7 @@ def _provider() -> TurnProvider:
 def _mock_direct_runner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     users = tmp_path / "users"
     users.mkdir()
-    for target in (
-        "straightjacket.engine.config_loader.USERS_DIR",
-        "straightjacket.engine.user_management.USERS_DIR",
-    ):
-        monkeypatch.setattr(target, users)
+    use_users_dir(monkeypatch, users)
     monkeypatch.setattr(runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(runner, "check_configured_models", lambda: None)
     monkeypatch.setattr(runner, "get_provider", _provider)
@@ -114,11 +110,7 @@ def test_elvira_plays_a_short_session_end_to_end(monkeypatch: pytest.MonkeyPatch
 def _ws_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> SessionLog:
     users = tmp_path / "users"
     users.mkdir()
-    for target in (
-        "straightjacket.engine.config_loader.USERS_DIR",
-        "straightjacket.engine.user_management.USERS_DIR",
-    ):
-        monkeypatch.setattr(target, users)
+    use_users_dir(monkeypatch, users)
     monkeypatch.setattr(runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(ws_runner, "check_configured_models", lambda: None)
     monkeypatch.setattr(ws_runner, "get_provider", _provider)

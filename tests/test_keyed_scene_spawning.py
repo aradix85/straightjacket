@@ -25,6 +25,7 @@ from tests._helpers import (
     make_progress_track,
     make_random_event,
     make_threat,
+    make_turning_point,
     make_world_state,
 )
 
@@ -259,18 +260,9 @@ def test_clock_fills_any_picks_highest_filled() -> None:
     assert fired.bound_entity_id == "clock:B"
 
 
-def _turning_point_with_plot_points(*plot_point_names: str) -> TurningPoint:
-    return TurningPoint(
-        plot_points=[PlotPointHit(theme="action", name=n, special_range=None) for n in plot_point_names],
-        plotline="Plotline 1",
-        opens_plotline=True,
-        concludes_plotline=False,
-    )
-
-
 def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point() -> None:
     narrative = make_narrative()
-    tp = _turning_point_with_plot_points("Betrayal!")
+    tp = make_turning_point("Betrayal!")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert len(narrative.keyed_scenes) == 1
     scene = narrative.keyed_scenes[0]
@@ -281,15 +273,15 @@ def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point() -> None:
 
 def test_ac_spawner_skips_unmapped_plot_points() -> None:
     narrative = make_narrative()
-    tp = _turning_point_with_plot_points("A Common Social Gathering", "Dense Urban Setting")
+    tp = make_turning_point("A Common Social Gathering", "Dense Urban Setting")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert not narrative.keyed_scenes
 
 
 def test_ac_spawner_dedups_same_plot_point_within_chapter() -> None:
     narrative = make_narrative()
-    tp1 = _turning_point_with_plot_points("Betrayal!")
-    tp2 = _turning_point_with_plot_points("Betrayal!")
+    tp1 = make_turning_point("Betrayal!")
+    tp2 = make_turning_point("Betrayal!")
     spawn_keyed_scenes_for_turning_point(narrative, tp1)
     spawn_keyed_scenes_for_turning_point(narrative, tp2)
     assert len(narrative.keyed_scenes) == 1
@@ -301,14 +293,14 @@ def test_ac_spawner_respects_max_keyed_scenes_per_chapter_cap() -> None:
     mappable_names = list(crafter().adventure_crafter.keyed_scene_mapping.keys())
     assert len(mappable_names) > cap
     over_cap = mappable_names[: cap + 2]
-    tp = _turning_point_with_plot_points(*over_cap)
+    tp = make_turning_point(*over_cap)
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert len(narrative.keyed_scenes) == cap
 
 
 def test_ac_spawner_assigns_unique_ids() -> None:
     narrative = make_narrative()
-    tp = _turning_point_with_plot_points("Betrayal!", "Liar!", "Hidden Agenda")
+    tp = make_turning_point("Betrayal!", "Liar!", "Hidden Agenda")
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     ids = {ks.id for ks in narrative.keyed_scenes}
     assert len(ids) == len(narrative.keyed_scenes)
@@ -463,7 +455,7 @@ def test_clock_spawner_dedups_same_clock_threshold_on_repeat_calls() -> None:
 def test_ac_spawned_pattern_scene_fires_when_state_meets_pattern() -> None:
     game = _seed_game()
     _seed_bond(game, "npc_a", filled_boxes=8, name="Alice")
-    tp = _turning_point_with_plot_points("Betrayal!")
+    tp = make_turning_point("Betrayal!")
     spawn_keyed_scenes_for_turning_point(game.narrative, tp)
     fired = evaluate_keyed_scenes(game)
     assert fired is not None

@@ -26,7 +26,7 @@ from straightjacket.engine.models import (
     SceneSetup,
     ThreatEvent,
 )
-from straightjacket.engine.prompt_blocks import character_tag, world_tag
+from straightjacket.engine.prompt_blocks import character_tag, recent_events_block, story_context_block, world_tag
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.ruleset.impacts import get_impacts
 from straightjacket.engine.xml_utils import xa as _xa
@@ -462,3 +462,28 @@ def _director_block(game: GameState) -> str:
 def _resolve_stance_category(move: str) -> str:
     move_cat = answers().action_kind(move)
     return gm().stance_move_buckets.mapping[move_cat]
+
+
+def _scene_fields(game: GameState, brain: BrainResult, scene: PromptScene, events: TurnEvents) -> dict[str, str]:
+    clock_block = _clock_filled_block(events.clock_fill_results)
+    return {
+        "n": str(game.narrative.scene_count),
+        "header": _scene_header(game),
+        "intent": _xe(brain.player_intent),
+        "player_words": _player_words_tag(scene.player_words),
+        "revelation": _revelation_tag(events.revelation),
+        "threats": _threat_events_block(events.threat_events),
+        "clocks": f"\n{clock_block}" if clock_block else "",
+        "location": _xe(game.world.current_location),
+        "generated": _generated_place_block(game),
+        "previous_locations": _loc_hist(game),
+        "time": _time_ctx(game),
+        "thread": _scene_enrichment(game),
+        "world_add": _world_add_tag(brain.world_addition),
+        "flags": _flags_block(game),
+        "agency": _npc_agency_block(events.npc_agency),
+        "pacing": _pacing_block(game, scene.scene_setup),
+        "events": _random_events_block(events.random_events),
+        "story": story_context_block(game),
+        "recent": recent_events_block(game),
+    }

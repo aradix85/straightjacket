@@ -59,7 +59,7 @@ def record_turn(
         )
 
     rec.state_after = _snapshot_state(game)
-    rec.npcs = _snapshot_npcs(game)
+    rec.npcs = snapshot_npcs(game)
     rec.clocks = _snapshot_clocks(game)
     rec.engine_log = _snapshot_engine_log(game)
     rec.story_arc = _snapshot_story_arc(game)
@@ -83,7 +83,7 @@ def _snapshot_state(game: GameState) -> StateSnapshot:
     )
 
 
-def _snapshot_npcs(game: GameState) -> list[NpcSnapshot]:
+def snapshot_npcs(game: GameState) -> list[NpcSnapshot]:
     return [
         NpcSnapshot(
             id=n.id,

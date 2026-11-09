@@ -1,23 +1,17 @@
 from __future__ import annotations
 
-import random as _random_module
-from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any
 
-from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
 from straightjacket.engine.ai.metadata import process_deceased_npcs
-from straightjacket.engine.ai.narrator import call_narrator, call_opening_setup
-from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
 from straightjacket.engine.director import new_guidance
-from straightjacket.engine.game.chapters import _apply_blueprint, _close_previous_chapter, _prepare_npcs_for_new_chapter
+from straightjacket.engine.game.chapters import _close_previous_chapter, _prepare_npcs_for_new_chapter
 from straightjacket.engine.game.game_start import take_up_character
-from straightjacket.engine.game.setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.game.setup_common import generate_opening, record_opening
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import drop_keyed_scenes_from
 from straightjacket.engine.gamemaster.spawn_sources import AC_SOURCE_PREFIX, CLOCK_KEYED_SOURCE_PREFIX
 from straightjacket.engine.gamemaster.world import clear_facts
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.parser import parse_narrator_response
 from straightjacket.engine.prompt_boundary import build_new_game_prompt
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.ruleset.character import make_character
@@ -162,41 +156,13 @@ def start_succession_with_character(
 
     _prepare_npcs_for_new_chapter(game)
 
-    narration = _generate_succession_opening(provider, game)
+    narration, setup_data = generate_opening(provider, game, build_new_game_prompt, label="SuccessionSetup")
+    if setup_data["deceased_npcs"]:
+        process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     _record_succession_opening(game, narration, record)
 
     game.campaign.pending_succession = False
-
-    return narration
-
-
-def _generate_succession_opening(provider: AIProvider, game: GameState) -> str:
-    seed = assemble_blueprint_seed_from_ac(_random_module.Random(), game)
-    log(f"[Succession] Blueprint seed assembled: themes={seed.themes}")
-
-    narrator_prompt = build_new_game_prompt(game)
-
-    def _run_narrator() -> str:
-        return call_narrator(provider, narrator_prompt, game)
-
-    def _run_voicing() -> dict[str, Any] | None:
-        return call_blueprint_voicing(provider, game, seed)
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        fut_narrator = pool.submit(_run_narrator)
-        fut_voicing = pool.submit(_run_voicing)
-        raw = fut_narrator.result()
-        voicing = fut_voicing.result()
-
-    narration = parse_narrator_response(game, raw)
-
-    _apply_blueprint(game, seed, voicing)
-
-    setup_data = call_opening_setup(provider, narration, game)
-    apply_opening_setup(game, setup_data, label="SuccessionSetup")
-    if setup_data["deceased_npcs"]:
-        process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     return narration
 

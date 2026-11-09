@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from straightjacket.engine.ruleset.bond import get_npc_bond
 from tests.elvira.elvira_bot.console import say
 
 if TYPE_CHECKING:
@@ -21,46 +20,6 @@ def print_narration(narration: str, *, full: bool) -> None:
 def print_state(game: GameState) -> None:
     meters = " ".join(f"{name}:{value}" for name, value in game.resources.meters.items())
     say(f"  [STATE] {meters} chaos:{game.world.chaos_factor} scene:{game.narrative.scene_count}")
-
-
-def final_state_dict(game: GameState) -> dict[str, Any]:
-    return {
-        "character": game.player_name,
-        "chapter": game.campaign.chapter_number,
-        "location": game.world.current_location,
-        "scene": game.narrative.scene_count,
-        "meters": dict(game.resources.meters),
-        "chaos": game.world.chaos_factor,
-        "npcs": [
-            {
-                "id": n.id,
-                "name": n.name,
-                "status": n.status,
-                "disposition": n.disposition,
-                "bond": get_npc_bond(game, n.id),
-                "agenda": n.agenda,
-                "instinct": n.instinct,
-                "arc": n.arc,
-                "aliases": list(n.aliases),
-                "memory_count": len(n.memory),
-                "importance_accumulator": n.importance_accumulator,
-                "needs_reflection": n.needs_reflection,
-            }
-            for n in game.npcs
-        ],
-        "active_clocks": [
-            {
-                "name": c.name,
-                "clock_type": c.clock_type,
-                "filled": c.filled,
-                "segments": c.segments,
-                "owner_kind": c.owner_kind,
-                "owner_id": c.owner_id,
-            }
-            for c in game.world.clocks
-            if not c.fired
-        ],
-    }
 
 
 def print_summary(slog: SessionLog, game: GameState) -> None:

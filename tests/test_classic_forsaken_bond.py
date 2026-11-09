@@ -10,7 +10,7 @@ from straightjacket.engine.ruleset import move_outcome
 from straightjacket.engine.ruleset.bond import connection_track, seal_bond
 from straightjacket.engine.ruleset.move_outcome import make_due_bond_test, resolve_move_outcome
 from straightjacket.engine.ruleset.outcome_result import new_outcome
-from tests._creation import TurnProvider, brain_answer, create_game, fixed_roll, force_result, library_game
+from tests._creation import TurnProvider, brain_answer, fixed_roll, force_result, hearthwood_game, library_game
 from tests._helpers import make_npc, make_threat
 
 VOW = "Find the lost page"
@@ -139,14 +139,7 @@ def test_the_vow_follows_the_person_when_two_npcs_turn_out_to_be_one(monkeypatch
 
 
 def test_starforged_asks_no_bond_test_for_a_forsaken_vow() -> None:
-    game = create_game(
-        "starforged",
-        location="Hearthwood",
-        npcs=[("Kira", "A hunter.", "friendly")],
-        stats=(2, 2, 1, 1, 3),
-        player_name="Aria",
-        background_vow="avenge sister",
-    )
+    game = hearthwood_game()
     seal_bond(game, game.npcs[0])
     vow = game.progress_tracks[0]
     vow.vowed_to = game.npcs[0].id

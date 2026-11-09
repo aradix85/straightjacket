@@ -11,7 +11,8 @@ from anthropic.resources.messages import Messages
 from openai.resources.chat.completions import Completions
 
 from straightjacket.engine.ai import provider_anthropic, provider_openai
-from straightjacket.engine.ai.provider_base import AICallSpec, ToolCall
+from straightjacket.engine.ai.provider_base import ToolCall
+from tests._helpers import make_ai_call_spec
 
 
 class _FakeEndpoint:
@@ -30,25 +31,6 @@ class _FakeEndpoint:
     def stream(self, **kwargs: Any) -> Any:
         self.calls.append(kwargs)
         return self.response
-
-
-def _spec(**overrides: Any) -> AICallSpec:
-    base: dict[str, Any] = {
-        "model": "test-model",
-        "system": "system text",
-        "messages": [{"role": "user", "content": "hello"}],
-        "max_tokens": 64,
-        "max_retries": 0,
-        "temperature": None,
-        "top_p": None,
-        "extra_body": {},
-        "json_schema": None,
-        "tools": None,
-        "log_role": "narrator",
-        "cached_system_prefix": "",
-    }
-    base.update(overrides)
-    return AICallSpec(**base)
 
 
 def _anthropic_usage(input_tokens: int = 5, output_tokens: int = 7, **cache: int) -> SimpleNamespace:
@@ -121,7 +103,7 @@ class TestAnthropicProvider:
             stop_reason="tool_use",
             usage=_anthropic_usage(11, 7),
         )
-        result = _anthropic().create_message(_spec())
+        result = _anthropic().create_message(make_ai_call_spec())
         assert result.content == "Hello world"
         assert result.tool_calls == [ToolCall(name="query_npc", arguments={"npc_id": "npc_1"})]
         assert result.stop_reason == "tool_use"
@@ -131,7 +113,7 @@ class TestAnthropicProvider:
     def test_request_carries_system_sampling_schema_and_converted_tools(anthropic_endpoint: _FakeEndpoint) -> None:
         anthropic_endpoint.response = _anthropic_reply()
         schema = {"title": "brain_output", "type": "object"}
-        spec = _spec(temperature=0.5, top_p=0.9, json_schema=schema, tools=[_tool()])
+        spec = make_ai_call_spec(temperature=0.5, top_p=0.9, json_schema=schema, tools=[_tool()])
         _anthropic().create_message(spec)
         sent = anthropic_endpoint.calls[0]
         assert sent["system"] == "system text"
@@ -152,7 +134,7 @@ class TestAnthropicProvider:
     @staticmethod
     def test_unset_options_are_not_sent(anthropic_endpoint: _FakeEndpoint) -> None:
         anthropic_endpoint.response = _anthropic_reply()
-        _anthropic().create_message(_spec())
+        _anthropic().create_message(make_ai_call_spec())
         assert set(anthropic_endpoint.calls[0]) == {"model", "max_tokens", "system", "messages"}
 
     @staticmethod
@@ -160,7 +142,7 @@ class TestAnthropicProvider:
         anthropic_endpoint.response = SimpleNamespace(
             content=[SimpleNamespace(type="text", text="cut")], stop_reason="max_tokens", usage=_anthropic_usage()
         )
-        result = _anthropic().create_message(_spec())
+        result = _anthropic().create_message(make_ai_call_spec())
         assert result.stop_reason == "truncated"
         assert not result.tool_calls
 
@@ -192,7 +174,7 @@ class TestOpenAICompatibleProvider:
     def test_maps_content_tool_calls_stop_reason_and_usage(openai_endpoint: _FakeEndpoint) -> None:
         call = SimpleNamespace(id="c1", function=SimpleNamespace(name="query_npc", arguments='{"npc_id": "npc_2"}'))
         openai_endpoint.response = _openai_response("Narration", "tool_calls", [call])
-        result = _openai().create_message(_spec())
+        result = _openai().create_message(make_ai_call_spec())
         assert result.content == "Narration"
         assert result.tool_calls == [ToolCall(name="query_npc", arguments={"npc_id": "npc_2"})]
         assert result.stop_reason == "tool_use"
@@ -202,7 +184,7 @@ class TestOpenAICompatibleProvider:
     def test_request_prepends_system_and_builds_schema_format(openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response("{}", "stop", None)
         schema = {"title": "brain_output", "type": "object"}
-        spec = _spec(temperature=0.7, top_p=0.95, json_schema=schema, tools=[_tool()])
+        spec = make_ai_call_spec(temperature=0.7, top_p=0.95, json_schema=schema, tools=[_tool()])
         _openai().create_message(spec)
         sent = openai_endpoint.calls[0]
         assert sent["messages"] == [
@@ -219,19 +201,19 @@ class TestOpenAICompatibleProvider:
     @staticmethod
     def test_the_clusters_extra_body_reaches_the_request(openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response("ok", "stop", None)
-        _openai().create_message(_spec(extra_body={"reasoning_effort": "none"}))
+        _openai().create_message(make_ai_call_spec(extra_body={"reasoning_effort": "none"}))
         assert openai_endpoint.calls[0]["extra_body"] == {"reasoning_effort": "none"}
 
     @staticmethod
     def test_unset_options_are_not_sent(openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response("ok", "stop", None)
-        _openai().create_message(_spec())
+        _openai().create_message(make_ai_call_spec())
         assert set(openai_endpoint.calls[0]) == {"model", "max_completion_tokens", "messages"}
 
     @staticmethod
     def test_length_is_truncated_and_empty_content_is_empty_string(openai_endpoint: _FakeEndpoint) -> None:
         openai_endpoint.response = _openai_response(None, "length", None)
-        result = _openai().create_message(_spec())
+        result = _openai().create_message(make_ai_call_spec())
         assert result.stop_reason == "truncated"
         assert not result.content
         assert not result.tool_calls
@@ -255,7 +237,7 @@ def _accepted(create: Any) -> set[str]:
 
 def test_anthropic_request_uses_only_parameters_the_installed_sdk_accepts(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = _anthropic_reply()
-    spec = _spec(temperature=0.5, top_p=0.9, json_schema={"title": "t", "type": "object"}, tools=[_tool()])
+    spec = make_ai_call_spec(temperature=0.5, top_p=0.9, json_schema={"title": "t", "type": "object"}, tools=[_tool()])
     _anthropic().create_message(spec)
     accepted = _accepted(Messages.create)
     assert set(anthropic_endpoint.calls[0]) <= accepted
@@ -263,7 +245,7 @@ def test_anthropic_request_uses_only_parameters_the_installed_sdk_accepts(anthro
 
 def test_openai_request_uses_only_parameters_the_installed_sdk_accepts(openai_endpoint: _FakeEndpoint) -> None:
     openai_endpoint.response = _openai_response("ok", "stop", None)
-    spec = _spec(
+    spec = make_ai_call_spec(
         temperature=0.5,
         top_p=0.9,
         extra_body={"reasoning_effort": "none"},
@@ -312,14 +294,14 @@ def test_anthropic_thinking_blocks_never_reach_the_content(anthropic_endpoint: _
         SimpleNamespace(type="redacted_thinking", data="opaque"),
         SimpleNamespace(type="text", text="The door holds."),
     )
-    result = _anthropic().create_message(_spec())
+    result = _anthropic().create_message(make_ai_call_spec())
     assert result.content == "The door holds."
 
 
 def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="{}"))
     extra = {"output_config": {"effort": "low"}, "cache_control": {"type": "ephemeral"}, "metadata_flag": True}
-    spec = _spec(json_schema={"title": "t", "type": "object"}, extra_body=extra, temperature=0.5)
+    spec = make_ai_call_spec(json_schema={"title": "t", "type": "object"}, extra_body=extra, temperature=0.5)
     _anthropic().create_message(spec)
     sent = anthropic_endpoint.calls[0]
     assert sent["output_config"] == {
@@ -338,7 +320,7 @@ def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_e
 def test_anthropic_caches_the_stable_start_of_the_system_prompt(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="ok"))
     cache = {"type": "ephemeral", "ttl": "1h"}
-    spec = _spec(
+    spec = make_ai_call_spec(
         system="fixed rules\nstate: wounded", cached_system_prefix="fixed rules\n", extra_body={"cache_control": cache}
     )
     _anthropic().create_message(spec)
@@ -353,7 +335,7 @@ def test_anthropic_caches_the_stable_start_of_the_system_prompt(anthropic_endpoi
 def test_anthropic_caches_the_whole_system_prompt_without_a_prefix(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="ok"))
     cache = {"type": "ephemeral"}
-    spec = _spec(extra_body={"cache_control": cache})
+    spec = make_ai_call_spec(extra_body={"cache_control": cache})
     _anthropic().create_message(spec)
     assert anthropic_endpoint.calls[0]["system"] == [{"type": "text", "text": "system text", "cache_control": cache}]
 
@@ -362,14 +344,14 @@ def test_anthropic_refuses_a_cache_prefix_that_is_not_the_start_of_the_system(
     anthropic_endpoint: _FakeEndpoint,
 ) -> None:
     anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="ok"))
-    spec = _spec(cached_system_prefix="other text", extra_body={"cache_control": {"type": "ephemeral"}})
+    spec = make_ai_call_spec(cached_system_prefix="other text", extra_body={"cache_control": {"type": "ephemeral"}})
     with pytest.raises(ValueError, match="cached_system_prefix"):
         _anthropic().create_message(spec)
 
 
 def test_anthropic_sends_the_system_prompt_as_text_without_caching(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="ok"))
-    _anthropic().create_message(_spec(cached_system_prefix="sys"))
+    _anthropic().create_message(make_ai_call_spec(cached_system_prefix="sys"))
     assert anthropic_endpoint.calls[0]["system"] == "system text"
 
 
@@ -377,7 +359,7 @@ def test_anthropic_moves_array_limits_it_cannot_enforce_into_the_description(ant
     anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="{}"))
     boasts = {"type": "array", "items": {"type": "string", "enum": ["a", "b"]}, "maxItems": 2}
     schema = {"type": "object", "properties": {"boasts": boasts}, "required": ["boasts"], "additionalProperties": False}
-    _anthropic().create_message(_spec(json_schema=schema))
+    _anthropic().create_message(make_ai_call_spec(json_schema=schema))
     sent_boasts = anthropic_endpoint.calls[0]["output_config"]["format"]["schema"]["properties"]["boasts"]
     assert "maxItems" not in sent_boasts
     assert "maxItems: 2" in sent_boasts["description"]
@@ -390,7 +372,7 @@ def test_anthropic_usage_counts_cached_input_and_reports_the_cached_share(anthro
         stop_reason="end_turn",
         usage=_anthropic_usage(4, 9, cache_read_input_tokens=3970, cache_creation_input_tokens=0),
     )
-    result = _anthropic().create_message(_spec())
+    result = _anthropic().create_message(make_ai_call_spec())
     assert result.usage == {"input_tokens": 3974, "output_tokens": 9, "cache_read_tokens": 3970}
 
 
@@ -427,7 +409,7 @@ def test_anthropic_stream_passes_only_text_deltas(anthropic_endpoint: _FakeEndpo
     ]
     anthropic_endpoint.response = _FakeAnthropicStream(events, final)
     received: list[str] = []
-    result = _anthropic().stream_message(_spec(), received.append)
+    result = _anthropic().stream_message(make_ai_call_spec(), received.append)
     assert received == ["The door ", "holds."]
     assert result.content == "The door holds."
     accepted = _accepted(Messages.stream)
@@ -443,7 +425,7 @@ def test_openai_stream_collects_text_finish_reason_and_usage(openai_endpoint: _F
     usage_chunk = SimpleNamespace(choices=[], usage=_openai_usage(3, 2))
     openai_endpoint.response = iter([chunk("Rain "), chunk(None), chunk("falls.", "stop"), usage_chunk])
     received: list[str] = []
-    result = _openai().stream_message(_spec(), received.append)
+    result = _openai().stream_message(make_ai_call_spec(), received.append)
     assert received == ["Rain ", "falls."]
     assert result.content == "Rain falls."
     assert result.usage == {"input_tokens": 3, "output_tokens": 2}
@@ -455,7 +437,7 @@ def test_openai_usage_reports_cached_prompt_tokens(openai_endpoint: _FakeEndpoin
     response = _openai_response("Narration", "stop", None)
     response.usage = _openai_usage(2000, 300, prompt_tokens_details=SimpleNamespace(cached_tokens=1500))
     openai_endpoint.response = response
-    result = _openai().create_message(_spec())
+    result = _openai().create_message(make_ai_call_spec())
     assert result.usage == {"input_tokens": 2000, "output_tokens": 300, "cache_read_tokens": 1500}
 
 
@@ -464,7 +446,7 @@ def test_openai_usage_reports_reasoning_tokens_nested_or_top_level(openai_endpoi
     nested = _openai_response("{}", "length", None)
     nested.usage = _openai_usage(10, 8192, completion_tokens_details=SimpleNamespace(reasoning_tokens=7800))
     openai_endpoint.response = nested
-    assert provider.create_message(_spec()).usage == {
+    assert provider.create_message(make_ai_call_spec()).usage == {
         "input_tokens": 10,
         "output_tokens": 8192,
         "reasoning_tokens": 7800,
@@ -472,7 +454,11 @@ def test_openai_usage_reports_reasoning_tokens_nested_or_top_level(openai_endpoi
     top_level = _openai_response("{}", "stop", None)
     top_level.usage = _openai_usage(10, 600, reasoning_tokens=40)
     openai_endpoint.response = top_level
-    assert provider.create_message(_spec()).usage == {"input_tokens": 10, "output_tokens": 600, "reasoning_tokens": 40}
+    assert provider.create_message(make_ai_call_spec()).usage == {
+        "input_tokens": 10,
+        "output_tokens": 600,
+        "reasoning_tokens": 40,
+    }
 
 
 def test_openai_response_keeps_the_reasoning_text_under_either_name(openai_endpoint: _FakeEndpoint) -> None:
@@ -480,13 +466,13 @@ def test_openai_response_keeps_the_reasoning_text_under_either_name(openai_endpo
     together_style = _openai_response("{}", "stop", None)
     together_style.choices[0].message.reasoning = "First, the NPC."
     openai_endpoint.response = together_style
-    assert provider.create_message(_spec()).reasoning == "First, the NPC."
+    assert provider.create_message(make_ai_call_spec()).reasoning == "First, the NPC."
     other_style = _openai_response("{}", "stop", None)
     other_style.choices[0].message.reasoning_content = "Then the clock."
     openai_endpoint.response = other_style
-    assert provider.create_message(_spec()).reasoning == "Then the clock."
+    assert provider.create_message(make_ai_call_spec()).reasoning == "Then the clock."
     openai_endpoint.response = _openai_response("{}", "stop", None)
-    assert not provider.create_message(_spec()).reasoning
+    assert not provider.create_message(make_ai_call_spec()).reasoning
 
 
 def test_anthropic_refusal_is_reported_as_refusal(anthropic_endpoint: _FakeEndpoint) -> None:
@@ -495,9 +481,9 @@ def test_anthropic_refusal_is_reported_as_refusal(anthropic_endpoint: _FakeEndpo
         stop_reason="refusal",
         usage=_anthropic_usage(1, 1),
     )
-    assert _anthropic().create_message(_spec()).stop_reason == "refusal"
+    assert _anthropic().create_message(make_ai_call_spec()).stop_reason == "refusal"
 
 
 def test_openai_content_filter_is_reported_as_refusal(openai_endpoint: _FakeEndpoint) -> None:
     openai_endpoint.response = _openai_response("", "content_filter", None)
-    assert _openai().create_message(_spec()).stop_reason == "refusal"
+    assert _openai().create_message(make_ai_call_spec()).stop_reason == "refusal"

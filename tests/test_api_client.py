@@ -8,11 +8,14 @@ import yaml
 
 from straightjacket.engine import config_loader
 from straightjacket.engine.ai import api_client
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.ai.provider_base import AIResponse
+from tests._helpers import config_data, every_role, make_ai_call_spec
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
+
+    from straightjacket.engine.ai.provider_base import AICallSpec
 
 
 class _FakeAdapter:
@@ -46,33 +49,19 @@ def _cluster(provider: str, model: str) -> dict[str, Any]:
 
 @pytest.fixture(name="two_providers")
 def fixture_two_providers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, _FakeAdapter]:
-    data = {
-        "server": {"host": "127.0.0.1", "port": 8081, "stream_narration": True},
-        "language": {"narration_language": "English"},
-        "ai": {
-            "prompts_dir": "prompts",
-            "providers": {
-                "fast": {
-                    "type": "openai_compatible",
-                    "api_base": "http://fast.invalid/v1",
-                    "api_key_env": "FAST_KEY",
-                    "timeout_seconds": 30,
-                },
-                "prose": {"type": "anthropic", "api_base": "", "api_key_env": "PROSE_KEY", "timeout_seconds": 30},
+    data = config_data(
+        providers={
+            "fast": {
+                "type": "openai_compatible",
+                "api_base": "http://fast.invalid/v1",
+                "api_key_env": "FAST_KEY",
+                "timeout_seconds": 30,
             },
-            "clusters": {"narrator": _cluster("prose", "model-b"), "classification": _cluster("fast", "model-a")},
-            "role_cluster": {
-                "narrator": "narrator",
-                "blueprint_voicing": "classification",
-                "director": "classification",
-                "recap": "classification",
-                "brain": "classification",
-                "correction": "classification",
-                "narrator_metadata": "classification",
-                "opening_setup": "classification",
-            },
+            "prose": {"type": "anthropic", "api_base": "", "api_key_env": "PROSE_KEY", "timeout_seconds": 30},
         },
-    }
+        clusters={"narrator": _cluster("prose", "model-b"), "classification": _cluster("fast", "model-a")},
+        role_cluster=every_role("classification") | {"narrator": "narrator"},
+    )
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.safe_dump(data), encoding="utf-8")
     monkeypatch.setattr(config_loader, "_CONFIG_PATH", config_file)
@@ -82,22 +71,13 @@ def fixture_two_providers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> di
 
 
 def _spec(role: str, **fields: Any) -> AICallSpec:
-    return AICallSpec(
+    return make_ai_call_spec(
         model="m",
         system="You are the Brain.",
         messages=[{"role": "user", "content": "hi"}],
-        **{
-            "max_tokens": 8,
-            "max_retries": 0,
-            "temperature": None,
-            "top_p": None,
-            "extra_body": {},
-            "json_schema": None,
-            "tools": None,
-            "log_role": role,
-            "cached_system_prefix": "",
-            **fields,
-        },
+        max_tokens=8,
+        log_role=role,
+        **fields,
     )
 
 

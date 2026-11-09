@@ -30,6 +30,7 @@ from tests._helpers import (
     make_game_state,
     make_npc,
     make_scene_setup,
+    use_users_dir,
 )
 
 
@@ -188,11 +189,7 @@ def _fresh_session(monkeypatch: pytest.MonkeyPatch) -> None:
 def _players_in_tmp(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     users = tmp_path / "users"
     users.mkdir()
-    for target in (
-        "straightjacket.engine.config_loader.USERS_DIR",
-        "straightjacket.engine.user_management.USERS_DIR",
-    ):
-        monkeypatch.setattr(target, users)
+    use_users_dir(monkeypatch, users)
 
 
 @pytest.mark.usefixtures("_fresh_session")

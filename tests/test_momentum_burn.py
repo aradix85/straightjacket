@@ -22,6 +22,7 @@ from straightjacket.engine.ruleset.suffer import start_dying_clock
 from straightjacket.web import handlers, server
 from straightjacket.web.session import new_session
 from tests._creation import OPENING_TEXT, TurnProvider, brain_answer, fixed_roll, force_result, library_game
+from tests._helpers import use_users_dir
 from tests._mocks import RecordingWebSocket
 from tests.elvira.elvira_bot.invariants import check_turn_replacement
 
@@ -165,11 +166,7 @@ class _FlakyNarrator(TurnProvider):
 
 
 def _session(monkeypatch: pytest.MonkeyPatch, tmp_path: Any, provider: TurnProvider) -> Any:
-    for target in (
-        "straightjacket.engine.config_loader.USERS_DIR",
-        "straightjacket.engine.user_management.USERS_DIR",
-    ):
-        monkeypatch.setattr(target, tmp_path)
+    use_users_dir(monkeypatch, tmp_path)
     monkeypatch.setattr(move_outcome, "roll_action", fixed_roll("MISS"))
     monkeypatch.setattr(handlers, "get_provider", lambda: provider)
     session = new_session()

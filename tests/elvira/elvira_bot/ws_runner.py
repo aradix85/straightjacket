@@ -29,11 +29,12 @@ from tests.elvira.elvira_bot.console import say
 from tests.elvira.elvira_bot.coverage import Coverage
 from tests.elvira.elvira_bot.creation import roll_character
 from tests.elvira.elvira_bot.display import print_narration, print_state, print_summary
-from tests.elvira.elvira_bot.models import ChapterRecord, SessionLog, TurnRecord
+from tests.elvira.elvira_bot.models import ChapterRecord, TurnRecord
 from tests.elvira.elvira_bot.recorder import record_turn
 from tests.elvira.elvira_bot.runner import (
     SEPARATOR,
     SESSION_ENDINGS,
+    RunState,
     _EventCapture,
     _norm,
     aggregate_token_stats,
@@ -41,6 +42,7 @@ from tests.elvira.elvira_bot.runner import (
     check_turn,
     decide_burn,
     is_correction_turn,
+    new_session_log,
     session_settings,
     story_complete,
     write_logs,
@@ -48,7 +50,7 @@ from tests.elvira.elvira_bot.runner import (
 from tests.elvira.elvira_bot.tokens import TokenMeter
 
 if TYPE_CHECKING:
-    from tests.elvira.elvira_bot.models import NpcSnapshot
+    from tests.elvira.elvira_bot.models import SessionLog
     from tests.elvira.elvira_bot.runner import SessionSettings
 
 
@@ -155,18 +157,8 @@ def _file_message(result: dict[str, Any], msg_type: str, msg: dict[str, Any], st
 
 
 @dataclass
-class _WsRun:
-    settings: SessionSettings
+class _WsRun(RunState):
     client: WsClient
-    provider: TokenMeter
-    persona: str
-    slog: SessionLog
-    coverage: Coverage
-    events: _EventCapture
-    game: GameState
-    narration: str
-    total_turns: int
-    prev_npcs: list[NpcSnapshot] | None
 
 
 async def _start_server(port: int) -> Any:
@@ -200,15 +192,7 @@ async def run_ws_session(bot_cfg: dict[str, Any], *, auto_override: bool, turns_
     port = bot_cfg.get("ws_port", cfg().server.port)
     url = f"ws://127.0.0.1:{port}/ws"
 
-    slog = SessionLog(
-        config={
-            **bot_cfg,
-            "game": settings.game_cfg,
-            "bot_behavior": {**bot_cfg["bot_behavior"], "style": settings.style},
-        },
-        engine_version=VERSION,
-        style=settings.style,
-    )
+    slog = new_session_log(bot_cfg, settings)
     events = _EventCapture(bot_cfg["logging"]["event_prefixes"])
     logging.getLogger("rpg_engine").addHandler(events)
 

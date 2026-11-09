@@ -1,6 +1,6 @@
 from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.suffer import start_dying_clock
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_scene_log_entry
+from tests._helpers import friendly_kira, make_clock, make_game_state, make_memory, make_scene_log_entry
 from tests.elvira.elvira_bot.invariants import assert_game_state
 from tests.elvira.elvira_bot.quality_checks import check_narration_quality
 
@@ -14,12 +14,8 @@ def _clean_game() -> GameState:
     game.world.chaos_factor = 5
     game.narrative.scene_count = 3
     game.npcs = [
-        make_npc(
-            id="npc_1",
-            name="Kira",
-            status="active",
-            disposition="friendly",
-            memory=[make_memory(scene=1, event="Met player", type="observation", importance=3)],
+        friendly_kira(
+            status="active", memory=[make_memory(scene=1, event="Met player", type="observation", importance=3)]
         ),
     ]
     game.world.clocks = [

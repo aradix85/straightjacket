@@ -123,17 +123,16 @@ README.md and ORIGINS.md are background. For anything else a sub-agent reports w
 
 ## NEXT STEP — 9y: The strictest linters and type checkers
 
-At the user's request (2026-11-06), taken up before step 18: every check of ruff, mypy, pylint, and pyright at their default limits, with nothing the game does changed. Each group is a release of its own; the groups still to come stand in `pyproject.toml` under "taken up in later releases", in `[tool.ruff.lint]` and in `[tool.pylint."messages control"]`. What is done is under DONE.
+At the user's request (2026-11-06), taken up before step 18: every check of ruff, mypy, and pylint at their default limits, with nothing the game does changed. Each group is a release of its own; the one still off, ruff's `any-type`, stands in `pyproject.toml` under "taken up in later releases" in `[tool.ruff.lint]`. What is done is under DONE.
 
-- **9y.2 pylint's duplicate code and module length:** 26 copied blocks on 2026-11-07, most of them in the tests, some between Elvira's two runners and among game start, chapters, and succession; `tests/test_project_rules.py` is longer than 1000 lines.
-- **9y.3 No `Any`:** ruff's `any-type` and mypy's `disallow_any_explicit` and `disallow_any_expr`, about 540 and then about 9,750 errors when measured: every value from yaml, JSON, and the AI's answers gets a real type.
-- **9y.4 pyright strict,** last, the user's choice: 519 errors before 9y.3 (2026-11-06), most of which 9y.3 removes.
-- **9y.5 pylint's optional extensions and the checks it leaves off by default,** which the user decides one by one, since some clash with their choices: on 2026-11-06 the most frequent were magic values in comparisons (1689, mostly the tests, where the user chose plain numbers), assignment expressions (278), comparisons with zero (65), too many statements in a `try` (30), mccabe's complexity again, which ruff already holds to 10 (24), and a ban on `while` (14).
+The user's choice (2026-11-10), weighing cost against what a check catches: mypy's `disallow_any_expr` (about 9,750 errors on 2026-11-06, for little beyond the explicit ban), pyright strict (which mostly repeats mypy strict), and pylint's optional extensions (style, much of it against their earlier choices) stay off.
+
+- **9y.3 No explicit `Any`:** ruff's `any-type` and mypy's `disallow_any_explicit`, about 540 errors when measured: every value from yaml, JSON, and the AI's answers gets a real type where it enters typed code.
 
 ### Definition of Done
 
-- Every group of the two "taken up in later releases" lists is on, and the lists are gone; what stays off is only what clashes with a project rule, a tool, or a choice of the user, each with its reason.
-- mypy runs with `disallow_any_explicit` and `disallow_any_expr`, and pyright strict is clean over the same paths, in CONTRIBUTING.md's workflow and the pre-commit hook.
+- Every group of the "taken up in later releases" list is on, and the list is gone; what stays off is only what clashes with a project rule, a tool, or a choice of the user, each with its reason.
+- mypy runs with `disallow_any_explicit`, in CONTRIBUTING.md's workflow and the pre-commit hook.
 - Nothing the game does changes; an Elvira run follows only a substep that changes how a turn plays.
 
 ### Reference patterns
@@ -211,7 +210,7 @@ At the user's request, Elvira is to test during a run everything the engine does
 - In WebSocket mode `collect_turn` counts a turn without narration as an empty success.
 - `test_the_coverage_counts_what_the_engine_logs_for_bonds_threats_and_forsaken_vows` failed once in thirteen runs of the whole suite with coverage and in none of forty on its own; its rolls are not fixed.
 - A failed correction is not rolled back; the injected turn drops every warning, real ones too; a failed save only prints, so the load-back blames serialization; a failed burn decision is swallowed; failed corrections and burns count as covered, and failed judgments are no problems; the game's and the judge's calls skip the retry wrapper; `--ws --matrix` plays direct mode.
-- Her code breaks the rules the scans read only in `src/`: silent fallbacks, broad excepts beyond AI calls, dataclass defaults, domain lists copied into `invariants.py`, checks that cannot fail, dead code (`TurnRecord.has_issues`, `final_state_dict`, a doubled report line, the `load_existing` path), the stale `[MoveOutcome]` prefix, and code the two runners copy from each other. The scans extend to `tests/elvira`.
+- Her code breaks the rules the scans read only in `src/`: silent fallbacks, broad excepts beyond AI calls, dataclass defaults, domain lists copied into `invariants.py`, checks that cannot fail, dead code (`TurnRecord.has_issues`, a doubled report line, the `load_existing` path), the stale `[MoveOutcome]` prefix, and code the two runners copy from each other. The scans extend to `tests/elvira`.
 
 **9w.2** What a run sees.
 
@@ -253,7 +252,7 @@ What remains needs a book or the user: 9j.3 the user's choice of a theme per ton
 
 **9j.6** What remains of Delve's threats: a threat a random event starts takes no category from Delve's Category table in Delve; a random event aims at a threat half the time; and a vow fulfilled against a threat at half its menace or more gives 2 experience in every setting (`ruleset/legacy.yaml` → `threat_overcome_bonus`, `threat_overcome_threshold`), which may be a Delve rule Datasworn does not hold, so the Delve book is read first. The register entry "Threats meet their end by engine rule" leaves.
 
-**9j.7** The Adventure Crafter's Meta plot points take effect. A Meta result is now a hit that does nothing, and `crafters/meta_plot_points.py` → `dispatch_meta`, its seven handlers, and the Characters List template (`crafters/adventure_crafter.py` → `lookup_characters_template`) have no production caller (an orphan-symbol carve-out in `tests/test_project_rules.py` until this step). Each handler is checked against the book first. Character Returns without an exited character needs a name from the npc generator; the handlers take the turning point's random generator; and one that needs the active plotline takes it where `roll_turning_point` holds it. The register entry "Meta plot points have no effect" leaves.
+**9j.7** The Adventure Crafter's Meta plot points take effect. A Meta result is now a hit that does nothing, and `crafters/meta_plot_points.py` → `dispatch_meta`, its seven handlers, and the Characters List template (`crafters/adventure_crafter.py` → `lookup_characters_template`) have no production caller (an orphan-symbol carve-out in `tests/_rules_orphans.py` until this step). Each handler is checked against the book first. Character Returns without an exited character needs a name from the npc generator; the handlers take the turning point's random generator; and one that needs the active plotline takes it where `roll_turning_point` holds it. The register entry "Meta plot points have no effect" leaves.
 
 **9j.12** The Adventure Crafter's procedure as the book gives it:
 
@@ -281,7 +280,7 @@ Reference patterns:
 
 As in 9j, each substep starts by reading its rule in the book and builds what the reading settles; all were found in 9r.
 
-**9t.1** Mythic: an adventure starts at chaos 5, so the background vow's words stop moving a new game's start (`ruleset/creation.yaml` → `chaos_vow_modifiers`, `game/game_start.py` → `_compute_chaos_start`, the engine's own since 0.36.0). A New NPC event brings a new character, named by the setting's generator, instead of rolling the Characters List (register "A New NPC event draws a known character" leaves).
+**9t.1** Mythic: an adventure starts at chaos 5, so the background vow's words stop moving a new game's start (`ruleset/creation.yaml` → `chaos_vow_modifiers`, `game/game_start.py` → `_compute_chaos_start`, a rule of the engine's own). A New NPC event brings a new character, named by the setting's generator, instead of rolling the Characters List (register "A New NPC event draws a known character" leaves).
 
 **9t.2** Starforged's recover moves: Resupply's weak hit costs no momentum but meets a cost or complication first (`recover/resupply` in `ruleset/move_outcomes.yaml`); Sojourn makes two recover moves, one on a weak hit, as automatic strong hits instead of its fixed gains; Test Your Relationship's miss loses the connection, and its strong hit's disposition shift, which came from EdgeTales, is read against the book (register "Make a Connection shifts the NPC's disposition").
 
@@ -643,4 +642,4 @@ Finished work in its shortest form; git holds the details, in the commits whose 
 - **9r — Where each rule comes from:** every rule that decides the fiction was read against EdgeTales, the design document, and the books; what lacked a source went to its step and the register, and AUDIT.md's principle 6 keeps it so.
 - **9w, so far:** Reach a Milestone is made without a roll (`docs/ruleset.md`, Moves without a roll), and the `vow_fulfilment` scenario plays a vow to its end on the mock provider (9w.R); the four suspected faults of 9w.0 are fixed.
 - **9x — The documents, shorter and by layer** (Sessions with the user).
-- **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); 9y.1, ruff's complexity rules at their default limits, with pylint's four left to ruff, the radon scan gone, and the two functions over 15 locals besides their arguments split as well.
+- **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); 9y.1, ruff's complexity rules at their default limits, with pylint's four left to ruff, the radon scan gone, and the two functions over 15 locals besides their arguments split as well; 9y.2, pylint's duplicate code and module length at their defaults, with the copied blocks shared and the project-rule scans split by kind (CONTRIBUTING.md, Testing).

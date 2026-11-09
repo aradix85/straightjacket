@@ -1,7 +1,7 @@
 from straightjacket.engine.ai.recap import call_recap
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState
-from tests._helpers import make_act, make_blueprint, make_game_state, make_npc, make_scene_log_entry
+from tests._helpers import friendly_kira, make_act, make_blueprint, make_game_state, make_scene_log_entry
 from tests._mocks import MockProvider
 
 
@@ -26,7 +26,7 @@ def test_a_recap_is_asked_with_the_story_so_far_and_returns_the_answer() -> None
         acts=[make_act(phase="setup", title="Act 1", goal="g", mood="tense", transition_trigger="trigger")],
     )
     game.narrative.scene_count = 3
-    game.npcs = [make_npc(id="npc_1", name="Kira", disposition="friendly", status="active", introduced=True)]
+    game.npcs = [friendly_kira(status="active", introduced=True)]
     game.narrative.session_log = [
         make_scene_log_entry(scene=1, summary="Met Kira", move="adventure/face_danger", result="STRONG_HIT")
     ]

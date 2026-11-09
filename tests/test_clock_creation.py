@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint
 from straightjacket.engine.crafters.turning_point_spawns import spawn_clocks_for_turning_point
 from straightjacket.engine.gamemaster.clocks import resolve_clock_fill
 from straightjacket.engine.gamemaster.random_events import spawn_clock_from_random_event
 from straightjacket.engine.models import RandomEvent
-from tests._helpers import make_clock, make_game_state, make_keyed_scene, make_progress_track
+from tests._helpers import make_clock, make_game_state, make_keyed_scene, make_progress_track, make_turning_point
 
 
 def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
@@ -18,15 +17,6 @@ def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
         meaning_action="Storm",
         meaning_subject="Approaches",
         source="test",
-    )
-
-
-def _tp(plot_point_names: list[str]) -> TurningPoint:
-    return TurningPoint(
-        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names],
-        plotline="Plotline 1",
-        opens_plotline=True,
-        concludes_plotline=False,
     )
 
 
@@ -76,7 +66,7 @@ def test_random_event_clock_dedups_same_target() -> None:
 
 def test_ac_clock_spawns_for_mapped_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    tp = _tp(["Time Limit"])
+    tp = make_turning_point("Time Limit")
 
     spawn_clocks_for_turning_point(g, tp)
 
@@ -89,7 +79,7 @@ def test_ac_clock_spawns_for_mapped_plot_point() -> None:
 
 def test_ac_clock_skips_unmapped_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    tp = _tp(["A New Enemy"])
+    tp = make_turning_point("A New Enemy")
 
     spawn_clocks_for_turning_point(g, tp)
 
@@ -98,7 +88,7 @@ def test_ac_clock_skips_unmapped_plot_point() -> None:
 
 def test_ac_clock_dedups_same_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    tp = _tp(["Time Limit"])
+    tp = make_turning_point("Time Limit")
 
     spawn_clocks_for_turning_point(g, tp)
     spawn_clocks_for_turning_point(g, tp)
@@ -108,7 +98,7 @@ def test_ac_clock_dedups_same_plot_point() -> None:
 
 def test_emergent_clock_cap_shared_across_sources() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    tp = _tp(["Time Limit", "A Needed Resource Runs Out", "Impending Doom"])
+    tp = make_turning_point("Time Limit", "A Needed Resource Runs Out", "Impending Doom")
     spawn_clocks_for_turning_point(g, tp)
     assert len(g.world.clocks) == 3
 

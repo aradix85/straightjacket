@@ -8,6 +8,17 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.10.0] — 2026-11-10
+
+pylint's duplicate code and module length at their default limits, roadmap 9y.2: `duplicate-code` and `too-many-lines` are on, where pylint found 26 blocks copied between files and one module over 1000 lines.
+
+- The openings of a new game, a chapter, and a succession share `game/setup_common.py` → `generate_opening` (`docs/story.md`, Blueprint); the chapter's voicing no longer reads a shallow copy of the game, which neither call writes to. The action and dialog prompts take their shared fields from `prompt_shared.py` → `_scene_fields`, and a script running the old and new builders side by side over the suite found all 248 prompts alike.
+- Elvira's runners share their run state and session log, and her unused `final_state_dict` (roadmap 9w.1) is gone with its test. Copied test set-ups are helpers in `tests/_helpers.py` and `tests/_creation.py`, and the config tests read the roles from `config.yaml` instead of copying the engine's list.
+- `tests/test_project_rules.py` stays the one test of every scan, which now live by kind beside it (CONTRIBUTING.md, Testing). Three sub-agents checked the release; what they found is fixed.
+- The roadmap's 9y keeps, at the user's choice, only the explicit ban on `Any` (9y.3): mypy's ban on every expression typed `Any`, pyright strict, and pylint's optional extensions stay off, since they cost far more than they would catch.
+
+Quality gate: 1912 tests, coverage 96.03% to 96.07%, mypy clean on 272 files, pylint clean, ruff clean on every rule outside the ignores. One run of the suite failed one test whose name it did not show; the thirteen runs after it passed, which fits the test with unfixed rolls that roadmap 9w.1 names. Save format unchanged. No Elvira run: every prompt of a turn reads as before, and the openings make the same calls in the same order.
+
 ## [2026.11.07.1] — 2026-11-07
 
 The two functions that 2026.11.07.0 left with more than 15 locals besides their arguments are split too, at the user's request, while pylint's count of locals stays off, since it counts the arguments, whose number the user left free. `ai/blueprint_voicing.py` → `call_blueprint_voicing` asks the AI through `_ask_voicing`, which holds the call and the reading of its answer, so an answer it cannot read still degrades to no blueprint, now tested for an answer that is no JSON, no object, or lacks a field; `gamemaster/npc/memory.py` → `retrieve_memories` scores each memory through `_score_memory`, `_relevance`, and `_words` instead of a closure. Nothing the game does changes: a script found old and new memory retrieval alike on five hundred random cases. A sub-agent checked the release.

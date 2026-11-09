@@ -4,7 +4,7 @@ How a chapter gets its plan from the Adventure Crafter, how its revelations land
 
 ## Blueprint
 
-At the start of a chapter `crafters/blueprint.py` → `assemble_blueprint_seed_from_ac` rolls one Adventure Crafter turning point for each act of `blueprint.act_phases` (`crafters/adventure_crafter.py` → `roll_turning_point`) into a frozen `BlueprintSeed`.
+At every opening, of a new game, a chapter, or a succession, `crafters/blueprint.py` → `assemble_blueprint_seed_from_ac` rolls one Adventure Crafter turning point for each act of `blueprint.act_phases` (`crafters/adventure_crafter.py` → `roll_turning_point`) into a frozen `BlueprintSeed`, which is voiced beside the narrator's opening scene before the opening extraction applies (`game/setup_common.py` → `generate_opening`).
 
 - **Voicing.** `ai/blueprint_voicing.py` → `call_blueprint_voicing` turns the seed into a setting-specific `StoryBlueprint` in one structured call. It asks for a fixed number of acts, of revelations (one per act), and of possible endings, and asks once more when the answer's counts are wrong (`docs/ai.md`). When the voicing fails, the chapter plays without a blueprint, so without acts, revelations, or an end.
 - **What the voicing gets.** Each act's turning point, with its beats, its plotline, and whether it opens, advances, or concludes that plotline, as the Adventure Crafter rolled it (`TurningPoint.plotline`, `opens_plotline`, `concludes_plotline`).

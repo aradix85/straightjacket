@@ -7,7 +7,7 @@ from straightjacket.engine.models import GameState, Resources
 from straightjacket.engine.persistence import delete_save, list_saves_with_info, load_game, save_game
 from straightjacket.engine.ruleset.meters import starting_resources
 from straightjacket.engine.user_management import get_save_dir
-from tests._helpers import make_blueprint, make_clock, make_game_state, make_memory, make_npc
+from tests._helpers import make_blueprint, make_clock, make_game_state, make_memory, make_npc, use_users_dir
 
 
 def _game() -> GameState:
@@ -30,11 +30,7 @@ def _game() -> GameState:
 
 @pytest.fixture
 def save_dir(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> Any:
-    for target in (
-        "straightjacket.engine.config_loader.USERS_DIR",
-        "straightjacket.engine.user_management.USERS_DIR",
-    ):
-        monkeypatch.setattr(target, tmp_path)
+    use_users_dir(monkeypatch, tmp_path)
     return tmp_path
 
 

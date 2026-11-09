@@ -8,7 +8,7 @@ from starlette.websockets import WebSocket, WebSocketState
 from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AIResponse
-from tests._helpers import make_game_state, make_npc
+from tests._helpers import friendly_kira, make_game_state
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -83,5 +83,5 @@ def make_test_game() -> GameState:
     g.resources.meters["spirit"] = 4
     g.preferences.content_lines = "no spiders"
     g.preferences.player_wishes = "a loyal dog"
-    g.npcs = [make_npc(id="npc_1", name="Kira", disposition="friendly")]
+    g.npcs = [friendly_kira()]
     return g

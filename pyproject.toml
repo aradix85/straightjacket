@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.07.1"
+version = "2026.11.10.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -48,7 +48,7 @@ ignore = [
     "suspicious-subprocess-import",
 ]
 "tests/test_config_loader.py" = ["suspicious-subprocess-import", "subprocess-without-shell-equals-true"]
-"tests/test_project_rules.py" = ["suspicious-subprocess-import", "subprocess-without-shell-equals-true"]
+"tests/_rules_code.py" = ["suspicious-subprocess-import", "subprocess-without-shell-equals-true"]
 "src/straightjacket/engine/ai/{brain,narrator,recap,blueprint_voicing,provider_base}.py" = ["blind-except"]
 "src/straightjacket/engine/{director,correction/analysis}.py" = ["blind-except"]
 "src/straightjacket/web/{handlers,server}.py" = ["blind-except"]
@@ -87,9 +87,6 @@ disable = [
     "too-many-branches",             # ruff checks it, at the same limit
     "too-many-return-statements",    # ruff checks it, at the same limit
     "too-many-statements",           # ruff checks it, at the same limit
-    # taken up in later releases, one group at a time:
-    "duplicate-code",
-    "too-many-lines",
 ]
 
 [tool.mypy]

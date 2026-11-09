@@ -1,21 +1,15 @@
-import random as _random_module
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
 from straightjacket.engine.ai.metadata import process_deceased_npcs
-from straightjacket.engine.ai.narrator import call_narrator, call_opening_setup
 from straightjacket.engine.ai.provider_base import AIProvider
-from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac, materialize_blueprint
 from straightjacket.engine.director import new_guidance
-from straightjacket.engine.game.setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.game.setup_common import generate_opening, record_opening
 from straightjacket.engine.gamemaster.clocks import start_opening_clock
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.random_events import add_character
 from straightjacket.engine.gamemaster.world import new_world
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import GameState, NarrativeState, PlayerPreferences
-from straightjacket.engine.parser import parse_narrator_response
 from straightjacket.engine.prompt_boundary import build_new_game_prompt
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.ruleset.character import Character, give_character, make_character
@@ -113,30 +107,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
 
     log(f"[NewGame] Character: {game.player_name}, paths={game.paths}, assets={game.assets}")
 
-    seed = assemble_blueprint_seed_from_ac(_random_module.Random(), game)
-    log(f"[NewGame] Blueprint seed assembled: themes={seed.themes}")
-
-    narrator_prompt = build_new_game_prompt(game)
-
-    def _run_narrator() -> str:
-        return call_narrator(provider, narrator_prompt, game)
-
-    def _run_voicing() -> dict[str, Any] | None:
-        return call_blueprint_voicing(provider, game, seed)
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        fut_narrator = pool.submit(_run_narrator)
-        fut_voicing = pool.submit(_run_voicing)
-        raw = fut_narrator.result()
-        voicing = fut_voicing.result()
-
-    narration = parse_narrator_response(game, raw)
-
-    if voicing is not None:
-        game.narrative.story_blueprint = materialize_blueprint(seed, voicing)
-
-    setup_data = call_opening_setup(provider, narration, game)
-    apply_opening_setup(game, setup_data, label="OpeningSetup")
+    narration, setup_data = generate_opening(provider, game, build_new_game_prompt, label="OpeningSetup")
 
     for npc in game.npcs:
         npc.introduced = True

@@ -3,13 +3,12 @@ from __future__ import annotations
 import random as _random
 from typing import TYPE_CHECKING
 
-from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint
 from straightjacket.engine.crafters.turning_point_spawns import spawn_dangers_for_turning_point
 from straightjacket.engine.gamemaster.random_events import spawn_danger_from_random_event
 from straightjacket.engine.gamemaster.scene import check_scene
 from straightjacket.engine.models import RandomEvent
 from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes
-from tests._helpers import fix_dice, make_game_state, make_keyed_scene, make_threat
+from tests._helpers import fix_dice, make_game_state, make_keyed_scene, make_threat, make_turning_point
 
 if TYPE_CHECKING:
     import pytest
@@ -23,15 +22,6 @@ def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
         meaning_action="Betray",
         meaning_subject="Faith",
         source="test",
-    )
-
-
-def _tp(plot_point_names: list[str]) -> TurningPoint:
-    return TurningPoint(
-        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names],
-        plotline="Plotline 1",
-        opens_plotline=True,
-        concludes_plotline=False,
     )
 
 
@@ -85,7 +75,7 @@ def test_random_event_threat_respects_the_threat_cap() -> None:
 
 def test_ac_threat_spawns_for_mapped_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    tp = _tp(["A New Enemy"])
+    tp = make_turning_point("A New Enemy")
 
     spawn_dangers_for_turning_point(g, tp)
 
@@ -99,7 +89,7 @@ def test_ac_threat_spawns_for_mapped_plot_point() -> None:
 
 def test_ac_threat_skips_unmapped_plot_point() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    tp = _tp(["Suspicion", "An Opposing Story"])
+    tp = make_turning_point("Suspicion", "An Opposing Story")
 
     spawn_dangers_for_turning_point(g, tp)
 
@@ -108,8 +98,8 @@ def test_ac_threat_skips_unmapped_plot_point() -> None:
 
 def test_ac_threat_dedup_skips_same_plot_point_twice() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    tp1 = _tp(["Hunted"])
-    tp2 = _tp(["Hunted"])
+    tp1 = make_turning_point("Hunted")
+    tp2 = make_turning_point("Hunted")
 
     spawn_dangers_for_turning_point(g, tp1)
     spawn_dangers_for_turning_point(g, tp2)
@@ -119,7 +109,7 @@ def test_ac_threat_dedup_skips_same_plot_point_twice() -> None:
 
 def test_ac_threat_cap_blocks_after_max() -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    tp = _tp(["A New Enemy", "Hidden Threat", "Enemies", "Hunted", "A Problem Returns"])
+    tp = make_turning_point("A New Enemy", "Hidden Threat", "Enemies", "Hunted", "A Problem Returns")
 
     spawn_dangers_for_turning_point(g, tp)
 
@@ -129,7 +119,7 @@ def test_ac_threat_cap_blocks_after_max() -> None:
 def test_ac_threat_uses_datasworn_cascade_on_delve() -> None:
     g = make_game_state(player_name="Hero", setting_id="delve")
     _random.seed(42)
-    tp = _tp(["A New Enemy"])
+    tp = make_turning_point("A New Enemy")
 
     spawn_dangers_for_turning_point(g, tp)
 
@@ -141,14 +131,14 @@ def test_ac_threat_uses_datasworn_cascade_on_delve() -> None:
 def test_a_delve_threat_takes_the_category_its_cascade_rolled(monkeypatch: pytest.MonkeyPatch) -> None:
     fix_dice(monkeypatch, 45, 1)
     g = make_game_state(player_name="Hero", setting_id="delve")
-    spawn_dangers_for_turning_point(g, _tp(["A New Enemy"]))
+    spawn_dangers_for_turning_point(g, make_turning_point("A New Enemy"))
     assert g.threats[0].category == "rampaging_creature"
 
 
 def test_a_cascade_row_that_rolls_twice_gives_both_results(monkeypatch: pytest.MonkeyPatch) -> None:
     fix_dice(monkeypatch, 95, 5, 65, 1)
     g = make_game_state(player_name="Hero", setting_id="delve")
-    spawn_dangers_for_turning_point(g, _tp(["A New Enemy"]))
+    spawn_dangers_for_turning_point(g, make_turning_point("A New Enemy"))
     [threat] = g.threats
     assert threat.category == "burgeoning_conflict"
     assert "Roll twice" not in threat.name
@@ -162,7 +152,7 @@ def test_emergent_threats_cap_is_shared_across_ac_and_random_event() -> None:
 
     assert len(g.threats) == 2
 
-    tp = _tp(["A New Enemy", "Hidden Threat"])
+    tp = make_turning_point("A New Enemy", "Hidden Threat")
     spawn_dangers_for_turning_point(g, tp)
 
     assert len(g.threats) == 3

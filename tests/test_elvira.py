@@ -6,8 +6,7 @@ import pytest
 from straightjacket.engine.models import (
     GameState,
 )
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_progress_track
-from tests.elvira.elvira_bot.display import final_state_dict
+from tests._helpers import friendly_kira, make_clock, make_game_state, make_memory, make_npc, make_progress_track
 from tests.elvira.elvira_bot.invariants import assert_game_state
 from tests.elvira.elvira_bot.recorder import record_turn
 from tests.elvira.elvira_bot.ws_runner import WsClient
@@ -30,11 +29,8 @@ def fixture_game() -> GameState:
     g.world.combat_position = ""
     g.narrative.scene_count = 5
     g.npcs = [
-        make_npc(
-            id="npc_1",
-            name="Kira",
+        friendly_kira(
             status="active",
-            disposition="friendly",
             agenda="Trade",
             instinct="Cautious",
             memory=[make_memory(scene=1, event="Met at docks", emotional_weight="neutral", importance=3)],
@@ -47,14 +43,6 @@ def fixture_game() -> GameState:
         make_progress_track(id="connection_npc_1", name="Kira", track_type="connection", rank="dangerous", ticks=8),
     ]
     return g
-
-
-def test_the_final_state_holds_the_character_the_bond_of_each_npc_and_the_clocks(game: GameState) -> None:
-    result = final_state_dict(game)
-    assert (result["character"], result["meters"]["health"], result["scene"]) == ("Elvira", 4, 5)
-    kira = next(n for n in result["npcs"] if n["name"] == "Kira")
-    assert kira["bond"] == 2
-    assert [c["name"] for c in result["active_clocks"]] == ["Doom"]
 
 
 def test_a_turn_record_keeps_the_state_and_the_npcs_in_play(game: GameState) -> None:

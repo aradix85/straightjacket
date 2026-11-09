@@ -5,7 +5,7 @@ import pytest
 
 from straightjacket.engine.ai.provider_base import AIUnavailableError
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.game import chapters
+from straightjacket.engine.game import setup_common
 from straightjacket.i18n import t
 from straightjacket.web import handlers
 from straightjacket.web.serializers import build_narrative_status
@@ -19,7 +19,7 @@ def test_a_failed_chapter_opening_leaves_the_game_as_it_was(monkeypatch: pytest.
         msg = "narrator: down"
         raise AIUnavailableError(msg)
 
-    monkeypatch.setattr(chapters, "call_narrator", narrator_down)
+    monkeypatch.setattr(setup_common, "call_narrator", narrator_down)
     monkeypatch.setattr(handlers, "get_provider", lambda: MockProvider("{}"))
     session = new_session()
     session.game = make_game_state(player_name="Aria", setting_id="starforged")

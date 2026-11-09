@@ -1,21 +1,11 @@
-import copy
-import random as _random_module
 import re
-from concurrent.futures import ThreadPoolExecutor
-from typing import Any
 
-from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
 from straightjacket.engine.ai.metadata import process_deceased_npcs
-from straightjacket.engine.ai.narrator import call_narrator, call_opening_setup
+from straightjacket.engine.ai.narrator import call_narrator
 from straightjacket.engine.ai.provider_base import AIProvider
-from straightjacket.engine.crafters.blueprint import (
-    BlueprintSeed,
-    assemble_blueprint_seed_from_ac,
-    materialize_blueprint,
-)
 from straightjacket.engine.director import new_guidance
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.game.setup_common import apply_opening_setup, record_opening
+from straightjacket.engine.game.setup_common import generate_opening, record_opening
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import drop_keyed_scenes_from
 from straightjacket.engine.gamemaster.npc.memory import consolidate_memory
@@ -68,7 +58,7 @@ def start_new_chapter(provider: AIProvider, game: GameState) -> str:
     else:
         game.world.current_scene_context = defaults["new_chapter_blank"]
 
-    narration, setup_data = _generate_chapter_opening(provider, game)
+    narration, setup_data = generate_opening(provider, game, build_new_chapter_prompt, label="ChapterSetup")
 
     if setup_data["deceased_npcs"]:
         process_deceased_npcs(game, setup_data["deceased_npcs"])
@@ -174,35 +164,6 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
             scored = sorted(npc.memory, key=lambda m: (m.importance, m.scene), reverse=True)
             npc.memory = sorted(scored[: chap_cfg.npc_memories_kept], key=lambda m: m.scene)
         consolidate_memory(npc)
-
-
-def _generate_chapter_opening(provider: AIProvider, game: GameState) -> tuple[str, dict[str, Any]]:
-    seed = assemble_blueprint_seed_from_ac(_random_module.Random(), game)
-    log(f"[Campaign] Blueprint seed assembled for chapter {game.campaign.chapter_number}: themes={seed.themes}")
-
-    chapter_prompt = build_new_chapter_prompt(game)
-    voicing_game = copy.copy(game)
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        fut_narrator = pool.submit(call_narrator, provider, chapter_prompt, game)
-        fut_voicing = pool.submit(call_blueprint_voicing, provider, voicing_game, seed)
-        raw = fut_narrator.result()
-        voicing = fut_voicing.result()
-
-    narration = parse_narrator_response(game, raw)
-
-    _apply_blueprint(game, seed, voicing)
-
-    setup_data = call_opening_setup(provider, narration, game)
-    apply_opening_setup(game, setup_data, label="ChapterSetup")
-    return narration, setup_data
-
-
-def _apply_blueprint(game: GameState, seed: BlueprintSeed, voicing: dict[str, Any] | None) -> None:
-    if voicing is not None:
-        game.narrative.story_blueprint = materialize_blueprint(seed, voicing)
-    else:
-        game.narrative.story_blueprint = None
 
 
 def _record_chapter_opening(game: GameState, narration: str) -> None:

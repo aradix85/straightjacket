@@ -30,8 +30,8 @@ from tests._creation import (
     OPENING_TEXT,
     OpeningProvider,
     TurnProvider,
-    create_game,
     creation_data,
+    hearthwood_game,
     library_game,
 )
 from tests._helpers import (
@@ -51,14 +51,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(name="aria")
 def fixture_aria() -> GameState:
-    g = create_game(
-        "starforged",
-        location="Hearthwood",
-        npcs=[("Kira", "A hunter.", "friendly")],
-        stats=(2, 2, 1, 1, 3),
-        player_name="Aria",
-        background_vow="avenge sister",
-    )
+    g = hearthwood_game()
     g.campaign.legacy["quests"].ticks = 24
     g.campaign.legacy["bonds"].ticks = 8
     g.campaign.legacy["discoveries"].ticks = 16

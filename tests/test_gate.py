@@ -2,17 +2,13 @@ from straightjacket.engine.gamemaster.stance_gate import compute_npc_gate, resol
 from straightjacket.engine.models import (
     GameState,
     NpcData,
-    RollResult,
-    consequence,
 )
-from straightjacket.engine.prompt_action import build_action_prompt
 from tests._helpers import (
-    action_prompt_kwargs,
+    docks_game,
     make_brain_result,
-    make_game_state,
     make_memory,
     make_npc,
-    make_progress_track,
+    weak_hit_prompt,
 )
 
 _DEFAULT_SECRETS: tuple[str, ...] = ("Kira is smuggling forbidden tech",)
@@ -44,21 +40,7 @@ def _npc(
 
 
 def _game(npc: NpcData, scene: int = 5, bond: int = 0) -> GameState:
-    game = make_game_state(player_name="Ash", setting_id="starforged", setting_genre="starforged")
-    game.world.current_location = "The Docks"
-    game.narrative.scene_count = scene
-    game.npcs.append(npc)
-    if bond > 0:
-        game.progress_tracks.append(
-            make_progress_track(
-                id=f"connection_{npc.id}",
-                name=npc.name,
-                track_type="connection",
-                rank="dangerous",
-                ticks=bond * 4,
-            )
-        )
-    return game
+    return docks_game(npc, scene=scene, bond=bond)
 
 
 def test_gate_0_stranger() -> None:
@@ -130,27 +112,7 @@ def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
     brain = make_brain_result(
         move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="approach carefully"
     )
-    roll = RollResult(
-        d1=3,
-        c1=6,
-        c2=7,
-        stat_name="edge",
-        stat_value=2,
-        action_score=9,
-        result="WEAK_HIT",
-        move="adventure/face_danger",
-        match=False,
-    )
-    return build_action_prompt(
-        game,
-        brain,
-        roll,
-        **action_prompt_kwargs(
-            consequences=[consequence("momentum_change", n=1)],
-            consequence_sentences=["The tide shifts."],
-            player_words="approach carefully",
-        ),
-    )
+    return weak_hit_prompt(game, brain, "approach carefully")
 
 
 def test_gate_0_shows_only_name_and_description() -> None:

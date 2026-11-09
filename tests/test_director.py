@@ -18,6 +18,7 @@ from straightjacket.engine.models import GameState
 from straightjacket.engine.tools import handler
 from tests._helpers import (
     dialog_prompt,
+    friendly_kira,
     keyed_reflections,
     make_act,
     make_blueprint,
@@ -36,10 +37,7 @@ def _game() -> GameState:
     game.narrative.scene_count = 6
     game.narrative.session_log.append(make_scene_log_entry(scene=6, summary="Last scene"))
     game.npcs = [
-        make_npc(
-            id="npc_1",
-            name="Kira",
-            disposition="friendly",
+        friendly_kira(
             agenda="protect archives",
             instinct="trust cautiously",
             description="Young archivist.",
