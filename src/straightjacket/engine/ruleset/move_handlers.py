@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.gamemaster.moves import roll_oracle_answer
 from straightjacket.engine.logging_util import log
@@ -35,53 +35,54 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.config_types import RecoveryParams, SufferParams, ThresholdParams
     from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
-def _can_recover(game: GameState, params: dict[str, Any], *, blocked: bool) -> bool:
-    track = params["track"]
+def _can_recover(game: GameState, params: SufferParams, *, blocked: bool) -> bool:
+    track = params.track
     if not is_condition_meter(game, track) or blocked:
         return False
     value = game.resources.meters[track]
-    if value <= 0 and not params["recover_from_zero"]:
+    if value <= 0 and not params.recover_from_zero:
         return False
     return value < condition_meters(game.setting_id)[track].max
 
 
-def _recover(game: GameState, params: dict[str, Any], cost: int, result: OutcomeResult) -> None:
-    track = params["track"]
+def _recover(game: GameState, params: SufferParams, cost: int, result: OutcomeResult) -> None:
+    track = params.track
     if cost:
         adjust_momentum(game, -cost)
         result.consequences.append(consequence("momentum_change", n=-cost))
-    gained = gain(game, track, params["recovery"])
+    gained = gain(game, track, params.recovery)
     result.consequences.append(consequence("track_gain", track=track, n=gained))
 
 
-def _suffer_strong_hit(game: GameState, params: dict[str, Any], *, blocked: bool, result: OutcomeResult) -> None:
+def _suffer_strong_hit(game: GameState, params: SufferParams, *, blocked: bool, result: OutcomeResult) -> None:
     if _can_recover(game, params, blocked=blocked):
-        _recover(game, params, params["strong_hit_exchange_cost"], result)
+        _recover(game, params, params.strong_hit_exchange_cost, result)
         return
     recovered = rules().momentum.suffer_recovery.strong_hit_gain
     adjust_momentum(game, recovered)
     result.consequences.append(consequence("momentum_change", n=recovered))
 
 
-def _suffer_weak_hit(game: GameState, params: dict[str, Any], *, blocked: bool, result: OutcomeResult) -> None:
+def _suffer_weak_hit(game: GameState, params: SufferParams, *, blocked: bool, result: OutcomeResult) -> None:
     if _can_recover(game, params, blocked=blocked):
         _recover(game, params, rules().momentum.suffer_recovery.weak_hit_exchange_cost, result)
 
 
-def apply_suffer_handler(game: GameState, move_key: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
+def apply_suffer_handler(game: GameState, move_key: str, roll_result: str, params: SufferParams) -> OutcomeResult:
     result = new_outcome()
-    track = params["track"]
-    miss_extra_track = params["miss_extra_track"]
-    miss_extra_momentum = params["miss_extra_momentum"]
+    track = params.track
+    miss_extra_track = params.miss_extra_track
+    miss_extra_momentum = params.miss_extra_momentum
 
     has_blocking_impact = bool(blocks_recovery(game, track))
 
     if roll_result == "STRONG_HIT":
         _suffer_strong_hit(game, params, blocked=has_blocking_impact, result=result)
-    elif roll_result == "WEAK_HIT" and params["weak_hit_exchange"]:
+    elif roll_result == "WEAK_HIT" and params.weak_hit_exchange:
         _suffer_weak_hit(game, params, blocked=has_blocking_impact, result=result)
     elif roll_result == "WEAK_HIT":
         pass
@@ -94,8 +95,8 @@ def apply_suffer_handler(game: GameState, move_key: str, roll_result: str, param
             adjust_momentum(game, miss_extra_momentum)
             result.consequences.append(consequence("momentum_change", n=miss_extra_momentum))
 
-        if condition_meter and game.resources.meters[track] <= 0 and params["impact_pair"]:
-            free = [impact for impact in params["impact_pair"] if impact not in game.impacts]
+        if condition_meter and game.resources.meters[track] <= 0 and params.impact_pair:
+            free = [impact for impact in params.impact_pair if impact not in game.impacts]
             if free:
                 apply_impact(game, free[0])
                 result.consequences.append(impact_consequence(game, "mark_impact", free[0]))
@@ -105,8 +106,8 @@ def apply_suffer_handler(game: GameState, move_key: str, roll_result: str, param
     return result
 
 
-def _roll_endure_table(game: GameState, move_key: str, params: dict[str, Any], result: OutcomeResult) -> None:
-    rows, told = roll_oracle_result(get_moves(game.setting_id)[move_key].tables[params["table"]])
+def _roll_endure_table(game: GameState, move_key: str, params: SufferParams, result: OutcomeResult) -> None:
+    rows, told = roll_oracle_result(get_moves(game.setting_id)[move_key].tables[params.table])
     log(f"[Suffer] {told.label}")
     result.consequences.append(told)
     rule = next((r for r in rules().suffer.table_rows for row in rows if row.startswith(r.prefix)), None)
@@ -114,26 +115,26 @@ def _roll_endure_table(game: GameState, move_key: str, params: dict[str, Any], r
         _TABLE_TRIGGERS[rule.trigger](game, params, result)
 
 
-def _face_the_threshold(_game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
-    result.follow_up_moves.append(params["threshold_move"])
+def _face_the_threshold(_game: GameState, params: SufferParams, result: OutcomeResult) -> None:
+    result.follow_up_moves.append(params.threshold_move)
 
 
-def _face_the_threshold_in_a_fight(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
+def _face_the_threshold_in_a_fight(game: GameState, params: SufferParams, result: OutcomeResult) -> None:
     if any(t.track_type == "combat" and t.status == "active" for t in game.progress_tracks):
         _face_the_threshold(game, params, result)
 
 
-def _start_dying(game: GameState, _params: dict[str, Any], _result: OutcomeResult) -> None:
+def _start_dying(game: GameState, _params: SufferParams, _result: OutcomeResult) -> None:
     start_dying_clock(game)
 
 
-def _forsake_the_newest_vow(game: GameState, _params: dict[str, Any], result: OutcomeResult) -> None:
+def _forsake_the_newest_vow(game: GameState, _params: SufferParams, result: OutcomeResult) -> None:
     vows = [t for t in game.progress_tracks if t.track_type == "vow" and t.status == "active"]
     if vows:
         forsake_vow(game, vows[-1], result)
 
 
-_TABLE_TRIGGERS: dict[str, Callable[[GameState, dict[str, Any], OutcomeResult], None]] = {
+_TABLE_TRIGGERS: dict[str, Callable[[GameState, SufferParams, OutcomeResult], None]] = {
     "threshold": _face_the_threshold,
     "threshold_in_a_fight": _face_the_threshold_in_a_fight,
     "dying": _start_dying,
@@ -141,32 +142,32 @@ _TABLE_TRIGGERS: dict[str, Callable[[GameState, dict[str, Any], OutcomeResult], 
 }
 
 
-def _die(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
-    game.end_reason = params["end_reason"]
-    result.consequences.append(consequence("told", text=params["game_over_text"]))
+def _die(game: GameState, params: ThresholdParams, result: OutcomeResult) -> None:
+    game.end_reason = params.end_reason
+    result.consequences.append(consequence("told", text=params.game_over_text))
 
 
-def _return_with_a_vow(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
+def _return_with_a_vow(game: GameState, params: ThresholdParams, result: OutcomeResult) -> None:
     swear_key = rules().suffer.swear_move
     swear_move = get_moves(game.setting_id)[swear_key]
     stat, value = best_roll_option(game, swear_move)
     roll = roll_action(stat, value, swear_key, momentum(game), 0)
     log(f"[Suffer] {swear_key} ({stat}={value}): {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}")
     result.consequences.append(consequence("chained_move", move=swear_move.name, result=roll.result))
-    sworn = apply_effects(game, parse_effects(move_outcome_config(game, swear_key)[roll.result.lower()]))
+    sworn = apply_effects(game, parse_effects(move_outcome_config(game, swear_key).effects[roll.result.lower()]))
     result.consequences.extend(sworn.consequences)
-    if roll.result == "MISS" and params["swear_miss_is_death"]:
+    if roll.result == "MISS" and params.swear_miss_is_death:
         _die(game, params, result)
         return
-    vow = start_bound_vow(game, params["vow_name"], params["vow_rank"], params["impact"])
+    vow = start_bound_vow(game, params.vow_name, params.vow_rank, params.impact)
     result.consequences.append(
         consequence("threshold_vow", vow=vow.name, rank=vow.rank, oracle=roll_oracle_answer(game))
     )
-    if apply_impact(game, params["impact"]):
-        result.consequences.append(impact_consequence(game, "mark_impact", params["impact"]))
+    if apply_impact(game, params.impact):
+        result.consequences.append(impact_consequence(game, "mark_impact", params.impact))
 
 
-def apply_threshold_handler(game: GameState, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
+def apply_threshold_handler(game: GameState, roll_result: str, params: ThresholdParams) -> OutcomeResult:
     result = new_outcome()
     if roll_result == "WEAK_HIT":
         _return_with_a_vow(game, params, result)
@@ -175,13 +176,13 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict[str,
     return result
 
 
-def apply_recovery_handler(game: GameState, roll_result: str, params: dict[str, Any], *, match: bool) -> OutcomeResult:
+def apply_recovery_handler(game: GameState, roll_result: str, params: RecoveryParams, *, match: bool) -> OutcomeResult:
     result = new_outcome()
-    track = params["track"]
-    full_amount = params["full_amount"]
-    impact_amount = params["impact_amount"]
-    weak_cost_type = params["weak_hit_cost_type"]
-    weak_cost = params["weak_hit_cost"]
+    track = params.track
+    full_amount = params.full_amount
+    impact_amount = params.impact_amount
+    weak_cost_type = params.weak_hit_cost_type
+    weak_cost = params.weak_hit_cost
 
     blocking_impact = blocks_recovery(game, track)
     has_impact = bool(blocking_impact)

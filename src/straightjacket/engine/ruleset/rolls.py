@@ -61,7 +61,7 @@ def score_action_roll(
 
 def downgrade_in_position(game: GameState, roll: RollResult) -> RollResult:
     cfg = move_outcome_config(game, roll.move)
-    if "downgrade_in" not in cfg or game.world.combat_position != cfg["downgrade_in"]:
+    if game.world.combat_position != cfg.downgrade_in:
         return roll
     rank = _rank(roll.result)
     if rank == 0 or (rank == len(rules().dice.results_by_dice_beaten) - 1 and roll.match):

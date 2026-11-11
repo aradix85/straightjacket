@@ -8,6 +8,18 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.11.1] — 2026-11-11
+
+Every yaml block a typed field, roadmap 9y.3b, the raw sections. Nineteen blocks of `engine/`, `gamemaster/`, and `ruleset/` were read through `get_raw`, which handed out `Any` and checked nothing. Each is now a field of its store's settings class, bound and checked at load like the rest, so `RawSections` and `get_raw` are gone, and at the top level too a key no field holds, or a field without its key, stops loading (ARCHITECTURE.md, Configuration).
+
+- The move outcomes are parsed by hand into `MoveOutcomeConfig` (`ruleset/config.py`): the lists of effects by their key, the two optional texts, and the parameters of the entry's handler as a dataclass of their own, `SufferParams`, `ThresholdParams`, `RecoveryParams`, or `SojournParams`, which also picks the handler (`ruleset/move_outcome.py` → `_apply_handler`). An unknown handler, which failed the turn that met it, now stops loading. The three suffer entries no turn reaches yet (Withstand Damage and the two companion moves, roadmap step 19) name the three parameters they lacked, as none.
+- The oracle moves and the rows of a move's table are dataclasses; the other blocks are mappings and lists of text and numbers. A section parsed by hand is handed to the binder as its parser, so the binder's checks of the keys come first and every error carries its path.
+- With `get_raw` gone, its scan and the orphan scan's reading of it are gone, and the consumers lost the local annotations that typed what it returned. Two literal fallbacks in files the release touched are gone: the Brain's trigger hint and a test's `other` category.
+- Found on the way, for roadmap 9w.1: a scenario's threat is lost when creation already holds as many emergent threats as the cap allows, 5 creations in 1500, which failed one test in one run of the suite.
+- A script held the old settings against the new: 3797 values alike, and all 64 move outcomes rebuild to their yaml. A sub-agent checked the release; what it found is fixed, and the roadmap's 9y.3b keeps the loaders.
+
+Measured: mypy's `disallow_any_explicit` finds 497 errors where it found 527. Quality gate: 1942 tests, coverage 96.08% to 96.12%, mypy clean on 272 files, pylint clean, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: the settings hold the values they held, so nothing the game does changes.
+
 ## [2026.11.11.0] — 2026-11-11
 
 The configuration bound by its annotations, roadmap 9y.3a, the first area of "no explicit `Any`". The four yaml stores were bound to their dataclasses by hand-written functions, one per section, that checked the names of the keys and never the values, so text where a number belongs loaded and failed wherever it was first used. One binder, `config_binding.py` → `bind_sections`, now reads the annotations of each settings class and of every dataclass below it and checks each value's type at every depth, naming a wrong value, an unknown key, or a missing key by its path in the yaml (ARCHITECTURE.md, Configuration). The shipped yaml held no wrong value: a script that loaded the four stores with the old code and the new found their 1976 values alike.

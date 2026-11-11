@@ -570,17 +570,6 @@ def _check_no_setdefault_calls() -> tuple[str, list[Violation]]:
     return ".setdefault() fallback (use direct subscript)", violations
 
 
-def _check_no_get_raw_with_fallback() -> tuple[str, list[Violation]]:
-    pattern = re.compile(r"\.get_raw\(\s*[^,)]+,\s*[^)]+\)")
-    violations: list[Violation] = []
-    for path in _iter_source_files():
-        rel = _rel(path)
-        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if pattern.search(line):
-                violations.append(Violation(rel, i, line.strip()))
-    return "eng().get_raw(key, fallback) — domain config raises on miss", violations
-
-
 def _check_no_warning_suppression() -> tuple[str, list[Violation]]:
     pattern = re.compile(r"#\s*(noqa|type:\s*ignore|pragma:\s*no\s*cover)")
     violations: list[Violation] = []

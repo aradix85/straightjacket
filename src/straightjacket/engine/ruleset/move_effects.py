@@ -132,9 +132,9 @@ def roll_move_table(game: GameState, move_key: str, key: str, result: OutcomeRes
     told = consequence("oracle_result", table=table.title, result=text)
     log(f"[MoveTable] {told.label}")
     result.consequences.append(told)
-    for rule in rules().get_raw("move_table_rows")[key]:
-        if text.startswith(rule["prefix"]):
-            _apply_effect(game, parse_effect(rule["effect"]), result, None)
+    for rule in rules().move_table_rows[key]:
+        if text.startswith(rule.prefix):
+            _apply_effect(game, parse_effect(rule.effect), result, None)
 
 
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
@@ -338,7 +338,7 @@ def _apply_disposition_shift_effect(
     _game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
     target = _required_target(effect, target)
-    shifts = gm().get_raw("disposition_shifts")
+    shifts = gm().disposition_shifts
     old_disp = target.disposition
 
     if old_disp in shifts:

@@ -250,7 +250,7 @@ def _create_new_npc(game: GameState, nd: dict[str, Any]) -> NpcData:
 
 def _seed_initial_memory(game: GameState, npc: NpcData, nd: dict[str, Any]) -> None:
     seed_event = nd["description"] or eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
-    seed_emotion = gm().get_raw("disposition_to_seed_emotion")[nd["disposition"]]
+    seed_emotion = gm().disposition_to_seed_emotion[nd["disposition"]]
     seed_imp = max(score_importance(seed_emotion, seed_event), gm().npc.seed_importance_floor)
     npc.memory.append(
         MemoryEntry(

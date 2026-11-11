@@ -28,7 +28,7 @@ from straightjacket.engine.ruleset.make_move import roll_move
 from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects, pay_the_price
 from straightjacket.engine.ruleset.move_outcome import acts_on_an_npc, resolve_move_outcome
 from straightjacket.engine.ruleset.moves import get_moves
-from straightjacket.engine.ruleset.outcome_result import move_outcome_config
+from straightjacket.engine.ruleset.outcome_result import suffer_params
 from straightjacket.engine.ruleset.progress import ticks_per_mark
 from straightjacket.engine.ruleset.roll_sources import best_roll_option
 from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
@@ -230,9 +230,9 @@ def test_every_move_that_marks_progress_names_its_track_category() -> None:
     marking = sorted(
         move for move, results in outcomes.items() if re.search(r"'(mark_progress|milestone)\b", str(results))
     )
-    categories = rules().get_raw("progress_mark_categories")
+    categories = rules().progress_mark_categories
     assert sorted(categories) == marking
-    assert set(categories.values()) <= set(rules().get_raw("track_types_by_category"))
+    assert set(categories.values()) <= set(rules().track_types_by_category)
 
 
 def test_make_a_connection_gives_no_momentum() -> None:
@@ -606,8 +606,13 @@ def test_lasting_harm_uses_each_rulebooks_names(setting: str, move: str, first: 
 
 
 def test_delve_faces_death_with_the_classic_move() -> None:
-    params = move_outcome_config(make_game_state(setting_id="delve"), "suffer/endure_harm")["params"]
-    assert params["threshold_move"] == "suffer/face_death"
+    params = suffer_params(make_game_state(setting_id="delve"), "suffer/endure_harm")
+    assert params.threshold_move == "suffer/face_death"
+
+
+def test_a_move_without_a_suffer_handler_has_no_suffer_parameters() -> None:
+    with pytest.raises(TypeError, match="adventure/face_danger has no suffer handler"):
+        suffer_params(make_game_state(setting_id="classic"), "adventure/face_danger")
 
 
 def test_sundered_isles_discovers_from_its_own_table() -> None:

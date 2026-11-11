@@ -251,3 +251,82 @@ class RollBonusesConfig:
 
 
 MoveAvailabilityCondition = ActiveTrackCondition | NoActiveTrackCondition | BondedTrackCondition | CombatPosCondition
+
+
+@dataclass
+class OracleMove:
+    table: str
+    rolls: int
+    reroll_prefixes: list[str]
+    legacy_track: str
+    ticks_per_roll: int
+
+
+@dataclass
+class MoveTableRow:
+    prefix: str
+    effect: str
+
+
+@dataclass
+class SufferParams:
+    track: str
+    recovery: int
+    miss_extra_track: int
+    miss_extra_momentum: int
+    impact_pair: list[str]
+    strong_hit_exchange_cost: int
+    weak_hit_exchange: bool
+    recover_from_zero: bool
+    endure_always: bool
+    table: str
+    threshold_move: str
+
+
+@dataclass
+class ThresholdParams:
+    impact: str
+    game_over_text: str
+    end_reason: str
+    vow_name: str
+    vow_rank: str
+    swear_miss_is_death: bool
+
+
+@dataclass
+class RecoveryParams:
+    track: str
+    full_amount: int
+    impact_amount: int
+    weak_hit_cost_type: str
+    weak_hit_cost: int
+
+
+@dataclass
+class SojournClear:
+    action: str
+    meter: str
+
+
+@dataclass
+class SojournParams:
+    picks: dict[str, int]
+    bond_picks: int
+    clear_a_condition: dict[str, SojournClear]
+    clear_gain: int
+    recover: dict[str, str]
+    recover_gain: int
+    focus_stat: str
+    focus_bond_add: int
+    focus_gain: dict[str, int]
+
+
+HandlerParams = SufferParams | ThresholdParams | RecoveryParams | SojournParams
+
+
+@dataclass
+class MoveOutcomeConfig:
+    effects: dict[str, list[str]]
+    recommit_on_miss: str | None
+    downgrade_in: str | None
+    params: HandlerParams | None

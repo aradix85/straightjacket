@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from straightjacket.engine.config_binding import RawSections, bind_sections
+from straightjacket.engine.config_binding import build_strict
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.gamemaster.config_types import (
     ActivationScores,
@@ -58,7 +58,7 @@ _CONFIG_DIR = PROJECT_ROOT / "gamemaster"
 
 
 @dataclass
-class GameMasterSettings(RawSections):
+class GameMasterSettings:
     npc: NpcConfig
     mythic_dice: MythicDiceConfig
     npc_status_groups: NpcStatusGroups
@@ -101,6 +101,9 @@ class GameMasterSettings(RawSections):
     clocks: ClocksConfig
     outcomes: OutcomesConfig
     moves: dict[str, GameMasterMove]
+    disposition_shifts: dict[str, str]
+    disposition_to_seed_emotion: dict[str, str]
+    memory_result_text: dict[str, str]
 
 
 _FACT_SUBJECTS = ("place", "npc")
@@ -118,7 +121,7 @@ def _check_fact_resolution(facts: FactResolutionConfig) -> None:
 
 
 def parse_gamemaster_yaml(data: dict[str, object]) -> GameMasterSettings:
-    settings = bind_sections(GameMasterSettings, data)
+    settings = build_strict(GameMasterSettings, data, "gamemaster")
     _check_fact_resolution(settings.fact_resolution)
     return settings
 

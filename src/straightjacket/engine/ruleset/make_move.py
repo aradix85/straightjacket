@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.logging_util import log
@@ -30,6 +30,7 @@ from straightjacket.engine.setting.oracle_rolls import plain_text, roll_rows
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import BrainResult, GameState, ProgressTrack, RollResult
+    from straightjacket.engine.ruleset.config_types import OracleMove
     from straightjacket.engine.ruleset.moves import Move
     from straightjacket.engine.ruleset.outcome_result import OutcomeResult
     from straightjacket.engine.setting.loader import OracleTable
@@ -88,7 +89,7 @@ def plays_without_roll(move: str) -> bool:
 
 
 def make_move_without_roll(game: GameState, brain: BrainResult) -> OutcomeResult:
-    effects = parse_effects(move_outcome_config(game, brain.move)["no_roll"])
+    effects = parse_effects(move_outcome_config(game, brain.move).effects["no_roll"])
     outcome = apply_effects(game, effects, target_npc_id=brain.target_npc)
     apply_progress_and_legacy(game, outcome, brain, None)
     log(f"[Move] {brain.move} without a roll: {', '.join(labels_of(outcome.consequences))}")
@@ -157,21 +158,21 @@ def _roll_chained_table(table: OracleTable, reroll_prefixes: list[str]) -> str:
             return eng().ai_text.consequence_labels["oracle_worse"].format(result=text) if rolled.worse else text
 
 
-def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome: OutcomeResult) -> None:
-    table = move.tables[cfg["table"]]
-    results = [_roll_chained_table(table, cfg["reroll_prefixes"]) for _ in range(cfg["rolls"])]
+def _chain_oracle_move(game: GameState, move: Move, cfg: OracleMove, outcome: OutcomeResult) -> None:
+    table = move.tables[cfg.table]
+    results = [_roll_chained_table(table, cfg.reroll_prefixes) for _ in range(cfg.rolls)]
     outcome.consequences.append(consequence("chained_move", move=move.name, result="; ".join(results)))
-    if cfg["legacy_track"]:
-        mark_legacy_ticks(game, cfg["legacy_track"], cfg["ticks_per_roll"] * cfg["rolls"])
+    if cfg.legacy_track:
+        mark_legacy_ticks(game, cfg.legacy_track, cfg.ticks_per_roll * cfg.rolls)
     log(f"[Chain] {move.name}: {'; '.join(results)}")
 
 
 def _chain_without_bond(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> bool:
     cfg = move_outcome_config(game, outcome.chained_move)
     track = connection_track(game, brain.target_npc) if brain.target_npc is not None else None
-    if "without_bond" not in cfg or track is None or is_bonded(track):
+    if "without_bond" not in cfg.effects or track is None or is_bonded(track):
         return False
-    marked = apply_effects(game, parse_effects(cfg["without_bond"]), target_npc_id=brain.target_npc)
+    marked = apply_effects(game, parse_effects(cfg.effects["without_bond"]), target_npc_id=brain.target_npc)
     outcome.consequences.extend(marked.consequences)
     log(f"[Chain] {outcome.chained_move}: no bond with {track.name} yet, so progress is marked without a roll")
     return True
@@ -179,7 +180,7 @@ def _chain_without_bond(game: GameState, brain: BrainResult, outcome: OutcomeRes
 
 def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> None:
     move = get_moves(game.setting_id)[outcome.chained_move]
-    oracle_moves = rules().get_raw("oracle_moves")
+    oracle_moves = rules().oracle_moves
     if move.roll_type == "no_roll" and outcome.chained_move in oracle_moves:
         _chain_oracle_move(game, move, oracle_moves[outcome.chained_move], outcome)
         return

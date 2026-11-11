@@ -3,6 +3,7 @@ import pytest
 from straightjacket.engine.models import GameState, Resources, labels_of
 from straightjacket.engine.prompt_boundary import build_new_game_prompt
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.config_types import SufferParams, ThresholdParams
 from straightjacket.engine.ruleset.impacts import apply_impact, blocks_recovery, clear_impact, get_impacts
 from straightjacket.engine.ruleset.meters import adjust_momentum, max_momentum
 from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
@@ -61,16 +62,18 @@ class TestImpactsFromTheRules:
 
     @staticmethod
     def test_every_impact_a_move_marks_is_its_rulesets_own() -> None:
-        outcomes = rules().get_raw("move_outcomes")
+        outcomes = rules().move_outcomes
         for setting_id in list_packages():
             game = make_game_state(setting_id=setting_id)
             named: set[str] = set(rules().suffer.exhausted_impacts.values())
             for key in get_moves(setting_id):
                 if key not in outcomes:
                     continue
-                params = move_outcome_config(game, key).get("params", {})
-                named.update(params.get("impact_pair", []))
-                named.update(params[name] for name in ("impact",) if params.get(name))
+                params = move_outcome_config(game, key).params
+                if isinstance(params, SufferParams):
+                    named.update(params.impact_pair)
+                if isinstance(params, ThresholdParams):
+                    named.add(params.impact)
             assert named <= set(get_impacts(setting_id)), (setting_id, named - set(get_impacts(setting_id)))
 
 

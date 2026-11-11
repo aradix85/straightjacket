@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.gamemaster.npc.matching import find_npc
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import consequence
 from straightjacket.engine.ruleset.bond import connection_track, is_bonded
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.config_types import SojournParams, SufferParams, ThresholdParams
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.meters import momentum
 from straightjacket.engine.ruleset.move_effects import (
@@ -30,9 +31,8 @@ from straightjacket.engine.ruleset.rolls import roll_action
 from straightjacket.engine.ruleset.sojourn import apply_sojourn_handler
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.config_types import HandlerParams
     from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
@@ -42,22 +42,16 @@ def resolve_move_outcome(
     move_cfg = move_outcome_config(game, move_key)
     result_key = roll_result.lower()
 
-    handler = move_cfg.get("handler")
-    if handler == "sojourn":
-        return apply_sojourn_handler(
-            game, move_key, roll_result, dict(move_cfg["params"]), match=match, aided_by=aided_by
-        )
-    if handler:
-        params_dict = dict(move_cfg["params"])
-        return _dispatch_handler(game, move_key, handler, roll_result, params_dict, match=match)
+    if move_cfg.params is not None:
+        return _apply_handler(game, move_key, roll_result, move_cfg.params, match=match, aided_by=aided_by)
 
     match_key = f"{result_key}_match"
-    effects_raw = move_cfg[match_key] if match and match_key in move_cfg else move_cfg.get(result_key)
-    if effects_raw is None:
+    effects_key = match_key if match and match_key in move_cfg.effects else result_key
+    if effects_key not in move_cfg.effects:
         msg = f"No effects for {move_key}/{result_key}. Add it to ruleset/move_outcomes.yaml."
         raise ValueError(msg)
 
-    effects = parse_effects(effects_raw)
+    effects = parse_effects(move_cfg.effects[effects_key])
     if roll_result not in rules().dice.hit_results and complication_replaces_price(game, match=match):
         effects = [
             MoveEffect(type="story_complication", value=0, target="") if e.type == "pay_the_price" else e
@@ -71,7 +65,7 @@ def resolve_move_outcome(
 
 
 def _effect_types(game: GameState, move_key: str) -> set[str]:
-    lists = [effects for effects in move_outcome_config(game, move_key).values() if isinstance(effects, list)]
+    lists = move_outcome_config(game, move_key).effects.values()
     return {effect.type for effects in lists for effect in parse_effects(effects)}
 
 
@@ -125,15 +119,13 @@ def make_due_bond_test(game: GameState, npc_id: str | None, rolled_move: str | N
     _make_follow_up(game, move_key, npc_id, result)
 
 
-def _dispatch_handler(
-    game: GameState, move_key: str, handler: str, roll_result: str, params: dict[str, Any], *, match: bool
+def _apply_handler(
+    game: GameState, move_key: str, roll_result: str, params: HandlerParams, *, match: bool, aided_by: str | None
 ) -> OutcomeResult:
-    handlers: dict[str, Callable[[], OutcomeResult]] = {
-        "suffer": lambda: apply_suffer_handler(game, move_key, roll_result, params),
-        "threshold": lambda: apply_threshold_handler(game, roll_result, params),
-        "recovery": lambda: apply_recovery_handler(game, roll_result, params, match=match),
-    }
-    if handler not in handlers:
-        msg = f"Unknown move-outcome handler {handler!r}. Valid: {sorted(handlers)}."
-        raise ValueError(msg)
-    return handlers[handler]()
+    if isinstance(params, SojournParams):
+        return apply_sojourn_handler(game, move_key, roll_result, params, match=match, aided_by=aided_by)
+    if isinstance(params, SufferParams):
+        return apply_suffer_handler(game, move_key, roll_result, params)
+    if isinstance(params, ThresholdParams):
+        return apply_threshold_handler(game, roll_result, params)
+    return apply_recovery_handler(game, roll_result, params, match=match)

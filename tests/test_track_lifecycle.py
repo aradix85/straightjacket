@@ -122,7 +122,7 @@ class TestTracksStatus:
 
     @staticmethod
     def test_every_track_type_of_the_ruleset_has_its_line() -> None:
-        track_types = set(rules().get_raw("track_types_by_category").values())
+        track_types = set(rules().track_types_by_category.values())
         assert {f"status.track_{track_type}" for track_type in track_types} <= set(all_strings())
 
 

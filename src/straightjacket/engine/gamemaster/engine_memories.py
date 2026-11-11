@@ -49,7 +49,7 @@ def generate_engine_memories(
     told_outcome = "dialog" if is_dialog else outcome
     intent = brain.player_intent
 
-    result_text = gm().get_raw("memory_result_text")[_memory_key(move, told_outcome)]
+    result_text = gm().memory_result_text[_memory_key(move, told_outcome)]
     move_verb = answers().action_phrase(move)
     cons_max = eng().prompt_display.memory_consequences_max
 

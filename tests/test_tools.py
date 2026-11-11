@@ -54,7 +54,7 @@ def test_the_director_is_offered_its_one_tool_without_parameters() -> None:
         "type": "function",
         "function": {
             "name": "query_game_state",
-            "description": eng().get_raw("tool_descriptions")["query_game_state"],
+            "description": eng().tool_descriptions["query_game_state"],
             "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
         },
     }

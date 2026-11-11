@@ -79,9 +79,12 @@ def _set(*path: str, value: object) -> Callable[[dict[str, Any]], None]:
     return change
 
 
-def _unset(key: str) -> Callable[[dict[str, Any]], None]:
+def _unset(*path: str) -> Callable[[dict[str, Any]], None]:
     def change(section: dict[str, Any]) -> None:
-        del section[key]
+        holder = section
+        for key in path[:-1]:
+            holder = holder[key]
+        del holder[path[-1]]
 
     return change
 
@@ -101,19 +104,67 @@ def _unset(key: str) -> Callable[[dict[str, Any]], None]:
         (gamemaster_config, "pacing", _unset("director_interval"), "pacing: missing keys .'director_interval'"),
         (gamemaster_config, "stopwords", _set("general", value="the"), "stopwords.general: expected list"),
         (gamemaster_config, "clocks", _set("complication", value=[4]), "complication: expected dict"),
-        (gamemaster_config, "clocks", _set("complication", "extra", value=1), "ComplicationClockConfig"),
+        (gamemaster_config, "clocks", _set("complication", "extra", value=1), "complication: unknown keys .'extra'"),
         (ruleset_config, "boasts", _set("options", value=[]), "boasts.options: expected dict"),
         (
             ruleset_config,
             "move_availability",
             _set("combat/strike", "available", value="in_control"),
-            "move_availability: expected list",
+            "combat/strike.available: expected list",
         ),
         (
             ruleset_config,
             "move_availability",
             _set("combat/strike", "available", value=[{"combat_pos_in": "in_control"}]),
             "combat_pos_in: expected list",
+        ),
+        (
+            ruleset_config,
+            "move_outcomes",
+            _set("adventure/face_danger", "strong_hit", value="momentum +1"),
+            "adventure/face_danger.effects.strong_hit: expected list",
+        ),
+        (
+            ruleset_config,
+            "move_outcomes",
+            _set("quest/fulfill_your_vow", "recommit_on_miss", value=1),
+            "quest/fulfill_your_vow.recommit_on_miss: expected",
+        ),
+        (
+            ruleset_config,
+            "move_outcomes",
+            _set("suffer/endure_harm", "handler", value="endure"),
+            "suffer/endure_harm: unknown move-outcome handler 'endure'",
+        ),
+        (
+            ruleset_config,
+            "move_outcomes",
+            _set("suffer/endure_harm", "miss", value=[]),
+            "a move with a handler holds handler and params",
+        ),
+        (
+            ruleset_config,
+            "move_outcomes",
+            _set("suffer/endure_harm", "params", "recovery", value="1"),
+            "suffer/endure_harm.params.recovery: expected",
+        ),
+        (
+            ruleset_config,
+            "move_outcomes",
+            _set("adventure/face_danger", value=3),
+            "adventure/face_danger: expected dict",
+        ),
+        (
+            ruleset_config,
+            "move_outcomes",
+            _set("quest/fulfill_your_vow", "recommit_on_miss", value=None),
+            "quest/fulfill_your_vow.recommit_on_miss: expected str",
+        ),
+        (
+            ruleset_config,
+            "move_outcomes",
+            _unset("suffer/endure_harm", "params", "table"),
+            "ruleset.move_outcomes.suffer/endure_harm.params: missing keys .'table'",
         ),
     ],
     ids=[
@@ -133,6 +184,14 @@ def _unset(key: str) -> Callable[[dict[str, Any]], None]:
         "list_for_a_mapping",
         "text_for_the_conditions",
         "text_for_the_positions",
+        "text_for_a_list_of_effects",
+        "number_for_an_outcome_text",
+        "unknown_handler",
+        "effects_beside_a_handler",
+        "text_for_a_handler_number",
+        "number_for_a_move_outcome",
+        "nothing_for_an_outcome_text",
+        "missing_handler_parameter",
     ],
 )
 def test_a_config_value_of_the_wrong_type_stops_loading(
@@ -148,3 +207,28 @@ def test_a_config_value_of_the_wrong_type_stops_loading(
 def test_a_whole_number_serves_where_a_fraction_is_asked(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     change_config(monkeypatch, tmp_path, gamemaster_config, "pacing", _set("weak_hit_clock_tick_chance", value=1))
     assert gamemaster_config.gm().pacing.weak_hit_clock_tick_chance == 1
+
+
+def test_a_section_no_settings_field_holds_stops_loading(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    change_config(monkeypatch, tmp_path, gamemaster_config, "pacing", lambda _section: None)
+    (tmp_path / "gamemaster" / "stray.yaml").write_text("stray: 1\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"gamemaster: unknown keys \['stray'\]"):
+        gamemaster_config.gm()
+
+
+@pytest.mark.parametrize(
+    ("layer", "section", "missing"),
+    [
+        (gamemaster_config, "pacing", "gamemaster: missing keys"),
+        (ruleset_config, "move_outcomes", "ruleset: missing keys"),
+    ],
+    ids=["a_bound_section", "a_section_parsed_by_hand"],
+)
+def test_a_missing_section_stops_loading(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, layer: ModuleType, section: str, missing: str
+) -> None:
+    change_config(monkeypatch, tmp_path, layer, section, lambda _section: None)
+    (tmp_path / layer.__name__.split(".")[-2] / f"{section}.yaml").unlink()
+    load = gamemaster_config.gm if layer is gamemaster_config else ruleset_config.rules
+    with pytest.raises(ValueError, match=rf"{missing} \[.*'{section}'"):
+        load()

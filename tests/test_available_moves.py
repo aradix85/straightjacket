@@ -113,9 +113,9 @@ class TestAvailableMoves:
 
 @pytest.mark.parametrize("setting", ["classic", "delve", "starforged", "sundered_isles"])
 def test_every_offered_progress_move_has_its_track(setting: str) -> None:
-    track_types = rules().get_raw("track_types_by_category")
-    marking = rules().get_raw("progress_mark_categories")
-    creating = rules().get_raw("track_creating_moves")
+    track_types = rules().track_types_by_category
+    marking = rules().progress_mark_categories
+    creating = rules().track_creating_moves
     ds_moves = get_moves(setting)
     for key, move in ds_moves.items():
         if move.roll_type == "progress_roll":

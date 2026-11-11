@@ -199,4 +199,4 @@ def test_each_kind_is_told_by_its_template_about_its_own_values(
 ) -> None:
     sentence = resolve_consequence_sentence(consequence(kind, **values), "Ash", "Target", "The Docks")
     told = {"player": "Ash", "npc": npc, "location": "The Docks", "amount": "", "impact": detail, "danger": detail}
-    assert sentence in {line.format(**told) for line in eng().get_raw("consequence_templates")[event]}
+    assert sentence in {line.format(**told) for line in eng().consequence_templates[event]}

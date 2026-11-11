@@ -62,7 +62,7 @@ def _build_moves_block(game: GameState) -> str:
     lines = []
     for key, move in _offered_moves(game).items():
         ways, roll = _ways_and_roll(move)
-        hint = trigger_hints.get(key, "")
+        hint = trigger_hints.get(key)
         lines.append(
             get_prompt(
                 "brain_move_line",
@@ -163,7 +163,7 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
     change = result.location_change
     if change is not None and change.kind not in gm().generation.place_categories:
         _refuse(f"location kind {change.kind!r} is not one of the choices offered")
-    if result.move in rules().get_raw("track_creating_moves") and not (result.track_name and result.track_name.strip()):
+    if result.move in rules().track_creating_moves and not (result.track_name and result.track_name.strip()):
         _refuse(f"move {result.move!r} starts a track, but track_name is empty")
     if starts_a_connection(result.move) and result.target_npc is None:
         _refuse(f"move {result.move!r} makes a connection, but names no target_npc")
@@ -187,9 +187,9 @@ def _check_target_track(game: GameState, result: BrainResult) -> None:
     category = track_category_of_move(game, result.move)
     if category is None:
         return
-    wanted = rules().get_raw("track_types_by_category")[category]
+    wanted = rules().track_types_by_category[category]
     if result.target_track is None:
-        if result.dialog_only or result.move in rules().get_raw("track_creating_moves"):
+        if result.dialog_only or result.move in rules().track_creating_moves:
             return
         if len([t for t in active_tracks(game) if t.track_type == wanted]) > 1:
             _refuse(f"move {result.move!r} works on one of several active {wanted} tracks, but names no target_track")

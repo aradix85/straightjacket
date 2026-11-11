@@ -1,58 +1,45 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any, TypeVar, get_args, get_origin, get_type_hints
+from dataclasses import fields
+from typing import TYPE_CHECKING, TypeVar, get_args, get_origin, get_type_hints
 
-from straightjacket.engine.serialization import is_dataclass_type, shaped, unwrap_optional
+from straightjacket.engine.serialization import allows_none, is_dataclass_type, shaped, unwrap_optional
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from _typeshed import DataclassInstance
 
 _D = TypeVar("_D", bound="DataclassInstance")
 
-_RAW_FIELD = "_raw"
 _SCALARS: dict[object, tuple[type, ...]] = {str: (str,), bool: (bool,), int: (int,), float: (int, float)}
 _SEQUENCES = (list, frozenset)
 
 
-@dataclass
-class RawSections:
-    _raw: dict[str, Any] = field(repr=False)
-
-    def get_raw(self, key: str) -> Any:
-        return self._raw[key]
-
-
-def bind_sections(cls: type[_D], data: dict[str, object], **prepared: object) -> _D:
-    hints = get_type_hints(cls)
-    names = [f.name for f in fields(cls) if f.name != _RAW_FIELD and f.name not in prepared]
-    sections = {name: _bind(hints[name], data[name], name) for name in names}
-    return cls(**sections, **prepared, **{_RAW_FIELD: data})
-
-
-def build_strict(cls: type[_D], data: object) -> _D:
-    return _build(cls, data, cls.__name__)
-
-
-def _build(cls: type[_D], data: object, where: str) -> _D:
+def build_strict(cls: type[_D], data: object, where: str, **parsers: Callable[[object, str], object]) -> _D:
     values = shaped(data, dict, f"{where}: expected dict")
     names = {f.name for f in fields(cls)}
     if unknown := set(values) - names:
-        msg = f"Unknown keys for {cls.__name__}: {sorted(unknown)}"
+        msg = f"{where}: unknown keys {sorted(unknown)}"
         raise ValueError(msg)
     if missing := names - set(values):
         msg = f"{where}: missing keys {sorted(missing)}"
         raise ValueError(msg)
     hints = get_type_hints(cls)
-    return cls(**{key: _bind(hints[key], value, f"{where}.{key}") for key, value in values.items()})
+    return cls(
+        **{
+            key: parsers[key](value, f"{where}.{key}") if key in parsers else _bind(hints[key], value, f"{where}.{key}")
+            for key, value in values.items()
+        }
+    )
 
 
 def _bind(hint: object, value: object, where: str) -> object:
-    inner, optional = unwrap_optional(hint)
-    if value is None and optional:
+    if value is None and allows_none(hint):
         return None
+    inner, _ = unwrap_optional(hint)
     if is_dataclass_type(inner):
-        return _build(inner, value, where)
+        return build_strict(inner, value, where)
     origin = get_origin(inner)
     if origin in _SEQUENCES:
         (item_hint,) = get_args(inner)

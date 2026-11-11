@@ -269,6 +269,9 @@ move_outcomes:
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
+      endure_always: false
+      table: ''
+      threshold_move: ''
   suffer/companion_takes_a_hit:
     handler: suffer
     params:
@@ -280,6 +283,9 @@ move_outcomes:
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
+      endure_always: false
+      table: ''
+      threshold_move: ''
   threshold/face_death:
     handler: threshold
     params:
@@ -453,6 +459,9 @@ move_outcomes:
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
+      endure_always: false
+      table: ''
+      threshold_move: ''
   suffer/face_death:
     handler: threshold
     params:

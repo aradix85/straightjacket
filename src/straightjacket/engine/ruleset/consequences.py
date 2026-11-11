@@ -12,12 +12,11 @@ if TYPE_CHECKING:
 
 
 def pick_template(key: str) -> str:
-    result: str = random.choice(eng().get_raw("consequence_templates")[key])
-    return result
+    return random.choice(eng().consequence_templates[key])
 
 
 def _meter_event(meter: str, change: int) -> str | None:
-    templates = eng().get_raw("consequence_templates")
+    templates = eng().consequence_templates
     if change > 0:
         event = f"{meter}_gain"
     elif f"{meter}_heavy" in templates:

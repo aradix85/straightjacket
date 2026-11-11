@@ -57,13 +57,13 @@ def _started_track_id(track_type: str, name: str) -> str:
 
 
 def start_track(game: GameState, brain: BrainResult, result: str) -> None:
-    track_type = rules().get_raw("track_creating_moves").get(brain.move)
+    track_type = rules().track_creating_moves.get(brain.move)
     if not track_type:
         return
-    if result not in rules().dice.hit_results and brain.move in rules().get_raw("tracks_started_on_a_hit"):
+    if result not in rules().dice.hit_results and brain.move in rules().tracks_started_on_a_hit:
         log(f"[Track] {brain.move} missed; no {track_type} track")
         return
-    if brain.target_track is not None and brain.move in rules().get_raw("progress_mark_categories"):
+    if brain.target_track is not None and brain.move in rules().progress_mark_categories:
         log(f"[Track] {brain.move} continues {brain.target_track}; no new {track_type} track")
         return
     if not brain.track_name or not brain.track_rank:
@@ -175,12 +175,12 @@ def recommit_track(track: ProgressTrack, rule: str, result: OutcomeResult) -> No
 
 def resolve_progress_roll(game: GameState, roll: RollResult, track: ProgressTrack, outcome: OutcomeResult) -> None:
     if roll.result in rules().dice.hit_results:
-        bonded = track.track_type in rules().get_raw("tracks_bonded_on_a_hit")
+        bonded = track.track_type in rules().tracks_bonded_on_a_hit
         complete_track(game, track.id, "bonded" if bonded else "completed")
         return
     cfg = move_outcome_config(game, roll.move)
-    if "recommit_on_miss" in cfg:
-        recommit_track(track, cfg["recommit_on_miss"], outcome)
+    if cfg.recommit_on_miss is not None:
+        recommit_track(track, cfg.recommit_on_miss, outcome)
     else:
         complete_track(game, track.id, "failed")
 
@@ -200,8 +200,8 @@ def apply_progress_and_legacy(
 
 
 def _mark_move_progress(game: GameState, outcome: OutcomeResult, brain: BrainResult) -> None:
-    track_category = rules().get_raw("progress_mark_categories")[brain.move]
-    started = rules().get_raw("track_creating_moves").get(brain.move)
+    track_category = rules().progress_mark_categories[brain.move]
+    started = rules().track_creating_moves.get(brain.move)
     target = brain.target_track
     if started and target is None:
         if not brain.track_name:
@@ -259,13 +259,12 @@ def track_category_of_move(game: GameState, move: str) -> str | None:
     ds_move = get_moves(game.setting_id).get(move)
     if ds_move is not None and ds_move.is_progress_roll:
         return ds_move.track_category
-    categories: dict[str, str] = rules().get_raw("progress_mark_categories")
-    return categories.get(move)
+    return rules().progress_mark_categories.get(move)
 
 
 def vow_acted_on(game: GameState, move: str, target_track: str | None) -> ProgressTrack | None:
     category = track_category_of_move(game, move)
-    if category is None or rules().get_raw("track_types_by_category")[category] != "vow":
+    if category is None or rules().track_types_by_category[category] != "vow":
         return None
     if target_track is not None:
         return next(t for t in game.progress_tracks if t.id == target_track)
@@ -274,7 +273,7 @@ def vow_acted_on(game: GameState, move: str, target_track: str | None) -> Progre
 
 
 def find_progress_track(game: GameState, track_category: str, target_track: str | None) -> ProgressTrack:
-    track_type = rules().get_raw("track_types_by_category")[track_category]
+    track_type = rules().track_types_by_category[track_category]
     candidates = [t for t in game.progress_tracks if t.track_type == track_type and t.status == "active"]
 
     if target_track is not None:

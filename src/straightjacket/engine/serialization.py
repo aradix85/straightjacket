@@ -23,7 +23,7 @@ def _resolve_item_type(tp: Any) -> type | None:
     return None
 
 
-def _allows_none(tp: Any) -> bool:
+def allows_none(tp: Any) -> bool:
     if get_origin(tp) is Union or isinstance(tp, types.UnionType):
         return types.NoneType in get_args(tp)
     return False
@@ -86,7 +86,7 @@ def deserialize(cls: type[_T], data: object) -> _T:
 
 def _deserialize_value(hint: Any, val: Any) -> Any:
     if val is None:
-        if _allows_none(hint):
+        if allows_none(hint):
             return None
         msg = f"null where {hint} is required"
         raise ValueError(msg)

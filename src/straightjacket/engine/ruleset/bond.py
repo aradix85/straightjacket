@@ -15,7 +15,7 @@ def connection_track_id(npc_id: str) -> str:
 
 
 def starts_a_connection(move: str) -> bool:
-    return bool(rules().get_raw("track_creating_moves").get(move) == "connection")
+    return rules().track_creating_moves.get(move) == "connection"
 
 
 def is_bonded(track: ProgressTrack) -> bool:

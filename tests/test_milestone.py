@@ -97,7 +97,7 @@ def test_a_milestone_marks_the_named_vow_by_its_rank_without_a_roll(monkeypatch:
     assert '<scene type="unrolled_move"' in prompt
     assert get_prompt("task_unrolled_move") in prompt
     assert "<result" not in prompt
-    told = [t.format(player=game.player_name) for t in eng().get_raw("consequence_templates")["milestone"]]
+    told = [t.format(player=game.player_name) for t in eng().consequence_templates["milestone"]]
     assert any(f"<consequence>{sentence}</consequence>" in prompt for sentence in told)
 
 
@@ -123,7 +123,7 @@ def test_a_milestone_is_told_and_remembered_as_a_move_not_a_dialog(monkeypatch: 
     assert thread.weight > weight
     memory = mira.memory[-1].event
     assert action_phrase(MILESTONE) in memory
-    assert gm().get_raw("memory_result_text")["unrolled_move"] in memory
+    assert gm().memory_result_text["unrolled_move"] in memory
     intent = brain["player_intent"][: eng().truncations.log_medium]
     assert game.narrative.narration_history[-1].prompt_summary == get_prompt("history_unrolled_move", intent=intent)
 

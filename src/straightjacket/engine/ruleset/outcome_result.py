@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.config_types import SufferParams
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import Consequence, GameState
+    from straightjacket.engine.ruleset.config_types import MoveOutcomeConfig
 
 
 @dataclass(kw_only=True)
@@ -39,15 +41,21 @@ def new_outcome() -> OutcomeResult:
     )
 
 
-def move_outcome_config(game: GameState, move_key: str) -> dict[str, Any]:
-    overrides = rules().get_raw("move_outcome_overrides")
+def move_outcome_config(game: GameState, move_key: str) -> MoveOutcomeConfig:
+    overrides = rules().move_outcome_overrides
     ruleset = load_ruleset(game.setting_id).id
     if ruleset in overrides and move_key in overrides[ruleset]:
-        cfg: dict[str, Any] = overrides[ruleset][move_key]
-        return cfg
-    outcomes = rules().get_raw("move_outcomes")
+        return overrides[ruleset][move_key]
+    outcomes = rules().move_outcomes
     if move_key not in outcomes:
         msg = f"No outcome config for {move_key}. Add it to ruleset/move_outcomes.yaml."
         raise ValueError(msg)
-    default: dict[str, Any] = outcomes[move_key]
-    return default
+    return outcomes[move_key]
+
+
+def suffer_params(game: GameState, move_key: str) -> SufferParams:
+    params = move_outcome_config(game, move_key).params
+    if not isinstance(params, SufferParams):
+        msg = f"{move_key} has no suffer handler in ruleset/move_outcomes.yaml."
+        raise TypeError(msg)
+    return params

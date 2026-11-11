@@ -8,7 +8,7 @@ from straightjacket.engine.models import consequence
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.impacts import apply_impact, impact_consequence
 from straightjacket.engine.ruleset.meters import adjust_momentum, lose
-from straightjacket.engine.ruleset.outcome_result import move_outcome_config
+from straightjacket.engine.ruleset.outcome_result import suffer_params
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import ClockData, GameState
@@ -30,7 +30,7 @@ def suffer(game: GameState, meter: str, amount: int, result: OutcomeResult) -> N
             result.consequences.append(impact_consequence(game, "mark_impact", impact))
         return
     endure = rules().suffer.endure_moves[meter]
-    if at_zero or move_outcome_config(game, endure)["params"]["endure_always"]:
+    if at_zero or suffer_params(game, endure).endure_always:
         result.follow_up_moves.append(endure)
 
 
@@ -72,5 +72,5 @@ def tick_dying_clock(game: GameState, result: OutcomeResult) -> None:
     game.world.clocks.remove(clock)
     result.consequences.append(consequence("out_of_time", clock=clock.name))
     endure = rules().suffer.endure_moves[cfg.meter]
-    result.follow_up_moves.append(move_outcome_config(game, endure)["params"]["threshold_move"])
+    result.follow_up_moves.append(suffer_params(game, endure).threshold_move)
     log(f"[Suffer] {clock.name} full: Face Death")

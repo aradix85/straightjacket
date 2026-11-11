@@ -71,7 +71,7 @@ class TestEngineMemoriesWithoutRoll:
 class TestMoveCategoriesCoverage:
     @staticmethod
     def test_every_implemented_move_has_real_category() -> None:
-        outcomes = rules().get_raw("move_outcomes")
+        outcomes = rules().move_outcomes
         engine_moves = rules().engine_moves
 
         implemented = set(outcomes.keys()) | set(engine_moves.keys())
@@ -79,7 +79,7 @@ class TestMoveCategoriesCoverage:
         uncategorized = [m for m in sorted(implemented) if action_kind(m) == "other" and m not in _explicitly_other()]
         assert uncategorized == [], (
             f"Implemented moves without a real category (will fall through to 'other'): {uncategorized}. "
-            "Add them to engine/move_categories.yaml under the appropriate bucket."
+            "Add them to ruleset/move_categories.yaml under the appropriate bucket."
         )
 
     @staticmethod
@@ -125,5 +125,4 @@ class TestExecuteRollStatNoneRejected:
 
 
 def _explicitly_other() -> set[str]:
-    mc = rules().get_raw("move_categories")
-    return set(mc.get("other", []))
+    return set(rules().move_categories["other"])

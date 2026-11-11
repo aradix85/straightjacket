@@ -8,7 +8,7 @@ from straightjacket.engine.setting.packages import list_packages
 
 
 def _all_categories() -> set[str]:
-    return set(rules().get_raw("move_categories").keys())
+    return set(rules().move_categories.keys())
 
 
 def _stance_bucket_values() -> set[str]:
@@ -64,7 +64,7 @@ class TestMoveCategoriesSymmetry:
     @staticmethod
     def test_memory_emotions_covers_every_non_dialog_combination() -> None:
         cats = _all_categories()
-        results = set(rules().get_raw("result_outcomes").values())
+        results = set(rules().result_outcomes.values())
         base = gm().memory_emotions.base
         missing = []
         for cat in cats:
@@ -79,8 +79,8 @@ class TestMoveCategoriesSymmetry:
     @staticmethod
     def test_memory_result_text_covers_every_non_dialog_combination() -> None:
         cats = _all_categories()
-        results = set(rules().get_raw("result_outcomes").values())
-        result_text = gm().get_raw("memory_result_text")
+        results = set(rules().result_outcomes.values())
+        result_text = gm().memory_result_text
         missing = [f"{cat}_{res}" for cat in cats for res in results if f"{cat}_{res}" not in result_text]
         assert missing == [], f"memory_result_text missing keys: {missing}."
 
@@ -90,7 +90,7 @@ class TestMoveCategoriesSymmetry:
 
     @staticmethod
     def test_memory_result_text_has_dialog_key() -> None:
-        assert "dialog" in gm().get_raw("memory_result_text"), "memory_result_text must contain 'dialog' key."
+        assert "dialog" in gm().memory_result_text, "memory_result_text must contain 'dialog' key."
 
 
 class TestEveryMoveResolvesEndToEnd:
@@ -120,10 +120,10 @@ class TestMoveOutcomesCoverage:
             if em.roll_type == "action_roll":
                 action_roll_moves.add(move_id)
 
-        outcomes = rules().get_raw("move_outcomes")
+        outcomes = rules().move_outcomes
         missing = sorted(action_roll_moves - set(outcomes.keys()))
         assert missing == [], (
-            f"Action_roll moves without an entry in engine/move_outcomes.yaml: {missing}. "
+            f"Action_roll moves without an entry in ruleset/move_outcomes.yaml: {missing}. "
             "Every action_roll move must have outcomes defined per result, "
             "otherwise resolve_move_outcome crashes mid-turn."
         )
@@ -135,9 +135,9 @@ class TestMoveOutcomesCoverage:
             all_known_moves.update(get_moves(sid).keys())
         all_known_moves.update(rules().engine_moves.keys())
 
-        outcomes = rules().get_raw("move_outcomes")
+        outcomes = rules().move_outcomes
         orphan = sorted(set(outcomes.keys()) - all_known_moves)
         assert orphan == [], (
-            f"engine/move_outcomes.yaml has entries for moves that don't exist: {orphan}. "
+            f"ruleset/move_outcomes.yaml has entries for moves that don't exist: {orphan}. "
             "Either remove the outcome entry or restore the move."
         )

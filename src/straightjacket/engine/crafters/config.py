@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from straightjacket.engine.config_binding import RawSections, bind_sections
+from straightjacket.engine.config_binding import build_strict
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.gamemaster.config_types import ClockCreationMappingEntry
 from straightjacket.engine.logging_util import log
@@ -75,7 +75,7 @@ class AdventureCrafterConfig:
 
 
 @dataclass
-class CrafterSettings(RawSections):
+class CrafterSettings:
     adventure_crafter: AdventureCrafterConfig
     adventure_crafter_dice: AdventureCrafterDiceConfig
 
@@ -86,6 +86,6 @@ _cache: dict[Path, CrafterSettings] = {}
 def crafter() -> CrafterSettings:
     if _CONFIG_DIR not in _cache:
         data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="The crafters/ directory ships with the repo.")
-        _cache[_CONFIG_DIR] = bind_sections(CrafterSettings, data)
+        _cache[_CONFIG_DIR] = build_strict(CrafterSettings, data, "crafters")
         log(f"[Config] Loaded {_CONFIG_DIR} ({len(data)} sections)")
     return _cache[_CONFIG_DIR]

@@ -23,7 +23,7 @@ A session also fixes what it meets that is ugly, illogical, or broken, even wher
 - **Fan out to sub-agents.** The reading of a hit-list goes to sub-agents, each given AGENTS.md and this document (AGENTS.md, Audits); only their lists enter the session's context.
 - **Grep first, reason second.** Whatever can be a grep query is run as one before any reading; the result is the candidate list, and reasoning happens per hit. Every query is run with an exact pattern, and its result count goes into the CHANGELOG entry. Where a principle needs reasoning that no grep captures, say so and read file by file within one submodule.
 - **Read context before classifying.** Open each hit and read at least ten lines around it; never classify from the grep line alone.
-- **Carve-outs need a documented anchor.** A hit is a carve-out only if an explicit exception covers it: in CONTRIBUTING.md's Project rules (the AI-call carve-out and the default exceptions) or in ARCHITECTURE.md (a named pattern such as `get_raw` or the re-export hubs). A hit that looks legitimate without such an anchor is marked `needs human judgment`.
+- **Carve-outs need a documented anchor.** A hit is a carve-out only if an explicit exception covers it: in CONTRIBUTING.md's Project rules (the AI-call carve-out and the default exceptions) or in ARCHITECTURE.md, as a named pattern such as the re-export hubs. A hit that looks legitimate without such an anchor is marked `needs human judgment`.
 - **Mark uncertainty, do not resolve it.** Unclear hits are marked `needs human judgment` with one sentence on why. Do not guess.
 - **No skipping by file name.** Exclusions are encoded in the grep query, never applied afterwards.
 - **Dynamic access defaults to `needs human judgment`.** Symbols reached through `getattr` with a variable name, runtime-built dict keys, fixture injection, schema generation, or serialization are invisible to grep; never declare them dead on grep alone.
@@ -60,7 +60,7 @@ The rules "Domain config keys raise on a miss, and dataclass fields have no defa
 - **Pass 2c — Mappings.** Grep dict and set literals in domain modules that hold domain keys (move names, dispositions, statuses). A mapping that should extend without Python changes is a violation, and so is a group of enum values written out at its callsites.
 - **Pass 2d — Dataclass defaults.** Grep `field(default=`, `field(default_factory=`, and `=` defaults on dataclass fields in `src/straightjacket/`. A violation unless it is one of the three exceptions under "Domain config keys raise on a miss, and dataclass fields have no defaults" in CONTRIBUTING.md; `AIResponse` in `ai/provider_base.py`, which the adapters fill from a provider's answer, counts as external-boundary parsing. `_check_no_dataclass_defaults` in `tests/_rules_code.py` covers every dataclass mechanically, with its carve-out `_EXTERNAL_STRUCTURE_DATACLASSES`; this pass reads that carve-out against the exceptions.
 
-Carve-outs: the `get_raw` pattern for yaml whose keys are domain data, and the AI-call carve-out files in `_AI_CALL_CARVE_OUT_FILES`.
+Carve-outs: the AI-call carve-out files in `_AI_CALL_CARVE_OUT_FILES`. A mapping keyed by domain data is configuration, not a violation of pass 2c (ARCHITECTURE.md, Configuration).
 
 ### Principle 3 — No defensive programming, no boilerplate, no dead structure
 
@@ -87,9 +87,9 @@ Carve-outs: the AI-call carve-out for broad excepts; re-exports that make up the
 No dead Python symbols, no dead YAML keys; every YAML key has a Python consumer and every config access a YAML source. YAGNI, KISS, DRY.
 
 - **Pass 5a — Dead Python symbols.** For each public symbol in `src/straightjacket/`, grep `src/`, `tests/`, the yaml of `engine/`, `gamemaster/`, `crafters/`, and `ruleset/`, `prompts/*.yaml`, and `data/`. Dead means no reader and no writer beyond the definition on every surface. Static tools (vulture, pylint) miss dict writes, getattr reads, fixtures, schema generation, and serialization; do not rely on them. Count production callers separately: a re-export plus tests is not a use in play.
-- **Pass 5b — Dead YAML keys.** For each key in `engine/`, `gamemaster/`, `crafters/`, `ruleset/`, `strings/`, `prompts/`, and `emotions/`, grep `src/` for the key; for each zero-hit key, check `get_raw` consumption and dataclass fields of the same name. Unambiguous orphans are violations.
+- **Pass 5b — Dead YAML keys.** For each key in `engine/`, `gamemaster/`, `crafters/`, `ruleset/`, `strings/`, `prompts/`, and `emotions/`, grep `src/` for the key; for each zero-hit key, check dataclass fields of the same name. Unambiguous orphans are violations.
 - **Pass 5c — Config dataclass fields without a YAML source.** For each subsystem dataclass in `engine_config_dataclasses.py` and the layers' `config_types.py` and `crafters/config.py`, locate each field's YAML key; fields never populated from config are violations.
-- **Pass 5d — YAML keys without a dataclass field.** The inverse of 5c, unless the block is read through `get_raw`.
+- **Pass 5d — YAML keys without a dataclass field.** The inverse of 5c. In `engine/`, `gamemaster/`, `crafters/`, and `ruleset/` the typed binding refuses such a key at load, and a field without its key (ARCHITECTURE.md, Configuration).
 - **Pass 5e — Single-use functions and classes.** References Pass 3c.
 
 **A field without a reader.** The game should be bound to its rules as tightly as it can be, so before a field, a return value, or an answer asked of the AI goes because no code reads it, ask whether it carries something the rules or the story know that the game should act on or tell. If it does, the finding is a missing reader: the session gives it one, a prompt that shows it to the AI or code that acts on it, and an Elvira session shows how play takes it. Only constants, copies of what is held elsewhere, and what only tests read go.

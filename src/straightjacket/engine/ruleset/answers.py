@@ -31,36 +31,32 @@ __all__ = [
 
 
 def outcome(result: str) -> str:
-    outcomes: dict[str, str] = rules().get_raw("result_outcomes")
-    return outcomes[result]
+    return rules().result_outcomes[result]
 
 
 def results_by_outcome() -> dict[str, str]:
-    outcomes: dict[str, str] = rules().get_raw("result_outcomes")
-    return {kind: result for result, kind in outcomes.items()}
+    return {kind: result for result, kind in rules().result_outcomes.items()}
 
 
 def action_kind(move: str) -> str:
-    categories = rules().get_raw("move_categories")
-    kind: str
-    for kind in categories:
-        if move in categories[kind]:
+    for kind, moves in rules().move_categories.items():
+        if move in moves:
             return kind
     return "other"
 
 
 def action_phrase(move: str) -> str:
-    phrases: dict[str, str] = rules().get_raw("action_phrases")
+    phrases = rules().action_phrases
     return phrases[move] if move in phrases else phrases["_catchall"]
 
 
 def time_taken(move: str) -> str:
-    steps: dict[str, str] = rules().get_raw("time_progression_map")
+    steps = rules().time_progression_map
     return steps[move] if move in steps else steps["_catchall"]
 
 
 def effect_bonus(move: str) -> int:
-    bonuses: dict[str, int] = rules().get_raw("effect_bonus_moves")
+    bonuses = rules().effect_bonus_moves
     return bonuses[move] if move in bonuses else bonuses["other"]
 
 

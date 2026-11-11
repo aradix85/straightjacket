@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.11.11.0"
+version = "2026.11.11.1"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -49,7 +49,9 @@ ignore = [
 ]
 "tests/test_config_loader.py" = ["suspicious-subprocess-import", "subprocess-without-shell-equals-true"]
 "tests/_rules_code.py" = ["suspicious-subprocess-import", "subprocess-without-shell-equals-true"]
-"src/straightjacket/engine/crafters/config.py" = ["typing-only-first-party-import"]
+"src/straightjacket/engine/{engine_config,gamemaster/config,crafters/config,ruleset/config}.py" = [
+    "typing-only-first-party-import",
+]
 "src/straightjacket/engine/ai/{brain,narrator,recap,blueprint_voicing,provider_base}.py" = ["blind-except"]
 "src/straightjacket/engine/{director,correction/analysis}.py" = ["blind-except"]
 "src/straightjacket/web/{handlers,server}.py" = ["blind-except"]
@@ -57,10 +59,7 @@ ignore = [
 
 [tool.ruff.lint.flake8-type-checking]
 strict = true
-runtime-evaluated-base-classes = [
-    "straightjacket.engine.serialization.SerializableMixin",
-    "straightjacket.engine.config_binding.RawSections",
-]
+runtime-evaluated-base-classes = ["straightjacket.engine.serialization.SerializableMixin"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"

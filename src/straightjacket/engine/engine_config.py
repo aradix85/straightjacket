@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from straightjacket.engine.config_binding import RawSections
 from straightjacket.engine.engine_config_dataclasses import (
     AiTextConfig,
     CorrectionConfig,
@@ -20,7 +19,7 @@ from straightjacket.engine.engine_config_dataclasses import (
 
 
 @dataclass
-class EngineSettings(RawSections):
+class EngineSettings:
     ai_text: AiTextConfig
     correction: CorrectionConfig
     narrative_direction: NarrativeDirectionConfig
@@ -35,3 +34,5 @@ class EngineSettings(RawSections):
     truncations: TruncationsConfig
     scene_range_default: list[int]
     creativity_seeds: list[str]
+    consequence_templates: dict[str, list[str]]
+    tool_descriptions: dict[str, str]

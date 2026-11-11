@@ -133,10 +133,6 @@ def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
             literal_patterns = [f'"{key}"', f"'{key}'", f".{key}", f"['{key}']", f'["{key}"]']
             if any(p in py_text for p in literal_patterns):
                 continue
-            dotted_pattern = f'get_raw("{key}'
-            dotted_pattern_alt = f"get_raw('{key}"
-            if dotted_pattern in py_text or dotted_pattern_alt in py_text:
-                continue
             violations.append(
                 Violation(yfile.relative_to(REPO_ROOT).as_posix(), 0, f"top-level key {key!r} has no Python reader")
             )

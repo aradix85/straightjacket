@@ -50,7 +50,7 @@ These rules hold across the codebase. `tests/test_project_rules.py` enforces wha
 
 **No `#` comments and no docstrings in Python or yaml.** Code explains itself through names, types, and tests; context, motivation, and architecture live in the md files (the repository root and `docs/`). The rule covers `src/`, `tests/`, and the scripts `run.py` and `data/data.py`. Most other scans read `src/` only; the scans for broad excepts, provider imports, and model names read `tests/` as well. Two narrow exceptions allow one short trailing comment at the callsite: an external-boundary default and the AI-call carve-out.
 
-**Domain config keys raise on a miss, and dataclass fields have no defaults.** Config is read by direct subscript (`config["key"]`): no `dict.get` with a literal fallback, no `x or "fallback"`. No dataclass field has a default, whether it binds to config, holds game state, or carries a result between modules, so a caller that forgets a field fails at once instead of carrying a silent empty value. A project-rule scan enforces this for every dataclass, with the external structures it names as its carve-out. A field the config binding fills from yaml takes not even an empty collection, since the binding would fill a missing key with it.
+**Domain config keys raise on a miss, and dataclass fields have no defaults.** Config is read by direct subscript (`config["key"]`): no `dict.get` with a literal fallback, no `x or "fallback"`. No dataclass field has a default, whether it binds to config, holds game state, or carries a result between modules, so a caller that forgets a field fails at once instead of carrying a silent empty value. A project-rule scan enforces this for every dataclass, with the external structures it names as its carve-out. A field the config binding fills from yaml takes not even an empty collection, and the binding refuses a missing key (ARCHITECTURE.md, Configuration).
 
 Three exceptions:
 
@@ -113,7 +113,7 @@ The gate's tools are the `test` extra of `pyproject.toml`; `uv sync --extra test
 - skip and xfail; `ruff format --check`; `# noqa`, `# type: ignore`, and `# pragma: no cover`;
 - the import layers; imports of `game`, `tools`, and `correction` through their `__init__.py`; a provider SDK imported outside its adapter (`docs/ai.md`, Provider adapters);
 - AI calls that route by their own role; a model name written in code;
-- `.setdefault`, a fallback to `get_raw`, `x or []`, and an optional collection parameter defaulting to `None`;
+- `.setdefault`, `x or []`, and an optional collection parameter defaulting to `None`;
 - a dataclass in the models without `SerializableMixin`; a versioned file name such as `_v2`;
 - documentation drift:
   - in the md files of the root and `docs/`, roadmap.md and the CHANGELOG apart, every path named is the end of a file's path in the repository, so it may start at any folder that holds it, and every `file.py → symbol` reference names a function, class, or assignment in that file;

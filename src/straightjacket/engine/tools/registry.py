@@ -18,7 +18,7 @@ def register(func: Tool) -> Tool:
         "type": "function",
         "function": {
             "name": name,
-            "description": eng().get_raw("tool_descriptions")[name],
+            "description": eng().tool_descriptions[name],
             "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
         },
     }
