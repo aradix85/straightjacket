@@ -99,6 +99,8 @@ UI changes keep the page accessible: semantic HTML, ARIA live regions, heading s
 python -m pytest tests/ -q --cov                         # unit and integration suite, with the coverage floor
 ```
 
+The gate's tools are the `test` extra of `pyproject.toml`; `uv sync --extra test --extra elvira` installs them into `.venv` at the versions `uv.lock` holds.
+
 **The test suite** runs without an API key, on mock providers with canned responses. It covers the engine's logic: consequences, NPC processing, serialization, the correction flow, prompt assembly, the WebSocket handlers.
 
 - A test that plays a turn, a correction, a momentum burn, or a chapter transition builds its game through the real character creation with `create_game` in `tests/_creation.py`, because hand-built states have hidden real faults. Hand-built states (`tests/_helpers.py`) serve unit tests of single functions.

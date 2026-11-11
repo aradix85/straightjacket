@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass
@@ -101,7 +100,7 @@ class AiTextConfig:
     no_roll_type: str
     brain_trigger_hints: dict[str, str]
     consequence_labels: dict[str, str]
-    narrator_defaults: dict[str, Any]
+    narrator_defaults: dict[str, str]
 
 
 @dataclass

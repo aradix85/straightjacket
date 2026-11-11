@@ -107,7 +107,7 @@ def test_resolve_fate_asks_the_configured_method_with_the_games_chaos_factor(mon
 
 
 def _odds_scale() -> list[str]:
-    return [entry["odds"] for entry in gm().fate.likelihood_rules.score_to_odds]
+    return [entry.odds for entry in gm().fate.likelihood_rules.score_to_odds]
 
 
 def test_fate_chart_all_odds_all_cf(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -191,7 +191,7 @@ def test_remembered_facts_come_back_only_at_their_own_place() -> None:
 def test_the_odds_of_every_fact_type_are_read_for_its_subject() -> None:
     game = _game()
     cfg = gm().fact_resolution
-    scale = [entry["odds"] for entry in gm().fate.likelihood_rules.score_to_odds]
+    scale = [entry.odds for entry in gm().fate.likelihood_rules.score_to_odds]
     for name, spec in cfg.types.items():
         about = cfg.place_reference if spec.subject == "place" else game.npcs[0].id
         assert fact_odds(game, FactRequest(fact_type=name, about=about)) in scale, name

@@ -12,13 +12,13 @@ _T = TypeVar("_T")
 _S = TypeVar("_S")
 
 
-def _is_dataclass_type(tp: object) -> TypeIs[type[DataclassInstance]]:
+def is_dataclass_type(tp: object) -> TypeIs[type[DataclassInstance]]:
     return isinstance(tp, type) and dataclasses.is_dataclass(tp)
 
 
 def _resolve_item_type(tp: Any) -> type | None:
     origin = get_origin(tp)
-    if origin is list and _is_dataclass_type(item := get_args(tp)[0]):
+    if origin is list and is_dataclass_type(item := get_args(tp)[0]):
         return item
     return None
 
@@ -29,7 +29,7 @@ def _allows_none(tp: Any) -> bool:
     return False
 
 
-def _unwrap_optional(tp: Any) -> tuple[Any, bool]:
+def unwrap_optional(tp: Any) -> tuple[Any, bool]:
     origin = get_origin(tp)
     if origin is Union or isinstance(tp, types.UnionType):
         args = get_args(tp)
@@ -63,7 +63,7 @@ def _serialize_value(val: Any) -> Any:
 
 
 def deserialize(cls: type[_T], data: object) -> _T:
-    if not _is_dataclass_type(cls):
+    if not is_dataclass_type(cls):
         msg = f"Expected dataclass type, got {cls}"
         raise TypeError(msg)
     if not isinstance(data, dict):
@@ -91,20 +91,20 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
         msg = f"null where {hint} is required"
         raise ValueError(msg)
 
-    inner, is_optional = _unwrap_optional(hint)
+    inner, is_optional = unwrap_optional(hint)
     if is_optional:
         return _deserialize_value(inner, val)
-    if _is_dataclass_type(inner):
-        return deserialize(inner, _shaped(val, dict, f"{inner.__name__} needs an object"))
+    if is_dataclass_type(inner):
+        return deserialize(inner, shaped(val, dict, f"{inner.__name__} needs an object"))
     origin = get_origin(inner)
     if origin is list:
-        return _deserialize_list(inner, _shaped(val, list, f"{inner} needs a list"))
+        return _deserialize_list(inner, shaped(val, list, f"{inner} needs a list"))
     if origin is dict:
-        return _deserialize_dict(inner, _shaped(val, dict, f"{inner} needs an object"))
+        return _deserialize_dict(inner, shaped(val, dict, f"{inner} needs an object"))
     return dict(val) if isinstance(val, dict) else val
 
 
-def _shaped(val: object, shape: type[_S], requirement: str) -> _S:
+def shaped(val: object, shape: type[_S], requirement: str) -> _S:
     if isinstance(val, shape):
         return val
     msg = f"{requirement}, got {type(val).__name__}"
@@ -122,7 +122,7 @@ def _deserialize_list(hint: Any, val: list[Any]) -> list[Any]:
 
 
 def _deserialize_dict(hint: Any, val: dict[Any, Any]) -> dict[Any, Any]:
-    if _is_dataclass_type(value_type := get_args(hint)[1]):
+    if is_dataclass_type(value_type := get_args(hint)[1]):
         return {key: deserialize(value_type, item) for key, item in val.items()}
     return dict(val)
 

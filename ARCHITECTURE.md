@@ -134,7 +134,12 @@ Each loader merges its directory and raises on a key that two files define. Code
 
 **`config.yaml`** stays a single, user-edited file for the server, the providers, and the model assignment, read as strictly as the rest. Startup stops, with a message that names it, on a key it does not know or lacks, a role under `ai.role_cluster` that the engine does not know or one it lacks, or a role mapped to a cluster it does not define.
 
-**Typed binding.** Every yaml block is parsed into a typed dataclass at load time, by the folder's own module: `engine_config.py` with `engine_config_dataclasses.py` for `engine/`, `gamemaster/config.py` with `gamemaster/config_types.py`, `crafters/config.py`, and `ruleset/config.py` with `ruleset/config_types.py`; the strict binding they share is `config_binding.py`. Code reads it as `gm().subsystem.field`, `rules().subsystem.field`, and so on. Inside a section a key the dataclass does not know raises, at every depth, and a top-level section that no code reads fails the orphan-key scan (CONTRIBUTING.md). The exception is yaml whose keys are themselves domain content, such as move names or dispositions, which must extend without a Python change; those blocks are read with `get_raw("section")` on the folder's accessor.
+**Typed binding.** Every yaml block is bound to a typed dataclass at load time by `config_binding.py` → `bind_sections`, which reads the annotations of the folder's settings class and of every dataclass below it: `EngineSettings` in `engine_config.py` with `engine_config_dataclasses.py`, `GameMasterSettings` in `gamemaster/config.py` with `gamemaster/config_types.py`, `CrafterSettings` in `crafters/config.py`, and `RulesetSettings` in `ruleset/config.py` with `ruleset/config_types.py`. A section is a field of its settings class, and code reads it as `gm().subsystem.field`, `rules().subsystem.field`, and so on.
+
+- Inside a section, at every depth, a key the dataclass does not know raises, and so do a key it lacks and a value of another type than its field's, such as text for a number or a list for a mapping; a whole number serves where a fraction is asked. The error names the value by its path in the yaml.
+- A top-level section that no code reads fails the orphan-key scan (CONTRIBUTING.md).
+- Only the move availability rules, whose yaml shape is not their dataclass's, are parsed by hand (`ruleset/config.py`).
+- The exception is yaml whose keys are themselves domain content, such as move names or dispositions, which must extend without a Python change; those blocks are read with `get_raw("section")` on the folder's accessor, unchecked until roadmap step 9y.3 gives them a type.
 
 ## Interface and accessibility
 

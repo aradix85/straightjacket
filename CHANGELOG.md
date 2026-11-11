@@ -8,6 +8,17 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.11.0] — 2026-11-11
+
+The configuration bound by its annotations, roadmap 9y.3a, the first area of "no explicit `Any`". The four yaml stores were bound to their dataclasses by hand-written functions, one per section, that checked the names of the keys and never the values, so text where a number belongs loaded and failed wherever it was first used. One binder, `config_binding.py` → `bind_sections`, now reads the annotations of each settings class and of every dataclass below it and checks each value's type at every depth, naming a wrong value, an unknown key, or a missing key by its path in the yaml (ARCHITECTURE.md, Configuration). The shipped yaml held no wrong value: a script that loaded the four stores with the old code and the new found their 1976 values alike.
+
+- The hand-written binders of `gamemaster/config.py`, `ruleset/config.py`, `crafters/config.py`, and `engine_config.py` are gone, some 270 lines. Only the move availability rules, whose yaml shape is not their dataclass's, are still parsed by hand, now with their values checked: a position written as text was split into its letters, and any `never` that read as true passed. The two checks of the fact types stay, after the binding.
+- `fate.likelihood_rules.score_to_odds` is a list of `OddsThreshold` and the engine's default texts a mapping of text, the two config fields that were typed `Any`; the clock's keyed scenes are a mapping on the settings, without the class that only wrapped it; `RawSections` holds the raw data as its own field, without a default. The binder and the saves share their shape check (`serialization.py` → `shaped`).
+- `tests/test_config_loader.py` hands the `src` folder to the fresh process it starts, which found the package only where it was installed. CONTRIBUTING.md names how the gate's tools are installed.
+- The roadmap splits what remains of 9y.3 by area, 9y.3b to 9y.3g. A sub-agent checked the release; what it found is fixed.
+
+Measured: mypy's `disallow_any_explicit` finds 527 errors where it found 557. Quality gate: 1930 tests, coverage 96.02% to 96.07%, mypy clean on 272 files, pylint clean, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: the bound settings hold the values they held, so nothing the game does changes.
+
 ## [2026.11.10.0] — 2026-11-10
 
 pylint's duplicate code and module length at their default limits, roadmap 9y.2: `duplicate-code` and `too-many-lines` are on, where pylint found 26 blocks copied between files and one module over 1000 lines.

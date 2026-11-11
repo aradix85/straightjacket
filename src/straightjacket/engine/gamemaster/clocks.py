@@ -40,7 +40,7 @@ def _emergent_cap_reached(game: GameState) -> bool:
 
 
 def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) -> None:
-    entry = gm().clock_keyed_scenes.by_clock_type[clock.clock_type]
+    entry = gm().clock_keyed_scenes[clock.clock_type]
     for fraction in entry.fractions:
         threshold = max(1, round(clock.segments * fraction))
         source = f"{CLOCK_KEYED_SOURCE_PREFIX}{clock.name}:{threshold}"

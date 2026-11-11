@@ -248,8 +248,7 @@ def _check_no_dataclass_defaults() -> tuple[str, list[Violation]]:
                 if not isinstance(stmt, ast.AnnAssign) or stmt.value is None:
                     continue
                 field_name = stmt.target.id if isinstance(stmt.target, ast.Name) else "?"
-                from_yaml = rel in _CONFIG_BINDING_FILES and not field_name.startswith("_")
-                if _field_without_default(stmt.value, empty_collection_allowed=not from_yaml):
+                if _field_without_default(stmt.value, empty_collection_allowed=rel not in _CONFIG_BINDING_FILES):
                     continue
                 snippet = lines[stmt.lineno - 1].strip()
                 violations.append(Violation(rel, stmt.lineno, f"{node.name}.{field_name}: {snippet}"))

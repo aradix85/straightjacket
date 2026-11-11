@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from straightjacket.engine.config_binding import RawSections, build_strict, reject_unknown
+from straightjacket.engine.config_binding import RawSections, bind_sections
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.gamemaster.config_types import ClockCreationMappingEntry
 from straightjacket.engine.logging_util import log
@@ -79,58 +79,6 @@ class CrafterSettings(RawSections):
     adventure_crafter: AdventureCrafterConfig
     adventure_crafter_dice: AdventureCrafterDiceConfig
 
-    _raw: dict[str, Any] = field(default_factory=dict, repr=False)
-
-
-def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
-    reject_unknown(AdventureCrafterConfig, ac_raw)
-    ac_special = build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
-    ac_meta_handlers = build_strict(MetaHandlerConfig, dict(ac_raw["meta_handlers"]))
-    ac_blueprint_raw = reject_unknown(BlueprintConfig, dict(ac_raw["blueprint"]))
-    ac_blueprint = BlueprintConfig(
-        possible_endings_per_blueprint=ac_blueprint_raw["possible_endings_per_blueprint"],
-        voicing_count_retries=ac_blueprint_raw["voicing_count_retries"],
-        act_phases=list(ac_blueprint_raw["act_phases"]),
-    )
-    ac_keyed_mapping = {
-        name: KeyedSceneMappingEntry(
-            trigger_type=reject_unknown(KeyedSceneMappingEntry, entry)["trigger_type"],
-            trigger_value=entry["trigger_value"],
-            priority=entry["priority"],
-            narrative_hint=entry["narrative_hint"],
-        )
-        for name, entry in dict(ac_raw["keyed_scene_mapping"]).items()
-    }
-    ac_clock_creation = {
-        name: build_strict(ClockCreationMappingEntry, dict(entry))
-        for name, entry in dict(ac_raw["clock_creation_mapping"]).items()
-    }
-    return AdventureCrafterConfig(
-        themes=list(ac_raw["themes"]),
-        theme_slots=ac_raw["theme_slots"],
-        theme_die_table={int(k): v for k, v in ac_raw["theme_die_table"].items()},
-        special_ranges=ac_special,
-        meta_handlers=ac_meta_handlers,
-        blueprint=ac_blueprint,
-        max_keyed_scenes_per_chapter=ac_raw["max_keyed_scenes_per_chapter"],
-        keyed_scene_mapping=ac_keyed_mapping,
-        danger_plot_points=list(ac_raw["danger_plot_points"]),
-        clock_creation_mapping=ac_clock_creation,
-        plotline_name_template=ac_raw["plotline_name_template"],
-        returning_character_name_template=ac_raw["returning_character_name_template"],
-        identity_roll_twice_row=ac_raw["identity_roll_twice_row"],
-        descriptor_roll_twice_row=ac_raw["descriptor_roll_twice_row"],
-        present_character_statuses=list(ac_raw["present_character_statuses"]),
-    )
-
-
-def parse_crafters_yaml(data: dict[str, Any]) -> CrafterSettings:
-    return CrafterSettings(
-        adventure_crafter=_build_adventure_crafter(dict(data["adventure_crafter"])),
-        adventure_crafter_dice=build_strict(AdventureCrafterDiceConfig, dict(data["adventure_crafter_dice"])),
-        _raw=data,
-    )
-
 
 _cache: dict[Path, CrafterSettings] = {}
 
@@ -138,6 +86,6 @@ _cache: dict[Path, CrafterSettings] = {}
 def crafter() -> CrafterSettings:
     if _CONFIG_DIR not in _cache:
         data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="The crafters/ directory ships with the repo.")
-        _cache[_CONFIG_DIR] = parse_crafters_yaml(data)
+        _cache[_CONFIG_DIR] = bind_sections(CrafterSettings, data)
         log(f"[Config] Loaded {_CONFIG_DIR} ({len(data)} sections)")
     return _cache[_CONFIG_DIR]

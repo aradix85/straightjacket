@@ -128,7 +128,8 @@ def _users_dirs_in_a_fresh_process(env: dict[str, str]) -> list[str]:
         "from straightjacket.engine import config_loader, user_management; "
         "print(config_loader.USERS_DIR); print(user_management.USERS_DIR)"
     )
-    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True)
+    source = {"PYTHONPATH": str(config_loader.PROJECT_ROOT / "src")}
+    out = subprocess.run([sys.executable, "-c", code], env=env | source, capture_output=True, text=True, check=True)
     return out.stdout.split()
 
 

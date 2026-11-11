@@ -1,53 +1,40 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from straightjacket.engine.config_binding import RawSections, build_strict, reject_unknown
+from straightjacket.engine.config_binding import RawSections, bind_sections, build_strict
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.ruleset.config_types import (
     ActiveTrackCondition,
-    AdvanceAThreatConfig,
-    AdvanceMarks,
-    BoastOption,
     BoastsConfig,
     BondedTrackCondition,
     CombatPosCondition,
-    ConnectionAidConfig,
     CreationConfig,
     DiceConfig,
-    DyingClockConfig,
     EngineMove,
-    ForsakeVowConfig,
-    InheritanceConfig,
     LegacyConfig,
     MetersConfig,
     MomentumConfig,
     MoveAvailabilityRule,
     NoActiveTrackCondition,
-    NpcCarryoverEntry,
     PayThePriceConfig,
-    PayThePriceSufferRow,
     ProgressConfig,
     RollBonusesConfig,
     StatsConfig,
     StrainConfig,
     SuccessionConfig,
     SufferConfig,
-    SufferRecoveryGain,
-    SufferTableRow,
     ThreatConfig,
-    ThreatCreationMappingEntry,
 )
+from straightjacket.engine.serialization import shaped
 from straightjacket.engine.yaml_merge import load_yaml_dir
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from straightjacket.engine.ruleset.config_types import (
-        MoveAvailabilityCondition,
-    )
+    from straightjacket.engine.ruleset.config_types import MoveAvailabilityCondition
 
 _CONFIG_DIR = PROJECT_ROOT / "ruleset"
 
@@ -75,36 +62,25 @@ class RulesetSettings(RawSections):
     advantage_moves: list[str]
     information_moves: list[str]
 
-    _raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
-
-_SIMPLE_SECTIONS: dict[str, type] = {
-    "dice": DiceConfig,
-    "stats": StatsConfig,
-    "creation": CreationConfig,
-    "meters": MetersConfig,
-    "progress": ProgressConfig,
-    "strain": StrainConfig,
+_TRACK_CONDITIONS: dict[str, type[ActiveTrackCondition | NoActiveTrackCondition | BondedTrackCondition]] = {
+    "active_track": ActiveTrackCondition,
+    "no_active_track": NoActiveTrackCondition,
+    "bonded_track": BondedTrackCondition,
 }
 
 
-def _known_track_type(track_type: str, track_types: set[str]) -> str:
-    if track_type not in track_types:
-        msg = f"move_availability names {track_type!r}, which is no track type of track_types_by_category"
-        raise ValueError(msg)
-    return track_type
-
-
-def _parse_move_availability_condition(cond: dict[str, Any], track_types: set[str]) -> MoveAvailabilityCondition:
-    keys = set(cond.keys())
-    if keys == {"active_track"}:
-        return ActiveTrackCondition(active_track=_known_track_type(cond["active_track"], track_types))
-    if keys == {"no_active_track"}:
-        return NoActiveTrackCondition(no_active_track=_known_track_type(cond["no_active_track"], track_types))
-    if keys == {"bonded_track"}:
-        return BondedTrackCondition(bonded_track=_known_track_type(cond["bonded_track"], track_types))
+def _parse_move_availability_condition(cond: dict[str, object], track_types: set[str]) -> MoveAvailabilityCondition:
+    keys = set(cond)
     if keys == {"combat_pos_in"}:
-        return CombatPosCondition(combat_pos_in=list(cond["combat_pos_in"]))
+        return build_strict(CombatPosCondition, cond)
+    for key, condition_type in _TRACK_CONDITIONS.items():
+        if keys == {key}:
+            condition = build_strict(condition_type, cond)
+            if cond[key] not in track_types:
+                msg = f"move_availability names {cond[key]!r}, which is no track type of track_types_by_category"
+                raise ValueError(msg)
+            return condition
     msg = (
         f"Invalid move_availability condition: {cond!r}. "
         "Expected exactly one of: active_track, no_active_track, bonded_track, combat_pos_in."
@@ -112,120 +88,33 @@ def _parse_move_availability_condition(cond: dict[str, Any], track_types: set[st
     raise ValueError(msg)
 
 
-def _parse_move_availability_rule(rule: dict[str, Any], track_types: set[str]) -> MoveAvailabilityRule:
-    keys = set(rule.keys())
+def _parse_move_availability_rule(rule: dict[str, object], track_types: set[str]) -> MoveAvailabilityRule:
+    keys = set(rule)
     if keys == {"never"}:
-        if not rule["never"]:
-            msg = f"move_availability rule with never=false is not allowed: {rule!r}"
+        if rule["never"] is not True:
+            msg = f"move_availability rule with never other than true is not allowed: {rule!r}"
             raise ValueError(msg)
         return MoveAvailabilityRule(never=True, available=[])
     if keys == {"available"}:
-        conds = [_parse_move_availability_condition(dict(c), track_types) for c in rule["available"]]
+        conditions = shaped(rule["available"], list, "move_availability: expected list")
+        conds = [
+            _parse_move_availability_condition(
+                shaped(c, dict, "a move_availability condition: expected dict"), track_types
+            )
+            for c in conditions
+        ]
         return MoveAvailabilityRule(never=False, available=conds)
     msg = f"Invalid move_availability rule: {rule!r}. Expected exactly one of: never, available."
     raise ValueError(msg)
 
 
-def _build_threats(t_raw: dict[str, Any]) -> ThreatConfig:
-    reject_unknown(ThreatConfig, t_raw)
-    by_origin = {
-        origin: build_strict(ThreatCreationMappingEntry, dict(entry)) for origin, entry in t_raw["by_origin"].items()
+def parse_ruleset_yaml(data: dict[str, object]) -> RulesetSettings:
+    track_types = set(shaped(data["track_types_by_category"], dict, "track_types_by_category: expected dict").values())
+    move_availability = {
+        key: _parse_move_availability_rule(shaped(rule, dict, f"move_availability.{key}: expected dict"), track_types)
+        for key, rule in shaped(data["move_availability"], dict, "move_availability: expected dict").items()
     }
-    advance = {
-        ruleset: build_strict(
-            AdvanceAThreatConfig,
-            {**dict(rule), "marks_by_row": [build_strict(AdvanceMarks, dict(row)) for row in rule["marks_by_row"]]},
-        )
-        for ruleset, rule in t_raw["advance_a_threat"].items()
-    }
-    return ThreatConfig(**{**t_raw, "by_origin": by_origin, "advance_a_threat": advance})
-
-
-def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
-    reject_unknown(PayThePriceConfig, ptp_raw)
-    return PayThePriceConfig(
-        move=ptp_raw["move"],
-        table=ptp_raw["table"],
-        match_miss_table=ptp_raw["match_miss_table"],
-        worse_reroll_prefixes=[str(prefix) for prefix in ptp_raw["worse_reroll_prefixes"]],
-        suffer_rows=[build_strict(PayThePriceSufferRow, dict(row)) for row in ptp_raw["suffer_rows"]],
-    )
-
-
-def _build_suffer(s_raw: dict[str, Any]) -> SufferConfig:
-    reject_unknown(SufferConfig, s_raw)
-    return SufferConfig(
-        endure_moves={str(k): str(v) for k, v in dict(s_raw["endure_moves"]).items()},
-        exhausted_impacts={str(k): str(v) for k, v in dict(s_raw["exhausted_impacts"]).items()},
-        swear_move=s_raw["swear_move"],
-        table_rows=[build_strict(SufferTableRow, dict(row)) for row in s_raw["table_rows"]],
-        dying_clock=build_strict(DyingClockConfig, dict(s_raw["dying_clock"])),
-        forsake_vow=build_strict(ForsakeVowConfig, dict(s_raw["forsake_vow"])),
-    )
-
-
-def _build_roll_bonuses(rb_raw: dict[str, Any]) -> RollBonusesConfig:
-    reject_unknown(RollBonusesConfig, rb_raw)
-    return RollBonusesConfig(
-        condition_chars=rb_raw["condition_chars"],
-        connection_aid={
-            ruleset: build_strict(ConnectionAidConfig, dict(aid))
-            for ruleset, aid in dict(rb_raw["connection_aid"]).items()
-        },
-    )
-
-
-def _build_boasts(b_raw: dict[str, Any]) -> BoastsConfig:
-    options = {
-        name: build_strict(BoastOption, {**spec, "effects": list(spec["effects"])})
-        for name, spec in dict(b_raw.pop("options")).items()
-    }
-    config: BoastsConfig = build_strict(BoastsConfig, {**b_raw, "options": options})
-    return config
-
-
-def _build_succession(succession_raw: dict[str, Any]) -> SuccessionConfig:
-    reject_unknown(SuccessionConfig, succession_raw)
-    return SuccessionConfig(
-        inheritance=build_strict(InheritanceConfig, dict(succession_raw["inheritance"])),
-        connections_kept=dict(succession_raw["connections_kept"]),
-        npc_carryover={
-            status: build_strict(NpcCarryoverEntry, dict(entry))
-            for status, entry in succession_raw["npc_carryover"].items()
-        },
-    )
-
-
-def parse_ruleset_yaml(data: dict[str, Any]) -> RulesetSettings:
-    simple: dict[str, Any] = {key: build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
-    m_data = dict(data["momentum"])
-    recovery = build_strict(SufferRecoveryGain, dict(m_data.pop("suffer_recovery")))
-    legacy_data = dict(data["legacy"])
-    legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
-    gated_track_types = set(data["track_types_by_category"].values())
-    return RulesetSettings(
-        **simple,
-        momentum=MomentumConfig(**m_data, suffer_recovery=recovery),
-        threats=_build_threats(dict(data["threats"])),
-        legacy=build_strict(LegacyConfig, legacy_data),
-        engine_moves={
-            key: build_strict(EngineMove, {**m, "stats": list(m["stats"])}) for key, m in data["engine_moves"].items()
-        },
-        move_availability={
-            key: _parse_move_availability_rule(rule, gated_track_types)
-            for key, rule in data["move_availability"].items()
-        },
-        unoffered_roll_types=list(data["unoffered_roll_types"]),
-        offered_without_roll=list(data["offered_without_roll"]),
-        boasts=_build_boasts(dict(data["boasts"])),
-        succession=_build_succession(dict(data["succession"])),
-        pay_the_price=_build_pay_the_price(dict(data["pay_the_price"])),
-        suffer=_build_suffer(dict(data["suffer"])),
-        roll_bonuses=_build_roll_bonuses(dict(data["roll_bonuses"])),
-        advantage_moves=list(data["advantage_moves"]),
-        information_moves=list(data["information_moves"]),
-        _raw=data,
-    )
+    return bind_sections(RulesetSettings, data, move_availability=move_availability)
 
 
 _cache: dict[Path, RulesetSettings] = {}

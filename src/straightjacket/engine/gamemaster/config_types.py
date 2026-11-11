@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass
@@ -247,9 +246,15 @@ class InformationGateConfig:
 
 
 @dataclass
+class OddsThreshold:
+    min_score: int
+    odds: str
+
+
+@dataclass
 class FateLikelihoodRules:
     disposition_scores: dict[str, int]
-    score_to_odds: list[dict[str, Any]]
+    score_to_odds: list[OddsThreshold]
 
 
 @dataclass
@@ -437,11 +442,6 @@ class ClockKeyedSceneEntry:
     fractions: list[float]
     priority: int
     narrative_hint_template: str
-
-
-@dataclass
-class ClockKeyedScenesConfig:
-    by_clock_type: dict[str, ClockKeyedSceneEntry]
 
 
 @dataclass

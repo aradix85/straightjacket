@@ -125,8 +125,8 @@ def resolve_fate(game: GameState, odds: str) -> FateResult:
 
 def score_to_odds(score: int) -> str:
     for entry in gm().fate.likelihood_rules.score_to_odds:
-        if score >= int(entry["min_score"]):
-            return str(entry["odds"])
+        if score >= entry.min_score:
+            return entry.odds
     msg = (
         f"score_to_odds has no matching threshold for score={score}; table must include a catch-all entry at the bottom"
     )

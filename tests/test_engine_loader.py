@@ -1,10 +1,13 @@
+from collections.abc import Callable
 from dataclasses import fields
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 import pytest
 
 from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.gamemaster import config as gamemaster_config
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.mythic_data import load_mythic
 from straightjacket.engine.ruleset import config as ruleset_config
@@ -45,11 +48,12 @@ def test_a_move_gate_on_a_track_type_that_does_not_exist_is_refused(
 @pytest.mark.parametrize(
     ("rule", "message"),
     [
-        ({"never": False}, "never=false is not allowed"),
+        ({"never": False}, "never other than true is not allowed"),
+        ({"never": "false"}, "never other than true is not allowed"),
         ({"never": True, "available": []}, "Expected exactly one of: never, available"),
         ({"available": [{"active_track": "vow", "bonded_track": "connection"}]}, "Invalid move_availability condition"),
     ],
-    ids=["never_false", "two_keys", "condition_with_two_keys"],
+    ids=["never_false", "never_as_text", "two_keys", "condition_with_two_keys"],
 )
 def test_a_move_availability_rule_of_the_wrong_shape_is_refused(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, rule: dict[str, object], message: str
@@ -60,3 +64,87 @@ def test_a_move_availability_rule_of_the_wrong_shape_is_refused(
     change_config(monkeypatch, tmp_path, ruleset_config, "move_availability", reshape)
     with pytest.raises(ValueError, match=message):
         ruleset_config.rules()
+
+
+_WrongValue = tuple[ModuleType, str, Callable[[dict[str, Any]], None], str]
+
+
+def _set(*path: str, value: object) -> Callable[[dict[str, Any]], None]:
+    def change(section: dict[str, Any]) -> None:
+        holder = section
+        for key in path[:-1]:
+            holder = holder[key]
+        holder[path[-1]] = value
+
+    return change
+
+
+def _unset(key: str) -> Callable[[dict[str, Any]], None]:
+    def change(section: dict[str, Any]) -> None:
+        del section[key]
+
+    return change
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        (gamemaster_config, "pacing", _set("director_interval", value="3"), "pacing.director_interval"),
+        (gamemaster_config, "pacing", _set("director_interval", value=True), "expected <class 'int'>"),
+        (gamemaster_config, "pacing", _set("director_interval", value=None), "got None"),
+        (gamemaster_config, "pacing", _set("weak_hit_clock_tick_chance", value="0.5"), "'float'"),
+        (gamemaster_config, "pacing", _set("director_interval", value=2.5), "expected <class 'int'>"),
+        (gamemaster_config, "pacing", _set("weak_hit_clock_tick_chance", value=True), "'float'"),
+        (gamemaster_config, "npc", _set("gate_memory_counts", value={"0": 0}), "gate_memory_counts key"),
+        (gamemaster_config, "clocks", _set("miss_ticks_by_position", "risky", value="2"), "position.risky: expected"),
+        (gamemaster_config, "stopwords", _set("general", value=["the", 3]), r"stopwords.general\[1\]: expected"),
+        (gamemaster_config, "pacing", _unset("director_interval"), "pacing: missing keys .'director_interval'"),
+        (gamemaster_config, "stopwords", _set("general", value="the"), "stopwords.general: expected list"),
+        (gamemaster_config, "clocks", _set("complication", value=[4]), "complication: expected dict"),
+        (gamemaster_config, "clocks", _set("complication", "extra", value=1), "ComplicationClockConfig"),
+        (ruleset_config, "boasts", _set("options", value=[]), "boasts.options: expected dict"),
+        (
+            ruleset_config,
+            "move_availability",
+            _set("combat/strike", "available", value="in_control"),
+            "move_availability: expected list",
+        ),
+        (
+            ruleset_config,
+            "move_availability",
+            _set("combat/strike", "available", value=[{"combat_pos_in": "in_control"}]),
+            "combat_pos_in: expected list",
+        ),
+    ],
+    ids=[
+        "text_for_a_number",
+        "flag_for_a_number",
+        "nothing_for_a_number",
+        "text_for_a_fraction",
+        "fraction_for_a_number",
+        "flag_for_a_fraction",
+        "text_for_a_number_key",
+        "text_for_a_number_in_a_mapping",
+        "number_in_a_list_of_text",
+        "missing_key",
+        "text_for_a_list",
+        "list_for_a_section",
+        "unknown_key_inside_a_section",
+        "list_for_a_mapping",
+        "text_for_the_conditions",
+        "text_for_the_positions",
+    ],
+)
+def test_a_config_value_of_the_wrong_type_stops_loading(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, case: _WrongValue
+) -> None:
+    layer, section, change, message = case
+    change_config(monkeypatch, tmp_path, layer, section, change)
+    load = gamemaster_config.gm if layer is gamemaster_config else ruleset_config.rules
+    with pytest.raises(ValueError, match=message):
+        load()
+
+
+def test_a_whole_number_serves_where_a_fraction_is_asked(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    change_config(monkeypatch, tmp_path, gamemaster_config, "pacing", _set("weak_hit_clock_tick_chance", value=1))
+    assert gamemaster_config.gm().pacing.weak_hit_clock_tick_chance == 1
