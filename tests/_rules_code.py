@@ -203,6 +203,8 @@ def _is_dataclass_decorator(decorator: ast.expr) -> bool:
 
 _CONFIG_BINDING_FILES = frozenset(
     {
+        "engine/config_loader.py",
+        "engine/emotions_loader.py",
         "engine/engine_config.py",
         "engine/engine_config_dataclasses.py",
         "engine/gamemaster/config.py",

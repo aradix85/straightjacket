@@ -2,10 +2,11 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 import yaml
 
+from straightjacket.engine.config_binding import build_strict
 from straightjacket.engine.logging_util import log
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -46,7 +47,7 @@ class ClusterConfig:
     top_p: float | None
     max_tokens: int
     max_retries: int
-    extra_body: dict[str, Any]
+    extra_body: dict[str, object]
 
 
 @dataclass
@@ -76,27 +77,6 @@ class AppConfig:
     language: LanguageConfig
 
 
-def _check_keys(where: str, data: Any, keys: tuple[str, ...]) -> dict[str, Any]:
-    if not isinstance(data, dict):
-        msg = f"config.yaml: {where} must be a mapping"
-        raise TypeError(msg)
-    unknown = sorted(set(data) - set(keys))
-    if unknown:
-        msg = f"config.yaml: {where} has unknown keys {unknown}"
-        raise ValueError(msg)
-    missing = [k for k in keys if k not in data]
-    if missing:
-        msg = f"config.yaml: {where} missing required fields: {missing}"
-        raise ValueError(msg)
-    return data
-
-
-_TOP_KEYS = ("server", "ai", "language")
-_SERVER_KEYS = ("host", "port", "stream_narration")
-_AI_KEYS = ("prompts_dir", "providers", "clusters", "role_cluster")
-_PROVIDER_KEYS = ("type", "api_base", "api_key_env", "timeout_seconds")
-_CLUSTER_KEYS = ("provider", "model", "temperature", "top_p", "max_tokens", "max_retries", "extra_body")
-_LANGUAGE_KEYS = ("narration_language",)
 _ROLES = (
     "narrator",
     "blueprint_voicing",
@@ -109,67 +89,36 @@ _ROLES = (
 )
 
 
-def _parse_config(data: dict[str, Any]) -> AppConfig:
-    _check_keys("the top level", data, _TOP_KEYS)
-    sd = _check_keys("server", data["server"], _SERVER_KEYS)
-    server = ServerConfig(host=sd["host"], port=sd["port"], stream_narration=bool(sd["stream_narration"]))
-
-    ad = _check_keys("ai", data["ai"], _AI_KEYS)
-
-    providers = {
-        name: ProviderConfig(
-            type=_check_keys(f"provider '{name}'", pd, _PROVIDER_KEYS)["type"],
-            api_base=pd["api_base"],
-            api_key_env=pd["api_key_env"],
-            timeout_seconds=float(pd["timeout_seconds"]),
-        )
-        for name, pd in ad["providers"].items()
-    }
-
-    clusters: dict[str, ClusterConfig] = {}
-    for cname, cdata in ad["clusters"].items():
-        _check_keys(f"cluster '{cname}'", cdata, _CLUSTER_KEYS)
-        if cdata["provider"] not in providers:
+def _check_roles(ai: AIConfig) -> None:
+    if unknown := sorted(set(ai.role_cluster) - set(_ROLES)):
+        msg = f"{_CONFIG_PATH.name}.ai.role_cluster: unknown keys {unknown}"
+        raise ValueError(msg)
+    if missing := sorted(set(_ROLES) - set(ai.role_cluster)):
+        msg = f"{_CONFIG_PATH.name}.ai.role_cluster: missing keys {missing}"
+        raise ValueError(msg)
+    for role, cluster in ai.role_cluster.items():
+        if cluster not in ai.clusters:
             msg = (
-                f"Cluster '{cname}' uses provider '{cdata['provider']}', which is not defined under ai.providers. "
-                f"Defined providers: {sorted(providers)}."
-            )
-            raise ValueError(msg)
-        clusters[cname] = ClusterConfig(
-            provider=cdata["provider"],
-            model=cdata["model"],
-            temperature=None if cdata["temperature"] is None else float(cdata["temperature"]),
-            top_p=None if cdata["top_p"] is None else float(cdata["top_p"]),
-            max_tokens=int(cdata["max_tokens"]),
-            max_retries=int(cdata["max_retries"]),
-            extra_body=dict(cdata["extra_body"]),
-        )
-
-    _check_keys("ai.role_cluster", ad["role_cluster"], _ROLES)
-    for role, cname in ad["role_cluster"].items():
-        if cname not in clusters:
-            msg = (
-                f"Role '{role}' maps to cluster '{cname}', which is not defined under ai.clusters. "
-                f"Defined clusters: {sorted(clusters)}."
+                f"Role '{role}' maps to cluster '{cluster}', which is not defined under ai.clusters. "
+                f"Defined clusters: {sorted(ai.clusters)}."
             )
             raise ValueError(msg)
 
-    ai = AIConfig(
-        providers=providers,
-        prompts_dir=ad["prompts_dir"],
-        clusters=clusters,
-        role_cluster=ad["role_cluster"],
-    )
 
-    ld = _check_keys("language", data["language"], _LANGUAGE_KEYS)
-    language = LanguageConfig(
-        narration_language=ld["narration_language"],
-    )
+def _parse_config(data: object) -> AppConfig:
+    config = build_strict(AppConfig, data, _CONFIG_PATH.name)
+    for name, cluster in config.ai.clusters.items():
+        if cluster.provider not in config.ai.providers:
+            msg = (
+                f"Cluster '{name}' uses provider '{cluster.provider}', which is not defined under ai.providers. "
+                f"Defined providers: {sorted(config.ai.providers)}."
+            )
+            raise ValueError(msg)
+    _check_roles(config.ai)
+    return config
 
-    return AppConfig(server=server, ai=ai, language=language)
 
-
-def _load_config_file() -> dict[str, Any]:
+def _load_config_file() -> object:
     if not _CONFIG_PATH.exists():
         msg = (
             f"Config file not found: {_CONFIG_PATH}\n"
@@ -178,10 +127,7 @@ def _load_config_file() -> dict[str, Any]:
         )
         raise FileNotFoundError(msg)
     with _CONFIG_PATH.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    if not isinstance(data, dict):
-        msg = f"Config file is not a valid YAML dict: {_CONFIG_PATH}"
-        raise TypeError(msg)
+        data: object = yaml.safe_load(f)
     log(f"[Config] Loaded {_CONFIG_PATH}")
     return data
 
@@ -217,7 +163,15 @@ def model_for_role(role: str) -> str:
     return cluster.model
 
 
-def sampling_params(role: str) -> dict[str, Any]:
+class SamplingParams(TypedDict):
+    max_tokens: int
+    max_retries: int
+    temperature: float | None
+    top_p: float | None
+    extra_body: dict[str, object]
+
+
+def sampling_params(role: str) -> SamplingParams:
     cluster = _cluster_for_role(role)
 
     return {

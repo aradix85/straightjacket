@@ -29,7 +29,6 @@ ENGINE_YAML_ROOTS = tuple(REPO_ROOT / name for name in ("engine", "gamemaster", 
 PROMPTS_YAML_ROOT = REPO_ROOT / "prompts"
 
 _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
-    ("check_configured_models", "engine/ai/api_client.py"),
     ("roll_character_traits", "engine/crafters/character_traits.py"),
     ("dispatch_meta", "engine/crafters/meta_plot_points.py"),
     ("lookup_characters_template", "engine/crafters/adventure_crafter.py"),

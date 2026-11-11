@@ -15,12 +15,13 @@ from typing import TYPE_CHECKING, Any
 import yaml
 from typing_extensions import override
 
-from straightjacket.engine.ai.api_client import check_configured_models, get_provider
+from straightjacket.engine.ai.api_client import get_provider
 from straightjacket.engine.ai.provider_base import AIUnavailableError
 from straightjacket.engine.ai.sentence_stream import SentenceStream
 from straightjacket.engine.config_loader import VERSION, model_for_role, narration_language, provider_for_role
 from straightjacket.engine.correction import process_correction
 from straightjacket.engine.game import (
+    check_startup,
     generate_epilogue,
     prepare_succession,
     process_momentum_burn,
@@ -223,7 +224,7 @@ def run_session(bot_cfg: dict[str, Any], *, auto_override: bool, turns_override:
     events = _EventCapture(bot_cfg["logging"]["event_prefixes"])
     logging.getLogger("rpg_engine").addHandler(events)
 
-    check_configured_models()
+    check_startup()
     configure_bot(bot_cfg["ai"])
     provider = TokenMeter(get_provider())
     create_user(settings.username)

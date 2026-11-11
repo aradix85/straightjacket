@@ -64,13 +64,16 @@ def _start() -> None:
     _ensure_data()
     sys.path.insert(0, str(ROOT / "src"))
 
-    from straightjacket.engine.ai.api_client import check_configured_models
+    import yaml
+
     from straightjacket.engine.config_loader import cfg
     from straightjacket.engine.logging_util import log
 
     try:
-        check_configured_models()
-    except (RuntimeError, TypeError, ValueError) as e:
+        from straightjacket.engine.game import check_startup
+
+        check_startup()
+    except (RuntimeError, TypeError, ValueError, OSError, yaml.YAMLError) as e:
         log(f"[Server] Startup check failed: {e}", level="error")
         _say(f"\n  Startup check failed:\n{e}\n")
         sys.exit(1)

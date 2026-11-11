@@ -14,8 +14,9 @@ from unittest import mock
 import uvicorn
 import websockets
 
-from straightjacket.engine.ai.api_client import check_configured_models, get_provider
+from straightjacket.engine.ai.api_client import get_provider
 from straightjacket.engine.config_loader import VERSION, cfg
+from straightjacket.engine.game import check_startup
 from straightjacket.engine.models import GameState
 from straightjacket.web import handlers
 from straightjacket.web.server import app
@@ -183,7 +184,7 @@ async def run_ws_session(bot_cfg: dict[str, Any], *, auto_override: bool, turns_
     without_scenario = {**bot_cfg, "session": {**bot_cfg["session"], "scenario": ""}}
     settings = session_settings(without_scenario, auto_override=auto_override, turns_override=turns_override)
 
-    check_configured_models()
+    check_startup()
     configure_bot(bot_cfg["ai"])
     provider = TokenMeter(get_provider())
     mock.patch.object(handlers, "get_provider", return_value=provider).start()

@@ -1,6 +1,5 @@
 import shutil
 from pathlib import Path
-from typing import Any
 
 from straightjacket.engine.config_loader import USERS_DIR
 from straightjacket.engine.engine_loader import eng
@@ -48,7 +47,7 @@ def get_save_dir(username: str) -> Path:
     return _get_user_dir(username) / "saves"
 
 
-def list_users() -> list[dict[str, Any]]:
+def list_users() -> list[dict[str, str]]:
     return [{"name": p.name} for p in sorted(USERS_DIR.iterdir()) if p.is_dir()]
 
 

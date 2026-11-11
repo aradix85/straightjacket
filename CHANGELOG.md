@@ -8,6 +8,17 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.11.2] — 2026-11-11
+
+The loaders typed and the stores loaded at startup, the rest of roadmap 9y.3b.
+
+- **`config.yaml`** is bound by the same binder as the stores, in place of a parser of its own that checked the names of the keys and converted the values. A value of another type than its field's now stops the start: a quoted number, which was converted without a word, text for `stream_narration`, which counted as true, or a list for `extra_body`. The checks across sections stay: a cluster's provider, the eight roles, and each role's cluster. The messages name the value by its path, as in `config.yaml.ai.clusters.narrator: missing keys ['model']`.
+- **At startup** `python run.py` and Elvira call `game/startup.py` → `check_startup`, which loads the four stores before it checks the configured models, so a wrong value in their yaml stops the start with its message and not the turn that first reads the store. `run.py` reports a yaml file that does not parse, or a folder that is missing, the same way, where it showed a traceback.
+- **The emotions** are bound to `EmotionSettings`; `yaml_merge.py` hands on `object` and refuses a top-level key that is not text; the sampling parameters of a role are a typed mapping.
+- A sub-agent checked the release; what it found is fixed. The prompts, the strings, and the emotions still load at their first use (ARCHITECTURE.md, Configuration).
+
+Measured: mypy's `disallow_any_explicit` finds 486 errors where it found 497. Quality gate: 1952 tests, coverage 96.07% to 96.11%, mypy clean on 273 files, pylint clean, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: the shipped `config.yaml` and emotions read as they did, but for the providers' `timeout_seconds`, which stays the whole number the file holds.
+
 ## [2026.11.11.1] — 2026-11-11
 
 Every yaml block a typed field, roadmap 9y.3b, the raw sections. Nineteen blocks of `engine/`, `gamemaster/`, and `ruleset/` were read through `get_raw`, which handed out `Any` and checked nothing. Each is now a field of its store's settings class, bound and checked at load like the rest, so `RawSections` and `get_raw` are gone, and at the top level too a key no field holds, or a field without its key, stops loading (ARCHITECTURE.md, Configuration).

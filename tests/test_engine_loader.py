@@ -1,3 +1,4 @@
+import shutil
 from collections.abc import Callable
 from dataclasses import fields
 from pathlib import Path
@@ -6,7 +7,11 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine import emotions_loader, engine_loader
+from straightjacket.engine.config_loader import PROJECT_ROOT
+from straightjacket.engine.crafters import config as crafters_config
 from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.game import startup
 from straightjacket.engine.gamemaster import config as gamemaster_config
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.mythic_data import load_mythic
@@ -232,3 +237,40 @@ def test_a_missing_section_stops_loading(
     load = gamemaster_config.gm if layer is gamemaster_config else ruleset_config.rules
     with pytest.raises(ValueError, match=rf"{missing} \[.*'{section}'"):
         load()
+
+
+def test_the_startup_check_loads_every_store_before_it_asks_the_providers(monkeypatch: pytest.MonkeyPatch) -> None:
+    caches: list[dict[Path, object]] = [{}, {}, {}, {}]
+    for store, cache in zip((engine_loader, gamemaster_config, crafters_config, ruleset_config), caches, strict=True):
+        monkeypatch.setattr(store, "_cache", cache)
+    loaded: list[int] = []
+    monkeypatch.setattr(startup, "check_configured_models", lambda: loaded.extend(len(cache) for cache in caches))
+    startup.check_startup()
+    assert loaded == [1, 1, 1, 1]
+
+
+def test_a_wrong_value_in_a_store_stops_the_start(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(startup, "check_configured_models", lambda: None)
+    change_config(monkeypatch, tmp_path, ruleset_config, "boasts", _set("options", value=[]))
+    with pytest.raises(ValueError, match=r"ruleset\.boasts\.options: expected dict"):
+        startup.check_startup()
+
+
+@pytest.mark.parametrize(
+    ("file", "text", "message"),
+    [
+        ("stray.yaml", "stray: 1\n", r"emotions: unknown keys \['stray'\]"),
+        ("importance.yaml", "importance:\n  joy: high\n", r"emotions\.importance\.joy: expected <class 'int'>"),
+        ("keyword_boosts.yaml", "keyword_boosts:\n  '7':\n  - death\n", r"emotions\.keyword_boosts key: expected"),
+    ],
+    ids=["unknown_section", "text_for_a_score", "text_for_a_score_key"],
+)
+def test_an_emotions_file_that_does_not_fit_stops_loading(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, file: str, text: str, message: str
+) -> None:
+    folder = tmp_path / "emotions"
+    shutil.copytree(PROJECT_ROOT / "emotions", folder)
+    (folder / file).write_text(text, encoding="utf-8")
+    monkeypatch.setattr(emotions_loader, "_EMOTIONS_DIR", folder)
+    with pytest.raises(ValueError, match=message):
+        emotions_loader.importance_map()

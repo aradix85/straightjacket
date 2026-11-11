@@ -78,22 +78,27 @@ def _cluster(data: dict[str, Any]) -> dict[str, Any]:
 @pytest.mark.parametrize(
     ("change", "message"),
     [
-        (lambda data: data.clear(), "missing required fields"),
-        (lambda data: data.update(colour="blue"), r"the top level has unknown keys \['colour'\]"),
+        (lambda data: data.clear(), r"config\.yaml: missing keys \['ai', 'language', 'server'\]"),
+        (lambda data: data.update(colour="blue"), r"config\.yaml: unknown keys \['colour'\]"),
         (
             lambda data: _cluster(data).update(temprature=0.4),
-            r"cluster 'classification' has unknown keys \['temprature'\]",
+            r"ai\.clusters\.classification: unknown keys \['temprature'\]",
         ),
-        (lambda data: _cluster(data).pop("provider"), "missing required fields"),
+        (lambda data: _cluster(data).pop("provider"), r"ai\.clusters\.classification: missing keys \['provider'\]"),
+        (lambda data: data["ai"]["clusters"].update(classification="qwen"), "classification: expected dict"),
+        (lambda data: data["server"].update(port="8081"), r"server\.port: expected <class 'int'>, got '8081'"),
+        (lambda data: data["server"].update(stream_narration="yes"), r"server\.stream_narration: expected"),
+        (lambda data: _cluster(data).update(temperature="0.7"), r"classification\.temperature: expected"),
+        (lambda data: _cluster(data).update(extra_body=[]), r"classification\.extra_body: expected dict"),
         (lambda data: _cluster(data).update(provider="elsewhere"), r"not defined under ai\.providers"),
         (lambda data: data["ai"]["role_cluster"].update(recap="creative"), r"not defined under ai\.clusters"),
         (
             lambda data: data["ai"]["role_cluster"].update(narator="classification"),
-            r"ai\.role_cluster has unknown keys \['narator'\]",
+            r"config\.yaml\.ai\.role_cluster: unknown keys \['narator'\]",
         ),
         (
             lambda data: data["ai"]["role_cluster"].pop("recap"),
-            r"ai\.role_cluster missing required fields: \['recap'\]",
+            r"config\.yaml\.ai\.role_cluster: missing keys \['recap'\]",
         ),
     ],
     ids=[
@@ -101,6 +106,11 @@ def _cluster(data: dict[str, Any]) -> dict[str, Any]:
         "unknown_top_key",
         "unknown_cluster_key",
         "missing_field",
+        "text_for_a_cluster",
+        "text_for_the_port",
+        "text_for_a_flag",
+        "text_for_a_temperature",
+        "list_for_the_extra_body",
         "unknown_provider",
         "unknown_cluster",
         "unknown_role",
@@ -113,13 +123,6 @@ def test_a_config_file_that_does_not_fit_stops_loading(
     data = _full_config_data()
     change(data)
     with pytest.raises(ValueError, match=message):
-        read_config(data)
-
-
-def test_a_config_section_that_is_not_a_mapping_stops_loading(read_config: Callable[[dict[str, object]], None]) -> None:
-    data = _full_config_data()
-    data["ai"]["clusters"]["classification"] = "qwen"
-    with pytest.raises(TypeError, match="must be a mapping"):
         read_config(data)
 
 
@@ -156,7 +159,7 @@ def test_a_config_file_that_is_not_a_mapping_stops_loading(monkeypatch: pytest.M
     path = tmp_path / "config.yaml"
     path.write_text("- server\n", encoding="utf-8")
     monkeypatch.setattr(config_loader, "_CONFIG_PATH", path)
-    with pytest.raises(TypeError, match="not a valid YAML dict"):
+    with pytest.raises(ValueError, match=r"config\.yaml: expected dict"):
         config_loader.cfg()
 
 

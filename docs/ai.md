@@ -72,7 +72,7 @@ Hosts cache the longest identical prefix of a prompt, so prompts put their fixed
 
 `ai/api_client.py` → `get_provider` returns a routing provider that sends each call to the provider of its role's cluster, keyed on `AICallSpec.log_role`; a project-rule scan requires every AI call to set it.
 
-`python run.py` and Elvira call `check_configured_models` first: every cluster's model must appear in its provider's model list, or startup stops and names the missing model. It reads each OpenAI-compatible provider's `/models` with a plain request, because Together returns a bare list that the OpenAI SDK's model listing cannot parse.
+`python run.py` and Elvira call `check_startup` first (ARCHITECTURE.md, Configuration), which ends with `check_configured_models`: every cluster's model must appear in its provider's model list, or startup stops and names the missing model. It reads each OpenAI-compatible provider's `/models` with a plain request, because Together returns a bare list that the OpenAI SDK's model listing cannot parse.
 
 ## Provider adapters
 

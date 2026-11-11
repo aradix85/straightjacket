@@ -86,7 +86,7 @@ The source lives under `src/straightjacket/`.
 - `engine/ruleset/` — the ruleset layer, the Ironsworn rules, with no AI: the rules, moves, and assets of the ruleset's Datasworn files; the character a player creates; stats and meters; rolls; Datasworn moves and which of them a situation offers; move outcomes with their effects and handlers; progress tracks and a connection's bond; impacts, harm, and stress; legacy; assets and roll bonuses; boasts; threats; the narrator's sentences for consequences; the mechanical side of succession; and its answers to the game master's questions.
 - `engine/ai/` — provider adapters and routing, output schemas, sentence streaming, and the AI calls of the Brain, the narrator, the metadata and opening extractions (applied with the NPC layer by `ai/metadata.py` and `game/setup_common.py`), recap, and blueprint voicing. Two calls live with the code that uses them: the Director's in `director.py` and the correction analysis in `correction/analysis.py`.
 - `engine/tools/` — the Director's tool registry, its tool, and the execution of its tool calls.
-- `engine/game/` — orchestration: the turn, action resolution, shared narration and finalization, momentum burn, game start, chapters, succession, and the deferred Director run.
+- `engine/game/` — orchestration: the turn, action resolution, shared narration and finalization, momentum burn, game start, chapters, succession, the deferred Director run, and the check at startup (`startup.py`).
 - `engine/correction/` — the `##` correction: the analysis call, the replay of a misread input, and state patches with re-narration.
 - `web/` — the Starlette server, one handler per WebSocket message, session state, serializers that turn game state into client JSON, and the single-page client `web/static/index.html`.
 
@@ -132,13 +132,16 @@ Configuration lives in yaml stores that are directories with one file per subsys
 
 Each loader merges its directory and raises on a key that two files define. Code reaches them only through `eng()`, `gm()`, `crafter()`, `rules()`, `get_prompt()` with `get_prompt_prefix()`, `t()` with `all_strings()`, and `importance_map()` with `keyword_boosts()`. Game content comes from the Datasworn JSON and the Mythic and Adventure Crafter data in the `data` folder, each setting from a yaml file in `data/settings`.
 
-**`config.yaml`** stays a single, user-edited file for the server, the providers, and the model assignment, read as strictly as the rest. Startup stops, with a message that names it, on a key it does not know or lacks, a role under `ai.role_cluster` that the engine does not know or one it lacks, or a role mapped to a cluster it does not define.
+**`config.yaml`** stays a single, user-edited file for the server, the providers, and the model assignment, bound by the same binder to the dataclasses of `config_loader.py`. Startup stops, with a message that names it, on a key it does not know or lacks, a value of another type than its field's, such as a quoted number, a role under `ai.role_cluster` that the engine does not know or one it lacks, a cluster on a provider it does not define, or a role mapped to a cluster it does not define. A cluster's `extra_body` is not checked: the provider's adapter reads it (`docs/ai.md`, Provider adapters).
+
+**At startup.** `python run.py` and Elvira call `game/startup.py` → `check_startup`, which loads the four stores, so that a wrong value in their yaml stops the start and not the turn that first reads it, and then checks the configured models (`docs/ai.md`, Routing and the startup check). The prompts, the strings, and the emotions load at their first use.
 
 **Typed binding.** Every yaml block is a field of its folder's settings class, bound at load time by `config_binding.py` → `build_strict`, which reads the annotations of that class and of every dataclass below it: `EngineSettings` in `engine_config.py` with `engine_config_dataclasses.py`, `GameMasterSettings` in `gamemaster/config.py` with `gamemaster/config_types.py`, `CrafterSettings` in `crafters/config.py`, and `RulesetSettings` in `ruleset/config.py` with `ruleset/config_types.py`. Code reads a block as `gm().subsystem.field`, `rules().subsystem.field`, and so on.
 
 - At every depth, the top level included, a key no field holds raises, and so do a field without its key and a value of another type than its field's, such as text for a number or a list for a mapping; a whole number serves where a fraction is asked. The error names the value by its path in the yaml.
 - A top-level section that no code reads fails the orphan-key scan (CONTRIBUTING.md).
 - A block whose keys are themselves domain content, such as move names or dispositions, is a mapping, which extends without a Python change.
+- The emotions are bound the same way, to `EmotionSettings` in `emotions_loader.py`; the prompts and the strings are text by key, and a value that is no text raises (`yaml_merge.py` → `load_text_dir`).
 - Two blocks whose yaml shape is not their dataclass's are parsed by hand in `ruleset/config.py`: the move availability rules, and the move outcomes, where an entry's `handler` names the dataclass of its `params`.
 
 ## Interface and accessibility

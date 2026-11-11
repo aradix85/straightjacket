@@ -35,8 +35,8 @@ def build_strict(cls: type[_D], data: object, where: str, **parsers: Callable[[o
 
 
 def _bind(hint: object, value: object, where: str) -> object:
-    if value is None and allows_none(hint):
-        return None
+    if hint is object or (value is None and allows_none(hint)):
+        return value
     inner, _ = unwrap_optional(hint)
     if is_dataclass_type(inner):
         return build_strict(inner, value, where)

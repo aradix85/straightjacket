@@ -21,6 +21,12 @@ def test_a_yaml_file_that_is_not_a_mapping_stops_loading(tmp_path: Path) -> None
         load_yaml_dir(tmp_path, missing_dir_hint="")
 
 
+def test_a_top_level_key_that_is_not_text_stops_loading(tmp_path: Path) -> None:
+    (tmp_path / "a.yaml").write_text("404: gone\n", encoding="utf-8")
+    with pytest.raises(TypeError, match=r"Top-level key 404 in .*a\.yaml is not text"):
+        load_yaml_dir(tmp_path, missing_dir_hint="")
+
+
 def test_a_top_level_key_in_two_files_stops_loading(tmp_path: Path) -> None:
     (tmp_path / "a.yaml").write_text("dice: 1\n", encoding="utf-8")
     (tmp_path / "b.yaml").write_text("dice: 2\n", encoding="utf-8")

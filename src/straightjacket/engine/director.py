@@ -187,7 +187,7 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
         tools=get_tools(),
         log_role="director",
         cached_system_prefix="",
-        **{**params, "max_retries": 1},
+        **(params | {"max_retries": 1}),
     )
     try:
         tool_response = create_with_retry(provider, tool_spec)
