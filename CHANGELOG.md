@@ -8,6 +8,17 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.12.1] — 2026-11-12
+
+Mythic's and the Adventure Crafter's data files bound to dataclasses, the first half of roadmap 9y.3d. Both files were handed out as loaded, `Any` at every depth, and each table was read by its keys where it was rolled. The reader that binds the configuration now binds each file whole at its first use, to `gamemaster/mythic_data.py` → `MythicData` and `crafters/adventure_crafter.py` → `AdventureCrafterData`, so a value of another type than its field's, a missing table, or a table the engine does not know stops the load and names its path, as in `adventure_crafter.json.plot_points[0].themes.action.max: expected <class 'int'>, got '8'` (ARCHITECTURE.md, Typed binding).
+
+- The eleven tables of Mythic that no code reads yet are fields held as they are; the step that comes to read one gives it its type.
+- The reader takes a field that names several plain types: an Adventure Crafter theme priority is a number or the text `4_or_5`.
+- The weighted choice among threads or characters names those two lists, where it took a list of anything.
+- The roadmap splits 9y.3d: Datasworn and the settings yaml remain.
+
+Measured: a script held every lookup of both files under the old code against the new, and 27,720 seeded rolls of fate, event focus, meaning, scene adjustment, character traits, and turning points: all alike. mypy's `disallow_any_explicit` finds 435 errors where it found 444. Quality gate: 1978 tests, coverage 96.09% to 96.13%, mypy clean on 271 files, pylint clean, ruff clean on every rule outside the ignores. A sub-agent checked the release; what it found is fixed. Save format unchanged. No Elvira run: every table reads as it did.
+
 ## [2026.11.12.0] — 2026-11-12
 
 Saves read by the reader that binds the configuration, roadmap 9y.3c. A dataclass was read from plain data in two ways: the saves by `deserialize`, which checked the names of the fields and never their values, and the configuration by the binder, which checks both. One reader, `serialization.py` → `build_strict`, now serves both, and `config_binding.py` is gone. **Saves from before this release no longer load**, since two of the changes below alter the save format; the player is told the save is incompatible.

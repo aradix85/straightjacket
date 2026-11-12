@@ -1,3 +1,4 @@
+import json
 import shutil
 from collections.abc import Callable
 from dataclasses import fields
@@ -13,6 +14,7 @@ from straightjacket.engine.crafters import config as crafters_config
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.game import startup
 from straightjacket.engine.gamemaster import config as gamemaster_config
+from straightjacket.engine.gamemaster import mythic_data
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.mythic_data import load_mythic
 from straightjacket.engine.ruleset import config as ruleset_config
@@ -30,11 +32,23 @@ def test_npc_status_groups_name_only_known_statuses() -> None:
         assert set(getattr(groups, group.name)) <= known, group.name
 
 
+def test_mythic_data_with_a_value_of_another_type_than_its_field_refuses_to_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data = json.loads((PROJECT_ROOT / "data" / "mythic_gme_2e.json").read_text(encoding="utf-8"))
+    data["fate_chart"]["fifty_fifty"][4]["yes"] = "50"
+    changed = tmp_path / "mythic_gme_2e.json"
+    changed.write_text(json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr(mythic_data, "_MYTHIC_DATA_PATH", changed)
+    with pytest.raises(ValueError, match=r"mythic_gme_2e\.json\.fate_chart\.fifty_fifty\[4\]\.yes: expected"):
+        load_mythic()
+
+
 def test_dice_sizes_cover_the_tables_they_roll() -> None:
     dice = gm().mythic_dice
     mythic = load_mythic()
-    assert max(row["max"] for row in mythic["event_focus"]) == dice.event_focus_die
-    assert max(row["max"] for row in mythic["scene_adjustment"]) == dice.scene_adjustment_die
+    assert max(row.max for row in mythic.event_focus) == dice.event_focus_die
+    assert max(row.max for row in mythic.scene_adjustment) == dice.scene_adjustment_die
     assert max(crafter().adventure_crafter.theme_die_table) == crafter().adventure_crafter_dice.theme_die
 
 

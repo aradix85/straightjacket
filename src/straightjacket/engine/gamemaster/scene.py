@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import evaluate_keyed_scenes
@@ -11,6 +11,7 @@ from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import SceneSetup
 
 if TYPE_CHECKING:
+    from straightjacket.engine.gamemaster.mythic_data import SceneAdjustmentRow
     from straightjacket.engine.models import GameState
 
 
@@ -44,7 +45,7 @@ def check_scene(game: GameState) -> SceneSetup:
 
 
 def _roll_adjustments() -> list[str]:
-    table = load_mythic()["scene_adjustment"]
+    table = load_mythic().scene_adjustment
     result = _lookup_adjustment(table, random.randint(1, gm().mythic_dice.scene_adjustment_die))
     if result != "make_2_adjustments":
         return [result]
@@ -56,16 +57,15 @@ def _roll_adjustments() -> list[str]:
     return adjustments
 
 
-def _lookup_adjustment(table: list[dict[str, Any]], roll: int) -> str:
+def _lookup_adjustment(table: list[SceneAdjustmentRow], roll: int) -> str:
     for entry in table:
-        if entry["min"] <= roll <= entry["max"]:
-            result: str = entry["result"]
-            return result
+        if entry.min <= roll <= entry.max:
+            return entry.result
     msg = f"scene_adjustment table has no entry covering roll={roll}; table={table!r}"
     raise KeyError(msg)
 
 
-def _roll_single_adjustment(table: list[dict[str, Any]]) -> str:
+def _roll_single_adjustment(table: list[SceneAdjustmentRow]) -> str:
     faces = [
         roll
         for roll in range(1, gm().mythic_dice.scene_adjustment_die + 1)

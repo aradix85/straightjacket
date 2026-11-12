@@ -60,8 +60,12 @@ def _is_dataclass_type(tp: object) -> TypeIs[type[DataclassInstance]]:
     return isinstance(tp, type) and dataclasses.is_dataclass(tp)
 
 
+def _is_union(hint: object) -> bool:
+    return get_origin(hint) is Union or isinstance(hint, types.UnionType)
+
+
 def _without_none(hint: object) -> tuple[object, bool]:
-    if get_origin(hint) is Union or isinstance(hint, types.UnionType):
+    if _is_union(hint):
         members = [member for member in get_args(hint) if member is not types.NoneType]
         return (members[0] if len(members) == 1 else hint), len(members) < len(get_args(hint))
     return hint, False
@@ -88,7 +92,10 @@ def _bind(hint: object, value: object, where: str) -> object:
 
 
 def _scalar(hint: object, value: object, where: str) -> object:
-    if hint in _SCALARS and isinstance(value, _SCALARS[hint]) and isinstance(value, bool) == (hint is bool):
+    members = [member for member in get_args(hint) if member is not types.NoneType] if _is_union(hint) else [hint]
+    if all(member in _SCALARS for member in members) and any(
+        isinstance(value, _SCALARS[member]) and isinstance(value, bool) == (member is bool) for member in members
+    ):
         return value
     msg = f"{where}: expected {hint}, got {value!r}"
     raise ValueError(msg)

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.ids import next_id
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models_story import PlotlineEntry
+from straightjacket.engine.serialization import build_strict
 
 if TYPE_CHECKING:
     import random
@@ -20,25 +21,114 @@ if TYPE_CHECKING:
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
 _PLOTLINE_ID_PREFIX = "ac_plot_"
 
-_cache: dict[Path, dict[str, Any]] = {}
+
+@dataclass(frozen=True)
+class RollRange:
+    min: int
+    max: int
 
 
-def load_ac_data() -> dict[str, Any]:
+@dataclass(frozen=True)
+class ThemeRow:
+    min: int
+    max: int
+    theme: str
+
+
+@dataclass(frozen=True)
+class ThemePriorityRow:
+    min: int
+    max: int
+    priority: int | str
+
+
+@dataclass(frozen=True)
+class MetaPlotPointRow:
+    name: str
+    min: int
+    max: int
+
+
+@dataclass(frozen=True)
+class PlotPointRow:
+    name: str
+    themes: dict[str, RollRange]
+
+
+@dataclass(frozen=True)
+class SpecialTraitRow:
+    min: int
+    max: int
+    trait: str
+
+
+@dataclass(frozen=True)
+class IdentityRow:
+    min: int
+    max: int
+    identity: str
+
+
+@dataclass(frozen=True)
+class DescriptorRow:
+    min: int
+    max: int
+    descriptor: str
+
+
+@dataclass(frozen=True)
+class TemplateRow:
+    min: int
+    max: int
+    result: str
+
+
+@dataclass(frozen=True)
+class TurningPointRules:
+    plot_points_per_turning_point: RollRange
+    plotline_selection: str
+    advancement_vs_conclusion: str
+    rolling_method: str
+    theme_4_5_alternation: str
+    max_entries_per_list_item: int
+    conclusion_plot_point_range: str
+    none_plot_point_range: str
+
+
+@dataclass(frozen=True)
+class AdventureCrafterData:
+    random_themes: list[ThemeRow]
+    plot_point_theme_priority: list[ThemePriorityRow]
+    theme_translation: dict[str, str]
+    meta_plot_points: list[MetaPlotPointRow]
+    plot_points: list[PlotPointRow]
+    character_special_trait: list[SpecialTraitRow]
+    character_identity: list[IdentityRow]
+    character_descriptors: list[DescriptorRow]
+    characters_list_template: list[TemplateRow]
+    plotlines_list_template: list[TemplateRow]
+    turning_point_rules: TurningPointRules
+
+
+_cache: dict[Path, AdventureCrafterData] = {}
+
+
+def load_ac_data() -> AdventureCrafterData:
     if _AC_DATA_PATH not in _cache:
         with _AC_DATA_PATH.open(encoding="utf-8") as f:
-            data: dict[str, Any] = json.load(f)
+            data = build_strict(AdventureCrafterData, json.load(f), _AC_DATA_PATH.name)
         log(f"[AdventureCrafter] Loaded {_AC_DATA_PATH}")
         _validate_random_themes(data)
         _cache[_AC_DATA_PATH] = data
     return _cache[_AC_DATA_PATH]
 
 
-def _validate_random_themes(data: dict[str, Any]) -> None:
+def _validate_random_themes(data: AdventureCrafterData) -> None:
     cfg = crafter().adventure_crafter
     json_table: dict[int, str] = {}
-    for entry in data["random_themes"]:
-        for face in range(entry["min"], entry["max"] + 1):
-            json_table[face] = entry["theme"]
+    for entry in data.random_themes:
+        for face in range(entry.min, entry.max + 1):
+            json_table[face] = entry.theme
     if json_table != cfg.theme_die_table:
         diff = sorted(set(json_table.items()) ^ set(cfg.theme_die_table.items()))
         msg = (
@@ -95,13 +185,9 @@ def assign_themes(rng: random.Random) -> list[str]:
 
 def lookup_plot_point(theme: str, roll: int) -> PlotPointResult:
     cfg = crafter().adventure_crafter
-    data = load_ac_data()
-    for entry in data["plot_points"]:
-        themes = entry["themes"]
-        if theme not in themes:
-            continue
-        if themes[theme]["min"] <= roll <= themes[theme]["max"]:
-            return PlotPointResult(name=entry["name"], special_range=_special_range_for(roll, cfg.special_ranges))
+    for entry in load_ac_data().plot_points:
+        if theme in entry.themes and entry.themes[theme].min <= roll <= entry.themes[theme].max:
+            return PlotPointResult(name=entry.name, special_range=_special_range_for(roll, cfg.special_ranges))
     msg = (
         f"no plot_points entry covers theme={theme!r} roll={roll}; "
         f"data/adventure_crafter.json plot_points may be incomplete"
@@ -120,11 +206,9 @@ def _special_range_for(roll: int, ranges: PlotPointRanges) -> str | None:
 
 
 def lookup_meta_plot_point(roll: int) -> str:
-    data = load_ac_data()
-    for entry in data["meta_plot_points"]:
-        if entry["min"] <= roll <= entry["max"]:
-            result: str = entry["name"]
-            return result
+    for entry in load_ac_data().meta_plot_points:
+        if entry.min <= roll <= entry.max:
+            return entry.name
     msg = (
         f"no meta_plot_points entry covers roll={roll}; data/adventure_crafter.json meta_plot_points may be incomplete"
     )
@@ -132,10 +216,9 @@ def lookup_meta_plot_point(roll: int) -> str:
 
 
 def lookup_theme_priority(roll: int, alternation: ThemeAlternation) -> int:
-    data = load_ac_data()
-    for entry in data["plot_point_theme_priority"]:
-        if entry["min"] <= roll <= entry["max"]:
-            priority = str(entry["priority"])
+    for entry in load_ac_data().plot_point_theme_priority:
+        if entry.min <= roll <= entry.max:
+            priority = str(entry.priority)
             if "_or_" in priority:
                 first, second = (int(p) for p in priority.split("_or_"))
                 resolved = first if alternation.next_is_4 else second
@@ -146,21 +229,20 @@ def lookup_theme_priority(roll: int, alternation: ThemeAlternation) -> int:
     raise LookupError(msg)
 
 
-def _lookup_template_result(roll: int, template_key: str) -> str:
-    data = load_ac_data()
-    for entry in data[template_key]:
-        if entry["min"] <= roll <= entry["max"]:
-            return str(entry["result"])
+def _lookup_template_result(roll: int, template: list[TemplateRow], template_key: str) -> str:
+    for entry in template:
+        if entry.min <= roll <= entry.max:
+            return entry.result
     msg = f"no {template_key} entry covers roll={roll}"
     raise LookupError(msg)
 
 
 def lookup_characters_template(roll: int) -> str:
-    return _lookup_template_result(roll, "characters_list_template")
+    return _lookup_template_result(roll, load_ac_data().characters_list_template, "characters_list_template")
 
 
 def lookup_plotlines_template(roll: int) -> str:
-    return _lookup_template_result(roll, "plotlines_list_template")
+    return _lookup_template_result(roll, load_ac_data().plotlines_list_template, "plotlines_list_template")
 
 
 def _select_active_plotline(narrative: NarrativeState) -> PlotlineEntry | None:
@@ -205,9 +287,9 @@ def _roll_plot_point(
 
 
 def _roll_plot_points(rng: random.Random, themes: list[str], *, conclusion_counts_as_none: bool) -> list[PlotPointHit]:
-    rules = load_ac_data()["turning_point_rules"]
-    slots = rules["plot_points_per_turning_point"]["max"]
-    none_limit = slots - rules["plot_points_per_turning_point"]["min"]
+    per_turning_point = load_ac_data().turning_point_rules.plot_points_per_turning_point
+    slots = per_turning_point.max
+    none_limit = slots - per_turning_point.min
     alternation = ThemeAlternation(next_is_4=True)
     hits: list[PlotPointHit] = []
     none_count = 0

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.gamemaster.clocks import spawn_emergent_clock
 from straightjacket.engine.gamemaster.config import gm
@@ -29,28 +29,25 @@ def drain_pending_events() -> list[RandomEvent]:
 
 
 def roll_event_focus() -> str:
-    table = load_mythic()["event_focus"]
     roll = random.randint(1, gm().mythic_dice.event_focus_die)
 
-    for entry in table:
-        if entry["min"] <= roll <= entry["max"]:
-            focus: str = entry["focus"]
-            return focus
+    for entry in load_mythic().event_focus:
+        if entry.min <= roll <= entry.max:
+            return entry.focus
 
     msg = f"event_focus table has no entry covering roll={roll}"
     raise ValueError(msg)
 
 
 def roll_meaning_table(table_name: str) -> tuple[str, str]:
-    data = load_mythic()
-    tables = data["meaning_tables"]
+    tables = load_mythic().meaning_tables
 
     if table_name == "descriptions":
-        words1 = tables["descriptions"]["adverbs"]
-        words2 = tables["descriptions"]["adjectives"]
+        words1 = tables.descriptions.adverbs
+        words2 = tables.descriptions.adjectives
     elif table_name == "actions":
-        words1 = tables["actions"]["verbs"]
-        words2 = tables["actions"]["subjects"]
+        words1 = tables.actions.verbs
+        words2 = tables.actions.subjects
     else:
         msg = f"Unknown meaning table '{table_name}' (valid: 'actions', 'descriptions')"
         raise KeyError(msg)
@@ -60,7 +57,7 @@ def roll_meaning_table(table_name: str) -> tuple[str, str]:
     return w1, w2
 
 
-def _select_from_weighted_list(entries: list[Any]) -> tuple[str, str]:
+def _select_from_weighted_list(entries: Sequence[ThreadEntry] | Sequence[CharacterListEntry]) -> tuple[str, str]:
     active = [e for e in entries if e.active]
     if not active:
         return "", ""

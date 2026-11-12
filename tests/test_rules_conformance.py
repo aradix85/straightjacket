@@ -124,15 +124,15 @@ def test_fate_check_random_event_needs_doubles_within_chaos(monkeypatch: pytest.
 
 
 def test_fate_chart_has_the_mythic_2e_shape() -> None:
-    chart = load_mythic()["fate_chart"]
-    rows = [[cell["yes"] for cell in chart[odds]] for odds in chart]
-    assert chart["fifty_fifty"][4]["yes"] == 50
+    chart = load_mythic().fate_chart
+    rows = [[cell.yes for cell in chart[odds]] for odds in chart]
+    assert chart["fifty_fifty"][4].yes == 50
     assert all(row == sorted(row) for row in rows)
     assert all([row[cf] for row in rows] == sorted((row[cf] for row in rows), reverse=True) for cf in range(9))
 
 
 def test_event_focus_table_is_mythic_2e() -> None:
-    table = [(row["min"], row["max"], row["focus"]) for row in load_mythic()["event_focus"]]
+    table = [(row.min, row.max, row.focus) for row in load_mythic().event_focus]
     assert table == MYTHIC_2E_EVENT_FOCUS
 
 
@@ -266,16 +266,16 @@ def test_mythic_lists_hold_an_entry_at_most_three_times() -> None:
 
 
 def test_meaning_tables_have_the_mythic_2e_shape() -> None:
-    tables = load_mythic()["meaning_tables"]
+    tables = load_mythic().meaning_tables
     pairs = [
-        tables["actions"]["verbs"],
-        tables["actions"]["subjects"],
-        tables["descriptions"]["adverbs"],
-        tables["descriptions"]["adjectives"],
+        tables.actions.verbs,
+        tables.actions.subjects,
+        tables.descriptions.adverbs,
+        tables.descriptions.adjectives,
     ]
     assert all(len(words) == 100 for words in pairs)
-    assert len(tables["elements"]) == 45
-    assert all(len(words) == 100 for words in tables["elements"].values())
+    assert len(tables.elements) == 45
+    assert all(len(words) == 100 for words in tables.elements.values())
 
 
 @pytest.mark.parametrize(("roll", "expected"), [(1, 1), (4, 1), (5, 2), (7, 2), (8, 3), (9, 3)])
@@ -295,25 +295,22 @@ def _covers_one_to_hundred(ranges: list[tuple[int, int]]) -> bool:
 
 def test_adventure_crafter_tables_are_complete() -> None:
     data = load_ac_data()
-    themes = {theme for point in data["plot_points"] for theme in point["themes"]}
+    themes = {theme for point in data.plot_points for theme in point.themes}
     assert themes == {"action", "tension", "mystery", "social", "personal"}
     for theme in themes:
-        ranges = [
-            (p["themes"][theme]["min"], p["themes"][theme]["max"]) for p in data["plot_points"] if theme in p["themes"]
-        ]
+        ranges = [(p.themes[theme].min, p.themes[theme].max) for p in data.plot_points if theme in p.themes]
         assert _covers_one_to_hundred(ranges), theme
-    assert _covers_one_to_hundred([(m["min"], m["max"]) for m in data["meta_plot_points"]])
-    for name in ("characters_list_template", "plotlines_list_template"):
-        rows = data[name]
+    assert _covers_one_to_hundred([(m.min, m.max) for m in data.meta_plot_points])
+    for rows in (data.characters_list_template, data.plotlines_list_template):
         assert len(rows) == 25
-        assert all(r["max"] - r["min"] == 3 for r in rows)
-        assert _covers_one_to_hundred([(r["min"], r["max"]) for r in rows])
+        assert all(r.max - r.min == 3 for r in rows)
+        assert _covers_one_to_hundred([(r.min, r.max) for r in rows])
 
 
 def test_adventure_crafter_conclusion_and_none_ranges() -> None:
-    points = {p["name"]: p["themes"] for p in load_ac_data()["plot_points"]}
-    assert all((r["min"], r["max"]) == (1, 8) for r in points["Conclusion"].values())
-    assert all((r["min"], r["max"]) == (9, 24) for r in points["None"].values())
+    points = {p.name: p.themes for p in load_ac_data().plot_points}
+    assert all((r.min, r.max) == (1, 8) for r in points["Conclusion"].values())
+    assert all((r.min, r.max) == (9, 24) for r in points["None"].values())
 
 
 class _ScriptedRng(random.Random):

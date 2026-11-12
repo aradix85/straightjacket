@@ -14,8 +14,7 @@ if TYPE_CHECKING:
 
 
 def resolve_fate_chart(odds: str, chaos_factor: int) -> FateResult:
-    data = load_mythic()
-    chart = data["fate_chart"]
+    chart = load_mythic().fate_chart
 
     if odds not in chart:
         msg = f"Unknown odds level '{odds}' (valid: {sorted(chart.keys())})"
@@ -27,15 +26,11 @@ def resolve_fate_chart(odds: str, chaos_factor: int) -> FateResult:
     cell = chart[odds][chaos_factor - 1]
     roll = random.randint(1, gm().mythic_dice.fate_chart_die)
 
-    ey_threshold = cell["exceptional_yes"]
-    yes_threshold = cell["yes"]
-    en_threshold = cell["exceptional_no"]
-
-    if ey_threshold is not None and roll <= ey_threshold:
+    if cell.exceptional_yes is not None and roll <= cell.exceptional_yes:
         answer = "exceptional_yes"
-    elif roll <= yes_threshold:
+    elif roll <= cell.yes:
         answer = "yes"
-    elif en_threshold is not None and roll >= en_threshold:
+    elif cell.exceptional_no is not None and roll >= cell.exceptional_no:
         answer = "exceptional_no"
     else:
         answer = "no"
@@ -73,9 +68,9 @@ def _check_answer(answers: dict[str, dict[str, int]], total: int) -> str:
 
 
 def resolve_fate_check(odds: str, chaos_factor: int) -> FateResult:
-    check = load_mythic()["fate_check"]
-    odds_modifiers = {row["odds"]: row["modifier"] for row in check["odds_modifiers"]}
-    chaos_modifiers = {row["chaos_factor"]: row["modifier"] for row in check["chaos_factor_modifiers"]}
+    check = load_mythic().fate_check
+    odds_modifiers = {row.odds: row.modifier for row in check.odds_modifiers}
+    chaos_modifiers = {row.chaos_factor: row.modifier for row in check.chaos_factor_modifiers}
     if odds not in odds_modifiers:
         msg = f"Unknown odds level '{odds}' (valid: {sorted(odds_modifiers)})"
         raise KeyError(msg)
@@ -89,7 +84,7 @@ def resolve_fate_check(odds: str, chaos_factor: int) -> FateResult:
     odds_mod = odds_modifiers[odds]
     cf_mod = chaos_modifiers[chaos_factor]
     total = d1 + d2 + odds_mod + cf_mod
-    answer = _check_answer(check["answers"], total)
+    answer = _check_answer(check.answers, total)
 
     event_triggered = _check_check_random_event(d1, d2, chaos_factor)
 

@@ -138,10 +138,11 @@ Each loader merges its directory and raises on a key that two files define. Code
 
 **Typed binding.** Every yaml block is a field of its folder's settings class, bound at load time by `serialization.py` → `build_strict`, the reader that also loads a save, which reads the annotations of that class and of every dataclass below it: `EngineSettings` in `engine_config.py` with `engine_config_dataclasses.py`, `GameMasterSettings` in `gamemaster/config.py` with `gamemaster/config_types.py`, `CrafterSettings` in `crafters/config.py`, and `RulesetSettings` in `ruleset/config.py` with `ruleset/config_types.py`. Code reads a block as `gm().subsystem.field`, `rules().subsystem.field`, and so on.
 
-- At every depth, the top level included, a key no field holds raises, and so do a field without its key and a value of another type than its field's, such as text for a number or a list for a mapping; a whole number serves where a fraction is asked. The error names the value by its path in the yaml.
+- At every depth, the top level included, a key no field holds raises, and so do a field without its key and a value of another type than its field's, such as text for a number or a list for a mapping; a whole number serves where a fraction is asked, and a field that names several plain types takes any of them. The error names the value by its path in the yaml.
 - A top-level section that no code reads fails the orphan-key scan (CONTRIBUTING.md).
 - A block whose keys are themselves domain content, such as move names or dispositions, is a mapping, which extends without a Python change.
 - The emotions are bound the same way, to `EmotionSettings` in `emotions_loader.py`; the prompts and the strings are text by key, and a value that is no text raises (`yaml_merge.py` → `load_text_dir`).
+- The Mythic and Adventure Crafter data files are bound the same way, each as a whole at its first use: `gamemaster/mythic_data.py` → `MythicData` and `crafters/adventure_crafter.py` → `AdventureCrafterData`. A table of Mythic's that no code reads yet is a field held as it is.
 - Two blocks whose yaml shape is not their dataclass's are parsed by hand in `ruleset/config.py`: the move availability rules, and the move outcomes, where an entry's `handler` names the dataclass of its `params`.
 
 ## Interface and accessibility

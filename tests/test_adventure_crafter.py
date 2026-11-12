@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.crafters import adventure_crafter
 from straightjacket.engine.crafters import config as crafters_config
 from straightjacket.engine.crafters.adventure_crafter import (
@@ -30,6 +31,18 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from straightjacket.engine.models import CharacterListEntry, NarrativeState, PlotlineEntry
+
+
+def _use_data_with(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, path: tuple[str | int, ...], value: object) -> None:
+    data = json.loads((PROJECT_ROOT / "data" / "adventure_crafter.json").read_text(encoding="utf-8"))
+    part = data
+    for step in path[:-1]:
+        part = part[step]
+    part[path[-1]] = value
+    changed = tmp_path / "adventure_crafter.json"
+    changed.write_text(json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr(adventure_crafter, "_AC_DATA_PATH", changed)
+
 
 _SPECIAL_BOUNDARIES = [
     (1, "conclusion"),
@@ -64,14 +77,34 @@ def _meta(name: str, narrative: NarrativeState, active_plotline_id: str | None =
 def test_data_whose_themes_disagree_with_the_theme_die_refuses_to_load(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    data = json.loads(json.dumps(load_ac_data()))
-    data["random_themes"][-1]["theme"] = "horror"
-    bad = tmp_path / "adventure_crafter.json"
-    bad.write_text(json.dumps(data), encoding="utf-8")
-    monkeypatch.setattr(adventure_crafter, "_AC_DATA_PATH", bad)
+    _use_data_with(monkeypatch, tmp_path, ("random_themes", -1, "theme"), "horror")
     with pytest.raises(ValueError, match="theme_die_table"):
         load_ac_data()
     with pytest.raises(ValueError, match="theme_die_table"):
+        load_ac_data()
+
+
+def test_data_with_a_value_of_another_type_than_its_field_refuses_to_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_data_with(monkeypatch, tmp_path, ("plot_points", 0, "themes", "action", "max"), "8")
+    with pytest.raises(ValueError, match=r"adventure_crafter\.json\.plot_points\[0\]\.themes\.action\.max: expected"):
+        load_ac_data()
+
+
+def test_a_theme_priority_is_a_number_or_the_text_of_two(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    priorities = [row.priority for row in load_ac_data().plot_point_theme_priority]
+    assert priorities == [1, 2, 3, "4_or_5"]
+    _use_data_with(monkeypatch, tmp_path, ("plot_point_theme_priority", 0, "priority"), [1])
+    with pytest.raises(ValueError, match=r"plot_point_theme_priority\[0\]\.priority: expected int \| str, got \[1\]"):
+        load_ac_data()
+
+
+def test_data_with_a_table_the_engine_does_not_know_refuses_to_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_data_with(monkeypatch, tmp_path, ("house_rules",), [])
+    with pytest.raises(ValueError, match=r"adventure_crafter\.json: unknown keys \['house_rules'\]"):
         load_ac_data()
 
 
@@ -396,13 +429,12 @@ def test_narrative_state_snapshot_restore_round_trips_plotlines_list() -> None:
     assert len(narrative.plotlines_list) == 1
     assert narrative.plotlines_list[0].name == "Original"
 
-    data = load_ac_data()
-    assert len(data["plot_points"]) == 186
+    assert len(load_ac_data().plot_points) == 186
 
 
 def test_plot_points_round_trip_special_entries() -> None:
     data = load_ac_data()
-    by_name = {entry["name"]: entry for entry in data["plot_points"]}
+    by_name = {entry.name: entry for entry in data.plot_points}
     sr = crafter().adventure_crafter.special_ranges
     for name, expected in [
         ("Conclusion", (sr.conclusion_min, sr.conclusion_max)),
@@ -410,13 +442,10 @@ def test_plot_points_round_trip_special_entries() -> None:
         ("Meta", (sr.meta_min, sr.meta_max)),
     ]:
         assert name in by_name, f"{name} missing from plot_points"
-        themes = by_name[name]["themes"]
+        themes = by_name[name].themes
         assert set(themes.keys()) == set(crafter().adventure_crafter.themes), f"{name} missing a theme"
         for t, range_ in themes.items():
-            assert (
-                range_["min"],
-                range_["max"],
-            ) == expected, f"{name}.{t} has range ({range_['min']}, {range_['max']}) != yaml {expected}"
+            assert (range_.min, range_.max) == expected, f"{name}.{t} has range {range_} != yaml {expected}"
 
 
 def test_themes_that_disagree_with_the_data_refuse_to_load(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

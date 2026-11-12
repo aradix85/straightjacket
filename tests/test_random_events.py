@@ -58,7 +58,7 @@ def test_meaning_table_descriptions_returns_pair() -> None:
 
 
 def _target(monkeypatch: pytest.MonkeyPatch, game: GameState, focus: str) -> tuple[str, str]:
-    fix_dice(monkeypatch, next(entry["min"] for entry in load_mythic()["event_focus"] if entry["focus"] == focus))
+    fix_dice(monkeypatch, next(entry.min for entry in load_mythic().event_focus if entry.focus == focus))
     event = generate_random_event(game, "interrupt_scene")
     drain_pending_events()
     return event.target, event.target_id
