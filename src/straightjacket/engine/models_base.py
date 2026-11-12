@@ -1,11 +1,22 @@
 from __future__ import annotations
 
+import copy
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, TypeVar
 
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.serialization import SerializableMixin, deserialize, serialize
+from straightjacket.engine.serialization import SerializableMixin
+
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
+
+_D = TypeVar("_D", bound="DataclassInstance")
+
+
+def _overwrite(target: _D, source: _D) -> None:
+    for f in dataclasses.fields(source):
+        setattr(target, f.name, copy.deepcopy(getattr(source, f.name)))
 
 
 @dataclass
@@ -13,13 +24,11 @@ class Resources(SerializableMixin):
     meters: dict[str, int]
     next_move_bonus: int
 
-    def snapshot(self) -> dict[str, Any]:
-        return serialize(self)
+    def snapshot(self) -> Resources:
+        return copy.deepcopy(self)
 
-    def restore(self, snap: dict[str, Any]) -> None:
-        restored = deserialize(Resources, snap)
-        for f in dataclasses.fields(self):
-            setattr(self, f.name, getattr(restored, f.name))
+    def restore(self, snap: Resources) -> None:
+        _overwrite(self, snap)
 
 
 @dataclass
@@ -71,13 +80,11 @@ class WorldState(SerializableMixin):
     facts: list[ResolvedFact] = field(default_factory=list)
     places: list[PlaceRecord] = field(default_factory=list)
 
-    def snapshot(self) -> dict[str, Any]:
-        return serialize(self)
+    def snapshot(self) -> WorldState:
+        return copy.deepcopy(self)
 
-    def restore(self, snap: dict[str, Any]) -> None:
-        restored = deserialize(WorldState, snap)
-        for f in dataclasses.fields(self):
-            setattr(self, f.name, getattr(restored, f.name))
+    def restore(self, snap: WorldState) -> None:
+        _overwrite(self, snap)
 
 
 @dataclass
@@ -124,15 +131,20 @@ class ThreatEvent(SerializableMixin):
 @dataclass
 class Consequence(SerializableMixin):
     kind: str
-    values: dict[str, Any]
+    texts: dict[str, str]
+    numbers: dict[str, int]
 
     @property
     def label(self) -> str:
-        return eng().ai_text.consequence_labels[self.kind].format(**self.values)
+        return eng().ai_text.consequence_labels[self.kind].format(**self.texts, **self.numbers)
 
 
-def consequence(consequence_kind: str, /, **values: Any) -> Consequence:
-    return Consequence(kind=consequence_kind, values=values)
+def consequence(consequence_kind: str, /, **values: str | int) -> Consequence:
+    return Consequence(
+        kind=consequence_kind,
+        texts={name: value for name, value in values.items() if isinstance(value, str)},
+        numbers={name: value for name, value in values.items() if isinstance(value, int)},
+    )
 
 
 def labels_of(consequences: list[Consequence]) -> list[str]:

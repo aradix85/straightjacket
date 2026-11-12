@@ -44,6 +44,15 @@ def test_the_brain_cannot_play_a_move_the_situation_does_not_allow() -> None:
     assert "combat/strike" not in schema_of(provider.calls[0])["properties"]["move"]["enum"]
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("dialog_only", "no"), ("target_npc", 3), ("boasts", "none"), ("location_change", "Archive Vault")],
+)
+def test_a_brain_answer_with_a_value_of_another_type_than_its_field_is_refused(field: str, value: object) -> None:
+    with pytest.raises(AIUnavailableError, match=rf"brain: ValueError: BrainResult\.{field}: expected"):
+        call_brain(TurnProvider(brain_answer(**{field: value})), _starforged(), "I jump the gap.")
+
+
 def test_the_brain_plays_an_available_move() -> None:
     assert call_brain(TurnProvider(brain_answer()), _starforged(), "I jump the gap.").move == "adventure/face_danger"
 

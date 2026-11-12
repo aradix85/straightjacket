@@ -39,7 +39,7 @@ def test_correction_input_misread_full_flow(monkeypatch: pytest.MonkeyPatch) -> 
     provider = _provider(_MISREAD, _SHOVE, _TALK)
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
-    snap_health = game.last_turn_snapshot.resources["meters"]["health"]
+    snap_health = game.last_turn_snapshot.resources.meters["health"]
     scene_before = game.narrative.scene_count
     history_len_before = len(game.narrative.narration_history)
 

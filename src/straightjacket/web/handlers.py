@@ -75,7 +75,8 @@ def _player_selected_message(session: Session) -> dict[str, Any]:
             "has_game": False,
             "creation_options": build_creation_options(),
         }
-    return {"type": "player_selected", "name": session.player, "has_game": True, "messages": session.chat_messages}
+    messages = [m.to_dict() for m in session.chat_messages]
+    return {"type": "player_selected", "name": session.player, "has_game": True, "messages": messages}
 
 
 async def send_player_selected(session: Session, ws: WebSocket) -> None:
@@ -186,7 +187,7 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict[str, Any]
             await _report_failure(ws, "start_game", e)
             return
 
-        session.take_game(game, [{"role": "assistant", "content": narration}])
+        session.begin_game(game, narration)
         await _autosave(session, game)
         await _send(
             ws,
@@ -406,7 +407,7 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, A
 async def handle_list_saves(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.player:
         return
-    saves = list_saves_with_info(session.player)
+    saves = [info.to_dict() for info in list_saves_with_info(session.player)]
     await _send(ws, {"type": "saves_list", "saves": saves, "default_save": eng().persistence.default_save_name})
 
 
@@ -553,7 +554,7 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict[str, An
         except Exception as e:
             await _report_failure(ws, "new chapter", e)
             return
-        session.take_game(game, [{"role": "assistant", "content": narration}])
+        session.begin_game(game, narration)
         await _autosave(session, game)
         await _send(
             ws,
@@ -605,7 +606,7 @@ async def handle_start_succession(session: Session, ws: WebSocket, msg: dict[str
         except Exception as e:
             await _report_failure(ws, "succession", e)
             return
-        session.take_game(game, [{"role": "assistant", "content": narration}])
+        session.begin_game(game, narration)
         await _autosave(session, game)
         await _send(
             ws,

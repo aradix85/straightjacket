@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.persistence import load_game, save_game
+from straightjacket.engine.persistence import ChatMessage, load_game, save_game
 from straightjacket.engine.user_management import InvalidNameError, get_save_dir
 from straightjacket.i18n import t
 from straightjacket.web import handlers
@@ -350,13 +350,13 @@ def test_selecting_the_player_after_a_save_as_resumes_the_game_where_it_was_left
     _run(handle_save(session, fake_ws, {"name": "Before the vault"}))
     _play_a_turn(session, fake_ws, monkeypatch, "I slip into the vault")
     assert session.game is not None
-    played = session.game.to_dict()
+    played, scenes_played = session.game.to_dict(), session.game.narrative.scene_count
 
     _run(handle_select_player(session, fake_ws, {"name": "Kael"}))
 
     named, _messages = load_game("Kael", "Before the vault")
     assert named is not None
-    assert (named.narrative.scene_count, played["narrative"]["scene_count"]) == (1, 2)
+    assert (named.narrative.scene_count, scenes_played) == (1, 2)
     assert session.game.to_dict() == played
 
 
@@ -378,7 +378,7 @@ def test_play_after_loading_a_save_goes_to_the_autosave_and_leaves_that_save_as_
     assert named.narrative.scene_count == 1
     assert session.game is not None
     assert resumed.to_dict() == session.game.to_dict()
-    assert [m["content"] for m in messages if m["role"] == "user"] == ["I climb the shelves instead"]
+    assert [m.content for m in messages if m.role == "user"] == ["I climb the shelves instead"]
 
 
 def test_a_correction_with_no_turn_to_correct_is_refused_outside_the_story(
@@ -387,7 +387,7 @@ def test_a_correction_with_no_turn_to_correct_is_refused_outside_the_story(
     provider = TurnProvider()
     monkeypatch.setattr(handlers, "get_provider", lambda: provider)
     session.player = "Kael"
-    opening = [{"role": "assistant", "content": "The opening."}]
+    opening = [ChatMessage(role="assistant", content="The opening.", epilogue=False)]
     session.take_game(library_game(), list(opening))
     assert session.game is not None
     before = session.game.to_dict()

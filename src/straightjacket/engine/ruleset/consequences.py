@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.npc.matching import find_npc
@@ -46,19 +46,19 @@ _SENTENCE_EVENTS: dict[str, tuple[str, str | None, str | None]] = {
 
 
 def _sentence_event(c: Consequence) -> tuple[str, str, str] | None:
-    values = c.values
+    texts, numbers = c.texts, c.numbers
     event: str | None
     if c.kind in {"track_gain", "track_loss"}:
-        event = _meter_event(values["track"], values["n"] if c.kind == "track_gain" else -values["n"])
+        event = _meter_event(texts["track"], numbers["n"] if c.kind == "track_gain" else -numbers["n"])
         return (event, "", "") if event else None
     if c.kind == "momentum_change":
-        if values["n"] == 0:
+        if numbers["n"] == 0:
             return None
-        return ("momentum_gain" if values["n"] > 0 else "momentum_loss"), "", ""
+        return ("momentum_gain" if numbers["n"] > 0 else "momentum_loss"), "", ""
     if c.kind not in _SENTENCE_EVENTS:
         return None
     event, subject, detail = _SENTENCE_EVENTS[c.kind]
-    return event.format(**values), values[subject] if subject else "", values[detail] if detail else ""
+    return event.format(**texts), texts[subject] if subject else "", texts[detail] if detail else ""
 
 
 def _target_name(game: GameState, brain: BrainResult) -> str:
@@ -107,12 +107,6 @@ def resolve_consequence_sentence(c: Consequence, player: str, npc_name: str, loc
     if event is None:
         return ""
     event_code, subject, detail = event
-    fmt: dict[str, Any] = {
-        "player": player,
-        "npc": subject or npc_name,
-        "location": location,
-        "amount": "",
-        "impact": detail,
-        "danger": detail,
-    }
-    return pick_template(event_code).format(**fmt)
+    return pick_template(event_code).format(
+        player=player, npc=subject or npc_name, location=location, amount="", impact=detail, danger=detail
+    )

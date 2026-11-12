@@ -62,7 +62,7 @@ README.md and ORIGINS.md are background. For anything else a sub-agent reports w
 - New AI-call wrapper: `ai/brain.py` → `call_brain` for a call the turn cannot do without, `ai/blueprint_voicing.py` → `call_blueprint_voicing` for one that degrades.
 - Director tool: `tools/builtins.py` → `query_game_state` (`docs/ai.md`, Tool calling and prompt injection).
 - Strict nested domain lookup: `gamemaster/stance_gate.py` → `resolve_npc_stance`.
-- New yaml-backed config section: a field on its layer's settings class (`GameMasterSettings` in `gamemaster/config.py`, `RulesetSettings` in `ruleset/config.py`, `CrafterSettings` in `crafters/config.py`, or `EngineSettings` in `engine_config.py` for `engine/`), with its dataclass in `gamemaster/config_types.py`, `ruleset/config_types.py`, or `engine_config_dataclasses.py` (required fields, no defaults); `config_binding.py` → `build_strict` binds it by its annotations.
+- New yaml-backed config section: a field on its layer's settings class (`GameMasterSettings` in `gamemaster/config.py`, `RulesetSettings` in `ruleset/config.py`, `CrafterSettings` in `crafters/config.py`, or `EngineSettings` in `engine_config.py` for `engine/`), with its dataclass in `gamemaster/config_types.py`, `ruleset/config_types.py`, or `engine_config_dataclasses.py` (required fields, no defaults); `serialization.py` → `build_strict` binds it by its annotations.
 - New template text: `prompts/*.yaml` for AI-facing text, with narrator-facing blocks in `prompts/blocks.yaml`; the engine's own texts the AI reads in `engine/` (the consequence labels in `engine/ai_text.yaml`, the sentences the narrator is told in `engine/consequence_templates.yaml`, the flags of a meter at zero in `engine/narrator_status_descriptions.yaml`); `strings/*.yaml` for user-facing text; the layer's own yaml folder (`gamemaster/`, `crafters/`, `ruleset/`) for a rule's values; `engine/*.yaml` for engine-internal values that are no rule.
 - Subpackage with a public API through its `__init__.py`: `engine/correction/`.
 - Large container split: `gamemaster/config.py` beside `gamemaster/config_types.py`.
@@ -125,13 +125,12 @@ README.md and ORIGINS.md are background. For anything else a sub-agent reports w
 
 At the user's request (2026-11-06), taken up before step 18: every check of ruff, mypy, and pylint at their default limits, with nothing the game does changed. Each group is a release of its own; the one still off, ruff's `any-type`, stands in `pyproject.toml` under "taken up in later releases" in `[tool.ruff.lint]`. What is done is under DONE.
 
-**9y.3 No explicit `Any`:** ruff's `any-type` and mypy's `disallow_any_explicit`, 486 errors of 557 left (measured 2026-11-11, `mypy --config-file pyproject.toml --disallow-any-explicit`): every value from yaml, JSON, and the AI's answers gets a real type where it enters typed code, checked there and not cast. One area a release, the two flags on with the last:
+**9y.3 No explicit `Any`:** ruff's `any-type` and mypy's `disallow_any_explicit`, 444 errors of 557 left (measured 2026-11-12, `mypy --config-file pyproject.toml --disallow-any-explicit`): every value from yaml, JSON, and the AI's answers gets a real type where it enters typed code, checked there and not cast. One area a release, the two flags on with the last:
 
-- **9y.3c Saves and models.** `serialization.py` and the binder of `config_binding.py` read a dataclass from plain data in two ways; one reader with the binder's value checks serves both, so a save with text where a number belongs is refused like any other incompatible save. The models' dict fields and `persistence.py` follow.
 - **9y.3d Datasworn and the data files:** `setting/`, `ruleset/datasworn.py`, the moves and assets, Mythic's and the Adventure Crafter's JSON.
-- **9y.3e The AI's answers:** the schemas, the provider adapters, and what the Brain, the narrator, the extractions, the Director, and the correction analysis read from an answer.
-- **9y.3f The web layer:** the messages, handlers, serializers, and session.
-- **9y.3g The tests and Elvira** (253 errors), then both flags on.
+- **9y.3e The AI's answers:** the schemas, the provider adapters, and what the Brain, the narrator, the extractions, the Director, and the correction analysis read from an answer. Only the Brain's answer is read by the strict reader so far; a value of the wrong type that another answer brings into the state is saved and then makes that save incompatible, since loading checks every value (9y.3c).
+- **9y.3f The web layer:** the messages, handlers, and serializers.
+- **9y.3g The tests and Elvira** (249 errors), then both flags on.
 
 ### Definition of Done
 
@@ -144,6 +143,7 @@ At the user's request (2026-11-06), taken up before step 18: every check of ruff
 - An ignore with its reason: `[tool.ruff.lint]` and `[tool.pylint."messages control"]` in `pyproject.toml`.
 - Arguments that belong together as one object: `prompt_shared.py` → `PromptScene`, `TurnEvents`.
 - A value from yaml typed where it enters typed code: the typed binding (ARCHITECTURE.md, Configuration).
+- JSON read as a dataclass by the same reader: `persistence.py` → `SavedGame` in `load_game`.
 
 ---
 
@@ -646,4 +646,4 @@ Finished work in its shortest form; git holds the details, in the commits whose 
 - **9r — Where each rule comes from:** every rule that decides the fiction was read against EdgeTales, the design document, and the books; what lacked a source went to its step and the register, and AUDIT.md's principle 6 keeps it so.
 - **9w, so far:** Reach a Milestone is made without a roll (`docs/ruleset.md`, Moves without a roll), and the `vow_fulfilment` scenario plays a vow to its end on the mock provider (9w.R); the four suspected faults of 9w.0 are fixed.
 - **9x — The documents, shorter and by layer** (Sessions with the user).
-- **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); 9y.1, ruff's complexity rules at their default limits, with pylint's four left to ruff, the radon scan gone, and the two functions over 15 locals besides their arguments split as well; 9y.2, pylint's duplicate code and module length at their defaults, with the copied blocks shared and the project-rule scans split by kind (CONTRIBUTING.md, Testing); 9y.3a, the configuration bound by its annotations, with every value's type checked at load, and 9y.3b, every yaml block a typed field of its settings class, the move outcomes and their handlers' parameters included, `config.yaml` and the emotions bound the same way, and the four stores loaded at startup (ARCHITECTURE.md, Configuration).
+- **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); 9y.1, ruff's complexity rules at their default limits, with pylint's four left to ruff; 9y.2, pylint's duplicate code and module length at their defaults (CONTRIBUTING.md, Testing); 9y.3a and 9y.3b, every yaml block, `config.yaml`, and the emotions bound by their annotations to typed fields, with every value's type checked at load and the four stores loaded at startup (ARCHITECTURE.md, Configuration); 9y.3c, a save read by the reader that binds the configuration, with its turn's snapshot and its chat as dataclasses (ARCHITECTURE.md, Saves).

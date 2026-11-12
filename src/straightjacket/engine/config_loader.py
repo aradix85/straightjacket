@@ -6,8 +6,8 @@ from typing import TypedDict
 
 import yaml
 
-from straightjacket.engine.config_binding import build_strict
 from straightjacket.engine.logging_util import log
+from straightjacket.engine.serialization import build_strict
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 

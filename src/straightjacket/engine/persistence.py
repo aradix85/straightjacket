@@ -1,32 +1,60 @@
+from __future__ import annotations
+
 import json
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, TypeVar
 
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import GameState
+from straightjacket.engine.serialization import SerializableMixin, build_strict, shaped
 from straightjacket.engine.user_management import _safe_name, get_save_dir
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+_S = TypeVar("_S")
 
 
 class IncompatibleSaveError(Exception):
     pass
 
 
-def save_game(game: GameState, username: str, chat_messages: list[dict[str, Any]], name: str) -> None:
+@dataclass
+class ChatMessage(SerializableMixin):
+    role: str
+    content: str
+    epilogue: bool
+
+
+@dataclass
+class SavedGame(SerializableMixin):
+    saved_at: str
+    game_state: GameState
+    chat_messages: list[ChatMessage]
+
+
+@dataclass
+class SaveInfo(SerializableMixin):
+    name: str
+    player_name: str
+    scene_count: int
+    chapter_number: int
+    saved_at: str
+
+
+def save_game(game: GameState, username: str, chat_messages: list[ChatMessage], name: str) -> None:
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     save_dir.mkdir(parents=True, exist_ok=True)
     path = save_dir / f"{name}.json"
 
-    data = {
-        "saved_at": datetime.now().astimezone().isoformat(),
-        "game_state": game.to_dict(),
-        "chat_messages": chat_messages,
-    }
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    saved = SavedGame(saved_at=datetime.now().astimezone().isoformat(), game_state=game, chat_messages=chat_messages)
+    path.write_text(json.dumps(saved.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
     log(f"[Save] Game saved: {username}/{name} (Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)")
 
 
-def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
+def load_game(username: str, name: str) -> tuple[GameState | None, list[ChatMessage]]:
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     path = save_dir / f"{name}.json"
@@ -35,14 +63,12 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
         return None, []
     data = json.loads(path.read_text(encoding="utf-8"))
 
-    game_data = data["game_state"]
     try:
-        game = GameState.from_dict(game_data)
+        saved = build_strict(SavedGame, data, f"{username}/{name}")
     except ValueError as e:
-        msg = f"{username}/{name}: {e}"
-        raise IncompatibleSaveError(msg) from e
+        raise IncompatibleSaveError(str(e)) from e
 
-    chat_messages = data["chat_messages"]
+    game, chat_messages = saved.game_state, saved.chat_messages
     log(
         f"[Load] Game loaded: {username}/{name} "
         f"({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
@@ -50,25 +76,31 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
     return game, chat_messages
 
 
-def list_saves_with_info(username: str) -> list[dict[str, Any]]:
+def _header(part: dict[str, object], key: str, shape: type[_S], where: str) -> _S:
+    return shaped(part[key], shape, f"{where}: {key} expected {shape.__name__}")
+
+
+def _save_info(path: Path) -> SaveInfo:
+    where = path.name
+    data = shaped(json.loads(path.read_text(encoding="utf-8")), dict, f"{where}: expected dict")
+    game = _header(data, "game_state", dict, where)
+    return SaveInfo(
+        name=path.stem,
+        player_name=_header(game, "player_name", str, where),
+        scene_count=_header(_header(game, "narrative", dict, where), "scene_count", int, where),
+        chapter_number=_header(_header(game, "campaign", dict, where), "chapter_number", int, where),
+        saved_at=_header(data, "saved_at", str, where),
+    )
+
+
+def list_saves_with_info(username: str) -> list[SaveInfo]:
     infos = []
     for path in get_save_dir(username).glob("*.json"):
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            gs = data["game_state"]
-            infos.append(
-                {
-                    "name": path.stem,
-                    "player_name": gs["player_name"],
-                    "scene_count": gs["narrative"]["scene_count"],
-                    "chapter_number": gs["campaign"]["chapter_number"],
-                    "saved_at": data["saved_at"],
-                }
-            )
-        except (OSError, json.JSONDecodeError, KeyError, TypeError) as e:
+            infos.append(_save_info(path))
+        except (OSError, ValueError, KeyError) as e:
             log(f"[Persistence] Skipping corrupt save '{path.name}': {e}", level="warning")
-            continue
-    infos.sort(key=lambda x: str(x["saved_at"]), reverse=True)
+    infos.sort(key=lambda info: info.saved_at, reverse=True)
     return infos
 
 

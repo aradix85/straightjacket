@@ -40,6 +40,7 @@ The Brain turns the player's input into a move, a stat, a roll bonus, a target N
 
 **`call_brain` refuses** anything else, and also:
 
+- an answer the reader refuses for `BrainResult`, such as a value of another type than its field's (ARCHITECTURE.md, Typed binding);
 - an empty track name for a move that starts a track;
 - a move that makes a connection without a target NPC;
 - a target track of another kind than the progress move works on;

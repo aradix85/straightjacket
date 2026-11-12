@@ -2,106 +2,33 @@ from __future__ import annotations
 
 import dataclasses
 import types
-from typing import TYPE_CHECKING, Any, Self, TypeVar, Union, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Self, TypeVar, Union, get_args, get_origin, get_type_hints
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from _typeshed import DataclassInstance
     from typing_extensions import TypeIs
 
-_T = TypeVar("_T")
+_D = TypeVar("_D", bound="DataclassInstance")
 _S = TypeVar("_S")
 
-
-def is_dataclass_type(tp: object) -> TypeIs[type[DataclassInstance]]:
-    return isinstance(tp, type) and dataclasses.is_dataclass(tp)
-
-
-def _resolve_item_type(tp: Any) -> type | None:
-    origin = get_origin(tp)
-    if origin is list and is_dataclass_type(item := get_args(tp)[0]):
-        return item
-    return None
+_SCALARS: dict[object, tuple[type, ...]] = {str: (str,), bool: (bool,), int: (int,), float: (int, float)}
+_SEQUENCES = (list, frozenset)
 
 
-def allows_none(tp: Any) -> bool:
-    if get_origin(tp) is Union or isinstance(tp, types.UnionType):
-        return types.NoneType in get_args(tp)
-    return False
+def serialize(obj: DataclassInstance) -> dict[str, object]:
+    return {f.name: _serialize_value(getattr(obj, f.name)) for f in dataclasses.fields(obj)}
 
 
-def unwrap_optional(tp: Any) -> tuple[Any, bool]:
-    origin = get_origin(tp)
-    if origin is Union or isinstance(tp, types.UnionType):
-        args = get_args(tp)
-        non_none = [a for a in args if a is not types.NoneType]
-        if len(non_none) == 1 and types.NoneType in args:
-            return non_none[0], True
-    return tp, False
-
-
-def serialize(obj: Any) -> dict[str, Any]:
-    if not dataclasses.is_dataclass(obj):
-        msg = f"Expected dataclass instance, got {type(obj).__name__}"
-        raise TypeError(msg)
-    result = {}
-    for f in dataclasses.fields(obj):
-        val = getattr(obj, f.name)
-        result[f.name] = _serialize_value(val)
-    return result
-
-
-def _serialize_value(val: Any) -> Any:
-    if val is None:
-        return None
+def _serialize_value(val: object) -> object:
     if dataclasses.is_dataclass(val) and not isinstance(val, type):
         return serialize(val)
     if isinstance(val, list):
         return [_serialize_value(item) for item in val]
     if isinstance(val, dict):
-        return {k: _serialize_value(v) for k, v in val.items()}
+        return {key: _serialize_value(item) for key, item in val.items()}
     return val
-
-
-def deserialize(cls: type[_T], data: object) -> _T:
-    if not is_dataclass_type(cls):
-        msg = f"Expected dataclass type, got {cls}"
-        raise TypeError(msg)
-    if not isinstance(data, dict):
-        msg = f"Expected dict, got {type(data).__name__}"
-        raise TypeError(msg)
-
-    hints = get_type_hints(cls)
-    field_names = {f.name for f in dataclasses.fields(cls)}
-    unknown = sorted(set(data) - field_names)
-    if unknown:
-        msg = f"{cls.__name__}: unknown fields {unknown}"
-        raise ValueError(msg)
-    missing = sorted(field_names - set(data))
-    if missing:
-        msg = f"{cls.__name__}: missing fields {missing}"
-        raise ValueError(msg)
-
-    return cls(**{key: _deserialize_value(hints[key], val) for key, val in data.items()})
-
-
-def _deserialize_value(hint: Any, val: Any) -> Any:
-    if val is None:
-        if allows_none(hint):
-            return None
-        msg = f"null where {hint} is required"
-        raise ValueError(msg)
-
-    inner, is_optional = unwrap_optional(hint)
-    if is_optional:
-        return _deserialize_value(inner, val)
-    if is_dataclass_type(inner):
-        return deserialize(inner, shaped(val, dict, f"{inner.__name__} needs an object"))
-    origin = get_origin(inner)
-    if origin is list:
-        return _deserialize_list(inner, shaped(val, list, f"{inner} needs a list"))
-    if origin is dict:
-        return _deserialize_dict(inner, shaped(val, dict, f"{inner} needs an object"))
-    return dict(val) if isinstance(val, dict) else val
 
 
 def shaped(val: object, shape: type[_S], requirement: str) -> _S:
@@ -111,26 +38,67 @@ def shaped(val: object, shape: type[_S], requirement: str) -> _S:
     raise ValueError(msg)
 
 
-def _deserialize_list(hint: Any, val: list[Any]) -> list[Any]:
-    item_type = _resolve_item_type(hint)
-    if item_type is None:
-        return list(val)
-    if not all(isinstance(item, dict) for item in val):
-        msg = f"a list of {item_type.__name__} holds an entry that is not an object"
+def build_strict(cls: type[_D], data: object, where: str, **parsers: Callable[[object, str], object]) -> _D:
+    values = shaped(data, dict, f"{where}: expected dict")
+    names = {f.name for f in dataclasses.fields(cls)}
+    if unknown := set(values) - names:
+        msg = f"{where}: unknown keys {sorted(unknown)}"
         raise ValueError(msg)
-    return [deserialize(item_type, item) for item in val]
+    if missing := names - set(values):
+        msg = f"{where}: missing keys {sorted(missing)}"
+        raise ValueError(msg)
+    hints = get_type_hints(cls)
+    return cls(
+        **{
+            key: parsers[key](value, f"{where}.{key}") if key in parsers else _bind(hints[key], value, f"{where}.{key}")
+            for key, value in values.items()
+        }
+    )
 
 
-def _deserialize_dict(hint: Any, val: dict[Any, Any]) -> dict[Any, Any]:
-    if is_dataclass_type(value_type := get_args(hint)[1]):
-        return {key: deserialize(value_type, item) for key, item in val.items()}
-    return dict(val)
+def _is_dataclass_type(tp: object) -> TypeIs[type[DataclassInstance]]:
+    return isinstance(tp, type) and dataclasses.is_dataclass(tp)
 
 
+def _without_none(hint: object) -> tuple[object, bool]:
+    if get_origin(hint) is Union or isinstance(hint, types.UnionType):
+        members = [member for member in get_args(hint) if member is not types.NoneType]
+        return (members[0] if len(members) == 1 else hint), len(members) < len(get_args(hint))
+    return hint, False
+
+
+def _bind(hint: object, value: object, where: str) -> object:
+    inner, optional = _without_none(hint)
+    if inner is object or (value is None and optional):
+        return value
+    if _is_dataclass_type(inner):
+        return build_strict(inner, value, where)
+    origin = get_origin(inner)
+    if origin in _SEQUENCES:
+        (item_hint,) = get_args(inner)
+        items = shaped(value, list, f"{where}: expected list")
+        return origin(_bind(item_hint, item, f"{where}[{i}]") for i, item in enumerate(items))
+    if origin is dict:
+        key_hint, value_hint = get_args(inner)
+        return {
+            _bind(key_hint, key, f"{where} key"): _bind(value_hint, item, f"{where}.{key}")
+            for key, item in shaped(value, dict, f"{where}: expected dict").items()
+        }
+    return _scalar(inner, value, where)
+
+
+def _scalar(hint: object, value: object, where: str) -> object:
+    if hint in _SCALARS and isinstance(value, _SCALARS[hint]) and isinstance(value, bool) == (hint is bool):
+        return value
+    msg = f"{where}: expected {hint}, got {value!r}"
+    raise ValueError(msg)
+
+
+@dataclasses.dataclass
 class SerializableMixin:
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, object]:
         return serialize(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
-        return deserialize(cls, data)
+    def from_dict(cls, data: object) -> Self:
+        return build_strict(cls, data, cls.__name__)

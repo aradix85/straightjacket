@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
-from typing import Any
 
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models_base import (
@@ -26,6 +26,8 @@ from straightjacket.engine.models_base import (
 )
 from straightjacket.engine.models_npc import MemoryEntry, NpcData
 from straightjacket.engine.models_story import (
+    BlueprintProgress,
+    CampaignSnapshot,
     CampaignState,
     ChapterSummary,
     CharacterListEntry,
@@ -34,6 +36,7 @@ from straightjacket.engine.models_story import (
     InheritanceRollResult,
     KeyedScene,
     NarrationEntry,
+    NarrativeSnapshot,
     NarrativeState,
     PlotlineEntry,
     PossibleEnding,
@@ -94,13 +97,13 @@ class BrainResult(SerializableMixin):
 
 @dataclass(kw_only=True)
 class TurnSnapshot(SerializableMixin):
-    resources: dict[str, Any] = field(default_factory=dict)
-    world: dict[str, Any] = field(default_factory=dict)
-    narrative: dict[str, Any] = field(default_factory=dict)
-    campaign: dict[str, Any] = field(default_factory=dict)
-    npcs: list[dict[str, Any]] = field(default_factory=list)
-    progress_tracks: list[dict[str, Any]] = field(default_factory=list)
-    threats: list[dict[str, Any]] = field(default_factory=list)
+    resources: Resources
+    world: WorldState
+    narrative: NarrativeSnapshot
+    campaign: CampaignSnapshot
+    npcs: list[NpcData] = field(default_factory=list)
+    progress_tracks: list[ProgressTrack] = field(default_factory=list)
+    threats: list[ThreatData] = field(default_factory=list)
     impacts: list[str] = field(default_factory=list)
     backstory: str
     crisis_mode: bool
@@ -163,9 +166,9 @@ class GameState(SerializableMixin):
             world=self.world.snapshot(),
             narrative=self.narrative.snapshot(),
             campaign=self.campaign.snapshot(),
-            npcs=[n.to_dict() for n in self.npcs],
-            progress_tracks=[t.to_dict() for t in self.progress_tracks],
-            threats=[t.to_dict() for t in self.threats],
+            npcs=copy.deepcopy(self.npcs),
+            progress_tracks=copy.deepcopy(self.progress_tracks),
+            threats=copy.deepcopy(self.threats),
             impacts=list(self.impacts),
             backstory=self.backstory,
             crisis_mode=self.crisis_mode,
@@ -184,9 +187,9 @@ class GameState(SerializableMixin):
         self.world.restore(snap.world)
         self.narrative.restore(snap.narrative)
         self.campaign.restore(snap.campaign)
-        self.npcs = [NpcData.from_dict(n) for n in snap.npcs]
-        self.progress_tracks = [ProgressTrack.from_dict(t) for t in snap.progress_tracks]
-        self.threats = [ThreatData.from_dict(t) for t in snap.threats]
+        self.npcs = copy.deepcopy(snap.npcs)
+        self.progress_tracks = copy.deepcopy(snap.progress_tracks)
+        self.threats = copy.deepcopy(snap.threats)
         self.impacts = list(snap.impacts)
         self.backstory = snap.backstory
         self.crisis_mode = snap.crisis_mode
@@ -197,7 +200,9 @@ class GameState(SerializableMixin):
 
 
 __all__ = [
+    "BlueprintProgress",
     "BrainResult",
+    "CampaignSnapshot",
     "CampaignState",
     "ChapterSummary",
     "CharacterListEntry",
@@ -216,6 +221,7 @@ __all__ = [
     "LocationChange",
     "MemoryEntry",
     "NarrationEntry",
+    "NarrativeSnapshot",
     "NarrativeState",
     "NpcData",
     "PlaceRecord",

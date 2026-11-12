@@ -53,9 +53,9 @@ A turn makes its move through `ruleset/make_move.py`, so the game package names 
 
 ### Consequences
 
-Every effect but the combat position records what it did as a structured consequence (`models_base.py` → `Consequence`): a kind, which is the key of its label in `consequence_labels` in `engine/ai_text.yaml`, and the values the label is filled with, such as the meter and amount or the NPC's name. The narrator's result, the metadata call, and the engine's memories read the label.
+Every effect but the combat position records what it did as a structured consequence (`models_base.py` → `Consequence`): a kind, which is the key of its label in `consequence_labels` in `engine/ai_text.yaml`, and the texts and numbers the label is filled with, such as the meter and amount or the NPC's name. The narrator's result, the metadata call, and the engine's memories read the label.
 
-`ruleset/consequences.py` → `generate_consequence_sentences` picks the narrator's sentence from `engine/consequence_templates.yaml` by kind and values, never by reading the label back:
+`ruleset/consequences.py` → `generate_consequence_sentences` picks the narrator's sentence from `engine/consequence_templates.yaml` by kind, texts, and numbers, never by reading the label back:
 
 - a loss of health or spirit is light or heavy by `meters.heavy_loss_amount` in `ruleset/meters.yaml`;
 - a bond's progress, a sealed or cleared bond, and a disposition shift are told about their NPC;

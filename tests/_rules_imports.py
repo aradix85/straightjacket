@@ -54,7 +54,6 @@ _ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "crafters", "game", "gamema
 _LAYERS = frozenset({"gamemaster", "crafters", "ruleset"})
 _CORE_BASE = frozenset(
     {
-        "config_binding",
         "config_loader",
         "emotions_loader",
         "engine_config",

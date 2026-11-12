@@ -33,7 +33,7 @@ from straightjacket.engine.game import (
 )
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.questions import install_answers
-from straightjacket.engine.persistence import delete_save, load_game, save_game
+from straightjacket.engine.persistence import ChatMessage, delete_save, load_game, save_game
 from straightjacket.engine.ruleset import answers as ironsworn
 from straightjacket.engine.setting.packages import list_packages, load_package
 from straightjacket.engine.user_management import create_user
@@ -144,7 +144,7 @@ class RunState:
 
 @dataclass
 class _Run(RunState):
-    chat_messages: list[dict[str, Any]]
+    chat_messages: list[ChatMessage]
 
 
 class _StreamCapture:
@@ -278,12 +278,16 @@ def story_complete(game: GameState) -> bool:
     return bool(bp and bp.story_complete and not game.campaign.epilogue_dismissed)
 
 
+def _narrated(narration: str) -> ChatMessage:
+    return ChatMessage(role="assistant", content=narration, epilogue=False)
+
+
 def _continue_by_succession(run: _Run) -> bool:
     run.game, narration = _play_succession(run.provider, run.game, run.settings.game_cfg, run.slog, run.coverage)
     if "error" in run.slog.succession:
         return False
     run.narration = narration
-    run.chat_messages.append({"role": "assistant", "content": narration})
+    run.chat_messages.append(_narrated(narration))
     return True
 
 
@@ -340,8 +344,8 @@ def _play_next_turn(run: _Run, prev_action: str) -> tuple[TurnRecord, bool]:
 def _keep_turn(run: _Run, turn_rec: TurnRecord) -> None:
     run.prev_npcs = list(turn_rec.npcs)
     run.slog.turns.append(turn_rec)
-    run.chat_messages.append({"role": "user", "content": turn_rec.action})
-    run.chat_messages.append({"role": "assistant", "content": run.narration})
+    run.chat_messages.append(ChatMessage(role="user", content=turn_rec.action, epilogue=False))
+    run.chat_messages.append(_narrated(run.narration))
     s = run.settings
     if run.total_turns % s.save_every == 0:
         _save_and_verify(run.game, s.username, run.chat_messages, s.save_out, slog=run.slog, coverage=run.coverage)
@@ -426,18 +430,14 @@ def write_logs(slog: SessionLog, coverage: Coverage, settings: SessionSettings) 
 
 def _setup_game(
     provider: AIProvider, username: str, game_cfg: dict[str, Any], *, auto_mode: bool
-) -> tuple[GameState, str, list[dict[str, Any]]]:
+) -> tuple[GameState, str, list[ChatMessage]]:
     if not auto_mode and game_cfg["load_existing"]:
         save_name = game_cfg["save_name"]
         game, chat_messages = load_game(username, save_name)
         if not game:
             missing = f"Save '{save_name}' not found for user '{username}'"
             raise SystemExit(missing)
-        narration = ""
-        for msg in reversed(chat_messages):
-            if msg.get("role") == "assistant" and not msg.get("recap"):
-                narration = msg.get("content", "")
-                break
+        narration = next((msg.content for msg in reversed(chat_messages) if msg.role == "assistant"), "")
         say(
             f"[SETUP] Loaded: {game.player_name} (Ch{game.campaign.chapter_number}, Scene {game.narrative.scene_count})"
         )
@@ -453,7 +453,7 @@ def _setup_game(
         raise SystemExit(1) from e
 
     say(f"[SETUP] Character: {game.player_name} at {game.world.current_location}")
-    return game, narration, [{"role": "assistant", "content": narration}]
+    return game, narration, [_narrated(narration)]
 
 
 def _play_turn(run: _Run, turn: int, prev_action: str) -> tuple[TurnRecord, bool]:
@@ -720,7 +720,7 @@ def _norm(text: str) -> str:
 def _save_and_verify(
     game: GameState,
     username: str,
-    chat_messages: list[dict[str, Any]],
+    chat_messages: list[ChatMessage],
     save_out: str,
     *,
     slog: SessionLog,
@@ -893,7 +893,7 @@ def _chapter_transition(run: _Run, *, chapter_num: int, chapter_idx: int) -> boo
     say(f"\n{SEPARATOR}\n  GENERATING EPILOGUE — Chapter {chapter_num}\n{SEPARATOR}")
     try:
         epilogue = generate_epilogue(provider, game)
-        run.chat_messages.append({"role": "assistant", "content": epilogue, "epilogue": True})
+        run.chat_messages.append(ChatMessage(role="assistant", content=epilogue, epilogue=True))
         print_narration(epilogue, full=True)
     except Exception as e:
         tb = traceback.format_exc()
@@ -923,12 +923,12 @@ def _chapter_transition(run: _Run, *, chapter_num: int, chapter_idx: int) -> boo
         run.narration = ""
         return True
     run.narration = narration
-    run.chat_messages = [{"role": "assistant", "content": narration}]
+    run.chat_messages = [_narrated(narration)]
     say(f"  [CHAPTER] Chapter {game.campaign.chapter_number} at {game.world.current_location}")
     return False
 
 
-def _try_save(game: GameState, username: str, chat_messages: list[dict[str, Any]], save_out: str) -> None:
+def _try_save(game: GameState, username: str, chat_messages: list[ChatMessage], save_out: str) -> None:
     try:
         save_game(game, username, chat_messages, save_out)
         say(f"  [SAVE] Saved to '{save_out}'")

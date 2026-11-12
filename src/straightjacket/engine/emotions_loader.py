@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from straightjacket.engine.config_binding import build_strict
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.logging_util import log
+from straightjacket.engine.serialization import build_strict
 from straightjacket.engine.yaml_merge import load_yaml_dir
 
 _EMOTIONS_DIR = PROJECT_ROOT / "emotions"

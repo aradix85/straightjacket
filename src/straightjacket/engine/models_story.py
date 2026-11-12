@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
-from typing import Any
 
 from straightjacket.engine.models_base import ClockEvent, Consequence, ProgressTrack
 from straightjacket.engine.serialization import SerializableMixin
@@ -131,6 +131,28 @@ class KeyedScene(SerializableMixin):
     source: str
 
 
+@dataclass
+class BlueprintProgress(SerializableMixin):
+    revealed: list[str]
+    triggered_transitions: list[str]
+    triggered_director_phases: list[str]
+    story_complete: bool
+
+
+@dataclass(kw_only=True)
+class NarrativeSnapshot(SerializableMixin):
+    scene_count: int
+    session_log: list[SceneLogEntry]
+    narration_history: list[NarrationEntry]
+    threads: list[ThreadEntry]
+    characters_list: list[CharacterListEntry]
+    plotlines_list: list[PlotlineEntry]
+    keyed_scenes: list[KeyedScene]
+    director_guidance: DirectorGuidance
+    scene_intensity_history: list[str]
+    story_blueprint_snapshot: BlueprintProgress | None
+
+
 @dataclass(kw_only=True)
 class NarrativeState(SerializableMixin):
     scene_count: int
@@ -144,46 +166,50 @@ class NarrativeState(SerializableMixin):
     plotlines_list: list[PlotlineEntry] = field(default_factory=list)
     keyed_scenes: list[KeyedScene] = field(default_factory=list)
 
-    def snapshot(self) -> dict[str, Any]:
-        return {
-            "scene_count": self.scene_count,
-            "session_log": [e.to_dict() for e in self.session_log],
-            "narration_history": [n.to_dict() for n in self.narration_history],
-            "threads": [t.to_dict() for t in self.threads],
-            "characters_list": [c.to_dict() for c in self.characters_list],
-            "plotlines_list": [p.to_dict() for p in self.plotlines_list],
-            "keyed_scenes": [k.to_dict() for k in self.keyed_scenes],
-            "director_guidance": self.director_guidance.to_dict(),
-            "scene_intensity_history": list(self.scene_intensity_history),
-            "story_blueprint_snapshot": {
-                "revealed": list(self.story_blueprint.revealed),
-                "triggered_transitions": list(self.story_blueprint.triggered_transitions),
-                "triggered_director_phases": list(self.story_blueprint.triggered_director_phases),
-                "story_complete": self.story_blueprint.story_complete,
-            }
-            if self.story_blueprint
-            else None,
-        }
+    def snapshot(self) -> NarrativeSnapshot:
+        blueprint = self.story_blueprint
+        return copy.deepcopy(
+            NarrativeSnapshot(
+                scene_count=self.scene_count,
+                session_log=self.session_log,
+                narration_history=self.narration_history,
+                threads=self.threads,
+                characters_list=self.characters_list,
+                plotlines_list=self.plotlines_list,
+                keyed_scenes=self.keyed_scenes,
+                director_guidance=self.director_guidance,
+                scene_intensity_history=self.scene_intensity_history,
+                story_blueprint_snapshot=BlueprintProgress(
+                    revealed=blueprint.revealed,
+                    triggered_transitions=blueprint.triggered_transitions,
+                    triggered_director_phases=blueprint.triggered_director_phases,
+                    story_complete=blueprint.story_complete,
+                )
+                if blueprint
+                else None,
+            )
+        )
 
-    def restore(self, snap: dict[str, Any]) -> None:
-        self.scene_count = snap["scene_count"]
-        self.director_guidance = DirectorGuidance.from_dict(snap["director_guidance"])
-        self.scene_intensity_history = list(snap["scene_intensity_history"])
-        self.session_log = [SceneLogEntry.from_dict(e) for e in snap["session_log"]]
-        self.narration_history = [NarrationEntry.from_dict(n) for n in snap["narration_history"]]
-        self.threads = [ThreadEntry.from_dict(t) for t in snap["threads"]]
-        self.characters_list = [CharacterListEntry.from_dict(c) for c in snap["characters_list"]]
-        self.plotlines_list = [PlotlineEntry.from_dict(p) for p in snap["plotlines_list"]]
-        self.keyed_scenes = [KeyedScene.from_dict(k) for k in snap["keyed_scenes"]]
-        bp, bp_snap = self.story_blueprint, snap["story_blueprint_snapshot"]
-        if (bp is None) != (bp_snap is None):
+    def restore(self, snap: NarrativeSnapshot) -> None:
+        held = copy.deepcopy(snap)
+        blueprint, progress = self.story_blueprint, held.story_blueprint_snapshot
+        if (blueprint is None) != (progress is None):
             msg = "a turn's snapshot and the game disagree on whether there is a story blueprint"
             raise ValueError(msg)
-        if bp is not None:
-            bp.revealed = list(bp_snap["revealed"])
-            bp.triggered_transitions = list(bp_snap["triggered_transitions"])
-            bp.triggered_director_phases = list(bp_snap["triggered_director_phases"])
-            bp.story_complete = bp_snap["story_complete"]
+        self.scene_count = held.scene_count
+        self.session_log = held.session_log
+        self.narration_history = held.narration_history
+        self.threads = held.threads
+        self.characters_list = held.characters_list
+        self.plotlines_list = held.plotlines_list
+        self.keyed_scenes = held.keyed_scenes
+        self.director_guidance = held.director_guidance
+        self.scene_intensity_history = held.scene_intensity_history
+        if blueprint is not None and progress is not None:
+            blueprint.revealed = progress.revealed
+            blueprint.triggered_transitions = progress.triggered_transitions
+            blueprint.triggered_director_phases = progress.triggered_director_phases
+            blueprint.story_complete = progress.story_complete
 
 
 @dataclass
@@ -215,6 +241,14 @@ class ChapterSummary(SerializableMixin):
     unresolved_threads: list[str]
 
 
+@dataclass
+class CampaignSnapshot(SerializableMixin):
+    predecessors: list[PredecessorRecord]
+    pending_succession: bool
+    xp: int
+    legacy: dict[str, ProgressTrack]
+
+
 @dataclass(kw_only=True)
 class CampaignState(SerializableMixin):
     campaign_history: list[ChapterSummary] = field(default_factory=list)
@@ -232,16 +266,19 @@ class CampaignState(SerializableMixin):
     def xp_available(self) -> int:
         return self.xp - self.xp_spent
 
-    def snapshot(self) -> dict[str, Any]:
-        return {
-            "predecessors": [p.to_dict() for p in self.predecessors],
-            "pending_succession": self.pending_succession,
-            "xp": self.xp,
-            "legacy": {name: track.to_dict() for name, track in self.legacy.items()},
-        }
+    def snapshot(self) -> CampaignSnapshot:
+        return copy.deepcopy(
+            CampaignSnapshot(
+                predecessors=self.predecessors,
+                pending_succession=self.pending_succession,
+                xp=self.xp,
+                legacy=self.legacy,
+            )
+        )
 
-    def restore(self, snap: dict[str, Any]) -> None:
-        self.predecessors = [PredecessorRecord.from_dict(p) for p in snap["predecessors"]]
-        self.pending_succession = snap["pending_succession"]
-        self.xp = snap["xp"]
-        self.legacy = {name: ProgressTrack.from_dict(track) for name, track in snap["legacy"].items()}
+    def restore(self, snap: CampaignSnapshot) -> None:
+        held = copy.deepcopy(snap)
+        self.predecessors = held.predecessors
+        self.pending_succession = held.pending_succession
+        self.xp = held.xp
+        self.legacy = held.legacy

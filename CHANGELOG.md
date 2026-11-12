@@ -8,6 +8,19 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.12.0] — 2026-11-12
+
+Saves read by the reader that binds the configuration, roadmap 9y.3c. A dataclass was read from plain data in two ways: the saves by `deserialize`, which checked the names of the fields and never their values, and the configuration by the binder, which checks both. One reader, `serialization.py` → `build_strict`, now serves both, and `config_binding.py` is gone. **Saves from before this release no longer load**, since two of the changes below alter the save format; the player is told the save is incompatible.
+
+- **A save with a value of another type than its field's is refused** as incompatible, where text for a number loaded and failed wherever it was first used. The whole file is read as one dataclass, `persistence.py` → `SavedGame`, so a file that lacks its game or its chat is refused the same way, and the log names the value by its path, as in `Kael/autosave.game_state.narrative.scene_count: expected <class 'int'>, got 'three'`.
+- **The turn's snapshot holds dataclasses**, copied from the state, where it held plain dicts that only a restore read back: a snapshot in a save is checked when the save loads. A snapshot's JSON is as it was.
+- **A chat message is a dataclass**, `ChatMessage`, with its epilogue mark always written, where the mark was a key only an epilogue had; this alters the save format. The entries of the list of saves are `SaveInfo`, whose header fields are checked for their types.
+- **A consequence keeps its texts and its numbers in two mappings**, where one mapping of any value held both; this alters the save format too.
+- **The Brain's answer** is read by the same reader, so an answer with a value of another type than its field's fails the turn, which rolls back, where it entered the state. An answer that follows the Brain's schema reads as it did.
+- Gone with their tests: the two checks that a value handed to the writer or the reader is a dataclass, which mypy now holds.
+
+Measured: a script played 60 games of six turns on the mock provider under the old code and the new, each with a turn undone, the turn's snapshot restored, and a save loaded and restored: all 540 saved states alike, but for the two mappings of their 3392 consequences. mypy's `disallow_any_explicit` finds 444 errors where it found 486. Quality gate: 1974 tests, coverage 96.05% to 96.10%, mypy clean on 271 files, pylint clean, ruff clean on every rule outside the ignores. A sub-agent checked the code and another the documents; what they found is fixed, and what they left open stands under roadmap 9y.3e. No Elvira run: a turn plays as it did, but for a Brain answer its schema does not allow.
+
 ## [2026.11.11.2] — 2026-11-11
 
 The loaders typed and the stores loaded at startup, the rest of roadmap 9y.3b.

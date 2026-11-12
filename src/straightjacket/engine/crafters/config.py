@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from straightjacket.engine.config_binding import build_strict
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.gamemaster.config_types import ClockCreationMappingEntry
 from straightjacket.engine.logging_util import log
+from straightjacket.engine.serialization import build_strict
 from straightjacket.engine.yaml_merge import load_yaml_dir
 
 if TYPE_CHECKING:

@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +12,7 @@ from straightjacket.engine.models import (
     GameState,
     RollResult,
 )
-from straightjacket.engine.persistence import save_game
+from straightjacket.engine.persistence import ChatMessage, save_game
 from straightjacket.engine.user_management import create_user
 from straightjacket.i18n import t
 from straightjacket.web import handlers, server
@@ -49,15 +50,25 @@ class TestSession:
         s = new_session()
         s.append_chat("user", "hello")
         s.append_chat("assistant", "world")
-        assert len(s.chat_messages) == 2
-        assert s.chat_messages[0] == {"role": "user", "content": "hello"}
-        assert s.chat_messages[1] == {"role": "assistant", "content": "world"}
+        assert s.chat_messages == [
+            ChatMessage(role="user", content="hello", epilogue=False),
+            ChatMessage(role="assistant", content="world", epilogue=False),
+        ]
 
     @staticmethod
-    def test_append_chat_extra_fields() -> None:
+    def test_an_epilogue_is_marked_in_the_chat() -> None:
         s = new_session()
         s.append_chat("assistant", "epilogue text", epilogue=True)
-        assert s.chat_messages[0]["epilogue"] is True
+        assert s.chat_messages == [ChatMessage(role="assistant", content="epilogue text", epilogue=True)]
+
+    @staticmethod
+    def test_a_game_begins_with_its_opening_as_the_only_message() -> None:
+        s = new_session()
+        s.append_chat("user", "left over from the game before")
+        game = make_game_state(player_name="Test")
+        s.begin_game(game, "The opening.")
+        assert s.game is game
+        assert s.chat_messages == [ChatMessage(role="assistant", content="The opening.", epilogue=False)]
 
     @staticmethod
     def test_an_input_without_its_narration_is_the_orphan() -> None:
@@ -75,10 +86,10 @@ class TestSession:
         s.append_chat("user", "first")
         s.append_chat("assistant", "response")
         s.pop_last_user_message()
-        assert [m["content"] for m in s.chat_messages] == ["first", "response"]
+        assert [m.content for m in s.chat_messages] == ["first", "response"]
         s.append_chat("user", "second")
         s.pop_last_user_message()
-        assert [m["content"] for m in s.chat_messages] == ["first", "response"]
+        assert [m.content for m in s.chat_messages] == ["first", "response"]
 
     @staticmethod
     def test_the_last_narration_is_replaced_past_a_later_input() -> None:
@@ -86,13 +97,13 @@ class TestSession:
         s.append_chat("assistant", "first")
         s.append_chat("user", "second")
         s.replace_last_assistant("replaced")
-        assert [m["content"] for m in s.chat_messages] == ["replaced", "second"]
+        assert [m.content for m in s.chat_messages] == ["replaced", "second"]
 
     @staticmethod
     def test_clear_game() -> None:
         s = new_session()
         s.game = make_game_state(player_name="Test")
-        s.chat_messages = [{"role": "assistant", "content": "x"}]
+        s.append_chat("assistant", "x")
         s.pending_burn = BurnOffer(
             roll=RollResult(1, 1, 1, "wits", 2, 4, "MISS", "adventure/face_danger", match=True),
             new_result="WEAK_HIT",
@@ -324,7 +335,7 @@ class TestSuccessionWebSocket:
         )
         game.campaign.legacy["quests"].ticks = 24
         game.narrative.scene_count = 5
-        save_game(game, player, [{"role": "assistant", "content": "..."}], "autosave")
+        save_game(game, player, [ChatMessage(role="assistant", content="...", epilogue=False)], "autosave")
 
     @staticmethod
     def _drain_initial(ws: Any) -> None:
@@ -338,6 +349,19 @@ class TestSuccessionWebSocket:
 
             assert server.active_session.game is None
             assert server.active_session.processing is False
+
+    def test_a_saved_game_reaches_the_page_with_its_chat_and_its_entry_in_the_saves(self, client: TestClient) -> None:
+        self._seed_session()
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "select_player", "name": "ws_succ"})
+            assert ws.receive_json()["messages"] == [{"role": "assistant", "content": "...", "epilogue": False}]
+
+            ws.send_json({"type": "list_saves"})
+            [entry] = ws.receive_json()["saves"]
+            saved_at = entry.pop("saved_at")
+            assert entry == {"name": "autosave", "player_name": "Aria", "scene_count": 5, "chapter_number": 1}
+            assert datetime.fromisoformat(saved_at).tzinfo is not None
 
     def test_retire_with_game_prepares_succession(self, client: TestClient) -> None:
         self._seed_session()
