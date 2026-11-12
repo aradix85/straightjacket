@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import CampaignState
@@ -8,24 +8,28 @@ from straightjacket.engine.ruleset.assets import asset_data, enable_next_ability
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.progress import filled_boxes, new_track, ranks
+from straightjacket.engine.serialization import read_key, read_optional_key
 from straightjacket.i18n import t
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import GameState, ProgressTrack, ThreatData
+    from straightjacket.engine.ruleset.datasworn import Asset
 
 
-def _legacy_tracks(setting_id: str) -> dict[str, dict[str, Any]]:
-    tracks: dict[str, dict[str, Any]] = {}
+def _legacy_tracks_earning_experience(setting_id: str) -> dict[str, bool]:
+    experience_tag = rules().legacy.experience_tag
+    tracks: dict[str, bool] = {}
     for rules_file in load_ruleset(setting_id).files:
-        for raw in (rules_file.rules.get("special_tracks") or {}).values():
-            if not raw["optional"] and raw["label"] not in tracks:
-                tracks[raw["label"]] = raw
+        for key, raw in rules_file.rule("special_tracks").items():
+            where = f"{rules_file.datasworn_id}.rules.special_tracks.{key}"
+            label = read_key(raw, "label", str, where)
+            if not read_key(raw, "optional", bool, where) and label not in tracks:
+                tags = read_optional_key(raw, "tags", dict, where) or {}
+                tracks[label] = any(
+                    read_optional_key(package_tags, experience_tag, bool, where) is True
+                    for package_tags in tags.values()
+                )
     return tracks
-
-
-def _earns_experience(setting_id: str, track_name: str) -> bool:
-    tags: dict[str, dict[str, Any]] = _legacy_tracks(setting_id)[track_name].get("tags", {})
-    return any(package_tags.get(rules().legacy.experience_tag) is True for package_tags in tags.values())
 
 
 def _legacy_track(name: str) -> ProgressTrack:
@@ -44,7 +48,7 @@ def new_campaign(setting_id: str) -> CampaignState:
         pending_succession=False,
         xp=0,
         xp_spent=0,
-        legacy={name: _legacy_track(name) for name in _legacy_tracks(setting_id)},
+        legacy={name: _legacy_track(name) for name in _legacy_tracks_earning_experience(setting_id)},
     )
 
 
@@ -61,7 +65,7 @@ def mark_legacy(game: GameState, track_name: str, source_rank: str) -> None:
 def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> None:
     track = game.campaign.legacy[track_name]
     cfg = rules().legacy
-    earns = _earns_experience(game.setting_id, track_name)
+    earns = _legacy_tracks_earning_experience(game.setting_id)[track_name]
     xp_gained = 0
     for _ in range(ticks):
         boxes_before = filled_boxes(track)
@@ -102,13 +106,13 @@ def advance_cost(kind: str) -> int:
     raise ValueError(msg)
 
 
-def _held_id(game: GameState, data: dict[str, Any]) -> str | None:
+def _held_id(game: GameState, data: Asset) -> str | None:
     for held in (*game.paths, *game.assets):
         held_data = asset_data(game, held)
         if held_data is None:
             msg = f"Held asset {held!r} is not in setting {game.setting_id!r}"
             raise ValueError(msg)
-        if held_data["_id"] == data["_id"]:
+        if held_data.id == data.id:
             return held
     return None
 

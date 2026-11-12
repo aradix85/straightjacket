@@ -2,19 +2,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypeVar
 
 import yaml
 
 from straightjacket.engine.config_loader import PROJECT_ROOT
 from straightjacket.engine.logging_util import log
+from straightjacket.engine.serialization import build_strict, shaped
 from straightjacket.engine.setting.loader import load_setting
 from straightjacket.engine.setting.oracle_rolls import PLACEHOLDER_PATTERN, link_owner_and_path
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
+
+    from _typeshed import DataclassInstance
 
     from straightjacket.engine.setting.loader import OracleTable, Setting
+
+_D = TypeVar("_D", bound="DataclassInstance")
+_S = TypeVar("_S")
 
 _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
@@ -46,18 +52,18 @@ class CreationFlow:
 
 @dataclass
 class _OraclePathsPartial:
-    action_theme: list[str] | None = None
-    backstory: str | None = None
-    threats: str | None = None
+    action_theme: list[str] | None
+    backstory: str | None
+    threats: str | None
 
 
 @dataclass
 class _CreationFlowPartial:
-    has_truths: bool | None = None
-    has_backstory_oracle: bool | None = None
-    has_name_tables: bool | None = None
-    has_ship_creation: bool | None = None
-    starting_asset_categories: list[str] | None = None
+    has_truths: bool | None
+    has_backstory_oracle: bool | None
+    has_name_tables: bool | None
+    has_ship_creation: bool | None
+    starting_asset_categories: list[str] | None
 
 
 @dataclass
@@ -75,59 +81,42 @@ class _SettingConfig:
     parent: str | None
 
 
-def _require_dict(data: dict[str, Any], key: str, yaml_path: str) -> dict[str, Any]:
+def _require(data: dict[str, object], key: str, shape: type[_S], yaml_path: str) -> _S:
     if key not in data:
         msg = f"Required key '{key}' missing in {yaml_path}"
         raise KeyError(msg)
     value = data[key]
-    if not isinstance(value, dict):
-        msg = f"Expected dict at '{key}' in {yaml_path}, got {type(value).__name__}"
+    if not isinstance(value, shape):
+        msg = f"Expected {shape.__name__} at '{key}' in {yaml_path}, got {type(value).__name__}"
         raise TypeError(msg)
     return value
 
 
-def _require_str(data: dict[str, Any], key: str, yaml_path: str) -> str:
-    if key not in data:
-        msg = f"Required key '{key}' missing in {yaml_path}"
-        raise KeyError(msg)
-    value = data[key]
-    if not isinstance(value, str):
-        msg = f"Expected str at '{key}' in {yaml_path}, got {type(value).__name__}"
-        raise TypeError(msg)
-    return value
+def _optional(data: dict[str, object], key: str, shape: type[_S], yaml_path: str) -> _S | None:
+    return _require(data, key, shape, yaml_path) if data.get(key) is not None else None
 
 
-def _require_bool(data: dict[str, Any], key: str, yaml_path: str) -> bool:
-    if key not in data:
-        msg = f"Required key '{key}' missing in {yaml_path}"
-        raise KeyError(msg)
-    value = data[key]
-    if not isinstance(value, bool):
-        msg = f"Expected bool at '{key}' in {yaml_path}, got {type(value).__name__}"
-        raise TypeError(msg)
-    return value
-
-
-def _reject_unknown_keys(data: dict[str, Any], schema: type, section: str, yaml_path: str) -> None:
+def _reject_unknown_keys(
+    data: dict[str, object], schema: type[DataclassInstance], section: str, yaml_path: str
+) -> None:
     unknown = sorted(set(data) - {f.name for f in fields(schema)})
     if unknown:
         msg = f"Unknown key(s) {unknown} in {section} of {yaml_path}"
         raise KeyError(msg)
 
 
-def _parse_oracle_paths_partial(data: dict[str, Any], yaml_path: str) -> _OraclePathsPartial:
-    _reject_unknown_keys(data, _OraclePathsPartial, "oracle_paths", yaml_path)
-    partial = _OraclePathsPartial()
-    if "action_theme" in data:
-        partial.action_theme = list(data["action_theme"])
-    if "backstory" in data:
-        partial.backstory = data["backstory"]
-    if "threats" in data:
-        partial.threats = data["threats"]
-    return partial
+def _bind_section(
+    schema: type[_D], absent: dict[str, object], data: dict[str, object], section: str, yaml_path: str
+) -> _D:
+    _reject_unknown_keys(data, schema, section, yaml_path)
+    empty = sorted(key for key, value in data.items() if value is None)
+    if empty:
+        msg = f"Key(s) {empty} have no value in {section} of {yaml_path}"
+        raise ValueError(msg)
+    return build_strict(schema, absent | data, f"{section} of {yaml_path}")
 
 
-def _parse_generators(data: dict[str, Any], yaml_path: str) -> dict[str, dict[str, str]]:
+def _parse_generators(data: dict[str, object], yaml_path: str) -> dict[str, dict[str, str]]:
     generators: dict[str, dict[str, str]] = {}
     for category, tables in data.items():
         if not isinstance(tables, dict) or not tables:
@@ -147,101 +136,74 @@ def _parse_generators(data: dict[str, Any], yaml_path: str) -> dict[str, dict[st
     return generators
 
 
-def _parse_vocabulary(data: dict[str, Any], yaml_path: str) -> VocabularyConfig:
-    _reject_unknown_keys(data, VocabularyConfig, "vocabulary", yaml_path)
-    return VocabularyConfig(
-        substitutions=dict(data.get("substitutions", {})),
-        sensory_palette=data.get("sensory_palette", ""),
-    )
-
-
-def _parse_creation_flow_partial(data: dict[str, Any] | None, yaml_path: str) -> _CreationFlowPartial:
-    partial = _CreationFlowPartial()
-    if data is None:
-        return partial
-    _reject_unknown_keys(data, _CreationFlowPartial, "creation_flow", yaml_path)
-    if "has_truths" in data:
-        partial.has_truths = bool(data["has_truths"])
-    if "has_backstory_oracle" in data:
-        partial.has_backstory_oracle = bool(data["has_backstory_oracle"])
-    if "has_name_tables" in data:
-        partial.has_name_tables = bool(data["has_name_tables"])
-    if "has_ship_creation" in data:
-        partial.has_ship_creation = bool(data["has_ship_creation"])
-    if "starting_asset_categories" in data:
-        partial.starting_asset_categories = list(data["starting_asset_categories"])
-    return partial
-
-
-def _parse_setting_config(data: dict[str, Any], yaml_path: str) -> _SettingConfig:
+def _parse_setting_config(data: dict[str, object], yaml_path: str) -> _SettingConfig:
     _reject_unknown_keys(data, _SettingConfig, "the setting", yaml_path)
-    setting_id = _require_str(data, "id", yaml_path)
+    setting_id = _require(data, "id", str, yaml_path)
     if setting_id != Path(yaml_path).stem:
         msg = f"Setting id '{setting_id}' must equal the file name '{Path(yaml_path).stem}' in {yaml_path}"
         raise ValueError(msg)
-    parent_raw = data.get("parent")
     return _SettingConfig(
         id=setting_id,
-        title=_require_str(data, "title", yaml_path),
-        datasworn_id=_require_str(data, "datasworn_id", yaml_path),
-        description=_require_str(data, "description", yaml_path),
-        playable=_require_bool(data, "playable", yaml_path),
-        default_tone=_require_str(data, "default_tone", yaml_path) if "default_tone" in data else None,
-        oracle_paths=_parse_oracle_paths_partial(_require_dict(data, "oracle_paths", yaml_path), yaml_path),
-        generators=_parse_generators(_require_dict(data, "generators", yaml_path), yaml_path),
-        vocabulary=_parse_vocabulary(_require_dict(data, "vocabulary", yaml_path), yaml_path),
-        creation_flow=_parse_creation_flow_partial(data.get("creation_flow"), yaml_path),
-        parent=str(parent_raw) if parent_raw else None,
+        title=_require(data, "title", str, yaml_path),
+        datasworn_id=_require(data, "datasworn_id", str, yaml_path),
+        description=_require(data, "description", str, yaml_path),
+        playable=_require(data, "playable", bool, yaml_path),
+        default_tone=_optional(data, "default_tone", str, yaml_path),
+        oracle_paths=_bind_section(
+            _OraclePathsPartial,
+            dict.fromkeys(f.name for f in fields(_OraclePathsPartial)),
+            _require(data, "oracle_paths", dict, yaml_path),
+            "oracle_paths",
+            yaml_path,
+        ),
+        generators=_parse_generators(_require(data, "generators", dict, yaml_path), yaml_path),
+        vocabulary=_bind_section(
+            VocabularyConfig,
+            {"substitutions": {}, "sensory_palette": ""},
+            _require(data, "vocabulary", dict, yaml_path),
+            "vocabulary",
+            yaml_path,
+        ),
+        creation_flow=_bind_section(
+            _CreationFlowPartial,
+            dict.fromkeys(f.name for f in fields(_CreationFlowPartial)),
+            _optional(data, "creation_flow", dict, yaml_path) or {},
+            "creation_flow",
+            yaml_path,
+        ),
+        parent=_optional(data, "parent", str, yaml_path),
     )
 
 
+def _first(values: Iterable[_S | None], field_path: str, yaml_path: str) -> _S:
+    for value in values:
+        if value is not None:
+            return value
+    msg = f"{field_path} missing in setting chain ending at {yaml_path}"
+    raise KeyError(msg)
+
+
 def _resolve_oracle_paths(chain: list[_SettingConfig], yaml_path: str) -> OraclePaths:
-    def pick_str(attr: str) -> str:
-        for cfg in chain:
-            val = getattr(cfg.oracle_paths, attr)
-            if val is not None:
-                return str(val)
-        msg = f"oracle_paths.{attr} missing in setting chain ending at {yaml_path}"
-        raise KeyError(msg)
-
-    def pick_str_list(attr: str) -> list[str]:
-        for cfg in chain:
-            val = getattr(cfg.oracle_paths, attr)
-            if val is not None:
-                return [str(item) for item in val]
-        msg = f"oracle_paths.{attr} missing in setting chain ending at {yaml_path}"
-        raise KeyError(msg)
-
+    paths = [cfg.oracle_paths for cfg in chain]
     return OraclePaths(
-        action_theme=pick_str_list("action_theme"),
-        backstory=pick_str("backstory"),
-        threats=pick_str("threats"),
+        action_theme=_first((p.action_theme for p in paths), "oracle_paths.action_theme", yaml_path),
+        backstory=_first((p.backstory for p in paths), "oracle_paths.backstory", yaml_path),
+        threats=_first((p.threats for p in paths), "oracle_paths.threats", yaml_path),
     )
 
 
 def _resolve_creation_flow(chain: list[_SettingConfig], yaml_path: str) -> CreationFlow:
-    def pick_bool(attr: str) -> bool:
-        for cfg in chain:
-            val = getattr(cfg.creation_flow, attr)
-            if val is not None:
-                return bool(val)
-        msg = f"creation_flow.{attr} missing in setting chain ending at {yaml_path}"
-        raise KeyError(msg)
-
-    def pick_str_list(attr: str) -> list[str]:
-        for cfg in chain:
-            val = getattr(cfg.creation_flow, attr)
-            if val is not None:
-                return [str(item) for item in val]
-        msg = f"creation_flow.{attr} missing in setting chain ending at {yaml_path}"
-        raise KeyError(msg)
-
+    flows = [cfg.creation_flow for cfg in chain]
     return CreationFlow(
-        has_truths=pick_bool("has_truths"),
-        has_backstory_oracle=pick_bool("has_backstory_oracle"),
-        has_name_tables=pick_bool("has_name_tables"),
-        has_ship_creation=pick_bool("has_ship_creation"),
-        starting_asset_categories=pick_str_list("starting_asset_categories"),
+        has_truths=_first((f.has_truths for f in flows), "creation_flow.has_truths", yaml_path),
+        has_backstory_oracle=_first(
+            (f.has_backstory_oracle for f in flows), "creation_flow.has_backstory_oracle", yaml_path
+        ),
+        has_name_tables=_first((f.has_name_tables for f in flows), "creation_flow.has_name_tables", yaml_path),
+        has_ship_creation=_first((f.has_ship_creation for f in flows), "creation_flow.has_ship_creation", yaml_path),
+        starting_asset_categories=_first(
+            (f.starting_asset_categories for f in flows), "creation_flow.starting_asset_categories", yaml_path
+        ),
     )
 
 
@@ -375,13 +337,13 @@ def list_packages() -> list[str]:
     return sorted(p.stem for p in _SETTINGS_DIR.glob("*.yaml"))
 
 
-def _read_yaml(setting_id: str) -> tuple[dict[str, Any], Path]:
+def _read_yaml(setting_id: str) -> tuple[dict[str, object], Path]:
     yaml_path = _SETTINGS_DIR / f"{setting_id}.yaml"
     if not yaml_path.exists():
         msg = f"Setting package not found: {yaml_path}"
         raise FileNotFoundError(msg)
     with Path(yaml_path).open(encoding="utf-8") as f:
-        raw = yaml.safe_load(f)
+        raw: dict[str, object] = shaped(yaml.safe_load(f), dict, f"{yaml_path}: expected a mapping")
     return raw, yaml_path
 
 

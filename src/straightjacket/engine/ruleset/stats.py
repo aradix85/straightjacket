@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.serialization import read_key
 
 _cache: dict[str, dict[str, str]] = {}
 
@@ -11,8 +12,8 @@ def stat_descriptions(setting_id: str) -> dict[str, str]:
         return _cache[setting_id]
     found: dict[str, str] = {}
     for rules_file in load_ruleset(setting_id).files:
-        for name, raw in (rules_file.rules.get("stats") or {}).items():
-            found[name] = raw["description"]
+        for name, raw in rules_file.rule("stats").items():
+            found[name] = read_key(raw, "description", str, f"{rules_file.datasworn_id}.rules.stats.{name}")
     _cache[setting_id] = found
     return found
 

@@ -7,6 +7,7 @@ from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import Resources
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.datasworn import load_ruleset
+from straightjacket.engine.serialization import read_key
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import GameState
@@ -29,8 +30,13 @@ def condition_meters(setting_id: str) -> dict[str, ConditionMeter]:
         return _cache[setting_id]
     meters: dict[str, ConditionMeter] = {}
     for rules_file in load_ruleset(setting_id).files:
-        for key, raw in (rules_file.rules.get("condition_meters") or {}).items():
-            meters[key] = ConditionMeter(min=raw["min"], max=raw["max"], start=raw["value"])
+        for key, raw in rules_file.rule("condition_meters").items():
+            where = f"{rules_file.datasworn_id}.rules.condition_meters.{key}"
+            meters[key] = ConditionMeter(
+                min=read_key(raw, "min", int, where),
+                max=read_key(raw, "max", int, where),
+                start=read_key(raw, "value", int, where),
+            )
     _cache[setting_id] = meters
     return meters
 

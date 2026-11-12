@@ -143,6 +143,8 @@ Each loader merges its directory and raises on a key that two files define. Code
 - A block whose keys are themselves domain content, such as move names or dispositions, is a mapping, which extends without a Python change.
 - The emotions are bound the same way, to `EmotionSettings` in `emotions_loader.py`; the prompts and the strings are text by key, and a value that is no text raises (`yaml_merge.py` → `load_text_dir`).
 - The Mythic and Adventure Crafter data files are bound the same way, each as a whole at its first use: `gamemaster/mythic_data.py` → `MythicData` and `crafters/adventure_crafter.py` → `AdventureCrafterData`. A table of Mythic's that no code reads yet is a field held as it is.
+- A Datasworn file is an external structure that holds far more than the engine reads, so it is not bound whole. `setting/loader.py` reads its oracles and truths into dataclasses and `ruleset/datasworn.py` its assets; the ruleset's readers take the moves, stats, meters, impacts, and special tracks from it. Each value goes through `serialization.py` → `read_key`, which refuses another type than the one asked and names the value by its path.
+- A setting's yaml is parsed in `setting/packages.py`, since a setting inherits what it leaves out (`docs/settings.md`, Inheritance). Its `oracle_paths`, `vocabulary`, and `creation_flow` are bound by `build_strict`, with what the yaml leaves out filled in as absent; a key written without a value raises.
 - Two blocks whose yaml shape is not their dataclass's are parsed by hand in `ruleset/config.py`: the move availability rules, and the move outcomes, where an entry's `handler` names the dataclass of its `params`.
 
 ## Interface and accessibility

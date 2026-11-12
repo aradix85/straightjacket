@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.datasworn import Asset
 
 
-def asset_data(game: GameState, asset_id: str) -> dict[str, Any] | None:
+def asset_data(game: GameState, asset_id: str) -> Asset | None:
     parts = asset_id.split("/")
     key = parts[-1]
     for rules_file in reversed(load_ruleset(game.setting_id).files):
@@ -26,7 +27,7 @@ def enabled_abilities(game: GameState, asset_id: str) -> list[bool]:
     data = asset_data(game, asset_id)
     if data is None:
         return []
-    return [bool(ability.get("enabled")) for ability in data["abilities"]]
+    return [ability.enabled for ability in data.abilities]
 
 
 def enable_next_ability(game: GameState, asset_id: str) -> None:

@@ -1,3 +1,5 @@
+import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -5,9 +7,15 @@ import pytest
 import yaml
 
 from straightjacket.engine.config_loader import PROJECT_ROOT
-from straightjacket.engine.ruleset.datasworn import load_ruleset
-from straightjacket.engine.ruleset.moves import get_moves
-from straightjacket.engine.setting import packages
+from straightjacket.engine.ruleset import datasworn, impacts, meters, stats
+from straightjacket.engine.ruleset.datasworn import load_ruleset, rules_file
+from straightjacket.engine.ruleset.impacts import get_impacts
+from straightjacket.engine.ruleset.legacy import new_campaign
+from straightjacket.engine.ruleset.meters import condition_meters
+from straightjacket.engine.ruleset.moves import get_moves, move_of_file
+from straightjacket.engine.ruleset.stats import stat_descriptions
+from straightjacket.engine.setting import loader, packages
+from straightjacket.engine.setting.loader import load_setting
 from straightjacket.engine.setting.packages import load_package
 
 _REAL_SETTINGS = PROJECT_ROOT / "data" / "settings"
@@ -64,6 +72,162 @@ def test_a_setting_chain_that_names_two_rulesets_raises(settings_dir: Path) -> N
     _copy(settings_dir, "sundered_isles", "mixed", parent="classic")
     with pytest.raises(ValueError, match="more than one ruleset"):
         load_package("mixed")
+
+
+@pytest.fixture(name="change_classic")
+def fixture_change_classic(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Callable[[tuple[str | int, ...], object], None]:
+    def change(path: tuple[str | int, ...], value: object) -> None:
+        data = json.loads((PROJECT_ROOT / "data" / "classic.json").read_text(encoding="utf-8"))
+        if path:
+            part = data
+            for step in path[:-1]:
+                part = part[step]
+            part[path[-1]] = value
+        else:
+            data = value
+        (tmp_path / "classic.json").write_text(json.dumps(data), encoding="utf-8")
+        for module in (loader, packages, datasworn, meters, impacts, stats):
+            monkeypatch.setattr(module, "_cache", {})
+        monkeypatch.setattr(loader, "_files", {})
+        monkeypatch.setattr(loader, "_DATA_DIR", tmp_path)
+        monkeypatch.setattr("straightjacket.engine.ruleset.moves._file_cache", {})
+
+    return change
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "read", "message"),
+    [
+        (
+            ("assets", "combat_talent", "contents", "archer", "abilities", 0, "text"),
+            7,
+            lambda: rules_file("classic"),
+            r"classic\.assets\.combat_talent\.archer\.abilities\[0\]\.text: expected str, got int",
+        ),
+        (
+            ("assets", "combat_talent", "contents", "archer", "abilities", 0, "enabled"),
+            "yes",
+            lambda: rules_file("classic"),
+            r"classic\.assets\.combat_talent\.archer\.abilities\[0\]\.enabled: expected bool, got str",
+        ),
+        (
+            ("moves", "adventure", "contents", "face_danger", "allow_momentum_burn"),
+            "yes",
+            lambda: move_of_file("classic", "adventure/face_danger"),
+            r"classic\.moves\.adventure/face_danger\.allow_momentum_burn: expected bool, got str",
+        ),
+        (
+            ("moves", "adventure", "contents", "face_danger", "trigger", "conditions", 0, "roll_options", 0, "stat"),
+            ["edge"],
+            lambda: move_of_file("classic", "adventure/face_danger"),
+            r"face_danger\.trigger\.conditions\[0\]\.roll_options\[0\]\.stat: expected str, got list",
+        ),
+        (
+            ("oracles", "action_and_theme", "contents", "action", "rows", 0, "roll", "min"),
+            "1",
+            lambda: load_setting("classic"),
+            r"classic\.oracles\.action_and_theme/action\.rows\[0\]\.min: expected int, got str",
+        ),
+        (
+            ("truths",),
+            [],
+            lambda: load_setting("classic"),
+            r"classic\.truths: expected dict, got list",
+        ),
+        (
+            ("truths", "old_world", "options", 0, "description"),
+            7,
+            lambda: load_setting("classic"),
+            r"classic\.truths\.old_world\.options\[0\]\.description: expected str, got int",
+        ),
+        (
+            ("oracles", "character", "contents", "goal", "rows", 32, "oracle_rolls", 0, "number_of_rolls"),
+            "2",
+            lambda: load_setting("classic"),
+            r"character/goal\.rows\[32\]\.oracle_rolls\[0\]\.number_of_rolls: expected int, got str",
+        ),
+        (
+            ("moves", "adventure", "contents", "face_danger", "suggestions"),
+            [7],
+            lambda: move_of_file("classic", "adventure/face_danger"),
+            r"face_danger\.suggestions: expected str, got int",
+        ),
+        (
+            ("rules", "impacts", "conditions", "contents", "wounded", "prevents_recovery"),
+            [7],
+            lambda: get_impacts("classic"),
+            r"impacts\.wounded\.prevents_recovery: expected str, got int",
+        ),
+        (
+            ("rules", "special_tracks", "bonds", "tags"),
+            {"classic": {"legacy_track_xp": "yes"}},
+            lambda: new_campaign("classic"),
+            r"special_tracks\.bonds\.legacy_track_xp: expected bool, got str",
+        ),
+        (
+            ("rules", "condition_meters", "health", "max"),
+            True,
+            lambda: condition_meters("classic"),
+            r"condition_meters\.health\.max: expected int, got bool",
+        ),
+        ((), [], lambda: load_setting("classic"), r"classic\.json: expected dict, got list"),
+        (
+            ("rules", "condition_meters", "health", "max"),
+            "5",
+            lambda: condition_meters("classic"),
+            r"classic\.rules\.condition_meters\.health\.max: expected int, got str",
+        ),
+        (
+            ("rules", "stats", "edge", "description"),
+            None,
+            lambda: stat_descriptions("classic"),
+            r"classic\.rules\.stats\.edge\.description: expected str, got NoneType",
+        ),
+        (
+            ("rules", "impacts", "conditions", "contents", "wounded", "permanent"),
+            "no",
+            lambda: get_impacts("classic"),
+            r"classic\.rules\.impacts\.wounded\.permanent: expected bool, got str",
+        ),
+        (
+            ("rules", "special_tracks", "bonds", "optional"),
+            "no",
+            lambda: new_campaign("classic"),
+            r"classic\.rules\.special_tracks\.bonds\.optional: expected bool, got str",
+        ),
+    ],
+    ids=[
+        "ability_text",
+        "ability_enabled",
+        "move_burn",
+        "roll_option_stat",
+        "oracle_row",
+        "truths",
+        "truth_option",
+        "oracle_roll",
+        "suggestion",
+        "prevents_recovery",
+        "tags",
+        "meter_bool",
+        "no_mapping",
+        "meter",
+        "stat",
+        "impact",
+        "special_track",
+    ],
+)
+def test_a_datasworn_value_of_another_type_than_the_engine_reads_refuses_to_load(
+    change_classic: Callable[[tuple[str | int, ...], object], None],
+    path: tuple[str | int, ...],
+    value: object,
+    read: Callable[[], object],
+    message: str,
+) -> None:
+    change_classic(path, value)
+    with pytest.raises(ValueError, match=message):
+        read()
 
 
 def _probe() -> dict[str, Any]:

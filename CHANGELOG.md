@@ -8,6 +8,17 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.12.2] — 2026-11-12
+
+Datasworn and the settings yaml read with their values checked, the rest of roadmap 9y.3d. A Datasworn file was handed through the engine as loaded, `Any` at every depth: a move, an asset, a truth, or a meter was a dict read by its keys wherever it was used. Datasworn is an external structure with far more than the engine reads, so it is not bound whole; each value the engine reads now goes through `serialization.py` → `read_key`, which refuses another type than the one asked and names the value by its path, as in `classic.moves.adventure/face_danger.allow_momentum_burn: expected bool, got str` (ARCHITECTURE.md, Typed binding).
+
+- **Assets, truths, and an oracle row's roll instructions are dataclasses** (`Asset`, `Truth`, `OracleRoll`), parsed where a setting or a rules file is made, where the ruleset, the page, and Elvira each read the raw dicts.
+- **The rules a ruleset's readers take** (stats, meters, impacts, special tracks) and the moves are checked value by value where they are parsed.
+- **A setting's yaml:** `oracle_paths`, `vocabulary`, and `creation_flow` are bound by the reader that binds the configuration, so a flag that is no boolean, a path that is no text, or a key written without a value stops the load, where a flag was coerced and a path taken as it came. One `_require` replaces three copies, one `_first` the four pickers along the chain of parents, and the partial classes lose their defaults and their carve-out in the no-defaults scan, since the binding fills in what a yaml leaves out.
+- The list of saves reads its header fields through `read_key` too, and `shaped` no longer takes a boolean for a whole number.
+
+Measured: a script held the old code against the new for all four settings: the creation options the page gets, every move, meter, stat, impact, and legacy track, every oracle table with its roll instructions, 4,672 seeded oracle rolls, the roll bonuses of a character with twelve assets, and 240 asset advances: all alike. mypy's `disallow_any_explicit` finds 396 errors where it found 435. Quality gate: 2003 tests, coverage 96.19% to 96.22%, mypy clean on 271 files, pylint clean, ruff clean on every rule outside the ignores. A sub-agent checked the release; what it found is fixed, but for a rules file parsing its assets each time it is made, which stands. Save format unchanged. No Elvira run: the shipped files read as they did.
+
 ## [2026.11.12.1] — 2026-11-12
 
 Mythic's and the Adventure Crafter's data files bound to dataclasses, the first half of roadmap 9y.3d. Both files were handed out as loaded, `Any` at every depth, and each table was read by its keys where it was rolled. The reader that binds the configuration now binds each file whole at its first use, to `gamemaster/mythic_data.py` → `MythicData` and `crafters/adventure_crafter.py` → `AdventureCrafterData`, so a value of another type than its field's, a missing table, or a table the engine does not know stops the load and names its path, as in `adventure_crafter.json.plot_points[0].themes.action.max: expected <class 'int'>, got '8'` (ARCHITECTURE.md, Typed binding).

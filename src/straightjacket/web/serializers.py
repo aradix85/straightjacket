@@ -149,15 +149,15 @@ def build_threats_status(game: GameState) -> str:
 def _truth_options(pkg: SettingPackage) -> list[dict[str, Any]]:
     trunc = eng().truncations
     truths = []
-    for truth_id, truth_data in pkg.data.truths().items():
+    for truth_id, truth in pkg.data.truths().items():
         options = [
             {
-                "summary": str(opt["summary"] if "summary" in opt else opt["description"])[: trunc.prompt_medium],
-                "description": str(opt["description"])[: trunc.prompt_medium],
+                "summary": option.summary[: trunc.prompt_medium],
+                "description": option.description[: trunc.prompt_medium],
             }
-            for opt in truth_data["options"]
+            for option in truth.options
         ]
-        truths.append({"id": truth_id, "name": truth_data["name"], "options": options})
+        truths.append({"id": truth_id, "name": truth.name, "options": options})
     return truths
 
 
@@ -169,7 +169,7 @@ def _setting_options(pkg_id: str, pkg: SettingPackage) -> dict[str, Any]:
         "id": pkg_id,
         "title": pkg.title,
         "description": pkg.description,
-        "paths": [{"id": asset["_id"].rsplit("/", 1)[-1], "title": asset["name"]} for asset in own.assets_of("path")],
+        "paths": [{"id": asset.id.rsplit("/", 1)[-1], "title": asset.name} for asset in own.assets_of("path")],
         "max_paths": rules().creation.max_paths[ruleset.id],
         "truths": _truth_options(pkg) if flow.has_truths else [],
         "name_tables": {
@@ -182,7 +182,7 @@ def _setting_options(pkg_id: str, pkg: SettingPackage) -> dict[str, Any]:
         if flow.has_backstory_oracle
         else [],
         "starting_assets": [
-            {"id": asset["_id"].rsplit("/", 1)[-1], "title": asset["name"], "category": own.assets[cat]["name"]}
+            {"id": asset.id.rsplit("/", 1)[-1], "title": asset.name, "category": own.assets[cat].name}
             for cat in flow.starting_asset_categories
             for asset in own.assets_of(cat)
         ],

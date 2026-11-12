@@ -3,17 +3,15 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import GameState
-from straightjacket.engine.serialization import SerializableMixin, build_strict, shaped
+from straightjacket.engine.serialization import SerializableMixin, build_strict, read_key
 from straightjacket.engine.user_management import _safe_name, get_save_dir
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-_S = TypeVar("_S")
 
 
 class IncompatibleSaveError(Exception):
@@ -76,20 +74,16 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[ChatMess
     return game, chat_messages
 
 
-def _header(part: dict[str, object], key: str, shape: type[_S], where: str) -> _S:
-    return shaped(part[key], shape, f"{where}: {key} expected {shape.__name__}")
-
-
 def _save_info(path: Path) -> SaveInfo:
     where = path.name
-    data = shaped(json.loads(path.read_text(encoding="utf-8")), dict, f"{where}: expected dict")
-    game = _header(data, "game_state", dict, where)
+    data: object = json.loads(path.read_text(encoding="utf-8"))
+    game = read_key(data, "game_state", dict, where)
     return SaveInfo(
         name=path.stem,
-        player_name=_header(game, "player_name", str, where),
-        scene_count=_header(_header(game, "narrative", dict, where), "scene_count", int, where),
-        chapter_number=_header(_header(game, "campaign", dict, where), "chapter_number", int, where),
-        saved_at=_header(data, "saved_at", str, where),
+        player_name=read_key(game, "player_name", str, where),
+        scene_count=read_key(read_key(game, "narrative", dict, where), "scene_count", int, where),
+        chapter_number=read_key(read_key(game, "campaign", dict, where), "chapter_number", int, where),
+        saved_at=read_key(data, "saved_at", str, where),
     )
 
 

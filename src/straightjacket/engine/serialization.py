@@ -32,10 +32,22 @@ def _serialize_value(val: object) -> object:
 
 
 def shaped(val: object, shape: type[_S], requirement: str) -> _S:
-    if isinstance(val, shape):
+    if isinstance(val, shape) and isinstance(val, bool) == (shape is bool):
         return val
     msg = f"{requirement}, got {type(val).__name__}"
     raise ValueError(msg)
+
+
+def read_key(part: object, key: str, shape: type[_S], where: str) -> _S:
+    return shaped(
+        shaped(part, dict, f"{where}: expected dict")[key], shape, f"{where}.{key}: expected {shape.__name__}"
+    )
+
+
+def read_optional_key(part: object, key: str, shape: type[_S], where: str) -> _S | None:
+    if shaped(part, dict, f"{where}: expected dict").get(key) is None:
+        return None
+    return read_key(part, key, shape, where)
 
 
 def build_strict(cls: type[_D], data: object, where: str, **parsers: Callable[[object, str], object]) -> _D:

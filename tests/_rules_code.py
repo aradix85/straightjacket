@@ -217,8 +217,6 @@ _CONFIG_BINDING_FILES = frozenset(
 
 _EXTERNAL_STRUCTURE_DATACLASSES: set[tuple[str, str]] = {
     ("engine/ai/provider_base.py", "AIResponse"),
-    ("engine/setting/packages.py", "_OraclePathsPartial"),
-    ("engine/setting/packages.py", "_CreationFlowPartial"),
 }
 
 _EMPTY_COLLECTION_FACTORIES = frozenset({"list", "dict", "set"})

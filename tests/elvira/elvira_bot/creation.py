@@ -70,7 +70,7 @@ def _roll_name(pkg: SettingPackage, game_cfg: dict[str, Any]) -> str:
 
 def _asset_ids(pkg: SettingPackage, categories: list[str]) -> list[str]:
     own = load_ruleset(pkg.id).setting_file
-    return [asset["_id"].rsplit("/", 1)[-1] for cat in categories for asset in own.assets_of(cat)]
+    return [asset.id.rsplit("/", 1)[-1] for cat in categories for asset in own.assets_of(cat)]
 
 
 def _roll_paths(pkg: SettingPackage, game_cfg: dict[str, Any]) -> list[str]:
@@ -116,9 +116,8 @@ def _roll_truths(pkg: SettingPackage, game_cfg: dict[str, Any]) -> dict[str, str
     if not pkg.creation_flow.has_truths:
         return {}
     result = {}
-    for truth_id, truth_data in pkg.data.truths().items():
-        chosen = _random.choice(truth_data["options"])
-        result[truth_id] = chosen["summary"] if "summary" in chosen else chosen["description"]
+    for truth_id, truth in pkg.data.truths().items():
+        result[truth_id] = _random.choice(truth.options).summary
     return result
 
 

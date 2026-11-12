@@ -32,7 +32,7 @@ def _path_names(paths: list[str], own: RulesFile) -> list[str]:
         if path is None:
             msg = f"Path '{pid}' is not among the paths of '{own.datasworn_id}'"
             raise ValueError(msg)
-        names.append(path["name"])
+        names.append(path.name)
     return names
 
 

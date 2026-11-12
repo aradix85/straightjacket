@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from straightjacket.engine.models import (
         Consequence,
     )
-    from straightjacket.engine.ruleset.datasworn import RulesFile
+    from straightjacket.engine.ruleset.datasworn import Asset, RulesFile
     from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 
 
@@ -534,7 +534,7 @@ def config_data(*, providers: dict[str, Any], clusters: dict[str, Any], role_clu
     }
 
 
-def known_asset(setting_file: RulesFile, category: str, asset_id: str) -> dict[str, Any]:
+def known_asset(setting_file: RulesFile, category: str, asset_id: str) -> Asset:
     found = setting_file.asset(category, asset_id)
     assert found is not None
     return found

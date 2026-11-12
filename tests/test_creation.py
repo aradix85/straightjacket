@@ -258,7 +258,7 @@ def test_a_character_takes_its_concept_from_its_paths() -> None:
     pkg = load_package("starforged")
     character = make_character({**_CHARACTER, "paths": ["ace", "explorer"], "background_vow_rank": "epic"}, pkg)
     own = load_ruleset("starforged").setting_file
-    names = [known_asset(own, "path", pid)["name"] for pid in ("ace", "explorer")]
+    names = [known_asset(own, "path", pid).name for pid in ("ace", "explorer")]
     assert character.concept == ", ".join(names)
     assert character.background_vow_rank == "epic"
 

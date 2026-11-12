@@ -9,11 +9,10 @@ from tests._helpers import known_asset
 def test_path_and_asset_titles_are_the_datasworn_names() -> None:
     for setting in build_creation_options()["settings"]:
         own = load_ruleset(setting["id"]).setting_file
-        assert {p["title"] for p in setting["paths"]} == {a["name"] for a in own.assets_of("path")}
-        category_of = {own.assets[cat]["name"]: cat for cat in own.assets}
+        assert {p["title"] for p in setting["paths"]} == {a.name for a in own.assets_of("path")}
+        category_of = {own.assets[cat].name: cat for cat in own.assets}
         assert all(
-            a["title"] == known_asset(own, category_of[a["category"]], a["id"])["name"]
-            for a in setting["starting_assets"]
+            a["title"] == known_asset(own, category_of[a["category"]], a["id"]).name for a in setting["starting_assets"]
         )
 
 

@@ -39,8 +39,8 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
         if data is None:
             continue
         flags = enabled_abilities(game, asset_id)
-        for index, (ability, enabled) in enumerate(zip(data["abilities"], flags, strict=True)):
-            text = plain_text(str(ability["text"]))
+        for index, (ability, enabled) in enumerate(zip(data.abilities, flags, strict=True)):
+            text = plain_text(ability.text)
             add = _ADD.search(text)
             if not enabled or add is None:
                 continue
@@ -48,7 +48,7 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
             options.append(
                 RollBonus(
                     id=f"{asset_id}#{index}",
-                    source=str(data["name"]),
+                    source=data.name,
                     condition=text[: cfg.condition_chars],
                     add=int(add.group(1)),
                     momentum_on_hit=int(momentum.group(1)) if momentum else 0,
