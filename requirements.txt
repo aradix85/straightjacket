@@ -5,4 +5,5 @@ uvicorn[standard]>=0.34,<1
 pyyaml>=6.0,<7
 anthropic>=1.8,<2
 openai>=3.19,<4
+pydantic>=2.13,<3
 typing-extensions>=4.10,<5

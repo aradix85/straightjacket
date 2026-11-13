@@ -1,5 +1,3 @@
-from typing import Any
-
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.ruleset.config import rules
@@ -7,35 +5,35 @@ from straightjacket.engine.ruleset.moves import PICK_METHODS
 from straightjacket.engine.ruleset.progress import ranks
 
 
-def _str() -> dict[str, Any]:
+def _str() -> dict[str, object]:
     return {"type": "string"}
 
 
-def _str_enum(enum: list[str]) -> dict[str, Any]:
+def _str_enum(enum: list[str]) -> dict[str, object]:
     return {"type": "string", "enum": enum}
 
 
-def _bool() -> dict[str, Any]:
+def _bool() -> dict[str, object]:
     return {"type": "boolean"}
 
 
-def _nullable_str() -> dict[str, Any]:
+def _nullable_str() -> dict[str, object]:
     return {"anyOf": [{"type": "string"}, {"type": "null"}]}
 
 
-def _nullable_obj(props: dict[str, Any]) -> dict[str, Any]:
+def _nullable_obj(props: dict[str, object]) -> dict[str, object]:
     return {"anyOf": [_obj(props), {"type": "null"}]}
 
 
-def _arr(item_schema: dict[str, Any]) -> dict[str, Any]:
+def _arr(item_schema: dict[str, object]) -> dict[str, object]:
     return {"type": "array", "items": item_schema}
 
 
-def _str_arr() -> dict[str, Any]:
+def _str_arr() -> dict[str, object]:
     return _arr({"type": "string"})
 
 
-def _obj(props: dict[str, Any]) -> dict[str, Any]:
+def _obj(props: dict[str, object]) -> dict[str, object]:
     return {
         "type": "object",
         "properties": props,
@@ -44,21 +42,21 @@ def _obj(props: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _obj_root(props: dict[str, Any], title: str) -> dict[str, Any]:
+def _obj_root(props: dict[str, object], title: str) -> dict[str, object]:
     return {**_obj(props), "title": title}
 
 
-def _nullable_enum(values: list[str]) -> dict[str, Any]:
+def _nullable_enum(values: list[str]) -> dict[str, object]:
     if not values:
         return {"type": "null"}
     return {"anyOf": [{"type": "string", "enum": sorted(set(values))}, {"type": "null"}]}
 
 
-def _fact_requests(npc_ids: list[str]) -> dict[str, Any]:
+def _fact_requests(npc_ids: list[str]) -> dict[str, object]:
     cfg = gm().fact_resolution
     place_types = sorted(name for name, spec in cfg.types.items() if spec.subject == "place")
     npc_types = sorted(name for name, spec in cfg.types.items() if spec.subject == "npc")
-    branches: list[dict[str, Any]] = []
+    branches: list[dict[str, object]] = []
     if place_types:
         branches.append(_obj({"fact_type": _str_enum(place_types), "about": _str_enum([cfg.place_reference])}))
     if npc_types and npc_ids:
@@ -77,7 +75,7 @@ def get_brain_output_schema(
     track_ids: list[str],
     clock_names: list[str],
     threat_ids: list[str],
-) -> dict[str, Any]:
+) -> dict[str, object]:
     rank_enum = sorted(ranks())
     return _obj_root(
         {
@@ -108,7 +106,7 @@ def get_brain_output_schema(
     )
 
 
-def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
+def get_director_output_schema(reflection_ids: list[str]) -> dict[str, object]:
     return _obj_root(
         {
             "scene_summary": _str(),
@@ -145,11 +143,11 @@ def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
     )
 
 
-def _counted_arr(item_schema: dict[str, Any], count: int) -> dict[str, Any]:
+def _counted_arr(item_schema: dict[str, object], count: int) -> dict[str, object]:
     return {"type": "array", "items": item_schema, "minItems": count, "maxItems": count}
 
 
-def get_blueprint_voicing_schema(acts: int, endings: int) -> dict[str, Any]:
+def get_blueprint_voicing_schema(acts: int, endings: int) -> dict[str, object]:
     return _obj_root(
         {
             "central_conflict": _str(),
@@ -173,13 +171,13 @@ def get_blueprint_voicing_schema(acts: int, endings: int) -> dict[str, Any]:
     )
 
 
-def _about_known_npcs(npc_ids: list[str], props: dict[str, Any]) -> dict[str, Any]:
+def _about_known_npcs(npc_ids: list[str], props: dict[str, object]) -> dict[str, object]:
     if not npc_ids:
         return {"type": "array", "items": {"type": "null"}, "maxItems": 0}
     return _arr(_obj({"npc_id": _str_enum(sorted(set(npc_ids))), **props}))
 
 
-def get_narrator_metadata_schema(npc_ids: list[str]) -> dict[str, Any]:
+def get_narrator_metadata_schema(npc_ids: list[str]) -> dict[str, object]:
     dispositions = list(gm().enums.dispositions)
     return _obj_root(
         {
@@ -208,7 +206,7 @@ def get_narrator_metadata_schema(npc_ids: list[str]) -> dict[str, Any]:
     )
 
 
-def get_opening_setup_schema() -> dict[str, Any]:
+def get_opening_setup_schema() -> dict[str, object]:
     return _obj_root(
         {
             "npcs": _arr(
@@ -240,8 +238,8 @@ def get_opening_setup_schema() -> dict[str, Any]:
     )
 
 
-def get_correction_output_schema(npc_ids: list[str]) -> dict[str, Any]:
-    field_props: dict[str, Any] = {}
+def get_correction_output_schema(npc_ids: list[str]) -> dict[str, object]:
+    field_props: dict[str, object] = {}
     for fname in eng().correction.npc_edit_fields:
         if fname == "aliases":
             field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}

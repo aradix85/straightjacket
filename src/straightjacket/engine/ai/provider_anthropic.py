@@ -1,18 +1,49 @@
-from collections.abc import Callable
-from typing import Any
+from __future__ import annotations
+
+from functools import partial
+from typing import TYPE_CHECKING, TypeVar
 
 import anthropic
+from anthropic.types import CacheControlEphemeralParam, OutputConfigParam, ThinkingConfigParam
+from anthropic.types.message_create_params import MessageCreateParamsBase
+from pydantic import TypeAdapter, ValidationError
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, ToolCall, normalize_stop_reason
+from straightjacket.engine.ai.provider_base import AIResponse, ToolCall, normalize_stop_reason
 from straightjacket.engine.logging_util import log
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-def _cached_system(spec: AICallSpec, cache_control: dict[str, Any]) -> list[dict[str, Any]]:
+    from anthropic.types import Message, TextBlockParam
+
+    from straightjacket.engine.ai.provider_base import AICallSpec
+
+_P = TypeVar("_P")
+
+_OUTPUT_CONFIG = TypeAdapter(OutputConfigParam)
+_CACHE_CONTROL = TypeAdapter(CacheControlEphemeralParam)
+_THINKING: TypeAdapter[ThinkingConfigParam] = TypeAdapter(ThinkingConfigParam)
+
+
+class _Request(MessageCreateParamsBase, total=False):
+    extra_body: dict[str, object]
+
+
+def _routed(adapter: TypeAdapter[_P], extra: dict[str, object], key: str) -> _P:
+    try:
+        return adapter.validate_python(extra.pop(key), strict=True, extra="forbid")
+    except ValidationError as e:
+        faults = "; ".join(f"{'.'.join(map(str, fault['loc']))}: {fault['msg']}" for fault in e.errors())
+        msg = f"extra_body.{key}: {faults}"
+        raise ValueError(msg) from e
+
+
+def _cached_system(spec: AICallSpec, cache_control: CacheControlEphemeralParam) -> list[TextBlockParam]:
     prefix = spec.cached_system_prefix or spec.system
     if not spec.system.startswith(prefix):
         msg = f"{spec.log_role}: cached_system_prefix is not the start of the system prompt"
         raise ValueError(msg)
-    blocks: list[dict[str, Any]] = [{"type": "text", "text": prefix, "cache_control": cache_control}]
+    blocks: list[TextBlockParam] = [{"type": "text", "text": prefix, "cache_control": cache_control}]
     if len(spec.system) > len(prefix):
         blocks.append({"type": "text", "text": spec.system[len(prefix) :]})
     return blocks
@@ -20,10 +51,8 @@ def _cached_system(spec: AICallSpec, cache_control: dict[str, Any]) -> list[dict
 
 class AnthropicProvider:
     def __init__(self, api_key: str, timeout_seconds: float, api_base: str) -> None:
-        client_kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": timeout_seconds}
-        if api_base:
-            client_kwargs["base_url"] = api_base
-        self._client = anthropic.Anthropic(**client_kwargs)
+        client = partial(anthropic.Anthropic, api_key=api_key, max_retries=0, timeout=timeout_seconds)
+        self._client = client(base_url=api_base) if api_base else client()
         log(f"[AnthropicProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def list_models(self) -> list[str]:
@@ -41,51 +70,48 @@ class AnthropicProvider:
         return self._response(final)
 
     @staticmethod
-    def _request(spec: AICallSpec) -> dict[str, Any]:
-        create_kwargs: dict[str, Any] = {
+    def _request(spec: AICallSpec) -> _Request:
+        request: _Request = {
             "model": spec.model,
-            "max_tokens": spec.max_tokens,
+            "max_tokens": spec.sampling["max_tokens"],
             "system": spec.system,
-            "messages": spec.messages,
+            "messages": [{"role": message["role"], "content": message["content"]} for message in spec.messages],
         }
-        extra: dict[str, Any] = dict(spec.extra_body)
+        extra = dict(spec.sampling["extra_body"])
 
-        sampling: dict[str, Any] = {}
-        if spec.temperature is not None:
-            sampling["temperature"] = spec.temperature
-        if spec.top_p is not None:
-            sampling["top_p"] = spec.top_p
+        body: dict[str, object] = {}
+        if spec.sampling["temperature"] is not None:
+            body["temperature"] = spec.sampling["temperature"]
+        if spec.sampling["top_p"] is not None:
+            body["top_p"] = spec.sampling["top_p"]
 
-        output_config: dict[str, Any] = extra.pop("output_config") if "output_config" in extra else {}
+        output_config: OutputConfigParam = (
+            _routed(_OUTPUT_CONFIG, extra, "output_config") if "output_config" in extra else {}
+        )
         if spec.json_schema is not None:
-            schema = anthropic.transform_schema(spec.json_schema)
-            output_config = {**output_config, "format": {"type": "json_schema", "schema": schema}}
+            output_config["format"] = {"type": "json_schema", "schema": anthropic.transform_schema(spec.json_schema)}
         if output_config:
-            create_kwargs["output_config"] = output_config
+            request["output_config"] = output_config
 
         if "cache_control" in extra:
-            create_kwargs["system"] = _cached_system(spec, extra.pop("cache_control"))
+            request["system"] = _cached_system(spec, _routed(_CACHE_CONTROL, extra, "cache_control"))
         if "thinking" in extra:
-            create_kwargs["thinking"] = extra.pop("thinking")
+            request["thinking"] = _routed(_THINKING, extra, "thinking")
 
-        body = {**sampling, **extra}
+        body.update(extra)
         if body:
-            create_kwargs["extra_body"] = body
+            request["extra_body"] = body
 
         if spec.tools is not None:
-            create_kwargs["tools"] = [
-                {
-                    "name": t["function"]["name"],
-                    "description": t["function"]["description"],
-                    "input_schema": t["function"]["parameters"],
-                }
-                for t in spec.tools
+            request["tools"] = [
+                {"name": tool.name, "description": tool.description, "input_schema": tool.parameters}
+                for tool in spec.tools
             ]
 
-        return create_kwargs
+        return request
 
     @staticmethod
-    def _response(response: Any) -> AIResponse:
+    def _response(response: Message) -> AIResponse:
         content = ""
         parsed_tool_calls = []
         for block in response.content:

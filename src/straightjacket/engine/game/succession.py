@@ -27,7 +27,14 @@ from straightjacket.engine.setting.packages import load_package
 
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
-    from straightjacket.engine.models import GameState, PredecessorRecord, ProgressTrack, ThreadEntry, ThreatData
+    from straightjacket.engine.models import (
+        GameState,
+        NpcData,
+        PredecessorRecord,
+        ProgressTrack,
+        ThreadEntry,
+        ThreatData,
+    )
 
 END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
 
@@ -59,7 +66,7 @@ def _reset_for_successor(
     game: GameState,
     surviving_threads: list[ThreadEntry],
     surviving_threats: list[ThreatData],
-    surviving_npcs: list[Any],
+    surviving_npcs: list[NpcData],
     surviving_connection_tracks: list[ProgressTrack],
 ) -> None:
     game.resources = starting_resources(game.setting_id)

@@ -11,7 +11,7 @@ from straightjacket.engine.game import start_new_game, turn
 from straightjacket.engine.models import RollResult
 from straightjacket.engine.ruleset import make_move
 from straightjacket.engine.setting.packages import load_package
-from tests._helpers import make_scene_setup
+from tests._helpers import make_scene_setup, schema_of
 from tests._mocks import ScriptedProvider
 
 if TYPE_CHECKING:
@@ -39,7 +39,7 @@ class OpeningProvider(ScriptedProvider):
     @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         self.calls.append(spec)
-        props = spec.json_schema["properties"] if spec.json_schema else {}
+        props = schema_of(spec)["properties"] if spec.json_schema else {}
         if "central_conflict" in props:
             return self._json(_voicing(props))
         if "scene_context" in props:
@@ -132,7 +132,7 @@ class TurnProvider(ScriptedProvider):
     @override
     def create_message(self, spec: AICallSpec) -> AIResponse:
         self.calls.append(spec)
-        props = spec.json_schema["properties"] if spec.json_schema else {}
+        props = schema_of(spec)["properties"] if spec.json_schema else {}
         if "move" in props:
             return self._json(self.brains.pop(0) if len(self.brains) > 1 else self.brains[0])
         if "correction_source" in props:

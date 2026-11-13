@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.npc.memory import recent_observations
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from straightjacket.engine.models import GameState, NpcData
 
 
-def _npc_state(game: GameState, npc: NpcData) -> dict[str, Any]:
+def _npc_state(game: GameState, npc: NpcData) -> dict[str, object]:
     return {
         "id": npc.id,
         "name": npc.name,
@@ -31,7 +31,7 @@ def _npc_state(game: GameState, npc: NpcData) -> dict[str, Any]:
 
 
 @register
-def query_game_state(game: GameState) -> dict[str, Any]:
+def query_game_state(game: GameState) -> dict[str, object]:
     return {
         "threads": [
             {"id": t.id, "name": t.name, "type": t.thread_type, "weight": t.weight}

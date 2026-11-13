@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.prompt_loader import get_prompt
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from straightjacket.engine.models import GameState
 
 
-def execute_tool_call(name: str, arguments: dict[str, Any], game: GameState) -> str:
+def execute_tool_call(name: str, arguments: dict[str, object], game: GameState) -> str:
     handler = get_handler(name)
     if handler is None:
         log(f"[Tools] Unknown tool: {name}", level="warning")

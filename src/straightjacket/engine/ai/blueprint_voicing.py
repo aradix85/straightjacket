@@ -1,6 +1,6 @@
 import json
 from itertools import starmap
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from straightjacket.engine.ai.schemas import get_blueprint_voicing_schema
@@ -13,6 +13,9 @@ from straightjacket.engine.models import GameState
 from straightjacket.engine.prompt_blocks import content_boundaries_block
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.xml_utils import xe as _xe
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import Message
 
 
 def _act_line(n: int, act_seed: ActSeed) -> str:
@@ -124,7 +127,7 @@ def call_blueprint_voicing(
     schema = get_blueprint_voicing_schema(expected["acts"], expected["possible_endings"])
     model = model_for_role("blueprint_voicing")
     params = sampling_params("blueprint_voicing")
-    messages: list[dict[str, Any]] = [{"role": "user", "content": _build_voicing_user_msg(game, seed)}]
+    messages: list[Message] = [{"role": "user", "content": _build_voicing_user_msg(game, seed)}]
     mismatch: list[str] = []
     for _attempt in range(blueprint.voicing_count_retries + 1):
         spec = AICallSpec(
@@ -135,7 +138,7 @@ def call_blueprint_voicing(
             tools=None,
             log_role="blueprint_voicing",
             cached_system_prefix="",
-            **params,
+            sampling=params,
         )
         answer = _ask_voicing(provider, spec, expected)
         if answer is None:

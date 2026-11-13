@@ -1,33 +1,38 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from dataclasses import dataclass
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import GameState
 
-Tool = Callable[[GameState], dict[str, Any]]
+Tool = Callable[[GameState], dict[str, object]]
 
-_registry: dict[str, tuple[Tool, dict[str, Any]]] = {}
+
+@dataclass(frozen=True)
+class ToolDefinition:
+    name: str
+    description: str
+    parameters: dict[str, object]
+
+
+_registry: dict[str, tuple[Tool, ToolDefinition]] = {}
 
 
 def register(func: Tool) -> Tool:
     name = func.__name__
-    definition = {
-        "type": "function",
-        "function": {
-            "name": name,
-            "description": eng().tool_descriptions[name],
-            "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
-        },
-    }
+    definition = ToolDefinition(
+        name=name,
+        description=eng().tool_descriptions[name],
+        parameters={"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+    )
     _registry[name] = (func, definition)
     log(f"[Tools] Registered {name}")
     return func
 
 
-def get_tools() -> list[dict[str, Any]]:
+def get_tools() -> list[ToolDefinition]:
     return [definition for _, definition in _registry.values()]
 
 

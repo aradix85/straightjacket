@@ -87,10 +87,12 @@ The `AIProvider` protocol has two implementations, `ai/provider_anthropic.py` an
 
 **Content.** Only text reaches `AIResponse.content`, never reasoning; the OpenAI-compatible adapter keeps a host's reasoning text apart for diagnostics on a call that does not stream.
 
+**The SDK's own types.** Each adapter builds its request as its SDK's parameter type and reads the answer as the SDK's answer type, so mypy holds both against the installed SDK.
+
 **Per adapter:**
 
-- The OpenAI-compatible adapter sends `max_completion_tokens`, which OpenAI's own models require.
-- The Anthropic adapter sends `temperature` and `top_p` only when set, routes `thinking` and `output_config` from the cluster's `extra_body` to their typed parameters, and puts `cache_control` on the system prompt's first block (Caching above).
+- The OpenAI-compatible adapter sends `max_completion_tokens`, which OpenAI's own models require. It refuses a tool call that calls no function or whose arguments are no JSON object, which fails the call.
+- The Anthropic adapter sends `temperature` and `top_p` only when set, routes `thinking` and `output_config` from the cluster's `extra_body` to their typed parameters, and puts `cache_control` on the system prompt's first block (Caching above). Those three keys come from the configuration and reach the SDK as typed values, so pydantic, on which both SDKs are built, holds each strictly against the installed SDK's type for it: an unknown key, a missing one, a value the type does not take, or a null fails the call and is named in the log (The retry wrapper's catch above), and a value newer than the SDK needs the SDK updated. Every other key of `extra_body` reaches the API as it is.
 - The Anthropic adapter passes a call's JSON schema through the SDK's `transform_schema`, because Anthropic's structured outputs refuse array limits such as `maxItems` (and numeric and string limits). The SDK moves them into the field's description, and the engine checks the counts itself after parsing: `ai/brain.py` → `_check_choices` for facts and boasts, blueprint voicing for its acts, revelations, and endings, and `ai/narrator.py` → `call_narrator_metadata` for renames and details while no NPC is known, which fail the extraction.
 
 ## When an AI call fails
@@ -132,7 +134,7 @@ New AI-consumable data is placed on the same axis.
 **The Director** is the only role that is not prompt-only.
 
 - Its prompt carries the scene; the story arc with its conflict, antagonist, and theme; its own last `arc_notes` (the observation on the arc each answer ends with, which the next call builds on); and a reflection block for each NPC the engine selected. Its answer's schema gives each of those NPCs exactly one reflection slot keyed by NPC id, and a reflection for any other NPC is rejected.
-- It has one tool, `tools/builtins.py` → `query_game_state`, which returns the active threads, the unfired clocks, and every active or background NPC in one answer. Tools are registered with `@register` in `tools/registry.py`, which takes each tool's description from `engine/tool_descriptions.yaml`; they take no parameters, read the game state, and never mutate.
+- It has one tool, `tools/builtins.py` → `query_game_state`, which returns the active threads, the unfired clocks, and every active or background NPC in one answer. Tools are registered with `@register` in `tools/registry.py`, which takes each tool's description from `engine/tool_descriptions.yaml` and keeps it as a `ToolDefinition`, from which each adapter builds its SDK's shape; they take no parameters, read the game state, and never mutate.
 - The first call offers the tool. `director.py` → `call_director` runs each call it asks for through `tools/handler.py` → `execute_tool_call` and hands the raw results, as `<tool_results>`, to the second call, which writes the structured answer. There is no round in between, since the Director needs the data, not the model's comment on it, and given one Claude Sonnet 5.5 called tools that do not exist ("respond", "reflect").
 - A tool the model invents answers with an error, and arguments it passes anyway are ignored and named in the result; both log a warning. A fault inside a tool is the engine's and propagates.
 - Anthropic's structured outputs allow at most 16 nullable or union-typed fields in one schema, so the Director's reflection fields are plain strings, empty when there is nothing to set; `tests/test_schema_strictness.py` keeps every schema under that limit.

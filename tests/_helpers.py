@@ -511,11 +511,15 @@ def make_ai_call_spec(**kwargs: Any) -> AICallSpec:
     kwargs.setdefault("model", "test-model")
     kwargs.setdefault("system", "system text")
     kwargs.setdefault("messages", [{"role": "user", "content": "hello"}])
-    kwargs.setdefault("max_tokens", 64)
-    kwargs.setdefault("max_retries", 0)
-    for name in ("temperature", "top_p", "json_schema", "tools"):
+    kwargs["sampling"] = {
+        "max_tokens": kwargs.pop("max_tokens", 64),
+        "max_retries": kwargs.pop("max_retries", 0),
+        "temperature": kwargs.pop("temperature", None),
+        "top_p": kwargs.pop("top_p", None),
+        "extra_body": kwargs.pop("extra_body", {}),
+    }
+    for name in ("json_schema", "tools"):
         kwargs.setdefault(name, None)
-    kwargs.setdefault("extra_body", {})
     kwargs.setdefault("log_role", "narrator")
     kwargs.setdefault("cached_system_prefix", "")
     return AICallSpec(**kwargs)

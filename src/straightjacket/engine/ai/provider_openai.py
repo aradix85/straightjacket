@@ -1,14 +1,44 @@
+from __future__ import annotations
+
 import json as _json
-from collections.abc import Callable
-from typing import Any
+from functools import partial
+from typing import TYPE_CHECKING
 
 import openai
+from openai.types.chat import ChatCompletionMessageFunctionToolCall
+from openai.types.chat.completion_create_params import CompletionCreateParamsBase
 
-from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, ToolCall, normalize_stop_reason
+from straightjacket.engine.ai.provider_base import AIResponse, ToolCall, normalize_stop_reason
 from straightjacket.engine.logging_util import log
+from straightjacket.engine.serialization import read_key, shaped
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from openai.types import CompletionUsage
+    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam, ChatCompletionMessageToolCallUnion
+
+    from straightjacket.engine.ai.provider_base import AICallSpec, Message
 
 
-def _usage(raw_usage: Any) -> dict[str, int] | None:
+class _Request(CompletionCreateParamsBase, total=False):
+    extra_body: dict[str, object]
+
+
+def _message(message: Message) -> ChatCompletionMessageParam:
+    if message["role"] == "assistant":
+        return {"role": "assistant", "content": message["content"]}
+    return {"role": "user", "content": message["content"]}
+
+
+def _tool_call(call: ChatCompletionMessageToolCallUnion) -> ToolCall:
+    function = shaped(call, ChatCompletionMessageFunctionToolCall, "tool call: expected a function call").function
+    return ToolCall(
+        name=function.name, arguments=shaped(_json.loads(function.arguments), dict, f"{function.name}: expected dict")
+    )
+
+
+def _usage(raw_usage: CompletionUsage | None) -> dict[str, int] | None:
     if raw_usage is None:
         return None
     usage = {"input_tokens": raw_usage.prompt_tokens, "output_tokens": raw_usage.completion_tokens}
@@ -26,10 +56,8 @@ def _usage(raw_usage: Any) -> dict[str, int] | None:
 
 class OpenAICompatibleProvider:
     def __init__(self, api_key: str, timeout_seconds: float, api_base: str) -> None:
-        client_kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": timeout_seconds}
-        if api_base:
-            client_kwargs["base_url"] = api_base
-        self._client = openai.OpenAI(**client_kwargs)
+        client = partial(openai.OpenAI, api_key=api_key, max_retries=0, timeout=timeout_seconds)
+        self._client = client(base_url=api_base) if api_base else client()
         log(f"[OpenAICompatibleProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def list_models(self) -> list[str]:
@@ -48,9 +76,9 @@ class OpenAICompatibleProvider:
         content = ""
         finish_reason = ""
         raw_usage = None
-        for chunk in self._client.chat.completions.create(
-            **self._request(spec), stream=True, stream_options={"include_usage": True}
-        ):
+        request = self._request(spec)
+        request["stream_options"] = {"include_usage": True}
+        for chunk in self._client.chat.completions.create(**request, stream=True):
             if chunk.choices:
                 choice = chunk.choices[0]
                 text = choice.delta.content
@@ -69,54 +97,51 @@ class OpenAICompatibleProvider:
         )
 
     @staticmethod
-    def _request(spec: AICallSpec) -> dict[str, Any]:
-        full_messages = [{"role": "system", "content": spec.system}, *spec.messages]
-
-        create_kwargs: dict[str, Any] = {
+    def _request(spec: AICallSpec) -> _Request:
+        request: _Request = {
             "model": spec.model,
-            "max_completion_tokens": spec.max_tokens,
-            "messages": full_messages,
+            "max_completion_tokens": spec.sampling["max_tokens"],
+            "messages": [{"role": "system", "content": spec.system}, *map(_message, spec.messages)],
         }
 
-        if spec.temperature is not None:
-            create_kwargs["temperature"] = spec.temperature
-        if spec.top_p is not None:
-            create_kwargs["top_p"] = spec.top_p
+        if spec.sampling["temperature"] is not None:
+            request["temperature"] = spec.sampling["temperature"]
+        if spec.sampling["top_p"] is not None:
+            request["top_p"] = spec.sampling["top_p"]
 
-        extra: dict[str, Any] = dict(spec.extra_body)
-        if extra:
-            create_kwargs["extra_body"] = extra
+        if spec.sampling["extra_body"]:
+            request["extra_body"] = dict(spec.sampling["extra_body"])
 
         if spec.json_schema is not None:
-            schema_name = spec.json_schema["title"]
-            create_kwargs["response_format"] = {
+            request["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {
-                    "name": schema_name,
+                    "name": read_key(spec.json_schema, "title", str, "json_schema"),
                     "strict": True,
                     "schema": spec.json_schema,
                 },
             }
 
         if spec.tools is not None:
-            create_kwargs["tools"] = spec.tools
+            request["tools"] = [
+                {
+                    "type": "function",
+                    "function": {"name": tool.name, "description": tool.description, "parameters": tool.parameters},
+                }
+                for tool in spec.tools
+            ]
 
-        return create_kwargs
+        return request
 
     @staticmethod
-    def _response(response: Any) -> AIResponse:
+    def _response(response: ChatCompletion) -> AIResponse:
         choice = response.choices[0]
         content = choice.message.content or ""
-
-        parsed_tool_calls = [
-            ToolCall(name=tc.function.name, arguments=_json.loads(tc.function.arguments))
-            for tc in choice.message.tool_calls or []
-        ]
 
         return AIResponse(
             content=content,
             stop_reason=normalize_stop_reason(choice.finish_reason, ("length",), "tool_calls", "content_filter"),
-            tool_calls=parsed_tool_calls,
+            tool_calls=[_tool_call(call) for call in choice.message.tool_calls or []],
             usage=_usage(response.usage),
             reasoning=getattr(choice.message, "reasoning", None)
             or getattr(choice.message, "reasoning_content", None)

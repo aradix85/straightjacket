@@ -1,6 +1,6 @@
 import json
 from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from straightjacket.engine.ai.provider_base import (
     AICallSpec,
@@ -22,6 +22,9 @@ from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.xml_utils import xa as _xa
 from straightjacket.engine.xml_utils import xe as _xe
 
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import Message
+
 
 def call_narrator(
     provider: AIProvider,
@@ -30,7 +33,7 @@ def call_narrator(
     stream: NarrationSink | None = None,
 ) -> str:
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars)")
-    messages: list[dict[str, Any]] = []
+    messages: list[Message] = []
     for entry in game.narrative.narration_history[-gm().pacing.max_narration_history :]:
         messages.extend(
             ({"role": "user", "content": entry.prompt_summary}, {"role": "assistant", "content": entry.narration})
@@ -47,7 +50,7 @@ def call_narrator(
         tools=None,
         log_role="narrator",
         cached_system_prefix=cached_prefix,
-        **sampling_params("narrator"),
+        sampling=sampling_params("narrator"),
     )
     response = stream_with_retry(provider, spec, stream) if stream is not None else create_with_retry(provider, spec)
     raw = response.content
@@ -95,7 +98,7 @@ def call_opening_setup(provider: AIProvider, narration: str, game: GameState) ->
         tools=None,
         log_role="opening_setup",
         cached_system_prefix="",
-        **sampling_params("opening_setup"),
+        sampling=sampling_params("opening_setup"),
     )
     try:
         data: dict[str, Any] = json.loads(create_with_retry(provider, spec).content)
@@ -175,7 +178,7 @@ def call_narrator_metadata(
         tools=None,
         log_role="narrator_metadata",
         cached_system_prefix="",
-        **sampling_params("narrator_metadata"),
+        sampling=sampling_params("narrator_metadata"),
     )
     try:
         metadata = _checked_metadata(create_with_retry(provider, spec).content, npc_ids)

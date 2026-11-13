@@ -11,7 +11,7 @@ from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.legacy import mark_legacy
 from straightjacket.engine.ruleset.progress import filled_boxes
 from tests._creation import OPENING_TEXT, OpeningProvider, drift_station_game
-from tests._helpers import make_blueprint, make_clock, make_game_state, make_memory, make_npc, make_threat
+from tests._helpers import make_blueprint, make_clock, make_game_state, make_memory, make_npc, make_threat, schema_of
 from tests._mocks import MockProvider
 from tests.elvira.elvira_bot.invariants import assert_game_state
 
@@ -97,7 +97,7 @@ def test_a_chapter_whose_blueprint_cannot_be_voiced_has_none() -> None:
     class _NoVoicing(OpeningProvider):
         @override
         def create_message(self, spec: AICallSpec) -> AIResponse:
-            if spec.json_schema is not None and "central_conflict" in spec.json_schema["properties"]:
+            if spec.json_schema is not None and "central_conflict" in schema_of(spec)["properties"]:
                 msg = "voicing is down"
                 raise ConnectionError(msg)
             return super().create_message(spec)

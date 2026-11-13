@@ -2,6 +2,7 @@ from typing import Any
 
 from straightjacket.engine.ai.schemas import get_opening_setup_schema
 from straightjacket.engine.game.setup_common import apply_opening_setup, seed_opening_memories
+from straightjacket.engine.serialization import read_key
 from tests._creation import opening_npc
 from tests._helpers import make_clock, make_game_state, make_npc
 
@@ -60,6 +61,6 @@ def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and
 
 
 def test_opening_setup_schema_leaves_clocks_and_time_to_the_engine() -> None:
-    properties = get_opening_setup_schema()["properties"]
+    properties = read_key(get_opening_setup_schema(), "properties", dict, "schema")
     assert "clocks" not in properties
     assert "time_of_day" not in properties

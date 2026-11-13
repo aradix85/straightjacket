@@ -8,6 +8,7 @@ from straightjacket.engine.ai.schemas import (
 )
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.serialization import read_key
 from tests._helpers import brain_schema
 
 ANTHROPIC_UNION_LIMIT = 16
@@ -104,23 +105,25 @@ def test_the_brain_schema_offers_the_stats_it_is_given_beside_no_stat_and_the_pi
 
 
 def test_the_metadata_extraction_names_only_known_npcs() -> None:
-    schema = get_narrator_metadata_schema(["npc_2", "npc_1"])
+    known = read_key(get_narrator_metadata_schema(["npc_2", "npc_1"]), "properties", dict, "schema")
+    none = read_key(get_narrator_metadata_schema([]), "properties", dict, "schema")
     for field in ("npc_renames", "npc_details"):
-        assert schema["properties"][field]["items"]["properties"]["npc_id"]["enum"] == ["npc_1", "npc_2"]
-        assert get_narrator_metadata_schema([])["properties"][field]["maxItems"] == 0
+        assert known[field]["items"]["properties"]["npc_id"]["enum"] == ["npc_1", "npc_2"]
+        assert none[field]["maxItems"] == 0
 
 
 def test_a_correction_names_only_known_npcs() -> None:
-    op = get_correction_output_schema(["npc_2", "npc_1"])["properties"]["state_ops"]["items"]["properties"]
+    known = read_key(get_correction_output_schema(["npc_2", "npc_1"]), "properties", dict, "schema")
+    none = read_key(get_correction_output_schema([]), "properties", dict, "schema")
+    op = known["state_ops"]["items"]["properties"]
     assert op["op"]["enum"] == eng().correction.ops
     for field in ("npc_id", "merge_source_id"):
         assert op[field]["anyOf"][0]["enum"] == ["npc_1", "npc_2"]
-        no_npcs = get_correction_output_schema([])["properties"]["state_ops"]["items"]["properties"][field]
-        assert no_npcs == {"type": "null"}
+        assert none["state_ops"]["items"]["properties"][field] == {"type": "null"}
 
 
 def test_a_correction_can_set_only_a_known_disposition_and_npc_status() -> None:
-    op = get_correction_output_schema(["npc_1"])["properties"]["state_ops"]["items"]
+    op = read_key(get_correction_output_schema(["npc_1"]), "properties", dict, "schema")["state_ops"]["items"]
     fields = next(branch for branch in op["properties"]["fields"]["anyOf"] if branch.get("type") == "object")
 
     def choices(field: str) -> list[str]:

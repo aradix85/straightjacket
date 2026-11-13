@@ -32,7 +32,7 @@ from straightjacket.engine.ruleset.tracks import vow_acted_on
 from straightjacket.engine.story_state import check_act_transition, check_story_completion
 
 
-def _update_characters_list(game: GameState, metadata: dict[str, Any], scene_present_ids: set[Any]) -> None:
+def _update_characters_list(game: GameState, metadata: dict[str, Any], scene_present_ids: set[str]) -> None:
     for npc in game.npcs:
         if npc.id in scene_present_ids:
             for c in game.narrative.characters_list:

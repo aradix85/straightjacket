@@ -1,8 +1,9 @@
 from straightjacket.engine.tools.builtins import query_game_state
 from straightjacket.engine.tools.handler import execute_tool_call
-from straightjacket.engine.tools.registry import get_tools
+from straightjacket.engine.tools.registry import ToolDefinition, get_tools
 
 __all__ = [
+    "ToolDefinition",
     "execute_tool_call",
     "get_tools",
     "query_game_state",

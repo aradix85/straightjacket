@@ -77,7 +77,7 @@ def call_recap(provider: AIProvider, game: GameState) -> str:
         tools=None,
         log_role="recap",
         cached_system_prefix="",
-        **sampling_params("recap"),
+        sampling=sampling_params("recap"),
     )
     try:
         return create_with_retry(provider, spec).content

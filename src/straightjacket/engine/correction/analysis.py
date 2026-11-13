@@ -84,7 +84,7 @@ def call_correction_brain(
         json_schema=get_correction_output_schema([n.id for n in game.npcs]),
         tools=None,
         cached_system_prefix="",
-        **sampling_params("correction"),
+        sampling=sampling_params("correction"),
     )
     log(f"[Correction] Analysing: {correction_text[: trunc.log_long]}")
     try:

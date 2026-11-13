@@ -8,6 +8,18 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.13.0] — 2026-11-13
+
+The request of an AI call in real types, the first half of roadmap 9y.3e. A call's schema, messages, tools, and the request each adapter hands its SDK were `Any` at every depth, so mypy held none of it against the SDKs. Each adapter now builds its request as its SDK's own parameter type and reads the answer as the SDK's answer type (`docs/ai.md`, Provider adapters).
+
+- **What the Anthropic adapter routes from a cluster's `extra_body` is checked.** `output_config`, `cache_control`, and `thinking` go to typed parameters, so they are held, strictly, against the installed SDK's types where the adapter reads them: a key or a value those do not know, a null among them, fails the call, and the log names it, as in `extra_body.output_config: efort: Extra inputs are not permitted`, where it went to the API and came back as an error. The rest of `extra_body` passes as it did. pydantic, which both SDKs bring, does the check and is a dependency of its own now. A checked value goes out with its keys in the SDK's order, which is the same JSON.
+- **The OpenAI-compatible adapter refuses a tool call that calls no function or whose arguments are no JSON object**, where the first failed on an attribute it lacks and a list or a null reached the tool's handler.
+- **A tool's definition is a dataclass**, `tools/registry.py` → `ToolDefinition`, from which each adapter builds its SDK's shape, where the registry held OpenAI's.
+- **A call's sampling values are one object**, `AICallSpec.sampling`, where the spec repeated the five fields `sampling_params` returns; pylint found the repeat once their types matched.
+- A message is a `Message`, a schema a mapping of objects, and the roadmap splits 9y.3e: the answers remain.
+
+Measured: a script sent 7,040 calls through the real SDK clients on a mock transport under the old code and the new (both adapters, with and without streaming, every schema, tools, cache prefix, sampling values, and seven shapes of `extra_body`): every HTTP body, read as JSON, and every parsed answer alike, on the locked SDK versions and on the lowest the project allows (anthropic 1.8.0, openai 3.19.0, pydantic 2.13.0), on which the adapters' tests pass too. mypy's `disallow_any_explicit` finds 341 errors where it found 396. Quality gate: 2018 tests, coverage 96.22%, as it was, mypy clean on 271 files, pylint clean, ruff clean on every rule outside the ignores. A sub-agent checked the release; what it found is fixed, and the new refusal of a null, in a routed key or as a tool call's arguments, stands as intended. Save format unchanged. No Elvira run: with the shipped configuration every request is as it was.
+
 ## [2026.11.12.2] — 2026-11-12
 
 Datasworn and the settings yaml read with their values checked, the rest of roadmap 9y.3d. A Datasworn file was handed through the engine as loaded, `Any` at every depth: a move, an asset, a truth, or a meter was a dict read by its keys wherever it was used. Datasworn is an external structure with far more than the engine reads, so it is not bound whole; each value the engine reads now goes through `serialization.py` → `read_key`, which refuses another type than the one asked and names the value by its path, as in `classic.moves.adventure/face_danger.allow_momentum_burn: expected bool, got str` (ARCHITECTURE.md, Typed binding).

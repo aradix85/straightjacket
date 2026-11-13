@@ -1,17 +1,29 @@
+from __future__ import annotations
+
 import re
 import time as _time
-from collections.abc import Callable
 from dataclasses import dataclass, field, replace
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Literal, Protocol, TypedDict
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.logging_util import log
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from straightjacket.engine.config_loader import SamplingParams
+    from straightjacket.engine.tools import ToolDefinition
+
+
+class Message(TypedDict):
+    role: Literal["user", "assistant"]
+    content: str
 
 
 @dataclass(frozen=True)
 class ToolCall:
     name: str
-    arguments: dict[str, Any]
+    arguments: dict[str, object]
 
 
 @dataclass
@@ -27,19 +39,17 @@ class AIResponse:
 class AICallSpec:
     model: str
     system: str
-    messages: list[dict[str, Any]]
-    max_tokens: int
-    max_retries: int
-    temperature: float | None
-    top_p: float | None
-    extra_body: dict[str, Any]
-    json_schema: dict[str, Any] | None
-    tools: list[dict[str, Any]] | None
+    messages: list[Message]
+    sampling: SamplingParams
+    json_schema: dict[str, object] | None
+    tools: list[ToolDefinition] | None
     log_role: str
     cached_system_prefix: str
 
 
-def normalize_stop_reason(raw: str, truncated_values: tuple[str, ...], tool_use_value: str, refusal_value: str) -> str:
+def normalize_stop_reason(
+    raw: str | None, truncated_values: tuple[str, ...], tool_use_value: str, refusal_value: str
+) -> str:
     if raw in truncated_values:
         return "truncated"
     if raw == tool_use_value:
@@ -123,6 +133,7 @@ class AIUnavailableError(Exception):
 
 
 def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
+    max_retries = spec.sampling["max_retries"]
     attempt = 0
     while True:
         try:
@@ -132,7 +143,7 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
             status_code = getattr(e, "status_code", None)
             is_connection_error = any("Connection" in cls.__name__ for cls in type(e).__mro__)
             is_retryable_status = status_code in retry_cfg.retryable_http_codes
-            if attempt >= spec.max_retries or not (is_retryable_status or is_connection_error):
+            if attempt >= max_retries or not (is_retryable_status or is_connection_error):
                 msg = f"{spec.log_role}: {type(e).__name__}: {e}"
                 raise AIUnavailableError(msg) from e
             retry_after = _retry_after_seconds(e)
@@ -142,7 +153,7 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
                 else retry_cfg.backoff_base**attempt
             )
             error_desc = f"HTTP {status_code}" if status_code else str(e)[: eng().truncations.log_medium]
-            log(f"[AI] {error_desc}, retry {attempt + 1}/{spec.max_retries} in {wait}s", level="warning")
+            log(f"[AI] {error_desc}, retry {attempt + 1}/{max_retries} in {wait}s", level="warning")
             _time.sleep(wait)
             attempt += 1
             continue
@@ -150,11 +161,11 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
         _log_usage(spec, result)
         if result.stop_reason != "refusal":
             return result
-        if attempt >= spec.max_retries:
+        if attempt >= max_retries:
             log(f"[AI] {spec.log_role}: model refused on every attempt", level="error")
             msg = f"{spec.log_role}: model refused on every attempt"
             raise AIUnavailableError(msg)
-        log(f"[AI] {spec.log_role}: model refused, retry {attempt + 1}/{spec.max_retries}", level="warning")
+        log(f"[AI] {spec.log_role}: model refused, retry {attempt + 1}/{max_retries}", level="warning")
         attempt += 1
 
 

@@ -9,9 +9,13 @@ import openai
 import pytest
 from anthropic.resources.messages import Messages
 from openai.resources.chat.completions import Completions
+from openai.types.chat import ChatCompletionMessageCustomToolCall, ChatCompletionMessageFunctionToolCall
+from openai.types.chat.chat_completion_message_custom_tool_call import Custom
+from openai.types.chat.chat_completion_message_function_tool_call import Function
 
 from straightjacket.engine.ai import provider_anthropic, provider_openai
-from straightjacket.engine.ai.provider_base import ToolCall
+from straightjacket.engine.ai.provider_base import AIUnavailableError, ToolCall, create_with_retry
+from straightjacket.engine.tools import ToolDefinition
 from tests._helpers import make_ai_call_spec
 
 
@@ -43,15 +47,12 @@ def _openai_usage(prompt_tokens: int, completion_tokens: int, **extra: Any) -> S
     return SimpleNamespace(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, **fields)
 
 
-def _tool() -> dict[str, Any]:
-    return {
-        "type": "function",
-        "function": {
-            "name": "query_npc",
-            "description": "Look up an NPC",
-            "parameters": {"type": "object", "properties": {"npc_id": {"type": "string"}}},
-        },
-    }
+def _tool() -> ToolDefinition:
+    return ToolDefinition(
+        name="query_npc",
+        description="Look up an NPC",
+        parameters={"type": "object", "properties": {"npc_id": {"type": "string"}}},
+    )
 
 
 def _anthropic() -> provider_anthropic.AnthropicProvider:
@@ -159,8 +160,16 @@ class TestAnthropicProvider:
         }
 
 
+def _function_call(arguments: str) -> ChatCompletionMessageFunctionToolCall:
+    return ChatCompletionMessageFunctionToolCall(
+        id="c1", type="function", function=Function(name="query_npc", arguments=arguments)
+    )
+
+
 def _openai_response(
-    content: str | None, finish_reason: str, tool_calls: list[SimpleNamespace] | None
+    content: str | None,
+    finish_reason: str,
+    tool_calls: list[ChatCompletionMessageCustomToolCall | ChatCompletionMessageFunctionToolCall] | None,
 ) -> SimpleNamespace:
     message = SimpleNamespace(content=content, tool_calls=tool_calls)
     return SimpleNamespace(
@@ -172,13 +181,26 @@ def _openai_response(
 class TestOpenAICompatibleProvider:
     @staticmethod
     def test_maps_content_tool_calls_stop_reason_and_usage(openai_endpoint: _FakeEndpoint) -> None:
-        call = SimpleNamespace(id="c1", function=SimpleNamespace(name="query_npc", arguments='{"npc_id": "npc_2"}'))
-        openai_endpoint.response = _openai_response("Narration", "tool_calls", [call])
+        openai_endpoint.response = _openai_response("Narration", "tool_calls", [_function_call('{"npc_id": "npc_2"}')])
         result = _openai().create_message(make_ai_call_spec())
         assert result.content == "Narration"
         assert result.tool_calls == [ToolCall(name="query_npc", arguments={"npc_id": "npc_2"})]
         assert result.stop_reason == "tool_use"
         assert result.usage == {"input_tokens": 20, "output_tokens": 5}
+
+    @staticmethod
+    @pytest.mark.parametrize("arguments", ['["npc_2"]', "null", '"npc_2"'])
+    def test_tool_arguments_that_are_no_json_object_are_refused(openai_endpoint: _FakeEndpoint, arguments: str) -> None:
+        openai_endpoint.response = _openai_response("", "tool_calls", [_function_call(arguments)])
+        with pytest.raises(ValueError, match="query_npc: expected dict"):
+            _openai().create_message(make_ai_call_spec())
+
+    @staticmethod
+    def test_a_tool_call_that_calls_no_function_is_refused(openai_endpoint: _FakeEndpoint) -> None:
+        custom = ChatCompletionMessageCustomToolCall(id="c2", type="custom", custom=Custom(name="note", input="x"))
+        openai_endpoint.response = _openai_response("", "tool_calls", [_function_call("{}"), custom])
+        with pytest.raises(ValueError, match="tool call: expected a function call, got ChatCompletionMessageCustom"):
+            _openai().create_message(make_ai_call_spec())
 
     @staticmethod
     def test_request_prepends_system_and_builds_schema_format(openai_endpoint: _FakeEndpoint) -> None:
@@ -196,7 +218,16 @@ class TestOpenAICompatibleProvider:
             "type": "json_schema",
             "json_schema": {"name": "brain_output", "strict": True, "schema": schema},
         }
-        assert sent["tools"] == [_tool()]
+        assert sent["tools"] == [
+            {
+                "type": "function",
+                "function": {
+                    "name": "query_npc",
+                    "description": "Look up an NPC",
+                    "parameters": {"type": "object", "properties": {"npc_id": {"type": "string"}}},
+                },
+            }
+        ]
 
     @staticmethod
     def test_the_clusters_extra_body_reaches_the_request(openai_endpoint: _FakeEndpoint) -> None:
@@ -300,7 +331,13 @@ def test_anthropic_thinking_blocks_never_reach_the_content(anthropic_endpoint: _
 
 def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="{}"))
-    extra = {"output_config": {"effort": "low"}, "cache_control": {"type": "ephemeral"}, "metadata_flag": True}
+    extra = {
+        "output_config": {"effort": "low"},
+        "cache_control": {"type": "ephemeral"},
+        "thinking": {"type": "enabled", "budget_tokens": 2048},
+        "metadata_flag": True,
+    }
+    sent_as_written = {key: dict(value) if isinstance(value, dict) else value for key, value in extra.items()}
     spec = make_ai_call_spec(json_schema={"title": "t", "type": "object"}, extra_body=extra, temperature=0.5)
     _anthropic().create_message(spec)
     sent = anthropic_endpoint.calls[0]
@@ -313,8 +350,9 @@ def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_e
     }
     assert "cache_control" not in sent
     assert sent["system"] == [{"type": "text", "text": "system text", "cache_control": {"type": "ephemeral"}}]
+    assert sent["thinking"] == {"type": "enabled", "budget_tokens": 2048}
     assert sent["extra_body"] == {"temperature": 0.5, "metadata_flag": True}
-    assert extra == {"output_config": {"effort": "low"}, "cache_control": {"type": "ephemeral"}, "metadata_flag": True}
+    assert extra == sent_as_written
 
 
 def test_anthropic_caches_the_stable_start_of_the_system_prompt(anthropic_endpoint: _FakeEndpoint) -> None:
@@ -347,6 +385,36 @@ def test_anthropic_refuses_a_cache_prefix_that_is_not_the_start_of_the_system(
     spec = make_ai_call_spec(cached_system_prefix="other text", extra_body={"cache_control": {"type": "ephemeral"}})
     with pytest.raises(ValueError, match="cached_system_prefix"):
         _anthropic().create_message(spec)
+
+
+@pytest.mark.parametrize(
+    ("extra_body", "named"),
+    [
+        ({"output_config": {"effort": "medium", "efort": "low"}}, r"extra_body\.output_config: efort: Extra inputs"),
+        ({"output_config": {"effort": "utmost"}}, r"extra_body\.output_config: effort: Input should be 'low'"),
+        ({"output_config": "medium"}, r"extra_body\.output_config: : Input should be a valid dict"),
+        ({"output_config": None}, r"extra_body\.output_config: : Input should be a valid dict"),
+        ({"cache_control": {"ttl": "1h"}}, r"extra_body\.cache_control: type: Field required"),
+        ({"cache_control": None}, r"extra_body\.cache_control: : Input should be a valid dict"),
+        ({"cache_control": {"type": "ephemeral", "ttl": "1d"}}, r"extra_body\.cache_control: ttl: Input should be"),
+        ({"thinking": {"type": "sometimes"}}, r"extra_body\.thinking: .*type: Input should be 'adaptive'"),
+        ({"thinking": {"type": "enabled"}}, r"extra_body\.thinking: .*budget_tokens: Field required"),
+        ({"thinking": {"type": "enabled", "budget_tokens": "2048"}}, r"budget_tokens: Input should be a valid integer"),
+    ],
+)
+def test_anthropic_refuses_a_routed_extra_body_value_the_sdk_does_not_know(
+    anthropic_endpoint: _FakeEndpoint, extra_body: dict[str, object], named: str
+) -> None:
+    with pytest.raises(ValueError, match=named):
+        _anthropic().create_message(make_ai_call_spec(extra_body=extra_body))
+    assert not anthropic_endpoint.calls
+
+
+def test_a_refused_extra_body_fails_the_call_without_asking_again(anthropic_endpoint: _FakeEndpoint) -> None:
+    spec = make_ai_call_spec(extra_body={"output_config": {"efort": "low"}}, max_retries=2)
+    with pytest.raises(AIUnavailableError, match=r"narrator: ValueError: extra_body\.output_config: efort"):
+        create_with_retry(_anthropic(), spec)
+    assert not anthropic_endpoint.calls
 
 
 def test_anthropic_sends_the_system_prompt_as_text_without_caching(anthropic_endpoint: _FakeEndpoint) -> None:
@@ -430,6 +498,7 @@ def test_openai_stream_collects_text_finish_reason_and_usage(openai_endpoint: _F
     assert result.content == "Rain falls."
     assert result.usage == {"input_tokens": 3, "output_tokens": 2}
     assert openai_endpoint.calls[0]["stream"] is True
+    assert openai_endpoint.calls[0]["stream_options"] == {"include_usage": True}
     assert set(openai_endpoint.calls[0]) <= _accepted(Completions.create)
 
 

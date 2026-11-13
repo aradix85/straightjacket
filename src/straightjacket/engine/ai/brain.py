@@ -1,5 +1,5 @@
 import json
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, NoReturn
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, AIUnavailableError, create_with_retry
 from straightjacket.engine.ai.schemas import get_brain_output_schema
@@ -9,7 +9,7 @@ from straightjacket.engine.gamemaster.clocks import open_complications
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.config_types import GameMasterMove
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.models import BrainResult, GameState, ThreatData
+from straightjacket.engine.models import BrainResult, GameState, NpcData, ThreatData
 from straightjacket.engine.prompt_blocks import content_boundaries_block, world_tag
 from straightjacket.engine.prompt_loader import get_prompt, get_prompt_prefix
 from straightjacket.engine.ruleset.bond import connection_track, is_bonded, starts_a_connection
@@ -25,6 +25,9 @@ from straightjacket.engine.ruleset.stats import stat_descriptions
 from straightjacket.engine.ruleset.threats import active_threats, vow_against
 from straightjacket.engine.ruleset.tracks import active_tracks, track_category_of_move
 from straightjacket.engine.xml_utils import xe as _xe
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import Message
 
 
 def _ways(move: Move) -> list[str]:
@@ -94,7 +97,7 @@ def _build_stats_line(game: GameState) -> str:
     return " ".join([_xe(game.player_name), *stats])
 
 
-def _listed_npcs(game: GameState) -> list[Any]:
+def _listed_npcs(game: GameState) -> list[NpcData]:
     return [n for n in game.npcs if n.status in gm().npc_status_groups.in_play]
 
 
@@ -322,7 +325,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         clock_names=choices["target_clock"],
         threat_ids=choices["target_threat"],
     )
-    messages: list[dict[str, Any]] = [{"role": "user", "content": _build_user_message(game, player_message)}]
+    messages: list[Message] = [{"role": "user", "content": _build_user_message(game, player_message)}]
     retries_asked = 0
     while True:
         spec = AICallSpec(
@@ -333,7 +336,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
             tools=None,
             log_role="brain",
             cached_system_prefix=cached_prefix,
-            **sampling_params("brain"),
+            sampling=sampling_params("brain"),
         )
         content, result = _ask_brain(provider, spec)
         _check_choices(result, move_keys, choices)

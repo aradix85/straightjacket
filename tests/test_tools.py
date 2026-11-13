@@ -6,7 +6,8 @@ import pytest
 from straightjacket.engine.director import build_director_prompt
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState
-from straightjacket.engine.tools import execute_tool_call, get_tools, handler, registry
+from straightjacket.engine.serialization import read_key
+from straightjacket.engine.tools import ToolDefinition, execute_tool_call, get_tools, handler, registry
 from straightjacket.engine.tools.builtins import query_game_state
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_thread
 
@@ -50,21 +51,18 @@ def _game_with_data() -> GameState:
 
 def test_the_director_is_offered_its_one_tool_without_parameters() -> None:
     [definition] = get_tools()
-    assert definition == {
-        "type": "function",
-        "function": {
-            "name": "query_game_state",
-            "description": eng().tool_descriptions["query_game_state"],
-            "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
-        },
-    }
+    assert definition == ToolDefinition(
+        name="query_game_state",
+        description=eng().tool_descriptions["query_game_state"],
+        parameters={"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+    )
 
 
 def test_query_game_state_returns_threads_clocks_and_npcs_at_once() -> None:
     result = query_game_state(_game_with_data())
-    assert [t["name"] for t in result["threads"]] == ["Find the vault"]
-    assert [c["name"] for c in result["clocks"]] == ["Vault heist"]
-    kira = next(n for n in result["npcs"] if n["id"] == "npc_1")
+    assert [t["name"] for t in read_key(result, "threads", list, "result")] == ["Find the vault"]
+    assert [c["name"] for c in read_key(result, "clocks", list, "result")] == ["Vault heist"]
+    kira = next(n for n in read_key(result, "npcs", list, "result") if n["id"] == "npc_1")
     assert kira["name"] == "Kira"
     assert kira["disposition"] == "distrustful"
     assert len(kira["recent_memories"]) == 2
@@ -74,7 +72,9 @@ def test_query_game_state_shows_the_memories_the_reflection_block_shows() -> Non
     game = _game_with_data()
     kira = game.npcs[0]
     kira.memory.append(make_memory(scene=4, event="Doubts the player", importance=6, type="reflection"))
-    shown = next(n for n in query_game_state(game)["npcs"] if n["id"] == "npc_1")["recent_memories"]
+    shown = next(n for n in read_key(query_game_state(game), "npcs", list, "result") if n["id"] == "npc_1")[
+        "recent_memories"
+    ]
     assert [m["event"] for m in shown] == ["Met at the docks", "Broke a promise"]
     block = build_director_prompt(game, "Kira hesitates.")
     assert all(m["event"] in block for m in shown)
@@ -88,7 +88,7 @@ def test_query_game_state_leaves_out_dead_and_lore_npcs() -> None:
         make_npc(id="npc_9", name="Old Vess", status="deceased"),
         make_npc(id="npc_8", name="The Founder", status="lore"),
     ]
-    assert [n["id"] for n in query_game_state(game)["npcs"]] == ["npc_1", "npc_2"]
+    assert [n["id"] for n in read_key(query_game_state(game), "npcs", list, "result")] == ["npc_1", "npc_2"]
 
 
 def test_a_tool_call_returns_the_tools_answer_as_json() -> None:
