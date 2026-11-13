@@ -8,7 +8,7 @@ Earlier audits produced false reassurance: asked "is the codebase config-driven?
 
 1. Work in the local repository.
 2. Read `ARCHITECTURE.md` and `CONTRIBUTING.md` in full: they define where things live and which exceptions to the project rules exist. Without them, violations and carve-outs get misclassified.
-3. Read Sessions with the user in `roadmap.md`: how the maintainer is answered, what a measuring run costs and that its cost is named before it starts, and where the API keys live.
+3. Read Sessions with the user in `CLAUDE.md`: how the maintainer is answered, what a measuring run costs and that its cost is named before it starts, and where the API keys live.
 4. Read this document in full, then the open items, among them the findings earlier audits recorded for the principle or submodule at hand. Take the next open item from Status.
 
 **One session, one principle.** One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule. Principle 6 reads origins across the layers, so one session covers it whole; the mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status, and anything to pick up next time as an open item.

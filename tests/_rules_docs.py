@@ -16,6 +16,7 @@ _ROOT_DOC_FILES = (
     "ARCHITECTURE.md",
     "CONTRIBUTING.md",
     "AGENTS.md",
+    "CLAUDE.md",
     "SECURITY.md",
     "ORIGINS.md",
     "AUDIT.md",

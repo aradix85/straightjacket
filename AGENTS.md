@@ -6,7 +6,7 @@ How a session of the maintainer hands work to sub-agents, and what every sub-age
 
 Sub-agents do the work whose conclusion is all the session needs, so that only their findings enter the session's context (the user's choice):
 
-- reading the md files outside the session's own list (roadmap.md, Sessions with the user) for what bears on NEXT STEP;
+- reading the md files outside the session's own list (CLAUDE.md, Sessions with the user) for what bears on NEXT STEP;
 - a broad search of the codebase;
 - checking documents against the code;
 - an audit's hit-lists (Audits below);
@@ -15,7 +15,7 @@ Sub-agents do the work whose conclusion is all the session needs, so that only t
 
 **What the session keeps.** It reads the code it will change itself and hands no map of it to a sub-agent first, since it must read that code anyway and the map only doubles the work (the user's choice). It keeps the decisions, its own edits, the quality gate, and the commit, so two writers never touch one file. Agents that only read run side by side.
 
-**Models.** A sub-agent that only searches or reads runs on a lighter model (Sonnet, or Haiku for a plain search), since it gathers rather than judges; a check of a release keeps the session's model (the user's choice).
+**Models and kinds.** A sub-agent that only searches or reads runs on a lighter model (Sonnet, or Haiku for a plain search), since it gathers rather than judges; a check of a release keeps the session's model (the user's choice). In Claude Code every sub-agent is a general-purpose agent, on the model its work asks: it can write its progress file, and Claude Code hands it CLAUDE.md and, through its import, this file. An Explore agent can write no file, so it could keep no progress file, and starts without both.
 
 ## What a task carries
 
@@ -58,4 +58,4 @@ An audit (AUDIT.md) hands the reading of its hit-lists to sub-agents, one per su
 
 ## Reading a source
 
-A sub-agent that reads a rule in a book, a Datasworn file, or the design document quotes the text that settles it, exactly and in full where it is short, with its Datasworn path or its page, and says where the reading needs a book the repository does not hold. The Datasworn files are in `data/`; the design document is a pdf in the user's repository `aradix85/narrative-rpg-engine`, which `pdftotext` reads (roadmap.md, Sessions with the user).
+A sub-agent that reads a rule in a book, a Datasworn file, or the design document quotes the text that settles it, exactly and in full where it is short, with its Datasworn path or its page, and says where the reading needs a book the repository does not hold. The Datasworn files are in `data/`; the design document is a pdf in the user's repository `aradix85/narrative-rpg-engine`, which `pdftotext` reads (CLAUDE.md, Sessions with the user).

@@ -19,9 +19,8 @@ def _say(text: str = "") -> None:
 
 
 def _venv_python() -> Path:
-    if sys.platform == "win32":
-        return ROOT / "venv" / "Scripts" / "python.exe"
-    return ROOT / "venv" / "bin" / "python"
+    in_venv = "Scripts/python.exe" if sys.platform == "win32" else "bin/python"
+    return ROOT / "venv" / in_venv
 
 
 def _in_venv() -> bool:

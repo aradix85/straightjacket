@@ -41,7 +41,7 @@ def test_random_event_clock_skips_unmapped_focus() -> None:
 
     spawn_clock_from_random_event(g, event)
 
-    assert g.world.clocks == []
+    assert not g.world.clocks
 
 
 def test_random_event_clock_progress_type_for_thread_moves() -> None:
@@ -83,7 +83,7 @@ def test_ac_clock_skips_unmapped_plot_point() -> None:
 
     spawn_clocks_for_turning_point(g, tp)
 
-    assert g.world.clocks == []
+    assert not g.world.clocks
 
 
 def test_ac_clock_dedups_same_plot_point() -> None:

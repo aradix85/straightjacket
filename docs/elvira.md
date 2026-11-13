@@ -14,7 +14,7 @@ python tests/elvira/elvira.py --ws --auto --turns 5      # through the WebSocket
 
 The API keys must be in the environment of the process that starts her: the game's provider key (`docs/ai.md`) and the key of the provider her own player and judge use. `tests/test_elvira_smoke.py` runs both modes against the mock provider in the normal test gate, so she cannot break unnoticed.
 
-She runs on the maintainer's laptop, where the API keys are. A session reads her report there through radix-mcp: the Markdown report, which is short, and of the session log and her console output only what the report points to, rather than the whole run (roadmap.md, Sessions with the user).
+She runs on the maintainer's laptop, where the API keys are and the sessions work. A session reads of her run the Markdown report, which is short, and of the session log and her console output only what the report points to, rather than the whole run (CLAUDE.md, Sessions with the user).
 
 ## Two modes
 

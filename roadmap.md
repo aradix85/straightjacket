@@ -1,61 +1,14 @@
 # Straightjacket — Roadmap
 
-Internal working doc: what gets built next, and in what order. The rules every change keeps and the checks before a commit are in CONTRIBUTING.md, the audit method in AUDIT.md; this document adds only the order of work, the decisions later steps rely on, and what concerns the sessions with the user.
-
-## Always
-
-Every substep and every session ends with both of these before its commit:
-
-- **Read the whole diff back** against CONTRIBUTING.md (Workflow, step 4) and fix what it finds; a green suite does not replace it.
-- **Move what is finished to DONE.** A finished step, substep, or session leaves its list and goes, cut short, under DONE, into its step's line while the step stays open. Every session also reads DONE for what can be shorter and cuts it.
+Internal working doc: what gets built next, and in what order. The rules every change keeps and the checks before a commit are in CONTRIBUTING.md, the audit method in AUDIT.md; this document adds only the order of work and the decisions later steps rely on. What concerns the sessions with the user is in CLAUDE.md.
 
 ## How the roadmap works
 
-The steps are the order of work: NEXT STEP first, then the others in their order, DONE at the bottom. Nothing is worked on outside a step; a new finding becomes a substep of an existing step or a new step in the same commit. A step takes one or more sessions of one or two releases each (Sessions with the user): read the code, build, test, and delete what the step made obsolete. When reality diverges from the plan, the roadmap changes in the same commit; it never claims what the code contradicts.
+The steps are the order of work: NEXT STEP first, then the others in their order, DONE at the bottom. Nothing is worked on outside a step; a new finding becomes a substep of an existing step or a new step in the same commit. A step takes one or more sessions of one or two releases each (CLAUDE.md, Sessions with the user): read the code, build, test, and delete what the step made obsolete. When reality diverges from the plan, the roadmap changes in the same commit; it never claims what the code contradicts.
 
 The roadmap stays short. A later step is a sketch: its aim, its substeps where they are known, the decisions taken with the user, and the facts a session could not find again in the code, the data, the CHANGELOG, or `docs/`. Its definition of done and reference patterns are written when it becomes NEXT STEP. What CONTRIBUTING.md, AUDIT.md, `docs/`, or the CHANGELOG already says is pointed to, not repeated.
 
 **Closing a step.** The checks of CONTRIBUTING.md pass; the step moves to DONE, cut to what a later session needs, and its entries leave the CHANGELOG (CONTRIBUTING.md, Workflow step 6); the next step becomes NEXT STEP with substeps, a definition of done, and reference patterns; and a decision later steps rely on goes under Decisions. The step's area is read against the source rulebooks and, where it touches the architecture, the design document; a departure goes to `docs/divergences.md`.
-
-## Sessions with the user
-
-**The user.** The user writes in Dutch and reads with a screen reader: answers are in Dutch and in plain prose; the repository stays in English.
-
-**One session, one or two releases.** A session starts in a fresh conversation and does one or two releases. A long conversation fills the model's context with every file, diff, and test run it reads, and the app then summarizes its beginning, which loses detail. What the next session needs is in the roadmap, the CHANGELOG, and `docs/`.
-
-**Where the work happens.**
-
-- The work happens in a cloud session. The user's opening grants git, commits, and pushes, and asks the session to clone the repository (`aradix85/straightjacket` on GitHub) through the Claude account's GitHub connection and read the md files; what follows here holds from then on.
-- The session works and runs the quality gate in that clone, commits each finished release to main, and pushes it.
-- The user's laptop (Windows 11), reached through the radix-mcp tools, holds the project at `C:\Users\radix\Documents\straightjacket`. After every push the session runs `git pull --ff-only` in that folder through radix-mcp.
-- The user does not edit the laptop's copy, so a pull that refuses means a session left something there outside git, such as a file it wrote through radix-mcp: find out what it is before anything else, and never reset or force.
-- The API keys live in the laptop's Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira); a process started by a tool may need them set in its own environment.
-
-**What a session reads.** It reads these itself: roadmap.md, CONTRIBUTING.md, ARCHITECTURE.md, AGENTS.md, and the CHANGELOG, which holds the releases of the step in progress. It also reads the md files of the area NEXT STEP touches:
-
-- the ruleset's rules (moves, tracks, meters, impacts, legacy, assets, threats): `docs/ruleset.md`;
-- the game master (scenes, chaos, random events, fate, facts, generators, NPCs, clocks): `docs/gamemaster.md`;
-- the story (blueprint, revelations, chapters, succession): `docs/story.md`;
-- any rule of those three: `docs/divergences.md` beside it;
-- the AI calls, prompts, and configuration: `docs/ai.md`;
-- an Elvira run: `docs/elvira.md`;
-- settings, rulesets, and character creation: `docs/settings.md`;
-- an audit: AUDIT.md;
-- the server and the player's input: SECURITY.md.
-
-README.md and ORIGINS.md are background. For anything else a sub-agent reports what bears on the step. Then the session continues with NEXT STEP.
-
-**Sub-agents.** A session that hands work to a sub-agent does it by AGENTS.md, which says what a session hands off and keeps, what a task carries, and how a release is checked, and gives the sub-agent that file to read first (the user's choice).
-
-**The design document** is not in the repository; README.md links it, and the user's repository `aradix85/narrative-rpg-engine` holds it as a pdf (version 2.4), which `pdftotext` reads. It is theory, and the engine is its practice, which may depart from it (the user's words).
-
-**Sources before prompts.** The user wants as much as possible to come from the source material: where a rulebook table can settle what the narrator still invents, that is the fix to reach for, ahead of new prompt wording, which on Sonnet stayed within the noise (9f).
-
-**Elvira runs.**
-
-- An Elvira run a release needs plays on the laptop after the pull, straight after the push to main with no branch in between (CONTRIBUTING.md, Workflow step 5).
-- Elvira runs on the real models again since 9i, the user's choice now that the work builds rather than tidies, but only when a run makes a real difference to the work, and never more runs or turns than that needs: tokens and credit are not to be wasted. A measurement of the engine as it was, when the decision does not hang on it, is no such run. The runs that releases without them left open are not caught up.
-- The Elvira sessions a step needs are part of the work. Say what a measuring round will cost before starting it, estimated from the last run's report; the API spend limit is set in the Claude Console (Settings, Billing). The user keeps runs to what a change needs, no extra ones.
 
 ## Reference patterns
 
@@ -645,5 +598,5 @@ Finished work in its shortest form; git holds the details, in the commits whose 
 - **9s — NPCs named by whole names** (`docs/gamemaster.md`, Memory and activation).
 - **9r — Where each rule comes from:** every rule that decides the fiction was read against EdgeTales, the design document, and the books; what lacked a source went to its step and the register, and AUDIT.md's principle 6 keeps it so.
 - **9w, so far:** Reach a Milestone is made without a roll (`docs/ruleset.md`, Moves without a roll), and the `vow_fulfilment` scenario plays a vow to its end on the mock provider (9w.R); the four suspected faults of 9w.0 are fixed.
-- **9x — The documents, shorter and by layer** (Sessions with the user).
+- **9x — The documents, shorter and by layer** (CLAUDE.md, Sessions with the user).
 - **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); 9y.1, ruff's complexity rules at their default limits, with pylint's four left to ruff; 9y.2, pylint's duplicate code and module length at their defaults (CONTRIBUTING.md, Testing); 9y.3a and 9y.3b, every yaml block, `config.yaml`, and the emotions bound by their annotations to typed fields, with every value's type checked at load and the four stores loaded at startup (ARCHITECTURE.md, Configuration); 9y.3c, a save read by the reader that binds the configuration, with its turn's snapshot and its chat as dataclasses (ARCHITECTURE.md, Saves); 9y.3d, Mythic's and the Adventure Crafter's data files bound whole by it, and what the engine reads of Datasworn and of a setting's yaml checked where it is read (ARCHITECTURE.md, Typed binding); the first half of 9y.3e, the request of an AI call in real types, each adapter's in its SDK's own (`docs/ai.md`, Provider adapters).

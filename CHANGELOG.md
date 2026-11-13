@@ -8,6 +8,20 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.13.1] — 2026-11-13
+
+The documents, at the user's request: the sessions now work in Claude Code on the user's laptop, in the project's folder itself, where they worked in a cloud session's clone and pulled every push to the laptop.
+
+- **CLAUDE.md is new**, the file Claude Code hands every session at its start. It holds what the roadmap said of the sessions, Always and Sessions with the user, which now says where the work happens, with the gate's tools in `.venv`; the references to those sections follow. The roadmap keeps the order of work, so that a sub-agent handed CLAUDE.md does not carry the steps. The document scans of `tests/_rules_docs.py` read CLAUDE.md like the other root documents.
+- **AGENTS.md says which kind of sub-agent Claude Code starts:** a general-purpose agent, on the model its work asks, since an Explore agent can write no file and so could keep no progress file. CLAUDE.md imports AGENTS.md, since Claude Code reads an AGENTS.md by itself only where no CLAUDE.md stands.
+
+The gate, green on Linux, found two things on Windows, both fixed so that it is clean on either:
+
+- mypy called the last line of `run.py` → `_venv_python` unreachable, since on Windows the platform check before it always returns; the function now picks the path in one expression.
+- pylint, whose parallel jobs infer more on Windows, asked two asserts of `tests/test_clock_creation.py` to test an empty list by its truth, as they now do.
+
+Quality gate: 2018 tests, coverage 96.21%, mypy clean on 271 files, on Windows and with `--platform linux`, pylint clean, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: nothing the game does changes.
+
 ## [2026.11.13.0] — 2026-11-13
 
 The request of an AI call in real types, the first half of roadmap 9y.3e. A call's schema, messages, tools, and the request each adapter hands its SDK were `Any` at every depth, so mypy held none of it against the SDKs. Each adapter now builds its request as its SDK's own parameter type and reads the answer as the SDK's answer type (`docs/ai.md`, Provider adapters).
