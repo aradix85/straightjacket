@@ -9,7 +9,7 @@ Claude Code hands this file to a sub-agent too. A sub-agent is no session: it wo
 Every substep and every session ends with both of these before its commit:
 
 - **Read the whole diff back** against CONTRIBUTING.md (Workflow, step 4) and fix what it finds; a green suite does not replace it.
-- **Move what is finished to DONE.** A finished step, substep, or session leaves its list in roadmap.md and goes, cut short, under DONE there, into its step's line while the step stays open. Every session also reads DONE for what can be shorter and cuts it.
+- **Move what is finished to DONE.** A finished step, substep, or session leaves its list in roadmap.md and goes under DONE at the bottom there, cut to its essence, only what a later session may still need, into its step's line while the step stays open. This is the user's standing way of working, so that what belongs together stands together: the open work above, the finished work below. Every session also reads DONE for what can be shorter and cuts it.
 
 ## Sessions with the user
 

@@ -8,6 +8,12 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.13.2] — 2026-11-13
+
+The rule for finished work, sharpened at the user's request, whose standing way of working it is: what is finished goes under DONE at the bottom of the roadmap, cut to its essence, only what a later session may still need, so that what belongs together stands together (CLAUDE.md, Always). DONE gains the line of the work that moved the sessions to Claude Code, as 9z.
+
+Quality gate: 2018 tests, coverage 96.22% to 96.23%, mypy clean on 271 files, pylint clean, ruff clean on every rule outside the ignores. Save format unchanged. No Elvira run: nothing the game does changes.
+
 ## [2026.11.13.1] — 2026-11-13
 
 The documents, at the user's request: the sessions now work in Claude Code on the user's laptop, in the project's folder itself, where they worked in a cloud session's clone and pulled every push to the laptop.
