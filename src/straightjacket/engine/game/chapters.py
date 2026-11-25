@@ -58,10 +58,8 @@ def start_new_chapter(provider: AIProvider, game: GameState) -> str:
     else:
         game.world.current_scene_context = defaults["new_chapter_blank"]
 
-    narration, setup_data = generate_opening(provider, game, build_new_chapter_prompt, label="ChapterSetup")
-
-    if setup_data["deceased_npcs"]:
-        process_deceased_npcs(game, setup_data["deceased_npcs"])
+    narration, setup = generate_opening(provider, game, build_new_chapter_prompt, label="ChapterSetup")
+    process_deceased_npcs(game, setup.deceased_npcs)
 
     _record_chapter_opening(game, narration)
 

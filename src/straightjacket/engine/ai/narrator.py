@@ -1,6 +1,6 @@
 import json
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.ai.provider_base import (
     AICallSpec,
@@ -15,7 +15,7 @@ from straightjacket.engine.config_loader import model_for_role, narration_langua
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.models import BrainResult, GameState, NpcData
+from straightjacket.engine.models import BrainResult, GameState, NarratorMetadata, NpcData, OpeningSetup
 from straightjacket.engine.parser import salvage_truncated_narration
 from straightjacket.engine.prompt_blocks import content_boundaries_block, get_narrator_system
 from straightjacket.engine.prompt_loader import get_prompt
@@ -66,15 +66,15 @@ def call_narrator(
     return raw
 
 
-def _no_opening_setup() -> dict[str, Any]:
-    return {"npcs": [], "location": "", "scene_context": "", "memory_updates": [], "deceased_npcs": []}
+def _no_opening_setup() -> OpeningSetup:
+    return OpeningSetup(npcs=[], location="", scene_context="", memory_updates=[], deceased_npcs=[])
 
 
-def _no_narrator_metadata() -> dict[str, Any]:
-    return {"new_npcs": [], "npc_renames": [], "npc_details": [], "deceased_npcs": [], "lore_npcs": []}
+def _no_narrator_metadata() -> NarratorMetadata:
+    return NarratorMetadata(new_npcs=[], npc_renames=[], npc_details=[], deceased_npcs=[], lore_npcs=[])
 
 
-def call_opening_setup(provider: AIProvider, narration: str, game: GameState) -> dict[str, Any]:
+def call_opening_setup(provider: AIProvider, narration: str, game: GameState) -> OpeningSetup:
     lang = narration_language()
 
     system = get_prompt("opening_setup_extractor", lang=lang)
@@ -101,13 +101,12 @@ def call_opening_setup(provider: AIProvider, narration: str, game: GameState) ->
         sampling=sampling_params("opening_setup"),
     )
     try:
-        data: dict[str, Any] = json.loads(create_with_retry(provider, spec).content)
-        summary = f"{len(data['npcs'])} NPCs, loc={data['location']}"
+        setup = OpeningSetup.from_dict(json.loads(create_with_retry(provider, spec).content))
     except Exception as e:
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
         return _no_opening_setup()
-    log(f"[OpeningSetup] Extracted: {summary}")
-    return data
+    log(f"[OpeningSetup] Extracted: {len(setup.npcs)} NPCs, loc={setup.location}")
+    return setup
 
 
 def _metadata_npc_ref(npc: NpcData) -> str:
@@ -161,7 +160,7 @@ def call_narrator_metadata(
     game: GameState,
     brain: BrainResult,
     consequences: Sequence[str],
-) -> dict[str, Any]:
+) -> NarratorMetadata:
     npc_ids = [n.id for n in game.npcs]
     system_base = get_prompt(
         "narrator_metadata", lang=narration_language(), dispositions="|".join(gm().enums.dispositions)
@@ -182,22 +181,21 @@ def call_narrator_metadata(
     )
     try:
         metadata = _checked_metadata(create_with_retry(provider, spec).content, npc_ids)
-        summary = (
-            f"{len(metadata['new_npcs'])} new NPCs, "
-            f"{len(metadata['npc_renames'])} renames, "
-            f"{len(metadata['deceased_npcs'])} deceased, "
-            f"{len(metadata['lore_npcs'])} lore"
-        )
     except Exception as e:
         log(f"[Metadata] Extraction failed: {e}", level="warning")
         return _no_narrator_metadata()
-    log(f"[Metadata] Extracted: {summary}")
+    log(
+        f"[Metadata] Extracted: {len(metadata.new_npcs)} new NPCs, "
+        f"{len(metadata.npc_renames)} renames, "
+        f"{len(metadata.deceased_npcs)} deceased, "
+        f"{len(metadata.lore_npcs)} lore"
+    )
     return metadata
 
 
-def _checked_metadata(content: str, npc_ids: list[str]) -> dict[str, Any]:
-    metadata: dict[str, Any] = json.loads(content)
-    if not npc_ids and (metadata["npc_renames"] or metadata["npc_details"]):
+def _checked_metadata(content: str, npc_ids: list[str]) -> NarratorMetadata:
+    metadata = NarratorMetadata.from_dict(json.loads(content))
+    if not npc_ids and (metadata.npc_renames or metadata.npc_details):
         msg = "the metadata renames or details an NPC, but no NPC is known"
         raise ValueError(msg)
     return metadata

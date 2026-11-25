@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.ai.metadata import apply_narrator_metadata
 from straightjacket.engine.ai.narrator import call_narrator, call_narrator_metadata
@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         Consequence,
         GameState,
         MemoryEntry,
+        NarratorMetadata,
         NpcData,
         RollResult,
     )
@@ -91,7 +92,7 @@ def apply_post_narration(
     outcome: str,
     scene_present_ids: set[str],
     consequences: Sequence[Consequence],
-) -> dict[str, Any]:
+) -> NarratorMetadata:
     cons_list = labels_of(list(consequences))
     present_names = [n.name for n in game.npcs if n.id in scene_present_ids]
     game.world.current_scene_context = generate_scene_context(game, brain, outcome, present_names)

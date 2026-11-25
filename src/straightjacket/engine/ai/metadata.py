@@ -1,5 +1,3 @@
-from typing import Any
-
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.npc.lifecycle import new_npc
 from straightjacket.engine.gamemaster.npc.matching import (
@@ -10,27 +8,26 @@ from straightjacket.engine.gamemaster.npc.matching import (
 )
 from straightjacket.engine.gamemaster.npc.processing import process_new_npcs, process_npc_details, process_npc_renames
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.models import GameState, NpcData
+from straightjacket.engine.models import DeceasedNpc, GameState, LoreNpc, NarratorMetadata, NpcData
 
 
 def apply_narrator_metadata(
-    game: GameState, metadata: dict[str, Any], *, scene_present_ids: set[str], world_addition: str
+    game: GameState, metadata: NarratorMetadata, *, scene_present_ids: set[str], world_addition: str
 ) -> None:
-    process_npc_renames(game, metadata["npc_renames"])
-    if metadata["new_npcs"]:
-        process_new_npcs(game, metadata["new_npcs"])
-    process_npc_details(game, metadata["npc_details"], world_addition=world_addition)
-    process_deceased_npcs_with_presence_check(game, metadata["deceased_npcs"], scene_present_ids=scene_present_ids)
-    _process_lore_npcs(game, metadata["lore_npcs"])
+    process_npc_renames(game, metadata.npc_renames)
+    if metadata.new_npcs:
+        process_new_npcs(game, metadata.new_npcs)
+    process_npc_details(game, metadata.npc_details, world_addition=world_addition)
+    process_deceased_npcs_with_presence_check(game, metadata.deceased_npcs, scene_present_ids=scene_present_ids)
+    _process_lore_npcs(game, metadata.lore_npcs)
 
 
-def _reported_dead(game: GameState, entry: dict[str, Any]) -> NpcData | None:
-    npc_id = entry["npc_id"]
-    if not npc_id:
+def _reported_dead(game: GameState, entry: DeceasedNpc) -> NpcData | None:
+    if not entry.npc_id:
         return None
-    npc = find_npc(game, npc_id)
+    npc = find_npc(game, entry.npc_id)
     if not npc:
-        log(f"[NPC] Deceased report for unknown NPC: '{npc_id}'", level="warning")
+        log(f"[NPC] Deceased report for unknown NPC: '{entry.npc_id}'", level="warning")
         return None
     if npc.status == "deceased":
         return None
@@ -43,7 +40,7 @@ def _mark_deceased(npc: NpcData) -> None:
     log(f"[NPC] Marked as deceased: {npc.name} ({npc.id}, was {old_status})")
 
 
-def process_deceased_npcs(game: GameState, deceased_list: list[Any]) -> None:
+def process_deceased_npcs(game: GameState, deceased_list: list[DeceasedNpc]) -> None:
     for entry in deceased_list:
         npc = _reported_dead(game, entry)
         if npc is not None:
@@ -51,7 +48,7 @@ def process_deceased_npcs(game: GameState, deceased_list: list[Any]) -> None:
 
 
 def process_deceased_npcs_with_presence_check(
-    game: GameState, deceased_list: list[Any], scene_present_ids: set[str]
+    game: GameState, deceased_list: list[DeceasedNpc], scene_present_ids: set[str]
 ) -> None:
     for entry in deceased_list:
         npc = _reported_dead(game, entry)
@@ -67,9 +64,9 @@ def process_deceased_npcs_with_presence_check(
         _mark_deceased(npc)
 
 
-def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
+def _process_lore_npcs(game: GameState, lore_list: list[LoreNpc]) -> None:
     for entry in lore_list:
-        name = entry["name"].strip()
+        name = entry.name.strip()
         if not name:
             continue
 
@@ -88,7 +85,7 @@ def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
             disposition=gm().npc.default_new_npc_disposition,
             status="lore",
             name_rolled=False,
-            description=entry["description"],
+            description=entry.description,
             agenda="",
             instinct="",
             secrets=[],

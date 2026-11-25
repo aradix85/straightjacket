@@ -1,7 +1,6 @@
 import dataclasses
 import pathlib
 import random
-from typing import Any
 
 import pytest
 
@@ -15,22 +14,24 @@ from straightjacket.engine.crafters.blueprint import (
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.keyed_scenes import has_keyed_scene_from
+from straightjacket.engine.models import BlueprintVoicing, PossibleEnding, VoicedAct, VoicedRevelation
 from tests._helpers import make_game_state
 
 
-def _voicing(act_count: int, revelations: int | None = None, endings: int = 3) -> dict[str, Any]:
-    return {
-        "central_conflict": "The relic is contested",
-        "antagonist_force": "The cult",
-        "thematic_thread": "trust",
-        "acts": [
-            {"title": f"Act {i + 1}", "goal": "g", "mood": "tense", "transition_trigger": "t"} for i in range(act_count)
+def _voicing(act_count: int, revelations: int | None = None, endings: int = 3) -> BlueprintVoicing:
+    return BlueprintVoicing(
+        central_conflict="The relic is contested",
+        antagonist_force="The cult",
+        thematic_thread="trust",
+        acts=[
+            VoicedAct(title=f"Act {i + 1}", goal="g", mood="tense", transition_trigger="t") for i in range(act_count)
         ],
-        "revelations": [
-            {"content": f"reveal {i + 1}"} for i in range(act_count if revelations is None else revelations)
+        revelations=[
+            VoicedRevelation(content=f"reveal {i + 1}")
+            for i in range(act_count if revelations is None else revelations)
         ],
-        "possible_endings": [{"type": "earned", "description": f"end {i + 1}"} for i in range(endings)],
-    }
+        possible_endings=[PossibleEnding(type="earned", description=f"end {i + 1}") for i in range(endings)],
+    )
 
 
 def _turning_point(*plot_points: tuple[str, str | None]) -> TurningPoint:

@@ -19,12 +19,17 @@ from straightjacket.engine.models import (
     ChapterSummary,
     CharacterListEntry,
     ClockData,
+    CorrectionOp,
+    DirectorAnswer,
     GameState,
     InheritanceRollResult,
     KeyedScene,
     MemoryEntry,
     NarrativeState,
     NpcData,
+    NpcDetail,
+    NpcEdit,
+    NpcRename,
     PlayerPreferences,
     PlotlineEntry,
     PredecessorRecord,
@@ -291,6 +296,8 @@ def make_brain_result(**kwargs: Any) -> BrainResult:
         kwargs.setdefault(name, None)
     for name in ("target_track", "target_clock", "target_threat", "bonus_id"):
         kwargs.setdefault(name, None)
+    kwargs.setdefault("undetermined_facts", [])
+    kwargs.setdefault("boasts", [])
     return BrainResult(**kwargs)
 
 
@@ -368,17 +375,17 @@ def keyed_reflections(*refs: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {ref["npc_id"]: {k: v for k, v in ref.items() if k != "npc_id"} for ref in refs}
 
 
-def make_npc_detail(**kwargs: Any) -> dict[str, Any]:
+def make_npc_detail(**kwargs: Any) -> NpcDetail:
     kwargs.setdefault("npc_id", "npc_1")
     kwargs.setdefault("full_name", None)
     kwargs.setdefault("description", None)
-    return kwargs
+    return NpcDetail(**kwargs)
 
 
-def make_npc_rename(**kwargs: Any) -> dict[str, Any]:
+def make_npc_rename(**kwargs: Any) -> NpcRename:
     kwargs.setdefault("npc_id", "npc_1")
     kwargs.setdefault("new_name", "")
-    return kwargs
+    return NpcRename(**kwargs)
 
 
 def _prompt_kwargs(overrides: dict[str, Any], **defaults: Any) -> dict[str, Any]:
@@ -454,19 +461,25 @@ def weak_hit_prompt(game: GameState, brain: BrainResult, player_words: str) -> s
     )
 
 
-def make_state_op(**kwargs: Any) -> dict[str, Any]:
+def state_op_answer(**kwargs: Any) -> dict[str, Any]:
     for name in ("npc_id", "fields", "split_name", "split_description", "merge_source_id", "value"):
         kwargs.setdefault(name, None)
+    if kwargs["fields"] is not None:
+        kwargs["fields"] = dict.fromkeys(f.name for f in dataclasses.fields(NpcEdit)) | kwargs["fields"]
     return kwargs
 
 
-def make_director_guidance(**kwargs: Any) -> dict[str, Any]:
+def make_state_op(**kwargs: Any) -> CorrectionOp:
+    return CorrectionOp.from_dict(state_op_answer(**kwargs))
+
+
+def make_director_guidance(**kwargs: Any) -> DirectorAnswer:
     kwargs.setdefault("scene_summary", "")
     kwargs.setdefault("narrator_guidance", "")
-    kwargs.setdefault("npc_guidance", {})
+    kwargs.setdefault("npc_guidance", [])
     kwargs.setdefault("npc_reflections", {})
     kwargs.setdefault("arc_notes", "")
-    return kwargs
+    return DirectorAnswer.from_dict(kwargs)
 
 
 def make_act(**kwargs: Any) -> StoryAct:

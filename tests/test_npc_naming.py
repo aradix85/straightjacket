@@ -4,6 +4,7 @@ import pytest
 
 from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
 from straightjacket.engine.gamemaster.npc.processing import process_new_npcs
+from straightjacket.engine.models import NewNpc
 from tests._helpers import make_game_state
 
 
@@ -39,7 +40,7 @@ def test_roll_oracle_name_delve_inherits_from_classic() -> None:
 def test_process_new_npcs_uses_oracle_name() -> None:
     game = make_game_state(player_name="Hero", setting_id="classic")
     with patch("straightjacket.engine.gamemaster.npc.processing.roll_oracle_name", return_value="Sigrid Ironhand"):
-        process_new_npcs(game, [{"name": "AI Generated Name", "description": "a warrior", "disposition": "neutral"}])
+        process_new_npcs(game, [NewNpc(name="AI Generated Name", description="a warrior", disposition="neutral")])
     assert len(game.npcs) == 1
     assert game.npcs[0].name == "Sigrid Ironhand"
 

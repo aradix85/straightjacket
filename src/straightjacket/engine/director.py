@@ -1,5 +1,4 @@
 import json
-from typing import Any
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, AIResponse, create_with_retry
 from straightjacket.engine.ai.schemas import get_director_output_schema
@@ -10,7 +9,14 @@ from straightjacket.engine.gamemaster.npc.matching import resolve_about_npc
 from straightjacket.engine.gamemaster.npc.memory import consolidate_memory, recent_observations
 from straightjacket.engine.gamemaster.questions import outcome_of
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.models import DirectorGuidance, GameState, MemoryEntry, NpcData
+from straightjacket.engine.models import (
+    DirectorAnswer,
+    DirectorGuidance,
+    GameState,
+    MemoryEntry,
+    NpcData,
+    NpcReflection,
+)
 from straightjacket.engine.prompt_blocks import character_tag, content_boundaries_block, world_tag
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.ruleset.bond import get_npc_bond
@@ -150,14 +156,13 @@ def build_director_prompt(game: GameState, latest_narration: str) -> str:
     )
 
 
-def _no_guidance(error: Exception) -> dict[str, Any]:
+def _log_no_guidance(error: Exception) -> None:
     log(f"[Director] Failed ({type(error).__name__}: {error}), continuing without guidance", level="warning")
-    return {}
 
 
-def _parsed_guidance(answer: AIResponse) -> dict[str, Any]:
+def _parsed_guidance(answer: AIResponse) -> DirectorAnswer:
     try:
-        guidance: dict[str, Any] = json.loads(answer.content)
+        guidance: object = json.loads(answer.content)
     except json.JSONDecodeError as e:
         usage = answer.usage or {}
         reasoning_tail = " ".join(answer.reasoning[-eng().truncations.log_xlong :].split())
@@ -168,10 +173,10 @@ def _parsed_guidance(answer: AIResponse) -> dict[str, Any]:
             f"and {len(answer.reasoning)} of reasoning text, which ended: {reasoning_tail!r}"
         )
         raise ValueError(msg) from e
-    return guidance
+    return DirectorAnswer.from_dict(guidance)
 
 
-def call_director(provider: AIProvider, game: GameState, latest_narration: str) -> dict[str, Any]:
+def call_director(provider: AIProvider, game: GameState, latest_narration: str) -> DirectorAnswer | None:
     log(f"[Director] Analyzing scene {game.narrative.scene_count}")
 
     prompt = build_director_prompt(game, latest_narration)
@@ -192,7 +197,8 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
     try:
         tool_response = create_with_retry(provider, tool_spec)
     except Exception as e:
-        return _no_guidance(e)
+        _log_no_guidance(e)
+        return None
 
     if tool_response.stop_reason == "tool_use" and tool_response.tool_calls:
         results = [execute_tool_call(call.name, call.arguments, game) for call in tool_response.tool_calls]
@@ -216,23 +222,21 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
     try:
         guidance = _parsed_guidance(create_with_retry(provider, answer_spec))
     except Exception as e:
-        return _no_guidance(e)
+        _log_no_guidance(e)
+        return None
 
-    guidance["npc_guidance"] = {
-        item["npc_id"]: item["guidance"] for item in guidance["npc_guidance"] if item["npc_id"] and item["guidance"]
-    }
     log(
         f"[Director] Guidance: "
-        f"reflections={len(guidance['npc_reflections'])}, "
-        f"summary={guidance['scene_summary'][: eng().truncations.log_medium]}"
+        f"reflections={len(guidance.npc_reflections)}, "
+        f"summary={guidance.scene_summary[: eng().truncations.log_medium]}"
     )
     return guidance
 
 
-def _apply_profile_updates(npc: NpcData, ref: dict[str, Any]) -> None:
+def _apply_profile_updates(npc: NpcData, ref: NpcReflection) -> None:
     trunc = eng().truncations
-    agenda = ref["agenda"].strip()
-    instinct = ref["instinct"].strip()
+    agenda = ref.agenda.strip()
+    instinct = ref.instinct.strip()
     if agenda and not npc.agenda.strip():
         npc.agenda = agenda
         log(f"[Director] Agenda set for {npc.name}: '{agenda}'")
@@ -240,21 +244,21 @@ def _apply_profile_updates(npc: NpcData, ref: dict[str, Any]) -> None:
         npc.instinct = instinct
         log(f"[Director] Instinct set for {npc.name}: '{instinct}'")
 
-    updated_agenda = ref["updated_agenda"].strip()
+    updated_agenda = ref.updated_agenda.strip()
     if updated_agenda and npc.agenda.strip():
         log(
             f"[Director] Agenda updated for {npc.name}: "
             f"'{npc.agenda[: trunc.log_xshort]}' → '{updated_agenda[: trunc.log_xshort]}'"
         )
         npc.agenda = updated_agenda
-    updated_arc = ref["updated_arc"].strip()
+    updated_arc = ref.updated_arc.strip()
     if updated_arc:
         log(
             f"[Director] Arc updated for {npc.name}: "
             f"'{npc.arc[: trunc.log_short]}' → '{updated_arc[: trunc.log_short]}'"
         )
         npc.arc = updated_arc
-    updated_description = ref["updated_description"].strip()
+    updated_description = ref.updated_description.strip()
     if updated_description:
         log(
             f"[Director] Description updated for {npc.name}: "
@@ -263,17 +267,17 @@ def _apply_profile_updates(npc: NpcData, ref: dict[str, Any]) -> None:
         npc.description = updated_description
 
 
-def _apply_reflection(game: GameState, npc: NpcData, ref: dict[str, Any]) -> None:
+def _apply_reflection(game: GameState, npc: NpcData, ref: NpcReflection) -> None:
     npc.memory.append(
         MemoryEntry(
             scene=game.narrative.scene_count,
-            event=ref["reflection"],
-            emotional_weight=ref["tone_key"],
-            tone=ref["tone"],
-            tone_key=ref["tone_key"],
+            event=ref.reflection,
+            emotional_weight=ref.tone_key,
+            tone=ref.tone,
+            tone_key=ref.tone_key,
             importance=gm().npc.reflection_importance,
             type="reflection",
-            about_npc=resolve_about_npc(game, ref["about_npc"], owner_id=npc.id),
+            about_npc=resolve_about_npc(game, ref.about_npc, owner_id=npc.id),
         )
     )
     npc.needs_reflection = False
@@ -281,7 +285,7 @@ def _apply_reflection(game: GameState, npc: NpcData, ref: dict[str, Any]) -> Non
     npc.last_reflection_scene = game.narrative.scene_count
     _apply_profile_updates(npc, ref)
     consolidate_memory(npc)
-    log(f"[Director] Reflection for {npc.name}: {ref['reflection'][: eng().truncations.log_medium]}")
+    log(f"[Director] Reflection for {npc.name}: {ref.reflection[: eng().truncations.log_medium]}")
 
 
 def _clear_reflection_flags(game: GameState, reason: str) -> None:
@@ -298,24 +302,24 @@ def new_guidance() -> DirectorGuidance:
     return DirectorGuidance(narrator_guidance="", arc_notes="")
 
 
-def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
-    if not guidance:
+def apply_director_guidance(game: GameState, guidance: DirectorAnswer | None) -> None:
+    if guidance is None:
         _clear_reflection_flags(game, "no guidance")
         return
 
     game.narrative.director_guidance = DirectorGuidance(
-        narrator_guidance=guidance["narrator_guidance"],
-        npc_guidance=guidance["npc_guidance"],
-        arc_notes=guidance["arc_notes"],
+        narrator_guidance=guidance.narrator_guidance,
+        npc_guidance={g.npc_id: g.guidance for g in guidance.npc_guidance if g.npc_id and g.guidance},
+        arc_notes=guidance.arc_notes,
     )
-    if guidance["scene_summary"]:
-        game.narrative.session_log[-1].rich_summary = guidance["scene_summary"]
+    if guidance.scene_summary:
+        game.narrative.session_log[-1].rich_summary = guidance.scene_summary
 
     selected = {npc.id: npc for npc in game.npcs if _reflection_eligible(npc)}
-    for npc_id, ref in guidance["npc_reflections"].items():
+    for npc_id, ref in guidance.npc_reflections.items():
         if npc_id not in selected:
             log(f"[Director] Rejected reflection for {npc_id!r}: not selected for reflection", level="warning")
-        elif ref["reflection"]:
+        elif ref.reflection:
             _apply_reflection(game, selected[npc_id], ref)
 
     _clear_reflection_flags(game, "not reflected")

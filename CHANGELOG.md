@@ -8,6 +8,19 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.25.0] — 2026-11-25
+
+The AI's structured answers read as dataclasses, the rest of roadmap 9y.3e. What the metadata extraction, the opening extraction, the Director, blueprint voicing, and the correction analysis answered was a dict of any value, read by its keys wherever the engine used it, so a value of another type than its schema's entered the game state and then made the save incompatible, since loading checks every value. Each answer is now read by the reader that binds the configuration, into its dataclass in `models_answers.py`, where `BrainResult` moved too: such a value, a missing key, or an unknown one fails the call where its answer is read, and the call degrades as when the AI cannot be reached (`docs/ai.md`, Roles; When an AI call fails).
+
+- The dataclasses live among the models, since the game master's NPC processing reads the extractions and may not import `ai`.
+- The NPC fields a correction may edit are the fields of `NpcEdit`, from which its schema is built, where `engine/correction.yaml` kept a list of them beside it (`npc_edit_fields`, gone).
+- A Director run that fails hands on no answer rather than an empty dict, and the guidance per NPC is gathered where the guidance is applied.
+- A correction that edits a known NPC but names no value is reported as skipped, as one that names no NPC was, where it applied nothing without a word.
+- The tests hand these functions the dataclasses, where they built plain dicts in some hundred places. New tests refuse an answer of the wrong shape for each of the five calls, and a turn, an opening, and a correction whose answers bring such a value leave a game whose save loads, where the value entered the state.
+- Found on the way, for roadmap step 9ab, new: a keyed scene a random event keys on an NPC outlives the NPC when it is absorbed into another or left behind by a succession, and every later scene test then fails; 8 of the 80 games below, under the old code and the new alike.
+
+Measured: a script played 80 seeded games of six turns, with three corrections each, on a mock provider under the old code and the new: all 720 recorded states alike, where a control that held each game against the next seed's found all 79 different. The correction schema is unchanged. mypy's `disallow_any_explicit` finds 281 errors where it found 341. Quality gate: 2044 tests, coverage 96.31%, mypy clean on 272 files, on Windows and with `--platform linux`, pylint clean, ruff clean on every rule outside the ignores. A sub-agent checked the code and another the documents; what they found is fixed. Save format unchanged. No Elvira run: an answer that follows its schema plays as it did.
+
 ## [2026.11.13.2] — 2026-11-13
 
 The rule for finished work, sharpened at the user's request, whose standing way of working it is: what is finished goes under DONE at the bottom of the roadmap, cut to its essence, only what a later session may still need, so that what belongs together stands together (CLAUDE.md, Always). DONE gains the line of the work that moved the sessions to Claude Code, as 9z.

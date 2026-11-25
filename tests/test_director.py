@@ -62,7 +62,7 @@ def test_empty_guidance_resets_reflection_flags_and_keeps_the_accumulator() -> N
     game = _game()
     assert game.npcs[0].needs_reflection is True
     before = game.npcs[0].importance_accumulator
-    apply_director_guidance(game, {})
+    apply_director_guidance(game, None)
     reflects_after: bool = game.npcs[0].needs_reflection
     assert reflects_after is False
     assert game.npcs[0].importance_accumulator == before
@@ -91,7 +91,7 @@ def test_director_reports_why_its_final_answer_broke_off(monkeypatch: Any) -> No
     monkeypatch.setattr(director, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     broken = '{"scene_summary": "Tense.", "narrator_guidance": '
     provider = _SequencedDirectorProvider(broken)
-    assert director.call_director(provider, make_test_game(), "Text.") == {}
+    assert director.call_director(provider, make_test_game(), "Text.") is None
     assert provider.final_calls == 1
     warning = " ".join(warnings)
     assert "stopped as truncated after 8192 output tokens, 7800 of them reasoning" in warning
@@ -124,7 +124,8 @@ class _ToolCallingDirectorProvider(ScriptedProvider):
 def test_the_director_hands_the_tool_results_straight_to_its_final_answer() -> None:
     provider = _ToolCallingDirectorProvider("query_game_state")
     guidance = director.call_director(provider, make_test_game(), "Text.")
-    assert guidance["narrator_guidance"] == "G."
+    assert guidance is not None
+    assert guidance.narrator_guidance == "G."
     assert len(provider.specs) == 2
     final_prompt = provider.specs[1].messages[-1]["content"]
     assert "<tool_results>" in final_prompt
@@ -146,7 +147,8 @@ def test_an_invented_tool_costs_no_extra_round(monkeypatch: Any) -> None:
     monkeypatch.setattr(handler, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     provider = _ToolCallingDirectorProvider("respond")
     guidance = director.call_director(provider, make_test_game(), "Text.")
-    assert guidance["arc_notes"] == "A."
+    assert guidance is not None
+    assert guidance.arc_notes == "A."
     assert len(provider.specs) == 2
     assert warnings == ["[Tools] Unknown tool: respond"]
 
@@ -167,7 +169,11 @@ def test_stores_narrator_guidance() -> None:
         game,
         make_director_guidance(
             narrator_guidance="Build tension slowly.",
-            npc_guidance={"npc_1": "Kira should test loyalty."},
+            npc_guidance=[
+                {"npc_id": "npc_1", "guidance": "Kira should test loyalty."},
+                {"npc_id": "npc_2", "guidance": ""},
+                {"npc_id": "", "guidance": "For nobody."},
+            ],
             arc_notes="Story progressing.",
         ),
     )
@@ -182,7 +188,10 @@ def test_the_narrator_reads_npc_guidance_under_the_npc_name() -> None:
         game,
         make_director_guidance(
             narrator_guidance="Build tension slowly.",
-            npc_guidance={"npc_1": "Kira should test loyalty.", "npc_9": "Nobody we know."},
+            npc_guidance=[
+                {"npc_id": "npc_1", "guidance": "Kira should test loyalty."},
+                {"npc_id": "npc_9", "guidance": "Nobody we know."},
+            ],
         ),
     )
     block = dialog_prompt(game)
@@ -415,18 +424,37 @@ def test_reset_stale_reflection_flags() -> None:
         assert npc.importance_accumulator == acc_before[npc.id]
 
 
+_ANSWER: dict[str, object] = {
+    "scene_summary": "Tense.",
+    "narrator_guidance": "Build tension.",
+    "npc_guidance": [],
+    "npc_reflections": {},
+    "arc_notes": "Progressing.",
+}
+
+
+@pytest.mark.parametrize(
+    "wrong",
+    [
+        {"narrator_guidance": None},
+        {"npc_guidance": {"npc_1": "Kira should test loyalty."}},
+        {"npc_reflections": {"npc_1": {"reflection": "Kira trusts the player."}}},
+        {"arc_notes": 3},
+    ],
+)
+def test_a_director_answer_with_a_value_of_another_type_changes_no_guidance(wrong: dict[str, object]) -> None:
+    game = make_test_game()
+    game.narrative.session_log.append(make_scene_log_entry(scene=5, summary="Last"))
+    game.npcs[0].needs_reflection = True
+    run_deferred_director(MockProvider(json.dumps(_ANSWER | wrong)), game, DirectorCall(narration="Text."))
+    assert game.narrative.director_guidance == director.new_guidance()
+    assert not game.narrative.session_log[-1].rich_summary
+    assert game.npcs[0].needs_reflection is False
+    assert [m.type for m in game.npcs[0].memory] == []
+
+
 def test_run_deferred_director_applies_guidance() -> None:
-    provider = MockProvider(
-        json.dumps(
-            {
-                "scene_summary": "Tense.",
-                "narrator_guidance": "Build tension.",
-                "npc_guidance": [],
-                "npc_reflections": {},
-                "arc_notes": "Progressing.",
-            }
-        )
-    )
+    provider = MockProvider(json.dumps(_ANSWER))
     game = make_test_game()
     game.narrative.session_log.append(make_scene_log_entry(scene=5, summary="Last"))
     run_deferred_director(

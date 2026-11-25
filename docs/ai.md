@@ -12,9 +12,9 @@ Every AI call carries its own role name (`AICallSpec.log_role`), and every role 
 - `opening_setup` extracts from the opening of a new game, a chapter, or a succession the NPCs with their dispositions, agendas, instincts, and secrets, their first memories, the location, and the scene context. The opening clock and the time of day are the engine's (`docs/gamemaster.md`, Clocks).
 - `recap` writes the player-facing recap (`ai/recap.py`); `blueprint_voicing` writes a setting-specific story blueprint from an Adventure Crafter seed (`ai/blueprint_voicing.py`). The chapter summary kept in campaign history is built by the engine (`docs/story.md`, Chapters).
 - `director` writes NPC reflections and guidance for the narrator after a turn that calls for it (`director.py` → `should_call_director`): a miss, a scene that was not the expected one, new NPCs, a revelation that landed (`docs/story.md`, Revelations), an NPC due a reflection, the first turn of the climax, every `pacing.director_interval` scenes, and once after the epilogue. After a state correction it runs when the analysis calls it useful and these triggers agree. What it decides came with EdgeTales and departs from the design document; roadmap step 11.0 settles what it keeps (`docs/divergences.md`, An AI Director steers the story and the NPCs).
-- `correction` analyses a `##` correction (`correction/analysis.py` → `call_correction_brain`): either a misread input, which the engine replays with the corrected input and the dice already rolled, or state operations, whose schema offers the operations and fields in `engine/correction.yaml` and the NPCs by id.
+- `correction` analyses a `##` correction (`correction/analysis.py` → `call_correction_brain`): either a misread input, which the engine replays with the corrected input and the dice already rolled, or state operations, whose schema offers the operations in `engine/correction.yaml`, the NPC fields of `models_answers.py` → `NpcEdit`, and the NPCs by id.
 
-The narrator writes pure prose; everything structured comes from separate calls with strict JSON schemas (`ai/schemas.py`). Why narration and extraction are separate calls is in `docs/divergences.md`.
+The narrator writes pure prose; everything structured comes from separate calls with strict JSON schemas (`ai/schemas.py`). Each structured answer is read into its dataclass in `models_answers.py` by the reader that binds the configuration (ARCHITECTURE.md, Typed binding), so a value of another type than its field's, a missing key, or one the dataclass does not know fails the call where the answer is read. The dataclasses live among the models, since the game master's NPC processing reads the extractions and may not import `ai`. Why narration and extraction are separate calls is in `docs/divergences.md`.
 
 **Prompts** live in `prompts/*.yaml`, one key per role or task:
 
@@ -101,7 +101,7 @@ The `AIProvider` protocol has two implementations, `ai/provider_anthropic.py` an
 
 The web handler for a turn, a correction, or a momentum burn then restores the snapshot it took before the call and tells the player that nothing in the story changed, as the design document asks (`web/handlers.py` → `_restore_after_failed_turn`, `_report_failure`). A burn that still stood, after a failed burn or a failed correction, is offered again. A new chapter and a succession run on a copy of the game, which replaces it only when the opening succeeds, so a failed opening leaves the game as it was. A handler catches only the call that reaches the AI; `web/server.py` → `_dispatch_one_message` logs any other fault in a handler at error level and tells the player an unexpected error occurred.
 
-**Every other call degrades** without a wrong state change:
+**Every other call degrades** without a wrong state change, an answer its dataclass refuses (Roles above) as much as an unreachable AI:
 
 - the metadata extraction and the Director are skipped;
 - the opening extraction registers no NPCs and leaves the location and scene context as they were;

@@ -10,7 +10,7 @@ from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
 from straightjacket.engine.gamemaster.npc.lifecycle import merge_npc_identity
 from straightjacket.engine.gamemaster.scene import check_scene
-from straightjacket.engine.models import RollResult, labels_of
+from straightjacket.engine.models import CorrectionAnalysis, CorrectionOp, RollResult, labels_of
 from straightjacket.engine.models_story import StoryAct, StoryBlueprint
 from straightjacket.engine.prompt_blocks import get_narrator_system
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
@@ -23,6 +23,7 @@ from straightjacket.engine.story_state import get_current_act
 from tests._creation import (
     TurnProvider,
     brain_answer,
+    correction_answer,
     drift_station_game,
     fixed_roll,
     force_result,
@@ -41,6 +42,8 @@ from tests._helpers import (
     make_state_op,
     make_threat,
     record_price_tables,
+    schema_of,
+    state_op_answer,
 )
 
 _SEARCH = brain_answer(player_intent="I search the room for clues", location_change=None)
@@ -318,8 +321,50 @@ def test_correction_brain_parses_response() -> None:
         provider, game, "I didn't want to attack, just talk", snap, brain=brain, narration="You swing your sword..."
     )
 
-    assert "correction_source" in result
-    assert result["correction_source"] in {"input_misread", "state_error"}
+    assert result == CorrectionAnalysis.from_dict(provider.correction)
+
+
+def _analysis_of(answer: dict[str, object]) -> CorrectionAnalysis:
+    provider = TurnProvider()
+    provider.correction = answer
+    game = library_game()
+    return call_correction_brain(
+        provider, game, "Mira is hostile", game.snapshot(), brain=make_brain_result(), narration="Mira smiles."
+    )
+
+
+def test_a_correction_analysis_reads_the_fields_its_schema_offers() -> None:
+    provider = TurnProvider()
+    game = library_game()
+    call_correction_brain(provider, game, "x", game.snapshot(), brain=make_brain_result(), narration="y")
+    op_schema = schema_of(provider.calls[-1])["properties"]["state_ops"]["items"]["properties"]
+    offered: dict[str, object] = dict.fromkeys(op_schema["fields"]["anyOf"][0]["properties"])
+    op = state_op_answer(op="npc_edit", npc_id="npc_1") | {"fields": offered | {"aliases": ["the archivist"]}}
+    analysis = _analysis_of(correction_answer(correction_source="state_error", state_ops=[op]))
+    [read] = analysis.state_ops
+    assert read.fields is not None
+    assert (read.fields.aliases, read.fields.name) == (["the archivist"], None)
+
+
+@pytest.mark.parametrize(
+    "wrong",
+    [
+        {"director_useful": "yes"},
+        {"state_ops": [state_op_answer(op="npc_edit", npc_id="npc_1", fields={"aliases": "the archivist"})]},
+        {"state_ops": [state_op_answer(op="npc_edit", npc_id="npc_1", fields={"name": 7})]},
+        {"state_ops": [state_op_answer(op="location_edit", value=["Harbor"])]},
+        {"state_ops": [state_op_answer(op="npc_edit", npc_id="npc_1") | {"fields": {"name": "Mira Hale"}}]},
+    ],
+)
+def test_a_correction_analysis_with_a_value_of_another_type_applies_nothing(wrong: dict[str, object]) -> None:
+    analysis = _analysis_of(correction_answer(correction_source="state_error") | wrong)
+    assert analysis == CorrectionAnalysis(
+        correction_source="state_error",
+        corrected_input="",
+        narrator_guidance="Mira is hostile",
+        director_useful=False,
+        state_ops=[],
+    )
 
 
 def test_momentum_burn_upgrades_result() -> None:
@@ -502,7 +547,7 @@ _UNAPPLICABLE_OPS = [
 
 @pytest.mark.parametrize("op", _UNAPPLICABLE_OPS)
 def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
-    monkeypatch: pytest.MonkeyPatch, op: dict[str, object]
+    monkeypatch: pytest.MonkeyPatch, op: CorrectionOp
 ) -> None:
     warnings: list[str] = []
     monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
@@ -511,11 +556,21 @@ def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
     ops.apply_correction_ops(game, [op])
     assert game.to_dict() == before
     [warning] = warnings
-    assert warning.startswith(f"[Correction] {op['op']} skipped: ")
+    assert warning.startswith(f"[Correction] {op.op} skipped: ")
+
+
+def test_an_npc_edit_that_names_no_value_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
+    warnings: list[str] = []
+    monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
+    game = library_game()
+    before = game.to_dict()
+    ops.apply_correction_ops(game, [make_state_op(op="npc_edit", npc_id="npc_1", fields={})])
+    assert game.to_dict() == before
+    assert warnings == ["[Correction] npc_edit skipped: no NPC or no fields named"]
 
 
 def test_every_correction_op_the_analysis_is_offered_is_applied_above() -> None:
-    assert sorted(str(op["op"]) for op in _UNAPPLICABLE_OPS) == sorted(eng().correction.ops)
+    assert sorted(op.op for op in _UNAPPLICABLE_OPS) == sorted(eng().correction.ops)
 
 
 def test_description_match_catches_identity_reveal() -> None:

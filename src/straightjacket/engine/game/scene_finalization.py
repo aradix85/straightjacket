@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Any
 
 from straightjacket.engine.director import should_call_director
 from straightjacket.engine.game.finalization import apply_post_narration
@@ -23,6 +22,7 @@ from straightjacket.engine.models import (
     ClockEvent,
     GameState,
     NarrationEntry,
+    NewNpc,
     RandomEvent,
     SceneLogEntry,
     ThreatEvent,
@@ -32,7 +32,7 @@ from straightjacket.engine.ruleset.tracks import vow_acted_on
 from straightjacket.engine.story_state import check_act_transition, check_story_completion
 
 
-def _update_characters_list(game: GameState, metadata: dict[str, Any], scene_present_ids: set[str]) -> None:
+def _update_characters_list(game: GameState, new_npcs: list[NewNpc], scene_present_ids: set[str]) -> None:
     for npc in game.npcs:
         if npc.id in scene_present_ids:
             for c in game.narrative.characters_list:
@@ -40,11 +40,11 @@ def _update_characters_list(game: GameState, metadata: dict[str, Any], scene_pre
                     add_character_weight(game, c.id)
                     break
 
-    for new_npc in metadata["new_npcs"]:
-        if not new_npc["name"]:
+    for new_npc in new_npcs:
+        if not new_npc.name:
             continue
-        npc_obj = find_npc(game, new_npc["name"])
-        name = npc_obj.name if npc_obj else new_npc["name"]
+        npc_obj = find_npc(game, new_npc.name)
+        name = npc_obj.name if npc_obj else new_npc.name
         entry_id = npc_obj.id if npc_obj else f"char_{len(game.narrative.characters_list) + 1}"
         existing = any(c.name == name or c.id == entry_id for c in game.narrative.characters_list)
         if not existing:
@@ -123,7 +123,7 @@ def finalize_scene(
 
     update_chaos_factor(game, outcome_of(log_entry.result), target_npc_id=brain.target_npc)
 
-    _update_characters_list(game, metadata, scene_present_ids)
+    _update_characters_list(game, metadata.new_npcs, scene_present_ids)
     scene_events = [*ctx.pending_random_events, *filter(None, [ctx.scene.scene_setup.interrupt_event])]
     for thread_id in invoked_threads(game, brain, scene_events, threat_events):
         add_thread_weight(game, thread_id)
@@ -134,7 +134,7 @@ def finalize_scene(
         game,
         roll_result=log_entry.result,
         chaos_used=ctx.scene.scene_setup.scene_type != "expected",
-        new_npcs_found=bool(metadata["new_npcs"]),
+        new_npcs_found=bool(metadata.new_npcs),
         revelation_landed=ctx.revelation is not None,
     )
     if director_reason:

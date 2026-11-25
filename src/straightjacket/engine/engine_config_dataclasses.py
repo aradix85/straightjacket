@@ -26,7 +26,6 @@ class NarratorMeterDescription:
 @dataclass
 class CorrectionConfig:
     ops: list[str]
-    npc_edit_fields: list[str]
 
 
 @dataclass

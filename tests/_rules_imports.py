@@ -63,6 +63,7 @@ _CORE_BASE = frozenset(
         "ids",
         "logging_util",
         "models",
+        "models_answers",
         "models_base",
         "models_npc",
         "models_story",

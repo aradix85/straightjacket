@@ -1,5 +1,8 @@
+import dataclasses
+
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.models import NpcEdit
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.moves import PICK_METHODS
 from straightjacket.engine.ruleset.progress import ranks
@@ -240,7 +243,7 @@ def get_opening_setup_schema() -> dict[str, object]:
 
 def get_correction_output_schema(npc_ids: list[str]) -> dict[str, object]:
     field_props: dict[str, object] = {}
-    for fname in eng().correction.npc_edit_fields:
+    for fname in (f.name for f in dataclasses.fields(NpcEdit)):
         if fname == "aliases":
             field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
         elif fname == "disposition":

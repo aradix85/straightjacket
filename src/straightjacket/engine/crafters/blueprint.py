@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.crafters.adventure_crafter import (
     assign_themes,
@@ -18,7 +18,6 @@ from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import has_keyed_scene_from
 from straightjacket.engine.models_story import (
-    PossibleEnding,
     Revelation,
     StoryAct,
     StoryBlueprint,
@@ -31,7 +30,7 @@ if TYPE_CHECKING:
         PlotPointHit,
         TurningPoint,
     )
-    from straightjacket.engine.models import GameState
+    from straightjacket.engine.models import BlueprintVoicing, GameState
     from straightjacket.engine.models_story import (
         NarrativeState,
         PlotlineEntry,
@@ -129,54 +128,53 @@ def assemble_blueprint_seed_from_ac(
     )
 
 
-def materialize_blueprint(seed: BlueprintSeed, voicing: dict[str, Any]) -> StoryBlueprint:
+def materialize_blueprint(seed: BlueprintSeed, voicing: BlueprintVoicing) -> StoryBlueprint:
     bp_cfg = crafter().adventure_crafter.blueprint
     weights = list(gm().enums.dramatic_weights)
 
-    voicing_acts = list(voicing["acts"])
-    if len(voicing_acts) != len(seed.acts):
-        msg = f"voicing returned {len(voicing_acts)} acts, seed has {len(seed.acts)}"
+    if len(voicing.acts) != len(seed.acts):
+        msg = f"voicing returned {len(voicing.acts)} acts, seed has {len(seed.acts)}"
         raise ValueError(msg)
-    voicing_revelations = list(voicing["revelations"])
-    if len(voicing_revelations) != len(seed.acts):
-        msg = f"voicing returned {len(voicing_revelations)} revelations, seed has {len(seed.acts)} acts"
+    if len(voicing.revelations) != len(seed.acts):
+        msg = f"voicing returned {len(voicing.revelations)} revelations, seed has {len(seed.acts)} acts"
         raise ValueError(msg)
     acts: list[StoryAct] = []
     revelations: list[Revelation] = []
-    for i, (act_seed, act, revelation) in enumerate(zip(seed.acts, voicing_acts, voicing_revelations, strict=True)):
+    for i, (act_seed, act, revelation) in enumerate(zip(seed.acts, voicing.acts, voicing.revelations, strict=True)):
         acts.append(
             StoryAct(
                 phase=act_seed.phase,
-                title=act["title"],
-                goal=act["goal"],
+                title=act.title,
+                goal=act.goal,
                 scene_range=list(act_seed.scene_range),
-                mood=act["mood"],
-                transition_trigger=act["transition_trigger"],
+                mood=act.mood,
+                transition_trigger=act.transition_trigger,
             )
         )
         revelations.append(
             Revelation(
                 id=f"revelation_{i + 1}",
-                content=revelation["content"],
+                content=revelation.content,
                 act_number=i + 1,
                 keyed_scene_source=act_seed.revelation_trigger,
                 dramatic_weight=weights[i % len(weights)],
             )
         )
 
-    voicing_endings = list(voicing["possible_endings"])
-    if len(voicing_endings) != bp_cfg.possible_endings_per_blueprint:
-        msg = f"voicing returned {len(voicing_endings)} endings, expected {bp_cfg.possible_endings_per_blueprint}"
+    if len(voicing.possible_endings) != bp_cfg.possible_endings_per_blueprint:
+        msg = (
+            f"voicing returned {len(voicing.possible_endings)} endings, "
+            f"expected {bp_cfg.possible_endings_per_blueprint}"
+        )
         raise ValueError(msg)
-    possible_endings = [PossibleEnding(type=v["type"], description=v["description"]) for v in voicing_endings]
 
     return StoryBlueprint(
-        central_conflict=voicing["central_conflict"],
-        antagonist_force=voicing["antagonist_force"],
-        thematic_thread=voicing["thematic_thread"],
+        central_conflict=voicing.central_conflict,
+        antagonist_force=voicing.antagonist_force,
+        thematic_thread=voicing.thematic_thread,
         acts=acts,
         revelations=revelations,
-        possible_endings=possible_endings,
+        possible_endings=list(voicing.possible_endings),
         revealed=[],
         triggered_transitions=[],
         triggered_director_phases=[],

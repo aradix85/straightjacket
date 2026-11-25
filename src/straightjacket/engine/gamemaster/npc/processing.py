@@ -1,4 +1,4 @@
-from typing import Any
+from dataclasses import replace
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.config import gm
@@ -24,24 +24,24 @@ from straightjacket.engine.gamemaster.npc.matching import (
 from straightjacket.engine.gamemaster.npc.memory import score_importance
 from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.models import GameState, MemoryEntry, NpcData
+from straightjacket.engine.models import GameState, MemoryEntry, NewNpc, NpcData, NpcDetail, NpcRename
 
 
-def process_npc_renames(game: GameState, renames: list[Any]) -> None:
+def process_npc_renames(game: GameState, renames: list[NpcRename]) -> None:
     for r in renames:
-        if not r["new_name"]:
+        if not r.new_name:
             continue
-        npc = find_npc(game, r["npc_id"])
+        npc = find_npc(game, r.npc_id)
         if not npc:
             log(
-                f"[NPC] Rename failed: could not find NPC '{r['npc_id']}'",
+                f"[NPC] Rename failed: could not find NPC '{r.npc_id}'",
                 level="warning",
             )
             continue
         if npc.status == "deceased":
             log(f"[NPC] Rename skipped for deceased NPC: {npc.name}")
             continue
-        new_name = r["new_name"].strip()
+        new_name = r.new_name.strip()
         player_norm = normalize_for_match(game.player_name)
         if _is_player_collision(normalize_for_match(new_name), player_norm, set(player_norm.split())):
             log(f"[NPC] Rename rejected: '{new_name}' matches player character")
@@ -67,11 +67,11 @@ def _should_reject_identity_reveal(npc: NpcData, new_name: str) -> bool:
 
 
 def _create_stub_for_rejected_reveal(
-    game: GameState, new_name: str, d: dict[str, Any], world_addition: str, paren_aliases: list[str]
+    game: GameState, new_name: str, d: NpcDetail, world_addition: str, paren_aliases: list[str]
 ) -> None:
     if find_npc(game, new_name):
         return
-    stub_desc = (d["description"] or "").strip() or world_addition.strip()
+    stub_desc = (d.description or "").strip() or world_addition.strip()
     npc_id = next_npc_id(game)
     stub = new_npc(
         npc_id=npc_id,
@@ -91,8 +91,8 @@ def _create_stub_for_rejected_reveal(
     log(f"[NPC] Created stub for rejected reveal: {new_name} ({npc_id})")
 
 
-def _apply_name_update(game: GameState, npc: NpcData, d: dict[str, Any], world_addition: str) -> bool:
-    raw_name = (d["full_name"] or "").strip()
+def _apply_name_update(game: GameState, npc: NpcData, d: NpcDetail, world_addition: str) -> bool:
+    raw_name = (d.full_name or "").strip()
     if not raw_name:
         return False
     new_name, paren_aliases = sanitize_npc_name(raw_name)
@@ -122,8 +122,8 @@ def _apply_name_update(game: GameState, npc: NpcData, d: dict[str, Any], world_a
     return False
 
 
-def _apply_description_updates(npc: NpcData, d: dict[str, Any]) -> None:
-    new_desc = (d["description"] or "").strip()
+def _apply_description_updates(npc: NpcData, d: NpcDetail) -> None:
+    new_desc = (d.description or "").strip()
     if new_desc:
         old_desc = npc.description
         if is_complete_description(new_desc) or not old_desc:
@@ -136,10 +136,10 @@ def _apply_description_updates(npc: NpcData, d: dict[str, Any]) -> None:
             )
 
 
-def _process_one_npc_detail(game: GameState, d: dict[str, Any], world_addition: str) -> None:
-    npc = find_npc(game, d["npc_id"])
+def _process_one_npc_detail(game: GameState, d: NpcDetail, world_addition: str) -> None:
+    npc = find_npc(game, d.npc_id)
     if not npc:
-        log(f"[NPC] npc_details: could not find NPC '{d['npc_id']}'", level="warning")
+        log(f"[NPC] npc_details: could not find NPC '{d.npc_id}'", level="warning")
         return
 
     skip_desc = _apply_name_update(game, npc, d, world_addition)
@@ -147,19 +147,9 @@ def _process_one_npc_detail(game: GameState, d: dict[str, Any], world_addition: 
         _apply_description_updates(npc, d)
 
 
-def process_npc_details(game: GameState, details: list[Any], world_addition: str) -> None:
+def process_npc_details(game: GameState, details: list[NpcDetail], world_addition: str) -> None:
     for d in details:
         _process_one_npc_detail(game, d, world_addition)
-
-
-def _normalize_new_npc_input(raw_nd: dict[str, Any]) -> dict[str, Any] | None:
-    if not raw_nd["name"]:
-        return None
-    return {
-        "name": raw_nd["name"],
-        "description": raw_nd["description"].strip(),
-        "disposition": raw_nd["disposition"],
-    }
 
 
 def _is_player_collision(name_norm: str, player_norm: str, player_parts: set[str]) -> bool:
@@ -176,26 +166,26 @@ def _handle_exact_name_match(game: GameState, name_norm: str) -> None:
         reactivate_npc(existing, reason="resurrected -- exact name in new_npcs", force=True)
 
 
-def _handle_fuzzy_match(game: GameState, nd: dict[str, Any]) -> bool:
-    fuzzy_hit, match_type = fuzzy_match_existing_npc(game, nd["name"])
+def _handle_fuzzy_match(game: GameState, nd: NewNpc) -> bool:
+    fuzzy_hit, match_type = fuzzy_match_existing_npc(game, nd.name)
     if not fuzzy_hit:
         return False
     if fuzzy_hit.status == "deceased":
-        log(f"[NPC] Fuzzy matched '{nd['name']}' to deceased '{fuzzy_hit.name}' -- creating new NPC instead")
+        log(f"[NPC] Fuzzy matched '{nd.name}' to deceased '{fuzzy_hit.name}' -- creating new NPC instead")
         return False
 
-    new_norm = normalize_for_match(nd["name"])
+    new_norm = normalize_for_match(nd.name)
     if match_type == "stt_variant":
-        _keep_name_add_alias(fuzzy_hit, nd["name"], reason="STT variant reappeared")
+        _keep_name_add_alias(fuzzy_hit, nd.name, reason="STT variant reappeared")
     elif set(new_norm.split()) <= set(normalize_for_match(fuzzy_hit.name).split()):
-        _keep_name_add_alias(fuzzy_hit, nd["name"], reason="named by part of the known name")
+        _keep_name_add_alias(fuzzy_hit, nd.name, reason="named by part of the known name")
     elif fuzzy_hit.name_rolled:
         if new_norm not in {normalize_for_match(a) for a in fuzzy_hit.aliases}:
-            log(f"[NPC] '{nd['name']}' only resembles a label of '{fuzzy_hit.name}' -- creating new NPC instead")
+            log(f"[NPC] '{nd.name}' only resembles a label of '{fuzzy_hit.name}' -- creating new NPC instead")
             return False
-        _keep_name_add_alias(fuzzy_hit, nd["name"], reason="its label reappeared")
+        _keep_name_add_alias(fuzzy_hit, nd.name, reason="its label reappeared")
     else:
-        merge_npc_identity(fuzzy_hit, nd["name"], nd["description"], game=game)
+        merge_npc_identity(fuzzy_hit, nd.name, nd.description, game=game)
     return True
 
 
@@ -208,22 +198,21 @@ def _keep_name_add_alias(npc: NpcData, label: str, reason: str) -> None:
         reactivate_npc(npc, reason=reason)
 
 
-def _handle_description_match(game: GameState, nd: dict[str, Any], name_norm: str) -> bool:
-    new_desc = nd["description"]
-    desc_hit = description_match_existing_npc(game, new_desc, name_norm)
+def _handle_description_match(game: GameState, nd: NewNpc, name_norm: str) -> bool:
+    desc_hit = description_match_existing_npc(game, nd.description, name_norm)
     if not desc_hit:
         return False
     if desc_hit.status == "deceased":
-        log(f"[NPC] Description matched '{nd['name']}' to deceased '{desc_hit.name}' -- creating new NPC instead")
+        log(f"[NPC] Description matched '{nd.name}' to deceased '{desc_hit.name}' -- creating new NPC instead")
         return False
-    log(f"[NPC] Description-based dedup: '{nd['name']}' matches '{desc_hit.name}' -- same person, name kept")
-    _keep_name_add_alias(desc_hit, nd["name"], reason="described again in new_npcs")
+    log(f"[NPC] Description-based dedup: '{nd.name}' matches '{desc_hit.name}' -- same person, name kept")
+    _keep_name_add_alias(desc_hit, nd.name, reason="described again in new_npcs")
     return True
 
 
-def _create_new_npc(game: GameState, nd: dict[str, Any]) -> NpcData:
+def _create_new_npc(game: GameState, nd: NewNpc) -> NpcData:
     npc_id = next_npc_id(game)
-    ai_name, paren_aliases = sanitize_npc_name(nd["name"].strip())
+    ai_name, paren_aliases = sanitize_npc_name(nd.name.strip())
     oracle_name = roll_oracle_name(game)
     if ai_name and ai_name.lower() != oracle_name.lower():
         paren_aliases.append(ai_name)
@@ -232,10 +221,10 @@ def _create_new_npc(game: GameState, nd: dict[str, Any]) -> NpcData:
     npc = new_npc(
         npc_id=npc_id,
         name=oracle_name,
-        disposition=nd["disposition"],
+        disposition=nd.disposition,
         status="active",
         name_rolled=True,
-        description=nd["description"],
+        description=nd.description,
         agenda="",
         instinct="",
         secrets=[],
@@ -248,9 +237,9 @@ def _create_new_npc(game: GameState, nd: dict[str, Any]) -> NpcData:
     return npc
 
 
-def _seed_initial_memory(game: GameState, npc: NpcData, nd: dict[str, Any]) -> None:
-    seed_event = nd["description"] or eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
-    seed_emotion = gm().disposition_to_seed_emotion[nd["disposition"]]
+def _seed_initial_memory(game: GameState, npc: NpcData, nd: NewNpc) -> None:
+    seed_event = nd.description or eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
+    seed_emotion = gm().disposition_to_seed_emotion[nd.disposition]
     seed_imp = max(score_importance(seed_emotion, seed_event), gm().npc.seed_importance_floor)
     npc.memory.append(
         MemoryEntry(
@@ -266,19 +255,19 @@ def _seed_initial_memory(game: GameState, npc: NpcData, nd: dict[str, Any]) -> N
     )
 
 
-def process_new_npcs(game: GameState, new_npcs: list[Any]) -> None:
+def process_new_npcs(game: GameState, new_npcs: list[NewNpc]) -> None:
     player_norm = normalize_for_match(game.player_name)
     player_parts = set(player_norm.split())
     existing_names = {normalize_for_match(n.name) for n in game.npcs}
 
-    for raw_nd in new_npcs:
-        nd = _normalize_new_npc_input(raw_nd)
-        if nd is None:
+    for reported in new_npcs:
+        if not reported.name:
             continue
+        nd = replace(reported, description=reported.description.strip())
 
-        name_norm = normalize_for_match(nd["name"])
+        name_norm = normalize_for_match(nd.name)
         if _is_player_collision(name_norm, player_norm, player_parts):
-            log(f"[NPC] Skipping player character from new_npcs: '{nd['name']}'")
+            log(f"[NPC] Skipping player character from new_npcs: '{nd.name}'")
             continue
 
         if name_norm in existing_names:

@@ -78,9 +78,8 @@ The roadmap stays short. A later step is a sketch: its aim, its substeps where t
 
 At the user's request (2026-11-06), taken up before step 18: every check of ruff, mypy, and pylint at their default limits, with nothing the game does changed. Each group is a release of its own; the one still off, ruff's `any-type`, stands in `pyproject.toml` under "taken up in later releases" in `[tool.ruff.lint]`. What is done is under DONE.
 
-**9y.3 No explicit `Any`:** ruff's `any-type` and mypy's `disallow_any_explicit`, 341 errors of 557 left (measured 2026-11-13, `mypy --config-file pyproject.toml --disallow-any-explicit`): every value from yaml, JSON, and the AI's answers gets a real type where it enters typed code, checked there and not cast. One area a release, the two flags on with the last:
+**9y.3 No explicit `Any`:** ruff's `any-type` and mypy's `disallow_any_explicit`, 281 errors of 557 left (measured 2026-11-25, `mypy --config-file pyproject.toml --disallow-any-explicit`): every value from yaml, JSON, and the AI's answers gets a real type where it enters typed code, checked there and not cast. One area a release, the two flags on with the last:
 
-- **9y.3e The AI's answers:** what the extractions, the Director, the correction analysis, and blueprint voicing read from an answer, each as a dataclass in the models, since the game master's NPC processing reads the extractions and may not import `ai`. Only the Brain's answer is read by the strict reader so far; a value of the wrong type that another answer brings into the state is saved and then makes that save incompatible, since loading checks every value (9y.3c). The tests hand these functions plain dicts in about a hundred places, which follow in the same release.
 - **9y.3f The web layer:** the messages, handlers, and serializers, and the creation data `ruleset/character.py` → `make_character` reads from the page.
 - **9y.3g The tests and Elvira** (247 errors), then both flags on.
 
@@ -111,9 +110,19 @@ Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not
 - A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), the id of each tool call (`ai/provider_base.py` → `ToolCall`), and a `Message` that holds more than text.
 - A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
 
+### 9ab — A keyed scene whose NPC leaves the game
+
+Found by a comparison script of 9y.3e (2026-11-25): a keyed scene a random event keys on an NPC's bond (`gamemaster/random_events.py` → `spawn_keyed_scene_from_random_event`, trigger value `npc_2:4`) outlives its NPC, and the scene test then raises `KeyError` on every later turn (`gamemaster/keyed_scenes.py` → `_bond_pool_candidates`), so the game cannot go on; 8 of 80 seeded games on a mock provider that merges NPCs often. The aim: a keyed scene follows its NPC where the NPC goes on as another, and leaves where it leaves the game.
+
+- An NPC leaves `game.npcs` in three places: absorbed into another as the same person (`gamemaster/npc/lifecycle.py` → `absorb_npc`), which moves its clocks and list entry but not its keyed scenes; left behind by a succession (`game/succession.py`), which drops the scenes of the Adventure Crafter and the clocks but not those of random events; and, rarely, named as the player character in an opening (`game/setup_common.py` → `register_extracted_npcs`).
+- A bound scene whose NPC is gone already never fires (`_bound_entity_meets_threshold`).
+- To read first: a random event's `threat_menace_phase` scene keyed on a threat may outlive a threat a succession drops, where the scene test raises for an unknown danger too.
+
+It comes before the next Elvira run, since a run that meets it cannot go on.
+
 ### 18 — Asset mechanics beyond adds
 
-Every character starts with paths and assets, and of their abilities only adds take effect, so the rest is lost from the first turn: a Fated path in an Elvira run did nothing. It comes after 9y and before 9w.1 to 9w.4 (the user's order). It builds on the enabled abilities and the Brain's `bonus_id` (`ruleset/assets.py`, `ruleset/bonuses.py`; `docs/ruleset.md`, Assets).
+Every character starts with paths and assets, and of their abilities only adds take effect, so the rest is lost from the first turn: a Fated path in an Elvira run did nothing. It comes after 9y and before 9w.1 to 9w.4 (the user's order), with 9ab before it. It builds on the enabled abilities and the Brain's `bonus_id` (`ruleset/assets.py`, `ruleset/bonuses.py`; `docs/ruleset.md`, Assets).
 
 **What Datasworn carries** (read 2026-10-24):
 
@@ -160,7 +169,7 @@ What this needs: a vow an ability names (the background vow, `vow_background`, o
 
 ### 9w — Elvira tests what the engine does
 
-At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026-10-23). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone; the order is step 9y (NEXT STEP), then step 18, then 9w.1 to 9w.4.
+At the user's request, Elvira is to test during a run everything the engine does that a run can show; two hit-lists read her against the codebase (2026-10-23). A run in WebSocket mode records no coverage, and much a run reaches leaves no trace. The user put 9w before what remains of 9j, which waits for books and for their choice of a theme per tone; the order is step 9y (NEXT STEP), then step 9ab, then step 18, then 9w.1 to 9w.4.
 
 **9w.1** Faults in Elvira herself.
 
@@ -599,5 +608,5 @@ Finished work in its shortest form; git holds the details, in the commits whose 
 - **9r — Where each rule comes from:** every rule that decides the fiction was read against EdgeTales, the design document, and the books; what lacked a source went to its step and the register, and AUDIT.md's principle 6 keeps it so.
 - **9w, so far:** Reach a Milestone is made without a roll (`docs/ruleset.md`, Moves without a roll), and the `vow_fulfilment` scenario plays a vow to its end on the mock provider (9w.R); the four suspected faults of 9w.0 are fixed.
 - **9x — The documents, shorter and by layer** (CLAUDE.md, Sessions with the user).
-- **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them (CONTRIBUTING.md, Code standards); 9y.1, ruff's complexity rules at their default limits, with pylint's four left to ruff; 9y.2, pylint's duplicate code and module length at their defaults (CONTRIBUTING.md, Testing); 9y.3a and 9y.3b, every yaml block, `config.yaml`, and the emotions bound by their annotations to typed fields, with every value's type checked at load and the four stores loaded at startup (ARCHITECTURE.md, Configuration); 9y.3c, a save read by the reader that binds the configuration, with its turn's snapshot and its chat as dataclasses (ARCHITECTURE.md, Saves); 9y.3d, Mythic's and the Adventure Crafter's data files bound whole by it, and what the engine reads of Datasworn and of a setting's yaml checked where it is read (ARCHITECTURE.md, Typed binding); the first half of 9y.3e, the request of an AI call in real types, each adapter's in its SDK's own (`docs/ai.md`, Provider adapters).
+- **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them, complexity, duplicate code, and module length at their default limits (CONTRIBUTING.md, Code standards). One strict reader checks every value's type in the yaml stores, `config.yaml`, the emotions, a save, Mythic's and the Adventure Crafter's data, and every structured AI answer, and the four stores load at startup; what the engine reads of Datasworn and a setting's yaml is checked where it is read (ARCHITECTURE.md, Typed binding). An AI call's request is built in its SDK's own types (`docs/ai.md`, Provider adapters).
 - **9z — Sessions in Claude Code on the laptop:** the sessions work by CLAUDE.md, which imports AGENTS.md and took the roadmap's session rules (CLAUDE.md, Sessions with the user). The gate, which Windows judges differently from Linux in places, is clean on both.

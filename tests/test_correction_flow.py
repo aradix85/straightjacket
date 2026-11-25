@@ -4,9 +4,9 @@ import pytest
 
 from straightjacket.engine.correction import process_correction
 from straightjacket.engine.game import finalization, process_turn
-from straightjacket.engine.models import ClockEvent, ClockFillResult, GameState, ThreatEvent
+from straightjacket.engine.models import ClockEvent, ClockFillResult, GameState, NarratorMetadata, ThreatEvent
 from tests._creation import TurnProvider, brain_answer, correction_answer, force_result, library_game
-from tests._helpers import make_clock, make_random_event, make_scene_setup, make_state_op
+from tests._helpers import make_clock, make_random_event, make_scene_setup, state_op_answer
 
 if TYPE_CHECKING:
     from straightjacket.engine.models import TurnSnapshot
@@ -18,7 +18,7 @@ _TALK = brain_answer(
 _MISREAD = correction_answer(corrected_input="I talk to Mira instead", narrator_guidance="Rewrite as peaceful dialog.")
 _LOYAL = correction_answer(
     correction_source="state_error",
-    state_ops=[make_state_op(op="npc_edit", npc_id="npc_1", fields={"disposition": "loyal"})],
+    state_ops=[state_op_answer(op="npc_edit", npc_id="npc_1", fields={"disposition": "loyal"})],
 )
 
 
@@ -53,6 +53,18 @@ def test_correction_input_misread_full_flow(monkeypatch: pytest.MonkeyPatch) -> 
     snapshot_after: TurnSnapshot | None = game.last_turn_snapshot
     assert snapshot_after is not None
     assert snapshot_after.player_input == "I talk to Mira instead"
+
+
+def test_an_analysis_with_a_value_of_another_type_changes_no_npc_and_keeps_the_save_loadable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wrong = state_op_answer(op="npc_edit", npc_id="npc_1", fields={"agenda": 7})
+    provider = _provider(correction_answer(correction_source="state_error", state_ops=[wrong]), _SHOVE)
+    game = _played_game(provider, monkeypatch)
+    agenda = game.npcs[0].agenda
+    process_correction(provider, game, "Mira wants the ledger")
+    assert game.npcs[0].agenda == agenda
+    assert GameState.from_dict(game.to_dict()) == game
 
 
 def test_correction_to_dialog_does_not_roll_even_with_a_stat(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -115,7 +127,7 @@ def test_a_state_correction_extracts_with_the_turns_world_addition(monkeypatch: 
     game.last_turn_snapshot.brain.world_addition = "A rope hangs from the gallery"
     seen: list[str] = []
 
-    def capture(_game: GameState, _metadata: dict[str, Any], *, world_addition: str, **_kwargs: object) -> None:
+    def capture(_game: GameState, _metadata: NarratorMetadata, *, world_addition: str, **_kwargs: object) -> None:
         seen.append(world_addition)
 
     monkeypatch.setattr(finalization, "apply_narrator_metadata", capture)

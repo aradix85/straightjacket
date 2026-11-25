@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import random
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 import yaml
@@ -15,6 +15,7 @@ from straightjacket.engine.ai.provider_base import AIResponse
 from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.director import apply_director_guidance
+from straightjacket.engine.models import NarratorMetadata, NpcDetail
 from straightjacket.engine.ruleset.meters import reset_momentum
 from tests._creation import library_game
 from tests._helpers import (
@@ -95,13 +96,15 @@ def test_reflection_for_an_npc_the_game_does_not_know_is_rejected() -> None:
 def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased() -> None:
     game = make_game_state(setting_id="classic")
     game.npcs = []
-    metadata = {
-        "npc_renames": [],
-        "new_npcs": [{"name": "Mara Voss", "description": "A courier in a grey coat", "disposition": "neutral"}],
-        "npc_details": [],
-        "deceased_npcs": [{"npc_id": "Mara Voss"}],
-        "lore_npcs": [],
-    }
+    metadata = NarratorMetadata.from_dict(
+        {
+            "npc_renames": [],
+            "new_npcs": [{"name": "Mara Voss", "description": "A courier in a grey coat", "disposition": "neutral"}],
+            "npc_details": [],
+            "deceased_npcs": [{"npc_id": "Mara Voss"}],
+            "lore_npcs": [],
+        }
+    )
     apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
     mara = next(n for n in game.npcs if "Mara Voss" in n.aliases)
     assert mara.status == "deceased"
@@ -119,19 +122,21 @@ def test_a_figure_matched_by_description_keeps_the_named_npc_name() -> None:
             last_location="quarry road",
         )
     ]
-    metadata = {
-        "npc_renames": [],
-        "new_npcs": [
-            {
-                "name": "Warden archer",
-                "description": "A man in a warden's grey cloak, his sleeves crusted with frost-rimed mud.",
-                "disposition": "hostile",
-            }
-        ],
-        "npc_details": [],
-        "deceased_npcs": [],
-        "lore_npcs": [],
-    }
+    metadata = NarratorMetadata.from_dict(
+        {
+            "npc_renames": [],
+            "new_npcs": [
+                {
+                    "name": "Warden archer",
+                    "description": "A man in a warden's grey cloak, his sleeves crusted with frost-rimed mud.",
+                    "disposition": "hostile",
+                }
+            ],
+            "npc_details": [],
+            "deceased_npcs": [],
+            "lore_npcs": [],
+        }
+    )
     apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
     [hale] = game.npcs
     assert hale.name == "Corrin Hale"
@@ -141,13 +146,15 @@ def test_a_figure_matched_by_description_keeps_the_named_npc_name() -> None:
 def test_an_npc_called_by_part_of_its_name_stays_one_npc() -> None:
     game = make_game_state()
     game.npcs = [make_npc(id="npc_1", name="Kira Vance", description="A pilot.")]
-    metadata = {
-        "npc_renames": [],
-        "new_npcs": [{"name": "Kira", "description": "A pilot.", "disposition": "neutral"}],
-        "npc_details": [],
-        "deceased_npcs": [],
-        "lore_npcs": [],
-    }
+    metadata = NarratorMetadata.from_dict(
+        {
+            "npc_renames": [],
+            "new_npcs": [{"name": "Kira", "description": "A pilot.", "disposition": "neutral"}],
+            "npc_details": [],
+            "deceased_npcs": [],
+            "lore_npcs": [],
+        }
+    )
     apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
     [kira] = game.npcs
     assert kira.name == "Kira Vance"
@@ -158,26 +165,28 @@ def test_an_npc_the_engine_named_is_matched_only_by_its_own_label(label: str, co
     game = make_game_state(setting_id="classic")
     nerissa = make_npc(id="npc_4", name="Nerissa Ashcroft", name_rolled=True, aliases=["Lunging deckhand"])
     game.npcs = [nerissa]
-    metadata = {
-        "npc_renames": [],
-        "new_npcs": [{"name": label, "description": "", "disposition": "hostile"}],
-        "npc_details": [],
-        "deceased_npcs": [],
-        "lore_npcs": [],
-    }
+    metadata = NarratorMetadata.from_dict(
+        {
+            "npc_renames": [],
+            "new_npcs": [{"name": label, "description": "", "disposition": "hostile"}],
+            "npc_details": [],
+            "deceased_npcs": [],
+            "lore_npcs": [],
+        }
+    )
     apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
     assert nerissa.name == "Nerissa Ashcroft"
     assert len(game.npcs) == count
 
 
-def _detail(npc_id: str, full_name: str) -> dict[str, Any]:
-    return {
-        "npc_renames": [],
-        "new_npcs": [],
-        "npc_details": [{"npc_id": npc_id, "full_name": full_name, "description": ""}],
-        "deceased_npcs": [],
-        "lore_npcs": [],
-    }
+def _detail(npc_id: str, full_name: str) -> NarratorMetadata:
+    return NarratorMetadata(
+        new_npcs=[],
+        npc_renames=[],
+        npc_details=[NpcDetail(npc_id=npc_id, full_name=full_name, description="")],
+        deceased_npcs=[],
+        lore_npcs=[],
+    )
 
 
 def test_a_name_revealed_for_an_unnamed_figure_is_taken() -> None:
@@ -245,6 +254,17 @@ def test_blueprint_voicing_degrades_to_no_blueprint_on_an_answer_it_cannot_read(
     game = library_game()
     seed = assemble_blueprint_seed_from_ac(random.Random(1), game)
     no_conflict: dict[str, list[str]] = {"acts": [], "revelations": [], "possible_endings": []}
+    act_without_a_title = {
+        "central_conflict": "A drowned city wants its name back",
+        "antagonist_force": "The tide-priests",
+        "thematic_thread": "Memory as debt",
+        "acts": [{"title": None, "goal": "g", "mood": "m", "transition_trigger": "x"} for _ in seed.acts],
+        "revelations": [{"content": "r"} for _ in seed.acts],
+        "possible_endings": [
+            {"type": "t", "description": "d"}
+            for _ in range(crafter().adventure_crafter.blueprint.possible_endings_per_blueprint)
+        ],
+    }
 
     class Answer(ScriptedProvider):
         def __init__(self, content: str) -> None:
@@ -254,5 +274,5 @@ def test_blueprint_voicing_degrades_to_no_blueprint_on_an_answer_it_cannot_read(
         def create_message(self, spec: AICallSpec) -> AIResponse:
             return AIResponse(content=self.content)
 
-    for content in ("not json", "[]", json.dumps(no_conflict)):
+    for content in ("not json", "[]", json.dumps(no_conflict), json.dumps(act_without_a_title)):
         assert call_blueprint_voicing(Answer(content), game, seed) is None

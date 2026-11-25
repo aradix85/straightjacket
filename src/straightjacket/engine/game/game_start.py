@@ -107,7 +107,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
 
     log(f"[NewGame] Character: {game.player_name}, paths={game.paths}, assets={game.assets}")
 
-    narration, setup_data = generate_opening(provider, game, build_new_game_prompt, label="OpeningSetup")
+    narration, setup = generate_opening(provider, game, build_new_game_prompt, label="OpeningSetup")
 
     for npc in game.npcs:
         npc.introduced = True
@@ -116,8 +116,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
         if npc.status == "active":
             add_character(game, npc.id, npc.name, "npc", 1)
 
-    if setup_data["deceased_npcs"]:
-        process_deceased_npcs(game, setup_data["deceased_npcs"])
+    process_deceased_npcs(game, setup.deceased_npcs)
 
     record_opening(
         game,

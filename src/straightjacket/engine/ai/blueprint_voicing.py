@@ -1,6 +1,6 @@
 import json
 from itertools import starmap
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from straightjacket.engine.ai.schemas import get_blueprint_voicing_schema
@@ -9,7 +9,7 @@ from straightjacket.engine.crafters.blueprint import ActSeed, BlueprintSeed
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.models import GameState
+from straightjacket.engine.models import BlueprintVoicing, GameState
 from straightjacket.engine.prompt_blocks import content_boundaries_block
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.xml_utils import xe as _xe
@@ -91,39 +91,35 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
 
 def _ask_voicing(
     provider: AIProvider, spec: AICallSpec, expected: dict[str, int]
-) -> tuple[str, dict[str, Any], str, list[str]] | None:
+) -> tuple[str, BlueprintVoicing, list[str]] | None:
     try:
         content = create_with_retry(provider, spec).content
-        voicing: dict[str, Any] = json.loads(content)
-        mismatch = [
-            f"{key} {len(voicing[key])} (expected {count})"
-            for key, count in expected.items()
-            if len(voicing[key]) != count
-        ]
-        conflict: str = voicing["central_conflict"]
+        voicing = BlueprintVoicing.from_dict(json.loads(content))
     except Exception as e:
         log(
             f"[BlueprintVoicing] Failed ({type(e).__name__}: {e}), continuing without blueprint",
             level="warning",
         )
         return None
-    return content, voicing, conflict, mismatch
+    counts = _counts(len(voicing.acts), len(voicing.revelations), len(voicing.possible_endings))
+    mismatch = [f"{key} {counts[key]} (expected {count})" for key, count in expected.items() if counts[key] != count]
+    return content, voicing, mismatch
+
+
+def _counts(acts: int, revelations: int, endings: int) -> dict[str, int]:
+    return {"acts": acts, "revelations": revelations, "possible_endings": endings}
 
 
 def call_blueprint_voicing(
     provider: AIProvider,
     game: GameState,
     seed: BlueprintSeed,
-) -> dict[str, Any] | None:
+) -> BlueprintVoicing | None:
     system = get_prompt(
         "blueprint_voicing", lang=narration_language(), content_boundaries_block=content_boundaries_block(game)
     )
     blueprint = crafter().adventure_crafter.blueprint
-    expected = {
-        "acts": len(seed.acts),
-        "revelations": len(seed.acts),
-        "possible_endings": blueprint.possible_endings_per_blueprint,
-    }
+    expected = _counts(len(seed.acts), len(seed.acts), blueprint.possible_endings_per_blueprint)
     schema = get_blueprint_voicing_schema(expected["acts"], expected["possible_endings"])
     model = model_for_role("blueprint_voicing")
     params = sampling_params("blueprint_voicing")
@@ -143,11 +139,11 @@ def call_blueprint_voicing(
         answer = _ask_voicing(provider, spec, expected)
         if answer is None:
             return None
-        content, voicing, conflict, mismatch = answer
+        content, voicing, mismatch = answer
         if not mismatch:
             log(
-                f"[BlueprintVoicing] Succeeded: conflict={conflict[: eng().truncations.log_medium]}, "
-                f"acts={expected['acts']}"
+                f"[BlueprintVoicing] Succeeded: "
+                f"conflict={voicing.central_conflict[: eng().truncations.log_medium]}, acts={expected['acts']}"
             )
             return voicing
         log(f"[BlueprintVoicing] Wrong counts ({', '.join(mismatch)}), asking again")

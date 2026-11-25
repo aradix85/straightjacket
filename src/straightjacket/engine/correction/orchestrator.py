@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.correction.analysis import call_correction_brain
 from straightjacket.engine.correction.ops import apply_correction_ops
@@ -28,7 +28,9 @@ if TYPE_CHECKING:
     from straightjacket.engine.game import BurnOffer
     from straightjacket.engine.models import (
         BrainResult,
+        CorrectionAnalysis,
         GameState,
+        NarratorMetadata,
         ResolvedFact,
         SceneSetup,
         TurnSnapshot,
@@ -96,17 +98,17 @@ def _update_state_error_logs(game: GameState, narration: str, intent: str) -> No
 
 def _maybe_queue_director(
     game: GameState,
-    analysis: dict[str, Any],
+    analysis: CorrectionAnalysis,
     narration: str,
-    metadata: dict[str, Any],
+    metadata: NarratorMetadata,
 ) -> DirectorCall | None:
-    if not analysis["director_useful"]:
+    if not analysis.director_useful:
         return None
     director_reason = should_call_director(
         game,
         roll_result=game.narrative.session_log[-1].result,
         chaos_used=False,
-        new_npcs_found=bool(metadata["new_npcs"]),
+        new_npcs_found=bool(metadata.new_npcs),
         revelation_landed=False,
     )
     if not director_reason:
@@ -129,13 +131,13 @@ def process_correction(
 
     analysis = call_correction_brain(provider, game, correction_text, snap, brain=brain, narration=last_narration)
     note = (
-        get_prompt("block_correction_context", guidance=_xe(analysis["narrator_guidance"]))
+        get_prompt("block_correction_context", guidance=_xe(analysis.narrator_guidance))
         + "\n"
         + get_prompt("block_correction_instruction")
     )
 
-    if analysis["correction_source"] == "input_misread":
-        corrected_input = analysis["corrected_input"] or snap.player_input
+    if analysis.correction_source == "input_misread":
+        corrected_input = analysis.corrected_input or snap.player_input
         narration, burn_offer, director_ctx = replay_turn(provider, game, corrected_input, note)
         log("[Correction] Complete: source=input_misread, turn replayed")
         return narration, burn_offer, director_ctx
@@ -150,14 +152,14 @@ def process_correction(
 def _correct_state(
     provider: AIProvider,
     game: GameState,
-    analysis: dict[str, Any],
+    analysis: CorrectionAnalysis,
     *,
     snap: TurnSnapshot,
     brain: BrainResult,
     scene_setup: SceneSetup,
     note: str,
 ) -> tuple[str, DirectorCall | None]:
-    apply_correction_ops(game, analysis["state_ops"])
+    apply_correction_ops(game, analysis.state_ops)
     activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, snap.player_input)
     scene = PromptScene(
         player_words=snap.player_input,

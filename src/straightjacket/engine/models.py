@@ -4,6 +4,29 @@ import copy
 from dataclasses import dataclass, field
 
 from straightjacket.engine.logging_util import log
+from straightjacket.engine.models_answers import (
+    BlueprintVoicing,
+    BrainResult,
+    CorrectionAnalysis,
+    CorrectionOp,
+    DeceasedNpc,
+    DirectorAnswer,
+    FactRequest,
+    LocationChange,
+    LoreNpc,
+    NarratorMetadata,
+    NewNpc,
+    NpcDetail,
+    NpcEdit,
+    NpcGuidance,
+    NpcReflection,
+    NpcRename,
+    OpeningMemory,
+    OpeningNpc,
+    OpeningSetup,
+    VoicedAct,
+    VoicedRevelation,
+)
 from straightjacket.engine.models_base import (
     ClockData,
     ClockEvent,
@@ -61,38 +84,6 @@ class RollResult(SerializableMixin):
     result: str
     move: str
     match: bool
-
-
-@dataclass
-class FactRequest(SerializableMixin):
-    fact_type: str
-    about: str
-
-
-@dataclass
-class LocationChange(SerializableMixin):
-    name: str
-    kind: str
-
-
-@dataclass(kw_only=True)
-class BrainResult(SerializableMixin):
-    move: str
-    stat: str
-    approach: str
-    target_npc: str | None
-    dialog_only: bool
-    player_intent: str
-    world_addition: str | None
-    location_change: LocationChange | None
-    track_name: str | None
-    track_rank: str | None
-    target_track: str | None
-    target_clock: str | None
-    target_threat: str | None
-    bonus_id: str | None
-    undetermined_facts: list[FactRequest] = field(default_factory=list)
-    boasts: list[str] = field(default_factory=list)
 
 
 @dataclass(kw_only=True)
@@ -201,6 +192,7 @@ class GameState(SerializableMixin):
 
 __all__ = [
     "BlueprintProgress",
+    "BlueprintVoicing",
     "BrainResult",
     "CampaignSnapshot",
     "CampaignState",
@@ -210,7 +202,11 @@ __all__ = [
     "ClockEvent",
     "ClockFillResult",
     "Consequence",
+    "CorrectionAnalysis",
+    "CorrectionOp",
     "CurrentAct",
+    "DeceasedNpc",
+    "DirectorAnswer",
     "DirectorGuidance",
     "FactRequest",
     "FateResult",
@@ -219,11 +215,22 @@ __all__ = [
     "InheritanceRollResult",
     "KeyedScene",
     "LocationChange",
+    "LoreNpc",
     "MemoryEntry",
     "NarrationEntry",
     "NarrativeSnapshot",
     "NarrativeState",
+    "NarratorMetadata",
+    "NewNpc",
     "NpcData",
+    "NpcDetail",
+    "NpcEdit",
+    "NpcGuidance",
+    "NpcReflection",
+    "NpcRename",
+    "OpeningMemory",
+    "OpeningNpc",
+    "OpeningSetup",
     "PlaceRecord",
     "PlayerPreferences",
     "PlotlineEntry",
@@ -243,6 +250,8 @@ __all__ = [
     "ThreatData",
     "ThreatEvent",
     "TurnSnapshot",
+    "VoicedAct",
+    "VoicedRevelation",
     "WorldState",
     "consequence",
     "labels_of",

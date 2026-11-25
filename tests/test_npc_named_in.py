@@ -1,8 +1,7 @@
-from typing import Any
-
 from straightjacket.engine.game.setup_common import seed_opening_memories
 from straightjacket.engine.gamemaster.npc.activation import activate_npcs_for_prompt
 from straightjacket.engine.gamemaster.npc.matching import named_in, proper_name_words
+from straightjacket.engine.models import OpeningMemory
 from straightjacket.engine.parser import parse_narrator_response
 from tests._helpers import make_brain_result, make_game_state, make_npc
 
@@ -81,8 +80,8 @@ def test_the_player_may_type_a_name_in_lower_case() -> None:
     assert "npc_2" not in found
 
 
-def _memory(npc_name: str) -> dict[str, Any]:
-    return {"npc_name": npc_name, "event": "Watched the player arrive", "emotional_weight": "neutral"}
+def _memory(npc_name: str) -> OpeningMemory:
+    return OpeningMemory(npc_name=npc_name, event="Watched the player arrive", emotional_weight="neutral")
 
 
 def test_an_opening_memory_finds_its_npc_by_a_given_name_and_not_by_a_title() -> None:

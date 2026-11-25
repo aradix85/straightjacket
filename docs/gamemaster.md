@@ -38,7 +38,7 @@ Normal turns, corrections of a misread input, and momentum burns run the turn's 
 **A correction of the state** edits the state and narrates the turn again (`correction/orchestrator.py` → `_rewrite_prompt`) with what the turn told the narrator: its random events, threat events, filled clocks, and NPC agency, which the snapshot keeps (`TurnSnapshot.random_events`, `threat_events`, `clock_fill_results`, `npc_agency`). Nothing is drawn or ticked a second time.
 
 - The analysis names NPCs by their id from the engine's list.
-- An operation the engine cannot apply (no NPC named, a time of day that does not exist) is skipped with a warning, and so is an empty name in an NPC's edit, whose other fields apply.
+- An operation the engine cannot apply (no NPC named, an NPC's edit that names no value, a time of day that does not exist) is skipped with a warning, and so is an empty name in an NPC's edit, whose other fields apply.
 - A split that names no second figure rolls its name like any new NPC.
 
 **Nothing to correct.** A new game, a new chapter, or a succession leaves nothing to correct, since its opening is not a turn: `process_correction` raises, and the server refuses a correction before it starts (`correction.no_snapshot` in `strings/correction.yaml`). A game that is over is not corrected either: the server answers with the burn that still stands, or with its succession.

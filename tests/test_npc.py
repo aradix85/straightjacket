@@ -20,7 +20,7 @@ from straightjacket.engine.gamemaster.npc.matching import (
 )
 from straightjacket.engine.gamemaster.npc.memory import consolidate_memory, retrieve_memories, score_importance
 from straightjacket.engine.gamemaster.npc.processing import process_new_npcs, process_npc_details, process_npc_renames
-from straightjacket.engine.models import GameState
+from straightjacket.engine.models import GameState, NewNpc
 from straightjacket.engine.ruleset.bond import get_npc_bond
 from tests._helpers import (
     make_brain_result,
@@ -280,7 +280,7 @@ def test_reactivate_background_npc() -> None:
 def test_a_lore_figure_who_appears_in_person_becomes_active() -> None:
     game = _make_game()
     game.npcs.append(make_npc(id="npc_9", name="Edda Varn", status="lore"))
-    process_new_npcs(game, [{"name": "Edda Varn", "description": "The founder, alive", "disposition": "neutral"}])
+    process_new_npcs(game, [NewNpc(name="Edda Varn", description="The founder, alive", disposition="neutral")])
     assert [n.status for n in game.npcs if n.id == "npc_9"] == ["active"]
 
 
@@ -426,7 +426,7 @@ def test_process_new_npcs_adds_npc() -> None:
     assert len(game.npcs) == 2
 
     with patch("straightjacket.engine.gamemaster.npc.processing.roll_oracle_name", return_value="Maren"):
-        process_new_npcs(game, [{"name": "Maren", "description": "Young scout", "disposition": "neutral"}])
+        process_new_npcs(game, [NewNpc(name="Maren", description="Young scout", disposition="neutral")])
 
     assert len(game.npcs) == 3
     maren = next(n for n in game.npcs if n.name == "Maren")
@@ -438,7 +438,7 @@ def test_process_new_npcs_adds_npc() -> None:
 def test_process_new_npcs_skips_player_character() -> None:
     game = _make_game()
 
-    process_new_npcs(game, [{"name": "Hero", "description": "The protagonist", "disposition": "neutral"}])
+    process_new_npcs(game, [NewNpc(name="Hero", description="The protagonist", disposition="neutral")])
 
     assert len(game.npcs) == 2
 
@@ -446,7 +446,7 @@ def test_process_new_npcs_skips_player_character() -> None:
 def test_process_new_npcs_skips_existing() -> None:
     game = _make_game()
 
-    process_new_npcs(game, [{"name": "Kira Voss", "description": "Same person", "disposition": "friendly"}])
+    process_new_npcs(game, [NewNpc(name="Kira Voss", description="Same person", disposition="friendly")])
 
     assert len(game.npcs) == 2
 

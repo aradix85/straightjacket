@@ -163,9 +163,8 @@ def start_succession_with_character(
 
     _prepare_npcs_for_new_chapter(game)
 
-    narration, setup_data = generate_opening(provider, game, build_new_game_prompt, label="SuccessionSetup")
-    if setup_data["deceased_npcs"]:
-        process_deceased_npcs(game, setup_data["deceased_npcs"])
+    narration, setup = generate_opening(provider, game, build_new_game_prompt, label="SuccessionSetup")
+    process_deceased_npcs(game, setup.deceased_npcs)
 
     _record_succession_opening(game, narration, record)
 

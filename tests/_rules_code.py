@@ -372,7 +372,7 @@ def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
     return "YAML COMMENT", violations
 
 
-_MODELS_FILES = ("models.py", "models_base.py", "models_npc.py", "models_story.py")
+_MODELS_FILES = ("models.py", "models_answers.py", "models_base.py", "models_npc.py", "models_story.py")
 
 
 def _class_inherits_mixin(node: ast.ClassDef) -> bool:

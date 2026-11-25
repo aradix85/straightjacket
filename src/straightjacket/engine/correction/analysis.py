@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from straightjacket.engine.ai.provider_base import AICallSpec, create_with_retry
 from straightjacket.engine.ai.schemas import get_correction_output_schema
 from straightjacket.engine.config_loader import model_for_role, narration_language, sampling_params
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.logging_util import log
+from straightjacket.engine.models import CorrectionAnalysis
 from straightjacket.engine.prompt_loader import get_prompt
 from straightjacket.engine.xml_utils import xe as _xe
 
@@ -24,7 +25,7 @@ def call_correction_brain(
     *,
     brain: BrainResult,
     narration: str,
-) -> dict[str, Any]:
+) -> CorrectionAnalysis:
     lang = narration_language()
 
     defaults = eng().ai_text.narrator_defaults
@@ -88,17 +89,15 @@ def call_correction_brain(
     )
     log(f"[Correction] Analysing: {correction_text[: trunc.log_long]}")
     try:
-        response = create_with_retry(provider, spec)
-        result: dict[str, Any] = json.loads(response.content)
-        summary = f"source={result['correction_source']} ops={len(result['state_ops'])}"
+        result = CorrectionAnalysis.from_dict(json.loads(create_with_retry(provider, spec).content))
     except Exception as e:
         log(f"[Correction] Brain failed ({type(e).__name__}: {e}), falling back to no-op state_error", level="warning")
-        return {
-            "correction_source": "state_error",
-            "corrected_input": "",
-            "narrator_guidance": correction_text,
-            "director_useful": False,
-            "state_ops": [],
-        }
-    log(f"[Correction] {summary}")
+        return CorrectionAnalysis(
+            correction_source="state_error",
+            corrected_input="",
+            narrator_guidance=correction_text,
+            director_useful=False,
+            state_ops=[],
+        )
+    log(f"[Correction] source={result.correction_source} ops={len(result.state_ops)}")
     return result
