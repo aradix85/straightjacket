@@ -17,6 +17,7 @@ from straightjacket.engine.ai import provider_anthropic, provider_openai
 from straightjacket.engine.ai.provider_base import AIUnavailableError, ToolCall, create_with_retry
 from straightjacket.engine.tools import ToolDefinition
 from tests._helpers import make_ai_call_spec
+from tests.model_compare.replay import MeasuredProvider
 
 
 class _FakeEndpoint:
@@ -556,3 +557,50 @@ def test_anthropic_refusal_is_reported_as_refusal(anthropic_endpoint: _FakeEndpo
 def test_openai_content_filter_is_reported_as_refusal(openai_endpoint: _FakeEndpoint) -> None:
     openai_endpoint.response = _openai_response("", "content_filter", None)
     assert _openai().create_message(make_ai_call_spec()).stop_reason == "refusal"
+
+
+def _measured_usage(speed: str | None) -> SimpleNamespace:
+    return SimpleNamespace(
+        input_tokens=40,
+        output_tokens=90,
+        cache_read_input_tokens=3000,
+        cache_creation_input_tokens=500,
+        output_tokens_details=SimpleNamespace(thinking_tokens=60),
+        speed=speed,
+    )
+
+
+def test_the_measured_adapter_reads_cache_writes_thinking_and_speed_from_the_answer(
+    anthropic_endpoint: _FakeEndpoint,
+) -> None:
+    anthropic_endpoint.response = SimpleNamespace(
+        content=[SimpleNamespace(type="text", text="{}")], stop_reason="end_turn", usage=_measured_usage("fast")
+    )
+    provider = MeasuredProvider(api_key="k", timeout_seconds=30, api_base="")
+    result = provider.create_message(make_ai_call_spec())
+    (attempt,) = provider.attempts
+    assert result.usage == {"input_tokens": 3540, "output_tokens": 90, "cache_read_tokens": 3000}
+    assert (attempt.uncached_tokens, attempt.cache_write_tokens, attempt.cache_read_tokens) == (40, 500, 3000)
+    assert (attempt.output_tokens, attempt.thinking_tokens, attempt.speed) == (90, 60, "fast")
+    assert attempt.first_text is None
+    assert attempt.seconds >= 0
+
+
+def test_the_measured_adapter_times_the_first_text_of_a_stream(anthropic_endpoint: _FakeEndpoint) -> None:
+    final = SimpleNamespace(
+        content=[SimpleNamespace(type="text", text="The door holds.")],
+        stop_reason="end_turn",
+        usage=_measured_usage(None),
+    )
+    anthropic_endpoint.response = _FakeAnthropicStream(
+        [_delta("thinking_delta", thinking="plan"), _delta("text_delta", text="The door holds.")], final
+    )
+    provider = MeasuredProvider(api_key="k", timeout_seconds=30, api_base="")
+    received: list[str] = []
+    result = provider.stream_message(make_ai_call_spec(), received.append)
+    (attempt,) = provider.attempts
+    assert received == ["The door holds."]
+    assert result.content == "The door holds."
+    assert attempt.speed is None
+    assert attempt.first_text is not None
+    assert 0 <= attempt.first_text <= attempt.seconds

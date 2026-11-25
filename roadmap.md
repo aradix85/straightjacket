@@ -103,6 +103,16 @@ At the user's request (2026-11-06), taken up before step 18: every check of ruff
 
 Sketches, in the order of work.
 
+### 9ac — Models chosen by a blind comparison
+
+At the user's request (2026-11-25), worked beside NEXT STEP: which model and effort each AI role runs on, chosen from a comparison Claude judges blind, the models learned only after every score is written down. The user's choices: Claude Sonnet 5.5, Opus 5.5, and Fable 5.2, each at effort medium, high, and xhigh, and Opus and Fable at medium in fast mode against normal speed, mainly for speed; $200 of API credit for it.
+
+- **Capture and replay**, since runs per model diverge after the first turn, when Elvira's player reacts to other prose. Elvira plays a source run on the current configuration with every request of the game recorded; each request is replayed under each configuration with only the model, the effort, and the speed changed; every answer gets a random code, and the key stays shut until the scores stand. The instrument is tested first: five hard cases as a pilot, and one configuration replayed twice for the noise.
+- **Judged:** the narrator (a miss or cost softened, too much or too little filled in, prose, NPC voice), the extractions (NPCs missed, invented, renamed, or killed against the narration they read), the Brain (move, stat, target), and the Director (valid, useful); per configuration also speed (the narrator's time to its first text, each call's time), tokens, and cost.
+- **Relation to 9m:** the captured calls and the blind judging are a first form of 9m's set; 9m reuses them, while a changed prompt needs its requests rebuilt from the game state rather than replayed.
+
+Definition of done: the harness under `tests/` with its tests, its output out of git; every configuration judged blind before the key opens; a report to the user per configuration, with how each claim is known and a recommendation of model and effort per role; `config.yaml` changes only on the user's choice.
+
 Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
 **The Director's tools.** The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and a step that wants another decides whether it becomes a new tool or part of that one. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text.

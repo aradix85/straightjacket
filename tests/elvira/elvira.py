@@ -30,7 +30,7 @@ from tests.elvira.elvira_bot.ws_runner import run_ws_session
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 
 
-def _scenario_cfg(bot_cfg: dict[str, Any], name: str) -> dict[str, Any]:
+def scenario_cfg(bot_cfg: dict[str, Any], name: str) -> dict[str, Any]:
     spec = bot_cfg["scenarios"][name]
     run_cfg = copy.deepcopy(bot_cfg)
     run_cfg["session"]["scenario"] = name
@@ -92,7 +92,7 @@ def _play(bot_cfg: dict[str, Any], args: argparse.Namespace) -> None:
     if args.scenario:
         names = list(bot_cfg["scenarios"]) if args.scenario == "all" else [args.scenario]
         for name in names:
-            run_session(_scenario_cfg(bot_cfg, name), auto_override=args.auto, turns_override=args.turns)
+            run_session(scenario_cfg(bot_cfg, name), auto_override=args.auto, turns_override=args.turns)
         return
 
     if args.matrix:

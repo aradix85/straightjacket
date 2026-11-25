@@ -8,6 +8,18 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.25.2] — 2026-11-25
+
+The harness for a blind comparison of models, roadmap step 9ac, at the user's request: which model and effort each AI role runs on is to come from a comparison Claude judges without knowing which model wrote what. Elvira runs per model would compare noise, since her player reacts to other prose from the first turn, so `tests/model_compare/` captures once and replays (`docs/elvira.md`, Comparing models):
+
+- a recording provider around the game's writes every request of her run as the `AICallSpec` it is, with whether it streamed and its answer;
+- each request is asked again per configuration with only the model, the effort, and fast mode changed, through a measuring subclass of the Anthropic adapter that keeps each attempt's time, time to the first text, cache writes and reads, thinking tokens, and speed, which the adapter's own usage folds together; fast mode the answer does not report stops the round;
+- every answer gets a random code; the packets the judges read hold the request, the rubric of its role, and the answers by code alone, and the key and the measures stay apart until every answer is scored, when a summary gives the scores, speed, tokens, and cost per configuration.
+
+The configurations are the user's: Sonnet 5.5, Opus 5.5, and Fable 5.2 at effort medium, high, and xhigh, and Opus and Fable at medium in fast mode. The measuring adapter is the one test file beside `tests/test_providers.py` that imports the SDK, for the type of its answer; Elvira's `scenario_cfg` is public, since the capture plays her scenarios.
+
+Quality gate: 2062 tests, coverage 96.31%, mypy clean on 279 files, on Windows and with `--platform linux`, pylint clean, ruff clean on every rule outside the ignores. Only tests and documents change, so the session read the diff back itself. Save format unchanged; nothing the game does changes. The comparison's own runs follow the push.
+
 ## [2026.11.25.1] — 2026-11-25
 
 A keyed scene follows its NPC, roadmap step 9ab, found by the comparison script of the release before. A random event keys a scene on an NPC's bond, and when that NPC left the game the scene stayed, so every later scene test raised and the game could not go on. An NPC leaves the game in three places, and its scene now goes with it (`docs/gamemaster.md`, Keyed scenes):

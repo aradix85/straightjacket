@@ -47,3 +47,4 @@ key.pem
 htmlcov/
 tests/elvira/runs/
 tests/elvira/users/
+tests/model_compare/runs/

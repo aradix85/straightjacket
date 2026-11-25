@@ -1,0 +1,85 @@
+sources:
+  - {name: near_death, scenario: near_death, style: "", turns: 6}
+  - {name: miss, scenario: miss, style: "", turns: 6}
+  - {name: dialog, scenario: "", style: dialogist, turns: 10}
+
+configurations:
+  sonnet_medium: {model: claude-sonnet-5-5, effort: medium, fast: false}
+  sonnet_high: {model: claude-sonnet-5-5, effort: high, fast: false}
+  sonnet_xhigh: {model: claude-sonnet-5-5, effort: xhigh, fast: false}
+  opus_medium: {model: claude-opus-5-5, effort: medium, fast: false}
+  opus_high: {model: claude-opus-5-5, effort: high, fast: false}
+  opus_xhigh: {model: claude-opus-5-5, effort: xhigh, fast: false}
+  opus_medium_fast: {model: claude-opus-5-5, effort: medium, fast: true}
+  fable_medium: {model: claude-fable-5-2, effort: medium, fast: false}
+  fable_high: {model: claude-fable-5-2, effort: high, fast: false}
+  fable_xhigh: {model: claude-fable-5-2, effort: xhigh, fast: false}
+  fable_medium_fast: {model: claude-fable-5-2, effort: medium, fast: true}
+
+prices:
+  claude-sonnet-5-5:
+    standard: {uncached: 2.00, cache_write: 4.00, cache_read: 0.10, output: 10.00}
+  claude-opus-5-5:
+    standard: {uncached: 4.00, cache_write: 8.00, cache_read: 0.20, output: 20.00}
+    fast: {uncached: 8.00, cache_write: 16.00, cache_read: 0.40, output: 40.00}
+  claude-fable-5-2:
+    standard: {uncached: 8.00, cache_write: 16.00, cache_read: 0.20, output: 40.00}
+    fast: {uncached: 16.00, cache_write: 32.00, cache_read: 0.40, output: 80.00}
+
+rubrics:
+  common: |
+    You judge blind: each answer carries only a random code. The request the answers were given is
+    in the packet: the system prompt (its fixed part in the file the packet names), the earlier
+    narration where there is one, and the request's last message. Judge every answer of a packet
+    against that request and against each other, by the scores of your role below. Write one JSON
+    line per answer: {"code": "...", "scores": {...}, "note": "one sentence"}. A score that does not
+    apply is null. An answer whose stop is "failed" scores as if it said nothing; one cut off at
+    "truncated" is judged on what it holds.
+  narrator: |
+    softened: true when a miss, harm, loss, or cost the request tells the narrator to show is turned
+      into a silver lining, played down, or left out; false when it lands in full; null when the
+      request holds no such cost.
+    invented: the number of facts the answer settles that neither the request nor the earlier
+      narration settled and the scene does not need: a new named person or place, a clue or
+      discovery on a miss, a past, an outcome the engine did not decide.
+    missing: the number of things the request tells the narrator to show that the answer leaves out.
+    prose: 1 to 5; clear, concrete, varied, in the tone the request sets, no purple or repeated
+      phrasing, no mechanics leaked.
+    voice: 1 to 5; whether each NPC who speaks sounds like their description and disposition; null
+      when no NPC speaks.
+  narrator_metadata: &extraction |
+    missed: the number of NPCs the narration shows or names that the answer should register or
+      update and does not.
+    invented: the number of NPCs or details the answer registers that the narration does not hold.
+    wrong_identity: the number of wrong renames or identities (a known NPC registered as new, a new
+      one taken for a known one, a rename the narration does not show).
+    wrong_death: the number of deaths reported that the narration does not show, plus shown deaths
+      missed.
+    other: the number of other wrong fields (disposition, agenda, location, scene context).
+  opening_setup: *extraction
+  brain: |
+    move: 1 when the move fits the player's words best among the moves on offer, 0.5 when it is
+      defensible, 0 when it is wrong.
+    stat: the same for the stat or way to roll; null for a move without a roll.
+    target: the same for the target NPC, track, or threat; null when none applies.
+    other: the number of other wrong fields (facts asked, a place change, a world addition, a track
+      name or rank).
+  director: |
+    valid: 1 when the answer does what its request asks (the first call calls the tool it is
+      offered; the second answers in its schema, with reflections only for the NPCs listed), 0
+      otherwise.
+    useful: 1 to 5; how well guidance and reflections fit the scene, the NPCs, and the story arc
+      without deciding what the engine decides; null for the first call.
+    invented: the number of facts the answer settles that the engine did not.
+  correction: |
+    right: 1 when the answer reads the correction as the player meant it (a misread input with the
+      corrected input, or the right state operations), 0.5 when partly, 0 when wrong.
+    other: the number of wrong operations or fields.
+  blueprint_voicing: |
+    valid: 1 when the blueprint holds every act, revelation, and ending its request asks, each
+      fitting the seed it voices, 0 otherwise.
+    quality: 1 to 5; how well it fits the setting and seed, concretely, without settling more than
+      a plan needs.
+  recap: |
+    right: 1 when the recap tells only what the request holds, 0 when it invents or misstates.
+    prose: 1 to 5.

@@ -15,6 +15,7 @@ _PROVIDER_IMPORT_ALLOWED = {
 
 _PROVIDER_IMPORT_ALLOWED_TESTS = {
     "test_providers.py",
+    "model_compare/replay.py",
 }
 
 _FORBIDDEN_SDK_MODULES = ("anthropic", "openai")

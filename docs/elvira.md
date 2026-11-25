@@ -86,3 +86,19 @@ The scenarios:
 **Cost.** It comes from the token use of the engine's calls, the opening and each chapter start included, which a meter around the provider in `tests/elvira/elvira_bot/tokens.py` counts. The calls of a turn that fails the run and of the closing epilogue are not counted.
 
 **Folders.** She keeps her players in tests/elvira/users by setting `STRAIGHTJACKET_USERS_DIR` before the engine loads, unless it is already set; git ignores both folders. To try another game model or narration language, point `STRAIGHTJACKET_CONFIG` at a copy of `config.yaml` with other clusters or another `language`, and give Elvira a config with its own `username`, so several runs can play side by side.
+
+## Comparing models
+
+`tests/model_compare/compare.py` compares models for the game's AI roles on captured calls, judged blind (roadmap step 9ac). Runs per model diverge after the first turn, since her player reacts to other prose, so it captures once and replays:
+
+```bash
+python tests/model_compare/compare.py capture NAME   # she plays the sources, every game request recorded
+python tests/model_compare/compare.py replay NAME --configs C ... --calls ID ...   # each request per configuration
+python tests/model_compare/compare.py packets NAME   # a packet per request, its answers by code
+python tests/model_compare/compare.py summary NAME   # once every answer is scored
+```
+
+- **Capture.** She plays each source of `tests/model_compare/model_compare.yaml` (a scenario or a play style, and its turns) on `config.yaml`, and a recording provider around the game's writes every request, whether it streamed, and its answer to `calls.jsonl`.
+- **Replay.** Each request is asked again under each configuration (model, effort, fast mode) with only those changed, through the Anthropic adapter, one thread per configuration, streamed where the source streamed. A refused request is left out, since the one asked after it is the same. A pair already answered is skipped unless `--again` asks for another answer, which measures the noise of one configuration. Fast mode the answer does not report stops the round.
+- **Blind.** Every answer gets a random code: `answers.jsonl` holds its text, `key.jsonl` its configuration, `measures.jsonl` each attempt's time, time to the first text, tokens (cache writes and reads, thinking), and speed. The judges read only the packets: the rubric of their role, the request, and the answers by code. Their scores go to `scores/`, a JSON line per answer, before the key and the measures are opened.
+- Cost comes from the yaml's prices per model and speed, a cache write at the one-hour price. The runs are in `tests/model_compare/runs/`, which git ignores.
