@@ -8,6 +8,15 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.25.3] — 2026-11-25
+
+The blind comparison of models, roadmap step 9ac, played and judged. Elvira played three short games on the current configuration (22 turns: `near_death`, `miss`, and a dialogist run), whose 108 game requests were each answered by the eleven configurations and by Sonnet 5.5 at medium a second time, 1,296 answers in all. Eleven sub-agents judged them by code, one role and game each, after a pilot of six requests the session judged itself; the Director's first call was checked by script, since all 216 answers called its tool. Only then did the key open.
+
+- **Found, beside the models:** the opening extraction's prompt contradicts itself on unnamed NPCs, the metadata extraction's description replaces what was known while the prompt asks for new facts, and the narrator put an NPC within reach that a fact settled otherwise (roadmap step 9m); the Director's tool results are cut mid-JSON, so a second NPC's id never reaches it (roadmap step 11.0).
+- The pilot sharpened the narrator's rubric: an action, word, or feeling given to the player character counts as invented, and a keyed or altered scene and an NPC's stance count among what must be shown.
+
+Measured: the comparison cost $69 of API credit ($1.50 for the source run, $5.85 for the pilot, $61.49 for the round); two Fable 5.2 answers at xhigh were cut off at the token limit, one of them empty, and two of its requests ran past the provider's 120 s timeout before answering. The report to the user gives each configuration's scores, speed, and cost. Quality gate: 2062 tests, coverage 96.32%, mypy clean on 279 files, on Windows and with `--platform linux`, pylint clean, ruff clean on every rule outside the ignores; only tests and documents change, so the session read the diff back itself. Save format unchanged; `config.yaml` unchanged until the user chooses.
+
 ## [2026.11.25.2] — 2026-11-25
 
 The harness for a blind comparison of models, roadmap step 9ac, at the user's request: which model and effort each AI role runs on is to come from a comparison Claude judges without knowing which model wrote what. Elvira runs per model would compare noise, since her player reacts to other prose from the first turn, so `tests/model_compare/` captures once and replays (`docs/elvira.md`, Comparing models):

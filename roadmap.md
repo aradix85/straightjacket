@@ -103,16 +103,6 @@ At the user's request (2026-11-06), taken up before step 18: every check of ruff
 
 Sketches, in the order of work.
 
-### 9ac — Models chosen by a blind comparison
-
-At the user's request (2026-11-25), worked beside NEXT STEP: which model and effort each AI role runs on, chosen from a comparison Claude judges blind, the models learned only after every score is written down. The user's choices: Claude Sonnet 5.5, Opus 5.5, and Fable 5.2, each at effort medium, high, and xhigh, and Opus and Fable at medium in fast mode against normal speed, mainly for speed; $200 of API credit for it.
-
-- **Capture and replay**, since runs per model diverge after the first turn, when Elvira's player reacts to other prose. Elvira plays a source run on the current configuration with every request of the game recorded; each request is replayed under each configuration with only the model, the effort, and the speed changed; every answer gets a random code, and the key stays shut until the scores stand. The instrument is tested first: five hard cases as a pilot, and one configuration replayed twice for the noise.
-- **Judged:** the narrator (a miss or cost softened, too much or too little filled in, prose, NPC voice), the extractions (NPCs missed, invented, renamed, or killed against the narration they read), the Brain (move, stat, target), and the Director (valid, useful); per configuration also speed (the narrator's time to its first text, each call's time), tokens, and cost.
-- **Relation to 9m:** the captured calls and the blind judging are a first form of 9m's set; 9m reuses them, while a changed prompt needs its requests rebuilt from the game state rather than replayed.
-
-Definition of done: the harness under `tests/` with its tests, its output out of git; every configuration judged blind before the key opens; a report to the user per configuration, with how each claim is known and a recommendation of model and effort per role; `config.yaml` changes only on the user's choice.
-
 Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
 **The Director's tools.** The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and a step that wants another decides whether it becomes a new tool or part of that one. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text.
@@ -302,7 +292,13 @@ The scene challenge of Starforged and Sundered Isles is configured but unreachab
 
 ### 9m — Measuring the other prompts
 
-The measuring setup of 9f, outside the repository, is gone (the user removed it), so 9m builds its own. A set of captured calls per prompt, with a judge that checks each answer against its input, comes before any change to the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `blueprint_voicing`, or `recap`.
+The measuring setup of 9f, outside the repository, is gone (the user removed it), so 9m builds its own. A set of captured calls per prompt, with a judge that checks each answer against its input, comes before any change to the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `blueprint_voicing`, or `recap`. Step 9ac's capture, replay, and blind packets are its first form (`docs/elvira.md`, Comparing models).
+
+Found in 9ac's judging:
+
+- The opening extraction's system prompt asks for "the named NPCs", its request for every character the player meets, so an unnamed smith or mechanic is registered or not by which line a model follows; the judges' scores for it turned on that alone.
+- The metadata extraction is asked for an NPC's newly established facts, while `gamemaster/npc/processing.py` → `_apply_description_updates` replaces the whole description with them, so an answer that follows the prompt drops what was known.
+- The narrator put an NPC within reach that a fact settled as an exceptional no, in the source run and in 3 of 12 answers to the same request.
 
 ### 10 — Location and encounter generators
 
@@ -344,7 +340,7 @@ Found in 9r: today the narrator invents the opening from a task of the fork peri
 
 **11.0** First, with the user: does the Director keep its tool, and what else does it keep?
 
-- **Its tool.** It takes no parameters, returns the same view whatever the model asks, and was called on every Director run, so by `docs/ai.md`'s own axis it could be prompt data, saving the first of the Director's two calls (about a quarter of its cost) and the tool registry. The design document makes tool calling central (`docs/divergences.md`, Tool calling per data type). The question is whether the Director must choose the data for 11.2, or the engine already knows the promoted NPC and hands it its threads and memories; the user is no longer sure tool calling adds much. If the tool stays, two things it hands over carry nothing yet: a thread's id, which no field of the Director's answer can name, and a clock's owner, `world` and none for every clock until step 12.
+- **Its tool.** It takes no parameters, returns the same view whatever the model asks, and was called on every Director run, so by `docs/ai.md`'s own axis it could be prompt data, saving the first of the Director's two calls (about a quarter of its cost) and the tool registry. The design document makes tool calling central (`docs/divergences.md`, Tool calling per data type). The question is whether the Director must choose the data for 11.2, or the engine already knows the promoted NPC and hands it its threads and memories; the user is no longer sure tool calling adds much. If the tool stays, two things it hands over carry nothing yet: a thread's id, which no field of the Director's answer can name, and a clock's owner, `world` and none for every clock until step 12. Found in 9ac: `director.py` → `call_director` cuts the tool results at `truncations.prompt_xxlong`, mid-JSON, so in a game of two NPCs the second, with its id, never reached the Director.
 - **What it decides** (widened by 9r). The Director, from EdgeTales, also decides what happens next (`narrator_guidance`, which the narrator follows), what an NPC should do or feel (`npc_guidance`), and how an NPC sees the player (reflections, with its agenda, instinct, arc, and description), all of which the design document leaves to systems (register "An AI Director steers the story and the NPCs").
 - **When it runs.** Which of these stay with an AI, when the Director runs (every three scenes and on EdgeTales' list of triggers), and when a reflection falls due, which EdgeTales' importance scores time (`emotions/importance.yaml`, `npc.reflection_threshold`; only 18 of their 168 words can be reached by the labels the engine writes), is decided here with the user.
 
@@ -611,3 +607,4 @@ Finished work in its shortest form; git holds the details, in the commits whose 
 - **9y, so far:** mypy strict but for the two checks that ban `Any`, ruff with every rule, and pylint beside them, complexity, duplicate code, and module length at their default limits (CONTRIBUTING.md, Code standards). One strict reader checks every value's type in the yaml stores, `config.yaml`, the emotions, a save, Mythic's and the Adventure Crafter's data, and every structured AI answer, and the four stores load at startup; what the engine reads of Datasworn and a setting's yaml is checked where it is read (ARCHITECTURE.md, Typed binding). An AI call's request is built in its SDK's own types (`docs/ai.md`, Provider adapters).
 - **9z — Sessions in Claude Code on the laptop:** the sessions work by CLAUDE.md, which imports AGENTS.md and took the roadmap's session rules (CLAUDE.md, Sessions with the user). The gate, which Windows judges differently from Linux in places, is clean on both.
 - **9ab — A keyed scene follows its NPC:** a random event's scene keyed on an NPC who was absorbed into another, or who left at a succession, stopped every later scene test; it now goes over or leaves with the NPC (`docs/gamemaster.md`, Keyed scenes). Threats never leave the game, so their scenes cannot outlive them.
+- **9ac — Models compared blind,** at the user's request: Elvira's 108 game requests of 22 turns, each answered by Sonnet 5.5, Opus 5.5, and Fable 5.2 at medium, high, and xhigh, Opus and Fable at medium in fast mode, and Sonnet at medium twice for the noise, judged by code before the key opened (`docs/elvira.md`, Comparing models; $69). Fable at medium narrated best, Opus and Fable chose the Brain's move better than Sonnet, the extractions were alike, Sonnet invented least as the Director, and Opus and Fable voiced the blueprints better; xhigh paid off nowhere. `config.yaml` changes only on the user's choice.

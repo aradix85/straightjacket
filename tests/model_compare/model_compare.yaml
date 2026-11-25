@@ -40,9 +40,12 @@ rubrics:
       into a silver lining, played down, or left out; false when it lands in full; null when the
       request holds no such cost.
     invented: the number of facts the answer settles that neither the request nor the earlier
-      narration settled and the scene does not need: a new named person or place, a clue or
-      discovery on a miss, a past, an outcome the engine did not decide.
-    missing: the number of things the request tells the narrator to show that the answer leaves out.
+      narration settled and the scene does not need (a new named person or place, a clue or
+      discovery on a miss, a past, an outcome the engine did not decide), plus every action,
+      word, thought, or feeling it gives the player character beyond the player's words and
+      intent; what is done to the character counts as an outcome, not as its action.
+    missing: the number of things the request tells the narrator to show that the answer leaves
+      out: the result, each consequence, a keyed or altered scene, an NPC's stance.
     prose: 1 to 5; clear, concrete, varied, in the tone the request sets, no purple or repeated
       phrasing, no mechanics leaked.
     voice: 1 to 5; whether each NPC who speaks sounds like their description and disposition; null
