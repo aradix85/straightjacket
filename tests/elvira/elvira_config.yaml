@@ -42,10 +42,6 @@ judge:
   extra_body:
     output_config: {effort: "low"}
 
-prices:
-  claude-haiku-5-5: [0.10, 0.50]
-  claude-sonnet-5-5: [2.00, 10.00]
-
 logging:
   log_file: "elvira_session.json"
   full_debug_log: false

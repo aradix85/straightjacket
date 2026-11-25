@@ -422,7 +422,7 @@ def _check_dataclasses_in_models_inherit_serializablemixin() -> tuple[str, list[
 
 
 _MODEL_NAME_PATTERNS = re.compile(
-    r"(qwen[-\d]|gpt-oss|gpt-\d|gpt-4|claude-\d|claude-opus|claude-sonnet|claude-haiku"
+    r"(qwen[-\d]|gpt-oss|gpt-\d|gpt-4|claude-\d|claude-opus|claude-sonnet|claude-haiku|claude-fable"
     r"|glm-?\d|zai-|deepseek|kimi-|llama-?\d|mistral-)",
     re.IGNORECASE,
 )

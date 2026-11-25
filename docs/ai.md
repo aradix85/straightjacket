@@ -23,7 +23,7 @@ The narrator writes pure prose; everything structured comes from separate calls 
 - `prompts/brain.yaml`: the Brain and the correction analysis;
 - `prompts/director.yaml`: the Director; `prompts/blueprint_voicing.yaml`: blueprint voicing.
 
-They are tuned for the models in use: switching models means re-tuning in place, not adding parallel variants.
+They were tuned on Claude Sonnet 5.5, and the blind comparison that chose today's models measured them unchanged on those (Model assignment below). A change a model needs is made in place, not as a parallel variant.
 
 ### The Brain
 
@@ -57,7 +57,10 @@ The Brain turns the player's input into a move, a stat, a roll bonus, a target N
 
 - An AI call reaches them only through `model_for_role(role)`, `provider_for_role(role)`, and `sampling_params(role)`; the adapters and the startup check read the clusters themselves (`ai/api_client.py`). No module hardcodes a model.
 - A `null` temperature or top_p is not sent, and an `api_base` of `""` means the SDK's default endpoint. A key is needed only for a provider in use.
-- Every cluster runs Claude Sonnet 5.5 through Anthropic at effort `medium` (`output_config` in the cluster's `extra_body`), with its adaptive thinking, which is on by default. One model for every role is the user's choice, since quality comes from the engine's structure and the prompts. The clusters send no `temperature` or `top_p`, since Sonnet 5.5 refuses any value but the default, so the roles differ in prompt and effort.
+- The models are the user's choice from a blind comparison of them (`docs/elvira.md`, Comparing models): every cluster runs at effort `medium` (`output_config` in the cluster's `extra_body`) in fast mode (`speed: "fast"`, which the adapter passes on as it is), since the chosen models in fast mode answered every role faster than Sonnet 5.5 at `medium` and were judged alike to themselves at normal speed. Higher effort made every model slower and gave Fable's narration nothing better; at `xhigh` it cut off two of Fable's narrations at the token limit.
+  - Narrator, classification (the Brain and the correction analysis), director, and extraction run on Claude Fable 5.2. As narrator it invented the fewest facts, left out the least, and wrote the best prose; it chose the Brain's moves as well as any model, extracted as well as any, and as the Director was judged more useful than Sonnet 5.5 and as useful as Opus 5.5, though it settles more facts of its own than Sonnet did (2.5 an answer against 1.7).
+  - Creative (blueprint voicing and the recap) runs on Claude Opus 5.5, whose blueprints were judged better than Sonnet's, and in fast mode a little better than Fable's (three blueprints each).
+- Adaptive thinking is on by default, and Fable 5.2 always thinks. The clusters send no `temperature` or `top_p`, since these models refuse any value but the default.
 - `ai/api_client.py` → `_schema_in_prompt` appends the compact JSON schema (template `json_schema_instruction` in `prompts/blocks.yaml`) to the end of the last message of every call with a schema, which is always the user's. A model that does not see the schema may write whitespace until the token limit, which a JSON grammar allows. It goes last, so every cached prefix stays intact.
 
 ### Caching

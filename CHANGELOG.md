@@ -8,6 +8,17 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.25.4] — 2026-11-25
+
+The models per role, the user's choice from the blind comparison of roadmap step 9ac (`docs/ai.md`, Model assignment): every cluster runs at effort medium in fast mode on Claude Fable 5.2, and the creative cluster (blueprint voicing and the recap) on Opus 5.5; in fast mode these answered every role faster than Sonnet 5.5 at medium. In the comparison this mix waited a median 6 s for the first sentence, against 10 s before, and the Director, which runs after the narration, a median 2 s against 7, at about 53 cents a turn against 5, input counted with its cache. Its one known cost in quality: as the Director, Fable settled more facts of its own than Sonnet (2.5 an answer against 1.7).
+
+The prompts stay as they are: they were tuned on Sonnet, and the comparison measured them unchanged on these models, where the narrator invented the fewest facts and the Brain chose its moves as well as any.
+
+- Elvira's report prices each role by the model comparison's table in `tests/model_compare/model_compare.yaml`, for its model and speed, where her own table knew neither Opus 5.5, Fable 5.2, nor fast mode; her config's `prices` is gone. A test holds that the table prices every role of the shipped configuration at its model and speed, and the smoke test that her report prices every role it played.
+- The scan for model names written in code knows Fable's, found by the check of this release.
+
+Quality gate: 2063 tests, coverage 96.36%, mypy clean on 279 files, on Windows and with `--platform linux`, pylint clean, ruff clean on every rule outside the ignores. Two sub-agents checked the release; what they found is fixed, apart from two things left as they stand: Elvira's report counts all input at the uncached price, as it says, and `speed` reaches the SDK untyped, as every key of `extra_body` but the three routed ones does. Save format unchanged. An Elvira run on the new models follows the push.
+
 ## [2026.11.25.3] — 2026-11-25
 
 The blind comparison of models, roadmap step 9ac, played and judged. Elvira played three short games on the current configuration (22 turns: `near_death`, `miss`, and a dialogist run), whose 108 game requests were each answered by the eleven configurations and by Sonnet 5.5 at medium a second time, 1,296 answers in all. Eleven sub-agents judged them by code, one role and game each, after a pilot of six requests the session judged itself; the Director's first call was checked by script, since all 216 answers called its tool. Only then did the key open.

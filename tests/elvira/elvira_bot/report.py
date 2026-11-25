@@ -5,8 +5,9 @@ import statistics
 from collections import Counter
 from typing import TYPE_CHECKING, Any
 
-from straightjacket.engine.config_loader import model_for_role
+from straightjacket.engine.config_loader import model_for_role, sampling_params
 from tests.elvira.elvira_bot.judge import CRITERIA
+from tests.model_compare.settings import load_settings
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -53,19 +54,22 @@ def collect_problems(slog: SessionLog) -> list[str]:
     return problems
 
 
-def _cost_lines(slog: SessionLog, prices: dict[str, list[float]]) -> list[str]:
+def _cost_lines(slog: SessionLog) -> list[str]:
+    prices = {
+        (model, speed): price for model, by_speed in load_settings().prices.items() for speed, price in by_speed.items()
+    }
     lines: list[str] = []
     total = 0.0
-    for role, usage in sorted(slog.token_summary.get("by_role", {}).items()):
-        model = model_for_role(role)
-        label = f"{role} ({model})"
-        price = prices.get(model)
+    for role, usage in sorted(slog.token_summary["by_role"].items()):
+        speed = "fast" if sampling_params(role)["extra_body"].get("speed") == "fast" else "standard"
+        label = f"{role} ({model_for_role(role)}, {speed})"
+        price = prices.get((model_for_role(role), speed))
         if price is None:
             lines.append(
                 f"- {label}: {usage['calls']} calls, {usage['input']} in, {usage['output']} out, no price configured"
             )
             continue
-        cost = usage["input"] * price[0] / 1e6 + usage["output"] * price[1] / 1e6
+        cost = usage["input"] * price.uncached / 1e6 + usage["output"] * price.output / 1e6
         total += cost
         lines.append(
             f"- {label}: {usage['calls']} calls, {usage['input']} in, {usage['output']} out, about ${cost:.3f}"
@@ -181,7 +185,7 @@ def _scenario_lines(scenario: dict[str, Any]) -> list[str]:
     ]
 
 
-def write_report(slog: SessionLog, coverage: Coverage, path: Path, prices: dict[str, list[float]]) -> Path:
+def write_report(slog: SessionLog, coverage: Coverage, path: Path) -> Path:
     problems = collect_problems(slog)
     verdict = "no problems found" if not problems else f"{len(problems)} problem(s) found"
     out: list[str] = [
@@ -200,7 +204,7 @@ def write_report(slog: SessionLog, coverage: Coverage, path: Path, prices: dict[
         ("Streaming", _stream_lines(slog)),
         ("Engine events", _event_lines(slog)),
         ("Speed", _speed_lines(slog)),
-        ("Cost", _cost_lines(slog, prices)),
+        ("Cost", _cost_lines(slog)),
     ):
         out += [f"## {title}", "", *lines, ""]
     path.parent.mkdir(parents=True, exist_ok=True)

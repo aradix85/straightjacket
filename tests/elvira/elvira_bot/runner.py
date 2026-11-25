@@ -119,7 +119,6 @@ class SessionSettings:
     print_rolls: bool
     do_invariants: bool
     judge_cfg: dict[str, Any] | None
-    prices: dict[str, Any]
     succession_enabled: bool
     full_debug: bool
 
@@ -199,7 +198,6 @@ def session_settings(bot_cfg: dict[str, Any], *, auto_override: bool, turns_over
         print_rolls=log_cfg["print_roll_details"],
         do_invariants=log_cfg["assert_state_invariants"],
         judge_cfg=bot_cfg["judge"] if bot_cfg["judge"]["enabled"] else None,
-        prices=bot_cfg["prices"],
         succession_enabled=session_cfg["succession_on_game_over"],
         full_debug=log_cfg["full_debug_log"],
     )
@@ -414,7 +412,7 @@ def _finish(run: _Run) -> None:
 
 
 def write_logs(slog: SessionLog, coverage: Coverage, settings: SessionSettings) -> None:
-    report_path = write_report(slog, coverage, RUNS_DIR / f"{settings.log_file.stem}.md", settings.prices)
+    report_path = write_report(slog, coverage, RUNS_DIR / f"{settings.log_file.stem}.md")
     say(f"  [REPORT] {report_path}")
 
     RUNS_DIR.mkdir(parents=True, exist_ok=True)

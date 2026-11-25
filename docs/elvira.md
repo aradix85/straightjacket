@@ -83,7 +83,7 @@ The scenarios:
 
 **Output.** Each run writes a JSON session log and a Markdown report to `tests/elvira/runs/`: the verdict first, then problems, a scenario's aims, coverage, audit, revelations (on how many turns one was put before the narrator, how often it came across, and in which scene each first did), streaming, engine events, speed, and estimated cost.
 
-**Cost.** It comes from the token use of the engine's calls, the opening and each chapter start included, which a meter around the provider in `tests/elvira/elvira_bot/tokens.py` counts. The calls of a turn that fails the run and of the closing epilogue are not counted.
+**Cost.** It comes from the token use of the engine's calls, the opening and each chapter start included, which a meter around the provider in `tests/elvira/elvira_bot/tokens.py` counts, priced by the model comparison's table in `tests/model_compare/model_compare.yaml` (Comparing models below) for each role's model and speed. The calls of a turn that fails the run and of the closing epilogue are not counted.
 
 **Folders.** She keeps her players in tests/elvira/users by setting `STRAIGHTJACKET_USERS_DIR` before the engine loads, unless it is already set; git ignores both folders. To try another game model or narration language, point `STRAIGHTJACKET_CONFIG` at a copy of `config.yaml` with other clusters or another `language`, and give Elvira a config with its own `username`, so several runs can play side by side.
 

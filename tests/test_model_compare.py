@@ -8,7 +8,7 @@ from typing_extensions import override
 
 from straightjacket.engine.ai.provider_base import AIResponse
 from straightjacket.engine.ai.sentence_stream import SentenceStream
-from straightjacket.engine.config_loader import cfg
+from straightjacket.engine.config_loader import cfg, model_for_role, sampling_params
 from straightjacket.engine.game import process_turn
 from tests._creation import TurnProvider, brain_answer, force_result, library_game
 from tests._helpers import make_ai_call_spec
@@ -247,3 +247,10 @@ def test_the_shipped_comparison_prices_every_configuration_and_has_a_rubric_for_
         assert "fast" in settings.prices[configuration.model] or not configuration.fast
         assert "standard" in settings.prices[configuration.model]
     assert set(cfg().ai.role_cluster) <= set(settings.rubrics)
+
+
+def test_the_price_table_prices_every_role_of_the_shipped_configuration_at_its_speed() -> None:
+    prices = load_settings().prices
+    for role in cfg().ai.role_cluster:
+        speed = "fast" if sampling_params(role)["extra_body"].get("speed") == "fast" else "standard"
+        assert speed in prices[model_for_role(role)], role

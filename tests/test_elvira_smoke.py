@@ -97,6 +97,7 @@ def test_elvira_plays_a_short_session_end_to_end(monkeypatch: pytest.MonkeyPatch
     assert "## Coverage" in report
     assert "## Revelations" in report
     assert report.startswith("# Elvira report: starforged, explorer")
+    assert "no price configured" not in report
     assert session.coverage["counts"]["save_roundtrip"] >= 1
     assert not session.save_roundtrip_issues
     compact = session.turns[0].to_compact_dict()
