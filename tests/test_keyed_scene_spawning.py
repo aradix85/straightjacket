@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from straightjacket.engine.correction.ops import apply_correction_ops
 from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.crafters.turning_point_spawns import spawn_keyed_scenes_for_turning_point
@@ -15,6 +16,7 @@ from straightjacket.engine.gamemaster.keyed_scenes import (
     evaluate_keyed_scenes,
 )
 from straightjacket.engine.gamemaster.random_events import generate_random_event, spawn_keyed_scene_from_random_event
+from tests._creation import library_game
 from tests._helpers import (
     make_character_entry,
     make_clock,
@@ -24,6 +26,7 @@ from tests._helpers import (
     make_npc,
     make_progress_track,
     make_random_event,
+    make_state_op,
     make_threat,
     make_turning_point,
     make_world_state,
@@ -479,3 +482,39 @@ def test_clock_spawned_scene_fires_when_clock_fills() -> None:
     fired = evaluate_keyed_scenes(game)
     assert fired is not None
     assert fired.trigger_type == "clock_fills"
+
+
+def _npc_scene_of(game: GameState, focus: str, npc_id: str) -> None:
+    spawn_keyed_scene_from_random_event(game, make_random_event(focus=focus, target=npc_id, target_id=npc_id))
+
+
+def test_a_random_events_keyed_scene_names_the_npc_by_its_id_when_the_event_names_it() -> None:
+    game = library_game()
+    game.narrative.keyed_scenes = []
+    _npc_scene_of(game, "npc_action", "Mira")
+    assert [ks.source for ks in game.narrative.keyed_scenes] == ["random_event:npc_action:npc_1"]
+
+
+def test_an_absorbed_npcs_keyed_scene_goes_to_the_npc_it_joins() -> None:
+    game = library_game(("Tam", "An old ferryman", "neutral"))
+    game.narrative.keyed_scenes = []
+    _npc_scene_of(game, "npc_negative", "npc_2")
+    apply_correction_ops(game, [make_state_op(op="npc_merge", npc_id="npc_1", merge_source_id="npc_2")])
+    [scene] = game.narrative.keyed_scenes
+    threshold = gm().random_events.keyed_scene_mapping["npc_negative"].threshold
+    assert (scene.source, scene.trigger_value) == ("random_event:npc_negative:npc_1", f"npc_1:{threshold}")
+    assert evaluate_keyed_scenes(game) is None
+
+
+def test_an_absorbed_npcs_keyed_scene_leaves_when_the_npc_it_joins_holds_one_of_its_kind() -> None:
+    game = library_game(("Tam", "An old ferryman", "neutral"))
+    game.narrative.keyed_scenes = []
+    _npc_scene_of(game, "npc_action", "npc_1")
+    _npc_scene_of(game, "npc_action", "npc_2")
+    _npc_scene_of(game, "npc_positive", "npc_2")
+    apply_correction_ops(game, [make_state_op(op="npc_merge", npc_id="npc_1", merge_source_id="npc_2")])
+    assert sorted(ks.source for ks in game.narrative.keyed_scenes) == [
+        "random_event:npc_action:npc_1",
+        "random_event:npc_positive:npc_1",
+    ]
+    assert evaluate_keyed_scenes(game) is None

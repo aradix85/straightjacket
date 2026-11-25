@@ -117,7 +117,7 @@ A connection's track carries an NPC's bond and has the NPC's id (`ruleset/bond.p
 - **Classic Test Your Bond** is offered only while a bond exists (`bonded_track`). Its weak hit tells that they ask proof of loyalty (`loyalty_test`). Its miss clears the bond and pays the price (`clear_bond`): the connection is removed, so the NPC's closeness is 0, and a later Forge a Bond seals a new one.
 - **No connection, no move.** The Brain is refused a move that marks, raises, or clears a connection for an NPC without one (`ruleset/move_outcome.py` → `needs_a_connection`).
 - **Aid.** A connection aids by its ruleset's rule (`connection_aid` in `ruleset/roll_bonuses.yaml`): in Starforged +1 and +1 momentum on a hit, +2 once bonded; in classic +1 where the move adds it for a shared bond.
-- **Two NPCs found to be one person**, through a correction's merge or a duplicate absorbed after a rename (`gamemaster/npc/lifecycle.py` → `absorb_npc`), become one. The NPC that stays keeps the connection with the most progress and takes over the other's memories, clocks, place on the characters list, and the vows sworn with its bond's aid.
+- **Two NPCs found to be one person**, through a correction's merge or a duplicate absorbed after a rename (`gamemaster/npc/lifecycle.py` → `absorb_npc`), become one. The NPC that stays keeps the connection with the most progress and takes over the other's memories, clocks, keyed scenes (`docs/gamemaster.md`, Keyed scenes), place on the characters list, and the vows sworn with its bond's aid.
 
 ### The ruleset's words
 

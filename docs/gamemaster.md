@@ -131,7 +131,7 @@ The chaos factor moves per turn (`gamemaster/chaos.yaml`). Pacing is computed fr
 - When a pattern fires, `evaluate_keyed_scenes` binds the entity in `KeyedScene.bound_entity_id`, which nothing reads yet, since the fired scene leaves the list at once.
 - Three sources spawn keyed scenes:
   - the Adventure Crafter at chapter start: its `keyed_scene_mapping` maps 33 plot points to triggers, at most one per plot point per chapter, capped by `max_keyed_scenes_per_chapter`; a new chapter drops the ones the last chapter's turning points left;
-  - random events when they fire, from the event's target;
+  - random events when they fire, from the event's target. A scene keyed on an NPC follows it: when the NPC is absorbed into another as the same person, its scene goes to that NPC, or leaves where that NPC already has one of its focus (`gamemaster/random_events.py` → `hand_over_npc_scenes`), and when it leaves the game at a succession or as the name a successor takes, its scene leaves too (`drop_scenes_of_departed_npcs`);
   - the opening clock and the clocks random events and plot points start, by the per-type fractions in `gamemaster/clock_keyed_scenes.yaml` (`gamemaster/clocks.py` → `spawn_keyed_scenes_for_clock`). Complication clocks and the dying clock get none.
 
 **Random events.** A four-step pipeline in `gamemaster/random_events.py`:

@@ -12,7 +12,8 @@ from straightjacket.engine.game.succession import (
     start_succession_with_character,
 )
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene
+from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene, evaluate_keyed_scenes
+from straightjacket.engine.gamemaster.random_events import spawn_keyed_scene_from_random_event
 from straightjacket.engine.models import CampaignState
 from straightjacket.engine.ruleset.bond import get_npc_bond, seal_bond
 from straightjacket.engine.ruleset.meters import starting_resources
@@ -41,6 +42,7 @@ from tests._helpers import (
     make_npc,
     make_predecessor,
     make_progress_track,
+    make_random_event,
     make_thread,
     make_threat,
 )
@@ -274,6 +276,37 @@ def test_a_successor_starts_without_the_old_adventures_and_clocks_keyed_scenes(a
     sources = {ks.source for ks in aria.narrative.keyed_scenes}
     assert not sources & {"ac:Old Plot Point", "clock:The flood rises:2"}
     assert "random_event:pc_negative:npc_1" in sources
+
+
+def _npc_scene_of(game: GameState, npc_id: str) -> None:
+    spawn_keyed_scene_from_random_event(game, make_random_event(focus="npc_action", target=npc_id, target_id=npc_id))
+
+
+def _random_event_scenes(game: GameState) -> list[str]:
+    return [ks.source for ks in game.narrative.keyed_scenes if ks.source.startswith("random_event:")]
+
+
+def test_a_successor_keeps_the_keyed_scenes_of_the_npcs_who_stay_and_not_of_those_who_leave(aria: GameState) -> None:
+    aria.narrative.keyed_scenes = []
+    kira_id = aria.npcs[0].id
+    aria.npcs.append(make_npc(id="npc_9", name="Old Tam", status="deceased"))
+    _npc_scene_of(aria, kira_id)
+    _npc_scene_of(aria, "npc_9")
+    aria.end_reason = "death"
+    prepare_succession(aria)
+    start_succession_with_character(OpeningProvider([], "Memorial"), aria, _successor())
+    assert _random_event_scenes(aria) == [f"random_event:npc_action:{kira_id}"]
+    evaluate_keyed_scenes(aria)
+
+
+def test_a_successor_named_as_an_npc_takes_the_npcs_keyed_scenes_out_of_the_game(aria: GameState) -> None:
+    aria.narrative.keyed_scenes = []
+    kira = aria.npcs[0]
+    _npc_scene_of(aria, kira.id)
+    _succeed(aria, _successor(player_name=kira.name))
+    assert kira not in aria.npcs
+    assert not _random_event_scenes(aria)
+    evaluate_keyed_scenes(aria)
 
 
 def test_prepare_succession_archives_and_sets_flag(aria: GameState) -> None:

@@ -9,6 +9,7 @@ from straightjacket.engine.game.game_start import take_up_character
 from straightjacket.engine.game.setup_common import generate_opening, record_opening
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import drop_keyed_scenes_from
+from straightjacket.engine.gamemaster.random_events import drop_scenes_of_departed_npcs
 from straightjacket.engine.gamemaster.spawn_sources import AC_SOURCE_PREFIX, CLOCK_KEYED_SOURCE_PREFIX
 from straightjacket.engine.gamemaster.world import clear_facts
 from straightjacket.engine.logging_util import log
@@ -106,6 +107,7 @@ def _reset_for_successor(
     game.progress_tracks = surviving_connection_tracks
 
     game.npcs = surviving_npcs
+    drop_scenes_of_departed_npcs(game)
 
     log(
         f"[Succession] Reset complete. Surviving: {len(surviving_npcs)} NPCs, "

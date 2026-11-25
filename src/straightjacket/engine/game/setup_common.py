@@ -16,6 +16,7 @@ from straightjacket.engine.gamemaster.npc.matching import (
 )
 from straightjacket.engine.gamemaster.npc.memory import score_importance
 from straightjacket.engine.gamemaster.pacing import record_scene_intensity
+from straightjacket.engine.gamemaster.random_events import drop_scenes_of_departed_npcs
 from straightjacket.engine.gamemaster.world import update_location
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import (
@@ -59,6 +60,7 @@ def register_extracted_npcs(game: GameState, extracted: list[OpeningNpc]) -> Non
         game.npcs.append(npc)
 
     game.npcs = [n for n in game.npcs if n.name.lower().strip() != player_lower]
+    drop_scenes_of_departed_npcs(game)
 
 
 def seed_opening_memories(game: GameState, memory_updates: list[OpeningMemory]) -> None:

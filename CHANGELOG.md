@@ -8,6 +8,18 @@ This log holds the releases of the step in progress (roadmap.md, NEXT STEP). Whe
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.11.25.1] — 2026-11-25
+
+A keyed scene follows its NPC, roadmap step 9ab, found by the comparison script of the release before. A random event keys a scene on an NPC's bond, and when that NPC left the game the scene stayed, so every later scene test raised and the game could not go on. An NPC leaves the game in three places, and its scene now goes with it (`docs/gamemaster.md`, Keyed scenes):
+
+- absorbed into another as the same person, its scene goes to that NPC, or leaves where that NPC already holds one of its focus;
+- left behind at a succession, its scene leaves;
+- taken out at an opening because a successor bears its name, its scene leaves.
+
+Threats never leave the game, since a succession keeps them all, so a random event's scene keyed on a threat cannot outlive it. A random event that names its NPC by a name keys the scene on the NPC's id, as it does when it names the id, and its danger and clock name their source by the same helper.
+
+Measured: the script of the release before played its 80 seeded games again: the 8 that stopped at the scene test play to their end, 5 more differ from before only in their keyed scenes, and the other 67 are alike. Quality gate: 2049 tests, coverage 96.32% to 96.36%, mypy clean on 272 files, on Windows and with `--platform linux`, pylint clean, ruff clean on every rule outside the ignores. A sub-agent checked the release; what it found is fixed. Save format unchanged. No Elvira run: the comparison of models the user asked for plays next and meets this.
+
 ## [2026.11.25.0] — 2026-11-25
 
 The AI's structured answers read as dataclasses, the rest of roadmap 9y.3e. What the metadata extraction, the opening extraction, the Director, blueprint voicing, and the correction analysis answered was a dict of any value, read by its keys wherever the engine used it, so a value of another type than its schema's entered the game state and then made the save incompatible, since loading checks every value. Each answer is now read by the reader that binds the configuration, into its dataclass in `models_answers.py`, where `BrainResult` moved too: such a value, a missing key, or an unknown one fails the call where its answer is read, and the call degrades as when the AI cannot be reached (`docs/ai.md`, Roles; When an AI call fails).

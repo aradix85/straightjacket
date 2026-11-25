@@ -17,7 +17,7 @@ from straightjacket.engine.prompt_loader import get_prompt
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from straightjacket.engine.models import GameState, ThreadEntry
+    from straightjacket.engine.models import GameState, KeyedScene, NarrativeState, ThreadEntry
 
 _pending_events: list[RandomEvent] = []
 
@@ -130,28 +130,29 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
         return
     if not event.target_id:
         return
-    source = f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id}"
-    if has_keyed_scene_from(game.narrative, source):
-        return
 
     entry = cfg.keyed_scene_mapping[event.focus]
     if entry.trigger_type == "bond_threshold":
-        if find_npc(game, event.target_id) is None:
+        npc = find_npc(game, event.target_id)
+        if npc is None:
             log(
                 f"[RandomEvent] focus '{event.focus}' targets '{event.target_id}', a character without an NPC "
                 "record; a bond keyed-scene needs an NPC, so none is spawned"
             )
             return
-        pool = event.target_id
+        target_id, pool = npc.id, npc.id
     elif entry.trigger_type == "threat_menace_phase":
-        pool = event.target
+        target_id, pool = event.target_id, event.target
     else:
         msg = (
             f"random_events.keyed_scene_mapping for focus {event.focus!r} uses unsupported "
             f"trigger_type {entry.trigger_type!r}"
         )
         raise ValueError(msg)
-    trigger_value = f"{pool}:{entry.threshold}"
+    source = _event_source(event.focus, target_id)
+    if has_keyed_scene_from(game.narrative, source):
+        return
+    trigger_value = _trigger_value(pool, entry.threshold)
 
     scene = add_keyed_scene(
         game.narrative,
@@ -168,13 +169,52 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
     )
 
 
+def _event_source(focus: str, target_id: str) -> str:
+    return f"{RANDOM_EVENT_SOURCE_PREFIX}{focus}:{target_id}"
+
+
+def _trigger_value(pool: str, threshold: int) -> str:
+    return f"{pool}:{threshold}"
+
+
+def _bond_foci() -> dict[str, int]:
+    mapping = gm().random_events.keyed_scene_mapping
+    return {focus: entry.threshold for focus, entry in mapping.items() if entry.trigger_type == "bond_threshold"}
+
+
+def hand_over_npc_scenes(narrative: NarrativeState, from_id: str, to_id: str) -> None:
+    for focus, threshold in _bond_foci().items():
+        scene = next((ks for ks in narrative.keyed_scenes if ks.source == _event_source(focus, from_id)), None)
+        if scene is None:
+            continue
+        if has_keyed_scene_from(narrative, _event_source(focus, to_id)):
+            narrative.keyed_scenes.remove(scene)
+            log(f"[RandomEvent] keyed-scene '{scene.id}' of {from_id} dropped: {to_id} already holds one of '{focus}'")
+            continue
+        scene.source = _event_source(focus, to_id)
+        scene.trigger_value = _trigger_value(to_id, threshold)
+        log(f"[RandomEvent] keyed-scene '{scene.id}' handed over from {from_id} to {to_id}")
+
+
+def drop_scenes_of_departed_npcs(game: GameState) -> None:
+    held = {_event_source(focus, npc.id) for focus in _bond_foci() for npc in game.npcs}
+    kept: list[KeyedScene] = []
+    for scene in game.narrative.keyed_scenes:
+        is_npc_scene = scene.source.startswith(RANDOM_EVENT_SOURCE_PREFIX) and scene.trigger_type == "bond_threshold"
+        if is_npc_scene and scene.source not in held:
+            log(f"[RandomEvent] keyed-scene '{scene.id}' dropped: its NPC has left the game ({scene.source})")
+            continue
+        kept.append(scene)
+    game.narrative.keyed_scenes = kept
+
+
 def spawn_danger_from_random_event(game: GameState, event: RandomEvent) -> None:
     if event.focus not in gm().random_events.danger_foci:
         return
     answers().add_danger(
         game,
         event.focus,
-        f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id or event.focus}",
+        _event_source(event.focus, event.target_id or event.focus),
         (_mythic_pair("block_mythic_pair_name", event), _mythic_pair("block_mythic_pair", event)),
     )
 
@@ -189,7 +229,7 @@ def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> None:
         base_name=_mythic_pair("block_mythic_pair_name", event),
         clock_type=cfg.clock_creation_mapping[event.focus].clock_type,
         trigger_description=_mythic_pair("block_mythic_pair", event),
-        source=f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id or event.focus}",
+        source=_event_source(event.focus, event.target_id or event.focus),
     )
 
 

@@ -2,6 +2,7 @@ from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.npc.matching import normalize_for_match, sanitize_npc_name
 from straightjacket.engine.gamemaster.npc.memory import consolidate_memory
 from straightjacket.engine.gamemaster.questions import answers
+from straightjacket.engine.gamemaster.random_events import hand_over_npc_scenes
 from straightjacket.engine.logging_util import log
 from straightjacket.engine.models import GameState, NpcData
 
@@ -214,6 +215,7 @@ def absorb_npc(game: GameState, original: NpcData, dup: NpcData) -> None:
     answers().merge_npcs(game, original, dup)
     _transfer_clocks(game, dup.name, original.name)
     _take_over_list_entry(game, original, dup)
+    hand_over_npc_scenes(game.narrative, dup.id, original.id)
 
     game.npcs.remove(dup)
     log(f"[NPC] Absorbed '{dup.name}' ({dup.id}) into '{original.name}' ({original.id}): {len(dup.memory)} memories")
